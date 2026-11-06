@@ -7,9 +7,9 @@ import { useState } from 'react'
 import { Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { DestinoAcciones } from './DestinoAcciones'
 import { useRevistaOpcional } from './useRevista'
-import { EncabezadoComun } from '@/design-system/EncabezadoComun'
-import { EncabezadoRevista } from '@/design-system/EncabezadoRevista'
-import { PanelLateral } from '@/design-system/PanelLateral'
+import { EncabezadoComun } from '@/components/common/EncabezadoComun'
+import { EncabezadoRevista } from '@/components/common/EncabezadoRevista'
+import { PanelLateral } from '@/components/common/PanelLateral'
 
 // TODO(phase 3): replace with the real session (user selector in the mock, decision 12).
 const USUARIO_TEMPORAL = { nombre: 'Ma. Camila Mendoza', perfil: 'Administradora' }
