@@ -24,8 +24,7 @@ export function CampoContrasena(props: CampoContrasenaProps) {
           onClick={() => setVisible((v) => !v)}
           className="rounded-sm text-etiqueta-13 text-texto-enlace"
         >
-          {visible ? 'Ocultar' : 'Mostrar'}
-          <span className="sr-only"> contraseña</span>
+          {visible ? 'Ocultar' : 'Mostrar'} <span className="sr-only">contraseña</span>
         </button>
       }
     />

@@ -30,6 +30,19 @@ const TAMANOS: Record<TamanoBoton, string> = {
   sm: 'min-h-control-sm px-3 text-etiqueta-13',
 }
 
+/** Class list of a button; shared by <Boton> and <EnlaceBoton> so both look identical. */
+export function clasesBoton(
+  variante: VarianteBoton = 'primario',
+  tamano: TamanoBoton = 'md',
+): string {
+  return cn(
+    'inline-flex items-center justify-center gap-2 rounded-md transition-colors',
+    TAMANOS[tamano],
+    VARIANTES[variante],
+    'disabled:cursor-not-allowed disabled:border-transparent disabled:bg-neutro-200 disabled:text-texto-secundario',
+  )
+}
+
 export function Boton({
   variante = 'primario',
   tamano = 'md',
@@ -47,13 +60,7 @@ export function Boton({
       type={type}
       disabled={inactivo}
       aria-busy={cargando || undefined}
-      className={cn(
-        'inline-flex items-center justify-center gap-2 rounded-md transition-colors',
-        TAMANOS[tamano],
-        VARIANTES[variante],
-        'disabled:cursor-not-allowed disabled:border-transparent disabled:bg-neutro-200 disabled:text-texto-secundario',
-        className,
-      )}
+      className={cn(clasesBoton(variante, tamano), className)}
     >
       {cargando && (
         <svg

@@ -37,7 +37,7 @@ export function FilaCorreoEnviado({
       <td className="px-4">
         <DistintivoEstado estado={resultado} />
       </td>
-      <td className="px-4 text-right">{accion}</td>
+      {accion !== undefined && <td className="px-4 text-right">{accion}</td>}
     </tr>
   )
 }
