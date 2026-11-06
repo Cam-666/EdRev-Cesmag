@@ -1,0 +1,127 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/*
+ * Design tokens (Figma). Single place where raw color values live.
+ * Semantic aliases are used by components; never use raw hex in components.
+ */
+:root {
+  /* Institutional */
+  --cesmag-azul: #0d47a1;
+  --cesmag-azul-panel: #0a3a85;
+  --cesmag-azul-oscuro: #072f6b;
+  --cesmag-rojo: #c62828;
+
+  /* Neutrals */
+  --neutro-0: #ffffff;
+  --neutro-50: #f7f8fa;
+  --neutro-100: #eff2f6;
+  --neutro-200: #e1e6ed;
+  --neutro-300: #c7d0da;
+  --neutro-400: #9aa6b4;
+  --neutro-600: #5d6b7c;
+  --neutro-800: #2c3a4b;
+  --neutro-900: #14202e;
+
+  /* State (text color + background). exito/alerta darkened for AA (user-validated) */
+  --estado-exito: #17703f;
+  --estado-exito-fondo: #e6f4ec;
+  --estado-alerta: #8a5300;
+  --estado-alerta-fondo: #fff4e0;
+  --estado-error: #c62828;
+  --estado-error-fondo: #fdecea;
+  --estado-info: #0d47a1;
+  --estado-info-fondo: #e8f0fb;
+
+  /* Semantic */
+  --superficie-fondo: var(--neutro-50);
+  --superficie-tarjeta: var(--neutro-0);
+  --superficie-sutil: var(--neutro-100);
+  --superficie-inversa: var(--neutro-900);
+  --texto-principal: var(--neutro-900);
+  --texto-secundario: var(--neutro-600);
+  --texto-tenue: var(--neutro-400); /* decorative only, never text */
+  --texto-inverso: var(--neutro-0);
+  --texto-enlace: var(--cesmag-azul);
+  --borde-base: var(--neutro-200);
+  --borde-fuerte: var(--neutro-300);
+  --borde-control: var(--neutro-600); /* 3:1 for control borders */
+  --borde-foco: var(--cesmag-azul);
+  --texto-placeholder: var(--neutro-600);
+
+  /* Overlays (modal scrim, hover tint on dark panel) */
+  --velo-modal: rgb(20 32 46 / 0.55);
+  --velo-panel: rgb(255 255 255 / 0.12);
+
+  /* Journal defaults (REEP); rewritten by [data-revista] */
+  --revista-primario: #d81b60;
+  --revista-primario-oscuro: #ad1457;
+  --revista-profundo: #0b1b4d;
+  --revista-suave: #fce4ec;
+  --revista-degradado-fin: #e8336a;
+  --revista-barra: linear-gradient(
+    90deg,
+    #011e56 0%,
+    #012a5c 8%,
+    #22507a 16%,
+    #6b86a6 26%,
+    #c6cedb 36%,
+    #f7f7fa 46%,
+    #ffe4ee 54%,
+    #feb3cb 64%,
+    #fb6e9d 74%,
+    #fa3375 84%,
+    #ff1360 93%,
+    #ce0b48 100%
+  );
+  /* Scrim behind the title so white text keeps contrast on the light part of the gradient */
+  --revista-velo: linear-gradient(90deg, rgb(1 30 86 / 0.85) 0%, rgb(1 30 86 / 0) 30%);
+  --revista-pastilla: var(--revista-primario-oscuro);
+  --revista-titulo-ancho: 30%;
+}
+
+[data-revista='reep'] {
+  --revista-titulo-ancho: 30%;
+  --revista-primario: #d81b60;
+  --revista-primario-oscuro: #ad1457;
+  --revista-profundo: #0b1b4d;
+  --revista-suave: #fce4ec;
+  --revista-degradado-fin: #e8336a;
+  --revista-pastilla: var(--revista-primario-oscuro);
+}
+
+[data-revista='ire'] {
+  --revista-titulo-ancho: 100%;
+  --revista-primario: #c62828;
+  --revista-primario-oscuro: #8e1b1b;
+  --revista-profundo: #141e5a;
+  --revista-suave: #fdeaea;
+  --revista-degradado-fin: #e01a2b;
+  --revista-barra: linear-gradient(90deg, #141e5a 0%, #5b1e6e 45%, #e01a2b 100%);
+  --revista-velo: linear-gradient(90deg, transparent, transparent);
+  --revista-pastilla: var(--cesmag-azul);
+}
+
+@layer base {
+  html {
+    font-family: 'Inter', system-ui, sans-serif;
+    color: var(--texto-principal);
+    background-color: var(--superficie-fondo);
+  }
+  body {
+    @apply text-cuerpo-15;
+    margin: 0;
+  }
+  /* 2px ring, 2px offset, on every interactive element */
+  :focus-visible {
+    outline: 2px solid var(--borde-foco);
+    outline-offset: 2px;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    * {
+      animation-duration: 0.01ms !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+}
