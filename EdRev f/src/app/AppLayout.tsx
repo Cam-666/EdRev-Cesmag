@@ -10,6 +10,9 @@ import { useRevistaOpcional } from '@/lib/revista/useRevista'
 import { EncabezadoComun } from '@/components/common/EncabezadoComun'
 import { EncabezadoRevista } from '@/components/common/EncabezadoRevista'
 import { PanelLateral } from '@/components/common/PanelLateral'
+import { SelectorUsuarioDemo } from '@/modules/acceso/components/SelectorUsuarioDemo'
+import { POLITICA_ACCESO } from '@/modules/acceso/config/politicaAcceso'
+import { useCierrePorInactividad } from '@/modules/acceso/hooks/useCierrePorInactividad'
 import { useSesion, useUsuarioActual } from '@/modules/acceso/hooks/useSesion'
 import { ETIQUETA_PERFIL } from '@/types/usuario'
 
@@ -21,6 +24,9 @@ export function AppLayout() {
   const usuario = useUsuarioActual()
   const { cerrarSesion } = useSesion()
   const [destino, setDestino] = useState<HTMLElement | null>(null)
+
+  // RNF-05: the session closes after a period of inactivity.
+  useCierrePorInactividad(POLITICA_ACCESO.inactividadMinutos, () => cerrarSesion('inactividad'))
 
   const acciones = <div ref={setDestino} className="flex items-center gap-2" />
 
@@ -37,7 +43,7 @@ export function AppLayout() {
         rutaActual={pathname}
         usuario={{ nombre: usuario.nombre, perfil: ETIQUETA_PERFIL[usuario.perfil] }}
         onAbrirRevista={(r) => navigate(`/${r}/tablero`)}
-        onCerrarSesion={cerrarSesion}
+        onCerrarSesion={() => cerrarSesion('manual')}
       />
       <div className="flex min-w-0 flex-1 flex-col">
         {revista ? (
@@ -51,6 +57,7 @@ export function AppLayout() {
           </DestinoAcciones.Provider>
         </main>
       </div>
+      <SelectorUsuarioDemo />
     </div>
   )
 }

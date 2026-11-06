@@ -2,14 +2,11 @@ import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { RouterProvider, createMemoryRouter } from 'react-router-dom'
 import { rutas } from '.'
-import { SesionProvider } from '@/modules/acceso/components/SesionProvider'
-import { USUARIOS_SEED } from '@/mocks/seed/usuarios'
+import { Proveedores } from '../Proveedores'
+import { ADMINISTRADORA, AUXILIAR } from '@/mocks/seed/usuarios'
 import type { Usuario } from '@/types/usuario'
 import { REVISTAS } from '@/types/revista'
 import type { Revista } from '@/types/revista'
-
-const ADMINISTRADORA = USUARIOS_SEED[0] ?? null
-const AUXILIAR = USUARIOS_SEED[1] ?? null
 
 /** The 18 views each journal has, identical for reep and ire. */
 const VISTAS = [
@@ -36,9 +33,9 @@ const VISTAS = [
 function montar(ruta: string, usuario: Usuario | null = ADMINISTRADORA) {
   const router = createMemoryRouter(rutas, { initialEntries: [ruta] })
   const vista = render(
-    <SesionProvider usuarioInicial={usuario}>
+    <Proveedores usuarioInicial={usuario}>
       <RouterProvider router={router} />
-    </SesionProvider>,
+    </Proveedores>,
   )
   return { router, ...vista }
 }
@@ -115,7 +112,7 @@ describe('route table', () => {
 
   it('shows the three access screens without the side panel', () => {
     for (const ruta of ['/acceso', '/acceso/recuperar', '/acceso/recuperar/enviado']) {
-      const { unmount } = montar(ruta)
+      const { unmount } = montar(ruta, null)
       expect(screen.queryByRole('navigation', { name: 'Principal' })).toBeNull()
       expect(screen.getByRole('heading', { level: 1 })).toBeInTheDocument()
       unmount()
