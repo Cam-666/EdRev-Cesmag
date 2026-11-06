@@ -73,7 +73,8 @@
   );
   /* Scrim behind the title so white text keeps contrast on the light part of the gradient */
   --revista-velo: linear-gradient(90deg, rgb(1 30 86 / 0.85) 0%, rgb(1 30 86 / 0) 30%);
-  --revista-pastilla: var(--revista-primario-oscuro);
+  --revista-pastilla: var(--cesmag-azul-oscuro);
+  --revista-acento: var(--revista-primario);
   --revista-titulo-ancho: 30%;
 }
 
@@ -84,7 +85,8 @@
   --revista-profundo: #0b1b4d;
   --revista-suave: #fce4ec;
   --revista-degradado-fin: #e8336a;
-  --revista-pastilla: var(--revista-primario-oscuro);
+  --revista-pastilla: var(--cesmag-azul-oscuro);
+  --revista-acento: var(--revista-primario);
 }
 
 [data-revista='ire'] {
@@ -94,7 +96,23 @@
   --revista-profundo: #141e5a;
   --revista-suave: #fdeaea;
   --revista-degradado-fin: #e01a2b;
-  --revista-barra: linear-gradient(90deg, #141e5a 0%, #5b1e6e 45%, #e01a2b 100%);
+  /* Measured on the real journal header; the end stays on #e01a2b (white text 4.8:1). */
+  --revista-barra: linear-gradient(
+    90deg,
+    #141e5a 0%,
+    #161b5f 8%,
+    #1a175a 16%,
+    #201454 26%,
+    #280f50 36%,
+    #2f0c4c 46%,
+    #410946 54%,
+    #68073d 64%,
+    #8d0536 74%,
+    #b40331 84%,
+    #d50127 93%,
+    #e01a2b 100%
+  );
+  --revista-acento: #d81e32;
   --revista-velo: linear-gradient(90deg, transparent, transparent);
   --revista-pastilla: var(--cesmag-azul);
 }

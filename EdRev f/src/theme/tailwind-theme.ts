@@ -102,6 +102,7 @@ export const tema: NonNullable<Config['theme']> = {
       suave: v('revista-suave'),
       'degradado-fin': v('revista-degradado-fin'),
       pastilla: v('revista-pastilla'),
+      acento: v('revista-acento'),
     },
     velo: { modal: v('velo-modal'), panel: v('velo-panel') },
   },
