@@ -3,6 +3,16 @@
 Frontend del Sistema de Gestión Editorial (Universidad CESMAG). Organización por módulos funcionales y
 separación de responsabilidades, según la revisión de Ingeniería de Software.
 
+## Ubicación en el repositorio
+
+```
+EdRev Cesmag/        raíz del repositorio (Git)
+  EdRev f/           frontend (este proyecto)
+  <backend>/         carpeta hermana cuando exista el backend (fuera del alcance de esta etapa)
+```
+
+Todos los comandos (`npm run dev`, `build`, `typecheck`, `lint`, `test`) se ejecutan dentro de `EdRev f/`.
+
 ## Estructura
 
 ```
@@ -15,7 +25,7 @@ src/
       components/   Componentes propios del módulo (presentación).
       hooks/        Estado y lógica de negocio del módulo (TanStack Query, formularios).
       services/     Acceso a datos del módulo: llamadas a lib/api. Nada de fetch en componentes.
-      schemas/      Validación (Zod) y configuración específica del módulo.
+      config/       Configuración específica del módulo (reglas, constantes, esquemas de validación).
     acceso · administracion · articulos · autores · pares · constancias · correos · inicio · informes
   components/
     common/       Componentes reutilizables y sin lógica de negocio (Boton, Tabla, Modal…).
@@ -27,8 +37,9 @@ src/
   test/           Configuración de pruebas.
 ```
 
-Las carpetas `hooks/`, `services/` y `schemas/` se crean en cada módulo cuando tiene contenido; todos los
-módulos siguen la misma forma.
+Todos los módulos tienen exactamente la misma forma (`components/`, `pages/`, `hooks/`, `services/`,
+`config/`), de modo que incorporar un módulo nuevo es copiar la plantilla. Las carpetas aún sin contenido se
+mantienen con un `.gitkeep` hasta la fase que las llena.
 
 ## Reglas de dependencia (las hace cumplir ESLint)
 
@@ -49,7 +60,7 @@ app  →  modules  →  components/common · lib · types · theme
 | Rutas públicas / privadas | `app/routes/publicas.tsx` · `privadas.tsx` | Qué requiere sesión y qué no.                     |
 | Guarda de autenticación   | `modules/acceso/components/RutaPrivada`    | Sin sesión redirige a `/acceso`.                  |
 | Guarda de autorización    | `modules/acceso/components/RutaPorPermiso` | Bloquea según el perfil.                          |
-| Permisos por perfil       | `modules/acceso/permisos.ts`               | Única tabla perfil → acciones (RNF-05).           |
+| Permisos por perfil       | `modules/acceso/config/permisos.ts`        | Única tabla perfil → acciones (RNF-05).           |
 | Cliente HTTP              | `lib/api/cliente.ts`                       | Único punto que adjunta el token `Authorization`. |
 
 ## Backend (fuera del alcance de esta etapa)
