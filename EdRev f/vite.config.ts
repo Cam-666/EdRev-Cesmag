@@ -12,11 +12,11 @@ export default defineConfig({
           groups: [
             {
               name: 'vendor-react',
-              test: /node_modules[\/](react|react-dom|react-router|react-router-dom|scheduler)[\/]/,
+              test: /node_modules[/](react|react-dom|react-router|react-router-dom|scheduler)[/]/,
             },
-            { name: 'vendor-radix', test: /node_modules[\/]@radix-ui[\/]/ },
-            { name: 'vendor-forms', test: /node_modules[\/](react-hook-form|@hookform|zod)[\/]/ },
-            { name: 'vendor-data', test: /node_modules[\/](@tanstack|date-fns)[\/]/ },
+            { name: 'vendor-radix', test: /node_modules[/]@radix-ui[/]/ },
+            { name: 'vendor-forms', test: /node_modules[/](react-hook-form|@hookform|zod)[/]/ },
+            { name: 'vendor-data', test: /node_modules[/](@tanstack|date-fns)[/]/ },
           ],
         },
       },
