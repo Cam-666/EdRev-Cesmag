@@ -24,6 +24,9 @@ export function paginasVisibles(pagina: number, totalPaginas: number): Array<num
   return salida
 }
 
+const FLECHA =
+  'text-texto-enlace hover:bg-estado-info-fondo disabled:text-texto-secundario disabled:hover:bg-transparent'
+
 const BASE =
   'inline-flex min-h-control-sm min-w-control-sm items-center justify-center rounded-md px-2 text-etiqueta-13'
 
@@ -42,10 +45,7 @@ export function Paginacion({ pagina, porPagina, total, onCambiar }: PaginacionPr
           <li>
             <button
               type="button"
-              className={cn(
-                BASE,
-                'text-texto-enlace hover:bg-estado-info-fondo disabled:text-texto-secundario disabled:hover:bg-transparent',
-              )}
+              className={cn(BASE, FLECHA)}
               disabled={pagina <= 1}
               onClick={() => onCambiar(pagina - 1)}
             >
@@ -80,10 +80,7 @@ export function Paginacion({ pagina, porPagina, total, onCambiar }: PaginacionPr
           <li>
             <button
               type="button"
-              className={cn(
-                BASE,
-                'text-texto-enlace hover:bg-estado-info-fondo disabled:text-texto-secundario disabled:hover:bg-transparent',
-              )}
+              className={cn(BASE, FLECHA)}
               disabled={pagina >= totalPaginas}
               onClick={() => onCambiar(pagina + 1)}
             >

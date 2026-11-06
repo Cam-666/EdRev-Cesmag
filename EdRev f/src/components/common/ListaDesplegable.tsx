@@ -4,6 +4,7 @@
  */
 import * as Select from '@radix-ui/react-select'
 import { useId } from 'react'
+import { MensajeError } from './MensajeError'
 import { cn } from '@/lib/cn'
 
 export interface OpcionLista {
@@ -79,12 +80,7 @@ export function ListaDesplegable({
           </Select.Content>
         </Select.Portal>
       </Select.Root>
-      {error && (
-        <p id={idError} role="alert" className="flex gap-1 text-cuerpo-13 text-estado-error">
-          <span aria-hidden="true">!</span>
-          <span>{error}</span>
-        </p>
-      )}
+      {error && <MensajeError id={idError}>{error}</MensajeError>}
     </div>
   )
 }

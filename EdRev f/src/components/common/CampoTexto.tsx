@@ -4,6 +4,7 @@
  */
 import { useId } from 'react'
 import type { ComponentPropsWithRef } from 'react'
+import { MensajeError } from './MensajeError'
 import { cn } from '@/lib/cn'
 
 export interface CampoTextoProps extends Omit<ComponentPropsWithRef<'input'>, 'id'> {
@@ -59,12 +60,7 @@ export function CampoTexto({
           {ayuda}
         </p>
       )}
-      {error && (
-        <p id={idError} role="alert" className="flex gap-1 text-cuerpo-13 text-estado-error">
-          <span aria-hidden="true">!</span>
-          <span>{error}</span>
-        </p>
-      )}
+      {error && <MensajeError id={idError}>{error}</MensajeError>}
     </div>
   )
 }
