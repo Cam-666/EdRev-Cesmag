@@ -23,7 +23,7 @@ export function EncabezadoRevista({ revista, acciones }: EncabezadoRevistaProps)
       <div aria-hidden="true" className="pointer-events-none absolute inset-0 bg-revista-velo" />
       <div className="relative min-w-0 max-w-titulo">
         <p className="text-micro-11 uppercase">{datos.etiquetaBarra}</p>
-        <h1 className="text-titulo-16">{datos.tituloBarra}</h1>
+        <p className="text-titulo-16">{datos.tituloBarra}</p>
       </div>
       <div className="relative flex items-center gap-4">
         <span className="rounded-full bg-revista-pastilla px-3 py-1 text-etiqueta-13 text-texto-inverso">
