@@ -74,6 +74,13 @@ Cuando exista el backend, las recomendaciones de la revisión se aplican así; e
 - El control de acceso del frontend es solo de experiencia de usuario: **la autorización real la hace el
   backend** en cada petición (RNF-05, RNF-04).
 
+## Marca y recursos gráficos
+
+La plataforma se llama **EdRev Cesmag**. Los recursos de la universidad viven en `src/assets/` ya
+optimizados: `escudo-cesmag.webp` (escudo, 21 KB; también es el favicon) y `fondo-cesmag.jpg` (fotografía
+aérea del campus para las pantallas de acceso, 340 KB; el original pesaba 7 MB). El escudo se usa solo a
+través del componente `components/common/Escudo`, y la fotografía solo en `FondoAcceso`.
+
 ## Datos simulados y acceso de demostración (MSW)
 
 Mientras no exista backend, MSW responde a `lib/api` (se activa en `main.tsx`; se apaga con
