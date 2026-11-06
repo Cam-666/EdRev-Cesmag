@@ -25,3 +25,19 @@ export function formatearCuenta(segundos: number): string {
   const ss = String(total % 60).padStart(2, '0')
   return `${mm}:${ss}`
 }
+
+/** "Ma. Camila Mendoza" -> "Ma. C. Mendoza"; "Andrea Villota" -> "A. Villota". */
+export function abreviarNombre(nombre: string): string {
+  const partes = nombre.trim().split(/\s+/)
+  if (partes.length >= 3) {
+    const [primero = '', segundo = ''] = partes
+    return `${primero} ${segundo.charAt(0)}. ${partes[partes.length - 1] ?? ''}`
+  }
+  if (partes.length === 2) return `${(partes[0] ?? '').charAt(0)}. ${partes[1] ?? ''}`
+  return nombre
+}
+
+/** Long date for statements such as "Archivado el 30 de septiembre de 2026". */
+export function formatearFechaLarga(iso: string): string {
+  return format(parseISO(iso), "d 'de' MMMM 'de' yyyy", { locale: es })
+}
