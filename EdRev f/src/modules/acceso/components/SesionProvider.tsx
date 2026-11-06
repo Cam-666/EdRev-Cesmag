@@ -3,12 +3,14 @@
  * guards and hooks read it, screens never touch it directly.
  * Covers: HU-28, RF-39, RNF-05. In production this wraps the JWT session of the backend.
  */
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 import type { ReactNode } from 'react'
 import { SesionContext } from '../hooks/SesionContext'
 import type { CierreSesion } from '../hooks/SesionContext'
 import { borrarSesion, guardarSesion, leerSesion } from '../services/almacenSesion'
-import { configurarProveedorToken } from '@/lib/api/cliente'
+import { establecerToken } from '@/lib/api/cliente'
+import { mocksActivos } from '@/mocks/habilitar'
+import { tokenMock } from '@/mocks/token'
 import type { MotivoCierre, RespuestaIngreso } from '@/types/acceso'
 import type { Usuario } from '@/types/usuario'
 
@@ -19,18 +21,18 @@ export interface SesionProviderProps {
 }
 
 export function SesionProvider({ usuarioInicial, children }: SesionProviderProps) {
-  const [usuario, setUsuario] = useState<Usuario | null>(() =>
-    usuarioInicial !== undefined ? usuarioInicial : leerSesion(),
-  )
+  // While MSW is on, a restored or forced session gets the matching mock token; with the real
+  // backend a cookie/JWT replaces it. Runs once, before any child fetches.
+  const [inicial] = useState(() => {
+    const u = usuarioInicial !== undefined ? usuarioInicial : leerSesion()
+    establecerToken(u && mocksActivos() ? tokenMock(u.id) : null)
+    return u
+  })
+  const [usuario, setUsuario] = useState<Usuario | null>(inicial)
   const [ultimoCierre, setUltimoCierre] = useState<CierreSesion | null>(null)
-  const token = useRef<string | null>(null)
-
-  useEffect(() => {
-    configurarProveedorToken(() => token.current)
-  }, [])
 
   const iniciarSesion = useCallback((respuesta: RespuestaIngreso, mantener = false) => {
-    token.current = respuesta.token
+    establecerToken(respuesta.token)
     guardarSesion(respuesta.usuario, mantener)
     setUltimoCierre(null)
     setUsuario(respuesta.usuario)
@@ -38,7 +40,7 @@ export function SesionProvider({ usuarioInicial, children }: SesionProviderProps
 
   const cerrarSesion = useCallback(
     (motivo: MotivoCierre = 'manual') => {
-      token.current = null
+      establecerToken(null)
       borrarSesion()
       setUltimoCierre(
         usuario && motivo === 'inactividad' ? { motivo, correo: usuario.correo } : null,

@@ -17,13 +17,11 @@ export class ErrorApi extends Error {
   }
 }
 
-type ProveedorToken = () => string | null
+let token: string | null = null
 
-let proveedorToken: ProveedorToken = () => null
-
-/** Registers where the bearer token comes from (set once by the session layer). */
-export function configurarProveedorToken(proveedor: ProveedorToken): void {
-  proveedorToken = proveedor
+/** Sets the bearer token sent with every request (null = signed out). Called only by the session layer. */
+export function establecerToken(nuevo: string | null): void {
+  token = nuevo
 }
 
 function baseApi(): string {
@@ -43,7 +41,6 @@ export async function solicitar<T>(ruta: string, init: RequestInit = {}): Promis
   const headers = new Headers(init.headers)
   headers.set('Accept', 'application/json')
   if (init.body !== undefined) headers.set('Content-Type', 'application/json')
-  const token = proveedorToken()
   if (token) headers.set('Authorization', `Bearer ${token}`)
 
   const respuesta = await fetch(`${baseApi()}${ruta}`, { ...init, headers })

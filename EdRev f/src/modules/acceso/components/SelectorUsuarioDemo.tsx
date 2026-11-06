@@ -6,6 +6,7 @@
 import { useSesion } from '../hooks/useSesion'
 import { ListaDesplegable } from '@/components/common/ListaDesplegable'
 import { mocksActivos } from '@/mocks/habilitar'
+import { tokenMock } from '@/mocks/token'
 import { USUARIOS_SEED } from '@/mocks/seed/usuarios'
 import { ETIQUETA_PERFIL } from '@/types/usuario'
 
@@ -24,7 +25,7 @@ export function SelectorUsuarioDemo() {
         valor={usuario.id}
         onCambio={(id) => {
           const elegido = activos.find((u) => u.id === id)
-          if (elegido) iniciarSesion({ usuario: elegido, token: 'mock-jwt' })
+          if (elegido) iniciarSesion({ usuario: elegido, token: tokenMock(elegido.id) })
         }}
         opciones={activos.map((u) => ({
           valor: u.id,
