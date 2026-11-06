@@ -6,19 +6,20 @@
 import { useState } from 'react'
 import { Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { DestinoAcciones } from './DestinoAcciones'
-import { useRevistaOpcional } from './useRevista'
+import { useRevistaOpcional } from '@/lib/revista/useRevista'
 import { EncabezadoComun } from '@/components/common/EncabezadoComun'
 import { EncabezadoRevista } from '@/components/common/EncabezadoRevista'
 import { PanelLateral } from '@/components/common/PanelLateral'
-
-// TODO(phase 3): replace with the real session (user selector in the mock, decision 12).
-const USUARIO_TEMPORAL = { nombre: 'Ma. Camila Mendoza', perfil: 'Administradora' }
+import { useSesion, useUsuarioActual } from '@/modules/acceso/hooks/useSesion'
+import { ETIQUETA_PERFIL } from '@/types/usuario'
 
 export function AppLayout() {
   const contexto = useRevistaOpcional()
   const revista = contexto?.revista ?? null
   const { pathname } = useLocation()
   const navigate = useNavigate()
+  const usuario = useUsuarioActual()
+  const { cerrarSesion } = useSesion()
   const [destino, setDestino] = useState<HTMLElement | null>(null)
 
   const acciones = <div ref={setDestino} className="flex items-center gap-2" />
@@ -34,9 +35,9 @@ export function AppLayout() {
       <PanelLateral
         revistaActiva={revista}
         rutaActual={pathname}
-        usuario={USUARIO_TEMPORAL}
+        usuario={{ nombre: usuario.nombre, perfil: ETIQUETA_PERFIL[usuario.perfil] }}
         onAbrirRevista={(r) => navigate(`/${r}/tablero`)}
-        onCerrarSesion={() => navigate('/acceso')}
+        onCerrarSesion={cerrarSesion}
       />
       <div className="flex min-w-0 flex-1 flex-col">
         {revista ? (

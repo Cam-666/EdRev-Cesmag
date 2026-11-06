@@ -1,9 +1,15 @@
 import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { RouterProvider, createMemoryRouter } from 'react-router-dom'
-import { rutas } from './routes'
+import { rutas } from '.'
+import { SesionProvider } from '@/modules/acceso/components/SesionProvider'
+import { USUARIOS_SEED } from '@/mocks/seed/usuarios'
+import type { Usuario } from '@/types/usuario'
 import { REVISTAS } from '@/types/revista'
 import type { Revista } from '@/types/revista'
+
+const ADMINISTRADORA = USUARIOS_SEED[0] ?? null
+const AUXILIAR = USUARIOS_SEED[1] ?? null
 
 /** The 18 views each journal has, identical for reep and ire. */
 const VISTAS = [
@@ -27,9 +33,13 @@ const VISTAS = [
   'correos',
 ]
 
-function montar(ruta: string) {
+function montar(ruta: string, usuario: Usuario | null = ADMINISTRADORA) {
   const router = createMemoryRouter(rutas, { initialEntries: [ruta] })
-  const vista = render(<RouterProvider router={router} />)
+  const vista = render(
+    <SesionProvider usuarioInicial={usuario}>
+      <RouterProvider router={router} />
+    </SesionProvider>,
+  )
   return { router, ...vista }
 }
 
@@ -124,5 +134,50 @@ describe('route table', () => {
     expect(screen.getByRole('dialog', { name: 'Retomar el proceso' })).toBeInTheDocument()
     await userEvent.keyboard('{Escape}')
     expect(router.state.location.pathname).toBe('/reep/articulos/2026-007')
+  })
+  describe('authentication and authorization', () => {
+    it.each([
+      '/inicio',
+      '/informes',
+      '/administracion/usuarios',
+      '/reep/tablero',
+      '/ire/articulos',
+    ])('redirects %s to /acceso without a session', (ruta) => {
+      const { router } = montar(ruta, null)
+      expect(router.state.location.pathname).toBe('/acceso')
+      expect(screen.queryByRole('navigation', { name: 'Principal' })).toBeNull()
+    })
+
+    it('keeps the access screens reachable without a session', () => {
+      const { router } = montar('/acceso/recuperar', null)
+      expect(router.state.location.pathname).toBe('/acceso/recuperar')
+    })
+
+    it('blocks Administración for the Auxiliar profile', () => {
+      montar('/administracion/usuarios', AUXILIAR)
+      expect(
+        screen.getByRole('heading', { level: 1, name: 'Acceso restringido' }),
+      ).toBeInTheDocument()
+      expect(screen.queryByRole('tab', { name: 'Usuarios' })).toBeNull()
+    })
+
+    it('lets the Auxiliar work in the journal modules', () => {
+      montar('/ire/articulos', AUXILIAR)
+      expect(screen.getByText('ISSN 2357-5239')).toBeInTheDocument()
+    })
+
+    it('lets the Administradora into Administración', () => {
+      montar('/administracion/plantillas', ADMINISTRADORA)
+      expect(screen.getByRole('tab', { name: 'Plantillas' })).toHaveAttribute(
+        'aria-selected',
+        'true',
+      )
+    })
+
+    it('logging out sends the user back to /acceso', async () => {
+      const { router } = montar('/inicio')
+      await userEvent.click(screen.getByRole('button', { name: 'Cerrar sesión' }))
+      expect(router.state.location.pathname).toBe('/acceso')
+    })
   })
 })
