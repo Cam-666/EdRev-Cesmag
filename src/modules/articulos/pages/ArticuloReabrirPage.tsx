@@ -6,7 +6,7 @@
  */
 import { useNavigate, useParams } from 'react-router-dom'
 import { ArticuloResumenPage } from './ArticuloResumenPage'
-import { useRevista } from '@/app/useRevista'
+import { useRevista } from '@/lib/revista/useRevista'
 import { Boton } from '@/components/common/Boton'
 import { Modal } from '@/components/common/Modal'
 

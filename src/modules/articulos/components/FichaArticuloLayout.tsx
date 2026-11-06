@@ -4,7 +4,7 @@
  * Covers: RF-36, HU-26 (criterion 3).
  */
 import { Outlet, useLocation, useNavigate, useParams } from 'react-router-dom'
-import { useRevista } from '@/app/useRevista'
+import { useRevista } from '@/lib/revista/useRevista'
 import { Pestanas } from '@/components/common/Pestanas'
 
 const SEGMENTOS = ['autores', 'pares', 'observaciones', 'historial'] as const

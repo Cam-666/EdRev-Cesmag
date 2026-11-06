@@ -4,7 +4,7 @@
  */
 import { useMemo } from 'react'
 import type { ReactNode } from 'react'
-import { RevistaContext } from './RevistaContext'
+import { RevistaContext } from '@/lib/revista/RevistaContext'
 import { REVISTAS } from '@/types/revista'
 import type { Revista } from '@/types/revista'
 
