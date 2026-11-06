@@ -4,7 +4,7 @@
  */
 import { Outlet } from 'react-router-dom'
 import { usePermiso } from '../hooks/usePermiso'
-import type { Accion } from '../permisos'
+import type { Accion } from '../config/permisos'
 import { Alerta } from '@/components/common/Alerta'
 
 export interface RutaPorPermisoProps {
