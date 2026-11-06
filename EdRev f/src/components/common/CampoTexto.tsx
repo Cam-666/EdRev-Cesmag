@@ -3,7 +3,7 @@
  * Covers: RNF-11 (labels associated to fields, error messages linked to their field), RNF-12.
  */
 import { useId } from 'react'
-import type { ComponentPropsWithRef } from 'react'
+import type { ComponentPropsWithRef, ReactNode } from 'react'
 import { MensajeError } from './MensajeError'
 import { cn } from '@/lib/cn'
 
@@ -12,6 +12,8 @@ export interface CampoTextoProps extends Omit<ComponentPropsWithRef<'input'>, 'i
   etiqueta: string
   ayuda?: string
   error?: string
+  /** Control aligned to the right of the label (e.g. the "Mostrar" password toggle). */
+  accionEtiqueta?: ReactNode
 }
 
 export function CampoTexto({
@@ -19,6 +21,7 @@ export function CampoTexto({
   etiqueta,
   ayuda,
   error,
+  accionEtiqueta,
   className,
   required,
   ...resto
@@ -31,15 +34,18 @@ export function CampoTexto({
 
   return (
     <div className="flex flex-col gap-1">
-      <label htmlFor={idCampo} className="text-etiqueta-13 text-texto-principal">
-        {etiqueta}
-        {required && (
-          <span aria-hidden="true" className="text-estado-error">
-            {' '}
-            *
-          </span>
-        )}
-      </label>
+      <div className="flex items-center justify-between gap-2">
+        <label htmlFor={idCampo} className="text-etiqueta-13 text-texto-principal">
+          {etiqueta}
+          {required && (
+            <span aria-hidden="true" className="text-estado-error">
+              {' '}
+              *
+            </span>
+          )}
+        </label>
+        {accionEtiqueta}
+      </div>
       <input
         {...resto}
         id={idCampo}
