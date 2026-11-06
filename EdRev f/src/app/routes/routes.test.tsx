@@ -55,8 +55,8 @@ describe('route table', () => {
       (vista) => {
         const { container } = montar(`/${revista}/${vista}`)
         expect(container.querySelector('[data-revista]')).toHaveAttribute('data-revista', revista)
-        expect(screen.getByText(`ISSN ${REVISTAS[revista].issn}`)).toBeInTheDocument()
-        expect(screen.queryByText(`ISSN ${REVISTAS[otra].issn}`)).toBeNull()
+        expect(screen.getByText(new RegExp(`ISSN: ${REVISTAS[revista].issn}`))).toBeInTheDocument()
+        expect(screen.queryByText(new RegExp(`ISSN: ${REVISTAS[otra].issn}`))).toBeNull()
         expect(screen.getByRole('main', { hidden: true })).toBeInTheDocument()
         expect(screen.getAllByRole('heading', { level: 1, hidden: true })).toHaveLength(1)
         // The side panel only lists the active journal's submodules.
@@ -99,7 +99,7 @@ describe('route table', () => {
     await userEvent.click(screen.getByRole('button', { name: /Investigium IRE/ }))
     expect(router.state.location.pathname).toBe('/ire/tablero')
     expect(container.querySelector('[data-revista]')).toHaveAttribute('data-revista', 'ire')
-    expect(screen.getByText('ISSN 2357-5239')).toBeInTheDocument()
+    expect(screen.getByText(/ISSN: 2357-5239/)).toBeInTheDocument()
   })
 
   it('brands the platform as EdRev Cesmag with the university coat of arms in the side panel', () => {
@@ -166,7 +166,7 @@ describe('route table', () => {
 
     it('lets the Auxiliar work in the journal modules', () => {
       montar('/ire/articulos', AUXILIAR)
-      expect(screen.getByText('ISSN 2357-5239')).toBeInTheDocument()
+      expect(screen.getByText(/ISSN: 2357-5239/)).toBeInTheDocument()
     })
 
     it('lets the Administradora into Administración', () => {

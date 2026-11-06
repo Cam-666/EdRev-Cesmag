@@ -9,9 +9,9 @@ export interface DatosRevista {
   /** Short name used in navigation. */
   nombreCorto: string
   issn: string
-  /** Small label on the top bar (first line). */
-  etiquetaBarra: string
-  /** Title on the top bar (second line). */
+  /** Medium printed next to the ISSN, as in the journal header. */
+  medioIssn: string
+  /** Compact title of the top bar (narrow screens, where the logo or wordmark is hidden). */
   tituloBarra: string
 }
 
@@ -22,7 +22,7 @@ export const REVISTAS: Record<Revista, DatosRevista> = {
     nombre: 'Revista Electrónica en Educación y Pedagogía',
     nombreCorto: 'Educación y Pedagogía',
     issn: '2590-7476',
-    etiquetaBarra: 'Módulo 1 · Revista Electrónica en',
+    medioIssn: 'En línea',
     tituloBarra: 'Educación y Pedagogía',
   },
   ire: {
@@ -31,7 +31,7 @@ export const REVISTAS: Record<Revista, DatosRevista> = {
     nombre: 'Revista Investigium IRE Ciencias Sociales y Humanas',
     nombreCorto: 'Investigium IRE',
     issn: '2357-5239',
-    etiquetaBarra: 'Módulo 2 · Revista',
+    medioIssn: 'Digital',
     tituloBarra: 'Investigium IRE · Ciencias Sociales y Humanas',
   },
 }
