@@ -26,4 +26,37 @@ export default tseslint.config(
       ],
     },
   },
+  // Dependency direction: app -> modules -> components/lib/types/theme (never upwards).
+  {
+    files: ['src/components/**/*.{ts,tsx}', 'src/lib/**/*.{ts,tsx}', 'src/types/**/*.{ts,tsx}'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            {
+              group: ['@/modules/*', '@/app/*'],
+              message: 'Shared code (components, lib, types) cannot depend on modules or app.',
+            },
+          ],
+        },
+      ],
+    },
+  },
+  {
+    files: ['src/modules/**/*.{ts,tsx}'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            {
+              group: ['@/app/*'],
+              message: 'Modules cannot depend on app (routes, layouts, providers).',
+            },
+          ],
+        },
+      ],
+    },
+  },
 )
