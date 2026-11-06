@@ -1,35 +1,24 @@
 /*
  * ArticuloReabrirPage — Retomar el proceso (/:revista/articulos/:id/reabrir), a modal rendered
- * over the article sheet so it is linkable.
- * Covers: RF-08, HU-05.
- * Status: empty modal, built in phase 4.
+ * over the article sheet so it is linkable (the archived row of the list opens it). Administradora
+ * only (RNF-05). Covers: RF-08, HU-05.
  */
-import { useNavigate, useParams } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
+import { ReabrirArticuloModal } from '../components/ReabrirArticuloModal'
+import { useArticuloActual } from '../hooks/useArticuloActual'
 import { ArticuloResumenPage } from './ArticuloResumenPage'
 import { useRevista } from '@/lib/revista/useRevista'
-import { Boton } from '@/components/common/Boton'
-import { Modal } from '@/components/common/Modal'
 
 export function ArticuloReabrirPage() {
   const { revista } = useRevista()
-  const { id = '' } = useParams()
+  const articulo = useArticuloActual()
   const navigate = useNavigate()
-  const cerrar = () => navigate(`/${revista}/articulos/${id}`)
+  const volver = () => navigate(`/${revista}/articulos/${encodeURIComponent(articulo.id)}`)
 
   return (
     <>
       <ArticuloResumenPage />
-      <Modal
-        abierto
-        onCerrar={cerrar}
-        titulo="Retomar el proceso"
-        descripcion="Pantalla pendiente · fase 4. Cubrirá: RF-08, HU-05."
-        acciones={
-          <Boton variante="neutro" onClick={cerrar}>
-            Cancelar
-          </Boton>
-        }
-      />
+      <ReabrirArticuloModal articulo={articulo} onCerrar={volver} onReabierto={volver} />
     </>
   )
 }

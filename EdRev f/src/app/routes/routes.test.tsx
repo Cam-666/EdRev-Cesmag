@@ -1,4 +1,4 @@
-import { render, screen, within } from '@testing-library/react'
+import { render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { RouterProvider, createMemoryRouter } from 'react-router-dom'
 import { rutas } from '.'
@@ -14,13 +14,13 @@ const VISTAS = [
   'articulos',
   'articulos/nuevo',
   'articulos/nuevo/autores',
-  'articulos/2026-034',
-  'articulos/2026-034/autores',
-  'articulos/2026-034/pares',
-  'articulos/2026-034/observaciones',
-  'articulos/2026-034/historial',
-  'articulos/2026-034/antiplagio',
-  'articulos/2026-034/reabrir',
+  'articulos/{id}',
+  'articulos/{id}/autores',
+  'articulos/{id}/pares',
+  'articulos/{id}/observaciones',
+  'articulos/{id}/historial',
+  'articulos/{id}/antiplagio',
+  'articulos/{archivado}/reabrir',
   'autores',
   'pares',
   'pares/bloqueados',
@@ -42,6 +42,12 @@ function montar(ruta: string, usuario: Usuario | null = ADMINISTRADORA) {
 
 const REVISTAS_IDS: Revista[] = ['reep', 'ire']
 
+/** Each journal has its own articles: an ordinary one and an archived one. */
+const ARTICULOS: Record<Revista, { id: string; archivado: string }> = {
+  reep: { id: '2026-034', archivado: '2026-007' },
+  ire: { id: '2026-077', archivado: '2026-022' },
+}
+
 describe('route table', () => {
   it('defines 18 views per journal', () => {
     expect(VISTAS).toHaveLength(18)
@@ -52,8 +58,15 @@ describe('route table', () => {
 
     it.each(VISTAS)(
       'renders /%s with its own top bar and no data of the other journal',
-      (vista) => {
-        const { container } = montar(`/${revista}/${vista}`)
+      async (vista) => {
+        const ruta = vista
+          .replace('{archivado}', ARTICULOS[revista].archivado)
+          .replace('{id}', ARTICULOS[revista].id)
+        const { container } = montar(`/${revista}/${ruta}`)
+        // Article views load their data first: wait until the page title is there.
+        await waitFor(() =>
+          expect(screen.getAllByRole('heading', { level: 1, hidden: true })).toHaveLength(1),
+        )
         expect(container.querySelector('[data-revista]')).toHaveAttribute('data-revista', revista)
         expect(screen.getByText(new RegExp(`ISSN: ${REVISTAS[revista].issn}`))).toBeInTheDocument()
         expect(screen.queryByText(new RegExp(`ISSN: ${REVISTAS[otra].issn}`))).toBeNull()
@@ -127,14 +140,14 @@ describe('route table', () => {
 
   it('article sheet tabs navigate between routes', async () => {
     const { router } = montar('/reep/articulos/2026-034')
-    await userEvent.click(screen.getByRole('tab', { name: 'Autores' }))
+    await userEvent.click(await screen.findByRole('tab', { name: 'Autores' }))
     expect(router.state.location.pathname).toBe('/reep/articulos/2026-034/autores')
     expect(screen.getByRole('tab', { name: 'Autores' })).toHaveAttribute('aria-selected', 'true')
   })
 
   it('the retake modal opens over the sheet and Escape returns to it', async () => {
     const { router } = montar('/reep/articulos/2026-007/reabrir')
-    expect(screen.getByRole('dialog', { name: 'Retomar el proceso' })).toBeInTheDocument()
+    expect(await screen.findByRole('dialog', { name: 'Retomar el proceso' })).toBeInTheDocument()
     await userEvent.keyboard('{Escape}')
     expect(router.state.location.pathname).toBe('/reep/articulos/2026-007')
   })

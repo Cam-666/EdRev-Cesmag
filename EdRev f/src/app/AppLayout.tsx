@@ -5,7 +5,7 @@
  */
 import { useState } from 'react'
 import { Outlet, useLocation, useNavigate } from 'react-router-dom'
-import { DestinoAcciones } from './DestinoAcciones'
+import { DestinoAcciones } from '@/lib/encabezado/DestinoAcciones'
 import { useRevistaOpcional } from '@/lib/revista/useRevista'
 import { EncabezadoComun } from '@/components/common/EncabezadoComun'
 import { EncabezadoRevista } from '@/components/common/EncabezadoRevista'

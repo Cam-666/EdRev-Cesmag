@@ -73,9 +73,19 @@ export const rutasPrivadas: RouteObject[] = [
             children: [
               { path: 'tablero', element: <TableroPage /> },
               { path: 'articulos', element: <ArticulosPage /> },
-              { path: 'articulos/nuevo', element: <ArticuloNuevoPage /> },
-              { path: 'articulos/nuevo/autores', element: <ArticuloNuevoAutoresPage /> },
-              { path: 'articulos/:id/antiplagio', element: <ArticuloAntiplagioPage /> },
+              {
+                element: <RutaPorPermiso accion="registrar-datos" />,
+                children: [
+                  { path: 'articulos/nuevo', element: <ArticuloNuevoPage /> },
+                  { path: 'articulos/nuevo/autores', element: <ArticuloNuevoAutoresPage /> },
+                ],
+              },
+              {
+                element: <RutaPorPermiso accion="registrar-revision" />,
+                children: [
+                  { path: 'articulos/:id/antiplagio', element: <ArticuloAntiplagioPage /> },
+                ],
+              },
               {
                 path: 'articulos/:id',
                 element: <FichaArticuloLayout />,
@@ -85,7 +95,10 @@ export const rutasPrivadas: RouteObject[] = [
                   { path: 'pares', element: <ArticuloParesPage /> },
                   { path: 'observaciones', element: <ArticuloObservacionesPage /> },
                   { path: 'historial', element: <ArticuloHistorialPage /> },
-                  { path: 'reabrir', element: <ArticuloReabrirPage /> },
+                  {
+                    element: <RutaPorPermiso accion="reabrir-articulo" encabezado="h2" />,
+                    children: [{ path: 'reabrir', element: <ArticuloReabrirPage /> }],
+                  },
                 ],
               },
               { path: 'autores', element: <AutoresPage /> },

@@ -1,17 +1,31 @@
 /*
- * ArticuloHistorialPage — Historial (/:revista/articulos/:id/historial).
- * Covers: RF-26, RF-41, HU-20, HU-30.
- * Status: empty screen, built in phase 4.
+ * ArticuloHistorialPage — Historial tab (/:revista/articulos/:id/historial): mails sent for the
+ * article and "who changed what". Covers: RF-26, RF-41, HU-20, HU-30.
  */
-import { PantallaVacia } from '@/components/common/PantallaVacia'
+import { ListaAuditoria } from '../components/ListaAuditoria'
+import { TablaCorreos } from '../components/TablaCorreos'
+import { useArticuloActual } from '../hooks/useArticuloActual'
+import { useHistorial } from '../hooks/useObservaciones'
+import { EstadoConsulta } from '@/components/common/EstadoConsulta'
 
 export function ArticuloHistorialPage() {
+  const articulo = useArticuloActual()
+  const consulta = useHistorial(articulo.id)
+
   return (
-    <PantallaVacia
-      titulo="Historial"
-      fase={4}
-      requisitos={['RF-26', 'RF-41', 'HU-20', 'HU-30']}
-      encabezado="h2"
-    />
+    <EstadoConsulta
+      cargando={consulta.isPending}
+      error={consulta.isError}
+      onReintentar={() => void consulta.refetch()}
+      descripcion="el historial"
+    >
+      <div className="grid grid-cols-1 gap-6 xl:grid-cols-[1fr_320px]">
+        <section className="flex flex-col gap-3">
+          <h2 className="text-titulo-16">Correos enviados por este artículo</h2>
+          <TablaCorreos correos={consulta.data?.correos ?? []} />
+        </section>
+        <ListaAuditoria entradas={consulta.data?.auditoria ?? []} />
+      </div>
+    </EstadoConsulta>
   )
 }
