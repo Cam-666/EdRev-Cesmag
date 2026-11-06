@@ -1,16 +1,11 @@
 /*
- * App — root. Phase 1 only mounts the design-system showcase; the full router arrives in phase 2.
+ * App — root: mounts the router built from the route table.
  */
-import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
-import { MuestraDiseno } from '@/app/MuestraDiseno'
+import { createBrowserRouter, RouterProvider } from 'react-router-dom'
+import { rutas } from '@/app/routes'
+
+const router = createBrowserRouter(rutas)
 
 export function App() {
-  return (
-    <BrowserRouter>
-      <Routes>
-        <Route path="/design-system" element={<MuestraDiseno />} />
-        <Route path="*" element={<Navigate to="/design-system" replace />} />
-      </Routes>
-    </BrowserRouter>
-  )
+  return <RouterProvider router={router} />
 }
