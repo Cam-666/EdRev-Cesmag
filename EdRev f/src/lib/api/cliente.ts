@@ -6,11 +6,14 @@
 
 export class ErrorApi extends Error {
   readonly estado: number
+  /** Parsed JSON body of the error response, when there is one. */
+  readonly cuerpo: unknown
 
-  constructor(estado: number, mensaje: string) {
+  constructor(estado: number, mensaje: string, cuerpo?: unknown) {
     super(mensaje)
     this.name = 'ErrorApi'
     this.estado = estado
+    this.cuerpo = cuerpo
   }
 }
 
@@ -23,6 +26,19 @@ export function configurarProveedorToken(proveedor: ProveedorToken): void {
   proveedorToken = proveedor
 }
 
+function baseApi(): string {
+  const base: unknown = import.meta.env.VITE_API_URL
+  return typeof base === 'string' && base !== '' ? base : '/api'
+}
+
+async function leerJson(respuesta: Response): Promise<unknown> {
+  try {
+    return await respuesta.json()
+  } catch {
+    return undefined
+  }
+}
+
 export async function solicitar<T>(ruta: string, init: RequestInit = {}): Promise<T> {
   const headers = new Headers(init.headers)
   headers.set('Accept', 'application/json')
@@ -30,8 +46,10 @@ export async function solicitar<T>(ruta: string, init: RequestInit = {}): Promis
   const token = proveedorToken()
   if (token) headers.set('Authorization', `Bearer ${token}`)
 
-  const respuesta = await fetch(`/api${ruta}`, { ...init, headers })
-  if (!respuesta.ok) throw new ErrorApi(respuesta.status, respuesta.statusText)
+  const respuesta = await fetch(`${baseApi()}${ruta}`, { ...init, headers })
+  if (!respuesta.ok) {
+    throw new ErrorApi(respuesta.status, respuesta.statusText, await leerJson(respuesta))
+  }
   if (respuesta.status === 204) return undefined as T
   return (await respuesta.json()) as T
 }
