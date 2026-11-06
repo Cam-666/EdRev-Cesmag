@@ -1,0 +1,14 @@
+{
+  "name": "edrev-cesmag-raiz",
+  "private": true,
+  "description": "Repository root. The frontend lives in 'EdRev f'; these scripts forward to it.",
+  "scripts": {
+    "install:frontend": "npm --prefix \"EdRev f\" install",
+    "dev": "npm --prefix \"EdRev f\" run dev",
+    "build": "npm --prefix \"EdRev f\" run build",
+    "typecheck": "npm --prefix \"EdRev f\" run typecheck",
+    "lint": "npm --prefix \"EdRev f\" run lint",
+    "format": "npm --prefix \"EdRev f\" run format",
+    "test": "npm --prefix \"EdRev f\" run test"
+  }
+}
