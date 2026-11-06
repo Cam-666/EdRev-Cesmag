@@ -73,3 +73,18 @@ Cuando exista el backend, las recomendaciones de la revisión se aplican así; e
 - `middlewares/` (autenticación, validación del JWT, errores, permisos), `controllers/`, `services/`, `models/`.
 - El control de acceso del frontend es solo de experiencia de usuario: **la autorización real la hace el
   backend** en cada petición (RNF-05, RNF-04).
+
+## Datos simulados y acceso de demostración (MSW)
+
+Mientras no exista backend, MSW responde a `lib/api` (se activa en `main.tsx`; se apaga con
+`VITE_USE_MOCKS=false`). Los handlers viven en `src/mocks/handlers/`.
+
+| Usuario            | Correo                            | Perfil                  |
+| ------------------ | --------------------------------- | ----------------------- |
+| Ma. Camila Mendoza | `maria.mendoza@unicesmag.edu.co`  | Administradora          |
+| Andrea Villota     | `andrea.villota@unicesmag.edu.co` | Auxiliar                |
+| Daniela Ortiz      | `daniela.ortiz@unicesmag.edu.co`  | Auxiliar (inhabilitada) |
+
+Contraseña de todos: `Editorial2026*` (solo en el mock). Tres intentos fallidos bloquean la cuenta 15
+minutos. Una vez dentro, el recuadro "Demostración · Usuario" cambia entre las cuentas activas para mostrar
+los permisos de cada perfil.
