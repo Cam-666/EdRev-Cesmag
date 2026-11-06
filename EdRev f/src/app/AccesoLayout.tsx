@@ -4,15 +4,19 @@
  * rendered by each page. Covers: HU-28.
  */
 import { Outlet } from 'react-router-dom'
+import { Escudo } from '@/components/common/Escudo'
 import { FondoAcceso } from '@/modules/acceso/components/FondoAcceso'
 
 export function AccesoLayout() {
   return (
     <div className="relative isolate flex min-h-screen flex-col text-texto-inverso">
       <FondoAcceso />
-      <header className="px-6 py-5">
-        <p className="text-titulo-16">UNIVERSIDAD CESMAG</p>
-        <p className="text-cuerpo-13">Vicerrectoría de Investigaciones · Editorial</p>
+      <header className="flex items-center gap-3 px-6 py-5">
+        <Escudo tamano="md" />
+        <div>
+          <p className="text-titulo-16">UNIVERSIDAD CESMAG</p>
+          <p className="text-cuerpo-13">Vicerrectoría de Investigaciones · Editorial</p>
+        </div>
       </header>
       <main className="flex flex-1 items-center justify-center px-6 py-8 text-texto-principal">
         <Outlet />

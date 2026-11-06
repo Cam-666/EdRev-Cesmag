@@ -7,6 +7,7 @@
 import * as Collapsible from '@radix-ui/react-collapsible'
 import { Link } from 'react-router-dom'
 import { Boton } from './Boton'
+import { Escudo } from './Escudo'
 import { cn } from '@/lib/cn'
 import { REVISTAS } from '@/types/revista'
 import type { Revista } from '@/types/revista'
@@ -88,9 +89,12 @@ export function PanelLateral({
 }: PanelLateralProps) {
   return (
     <aside className="flex w-panel min-w-panel flex-col bg-cesmag-azul-panel text-texto-inverso">
-      <div className="px-4 py-5">
-        <p className="text-titulo-16">UNIVERSIDAD CESMAG</p>
-        <p className="text-cuerpo-13">Dependencia de Editorial</p>
+      <div className="flex items-center gap-3 px-4 py-5">
+        <Escudo tamano="lg" alt="Escudo de la Universidad CESMAG" />
+        <div>
+          <p className="text-titulo-16">EdRev Cesmag</p>
+          <p className="text-cuerpo-13">Dependencia de Editorial</p>
+        </div>
       </div>
 
       <nav aria-label="Principal" className="flex flex-1 flex-col gap-1 overflow-y-auto px-2">

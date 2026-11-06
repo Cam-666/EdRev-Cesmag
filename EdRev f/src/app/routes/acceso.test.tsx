@@ -40,6 +40,7 @@ describe('login (/acceso)', () => {
       screen.getByRole('heading', { level: 1, name: 'Sistema de Gestión Editorial' }),
     ).toBeInTheDocument()
     expect(screen.getByText('Ingrese con su correo institucional')).toBeInTheDocument()
+    expect(screen.getByText('EdRev Cesmag')).toBeInTheDocument()
     expect(screen.getByLabelText('Correo institucional')).toHaveAttribute(
       'placeholder',
       'nombre.apellido@unicesmag.edu.co',

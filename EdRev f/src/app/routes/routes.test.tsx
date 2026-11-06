@@ -102,6 +102,12 @@ describe('route table', () => {
     expect(screen.getByText('ISSN 2357-5239')).toBeInTheDocument()
   })
 
+  it('brands the platform as EdRev Cesmag with the university coat of arms in the side panel', () => {
+    montar('/inicio')
+    expect(screen.getByText('EdRev Cesmag')).toBeInTheDocument()
+    expect(screen.getByRole('img', { name: 'Escudo de la Universidad CESMAG' })).toBeInTheDocument()
+  })
+
   it('provides a skip link to the main content', () => {
     montar('/inicio')
     expect(screen.getByRole('link', { name: 'Saltar al contenido' })).toHaveAttribute(
