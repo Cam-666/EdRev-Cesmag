@@ -1,16 +1,21 @@
 /*
  * RecuperarPage — Recuperar contraseña (/acceso/recuperar).
- * Covers: sin RF/HU: pendiente de incorporar.
- * Status: empty screen, built in phase 3.
+ * Covers: RNF-11. No RF/HU yet: password recovery is a pending requirement to incorporate.
  */
-import { PantallaVacia } from '@/components/common/PantallaVacia'
+import { useNavigate } from 'react-router-dom'
+import { FormularioRecuperar } from '../components/FormularioRecuperar'
+import { TarjetaAcceso } from '../components/TarjetaAcceso'
 
 export function RecuperarPage() {
+  const navigate = useNavigate()
   return (
-    <PantallaVacia
+    <TarjetaAcceso
       titulo="Recuperar contraseña"
-      fase={3}
-      requisitos={['sin RF/HU: pendiente de incorporar']}
-    />
+      subtitulo="Le enviaremos un enlace para crear una contraseña nueva"
+    >
+      <FormularioRecuperar
+        onEnviado={(correo) => navigate('/acceso/recuperar/enviado', { state: { correo } })}
+      />
+    </TarjetaAcceso>
   )
 }
