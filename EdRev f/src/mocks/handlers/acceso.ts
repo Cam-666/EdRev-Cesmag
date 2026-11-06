@@ -6,6 +6,7 @@
 import { http, HttpResponse } from 'msw'
 import { CONTRASENA_DEMO } from '../seed/credenciales'
 import { USUARIOS_SEED } from '../seed/usuarios'
+import { tokenMock } from '../token'
 import { POLITICA_ACCESO } from '@/modules/acceso/config/politicaAcceso'
 import type { CredencialesIngreso, DetalleErrorIngreso } from '@/types/acceso'
 
@@ -55,7 +56,7 @@ export const handlersAcceso = [
     }
 
     intentos.delete(clave)
-    return HttpResponse.json({ usuario, token: 'mock-jwt' })
+    return HttpResponse.json({ usuario, token: tokenMock(usuario.id) })
   }),
 
   http.post('*/api/auth/recuperar', () => HttpResponse.json({}, { status: 202 })),
