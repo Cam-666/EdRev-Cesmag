@@ -104,7 +104,10 @@ export const rutasPrivadas: RouteObject[] = [
               { path: 'autores', element: <AutoresPage /> },
               { path: 'pares', element: <ParesPage /> },
               { path: 'pares/bloqueados', element: <ParesBloqueadosPage /> },
-              { path: 'pares/asignar', element: <ParesAsignarPage /> },
+              {
+                element: <RutaPorPermiso accion="asignar-pares" />,
+                children: [{ path: 'pares/asignar', element: <ParesAsignarPage /> }],
+              },
               { path: 'pares/:id', element: <ParDetallePage /> },
               { path: 'constancias', element: <ConstanciasPage /> },
               { path: 'correos', element: <CorreosPage /> },

@@ -93,6 +93,7 @@ export function ArticuloNuevoAutoresPage() {
           ) : (
             <FormularioAutor
               textoBoton="Agregar"
+              reiniciar
               idsExcluidos={borrador.autores.flatMap((a) => (a.autorId ? [a.autorId] : []))}
               onGuardar={(autor) => {
                 setSinAutores(false)

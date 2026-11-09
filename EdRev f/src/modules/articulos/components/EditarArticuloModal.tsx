@@ -24,7 +24,12 @@ export interface EditarArticuloModalProps {
 
 const FORMULARIO = 'formulario-editar-articulo'
 
-export function EditarArticuloModal({ articulo, abierto, onCerrar }: EditarArticuloModalProps) {
+/** Mounted only while open: each opening starts from the saved data, not from abandoned edits. */
+export function EditarArticuloModal(props: EditarArticuloModalProps) {
+  return props.abierto ? <ContenidoEditarArticulo {...props} /> : null
+}
+
+function ContenidoEditarArticulo({ articulo, abierto, onCerrar }: EditarArticuloModalProps) {
   const mutacion = useEditarArticulo(articulo.id)
   const {
     register,
@@ -33,7 +38,7 @@ export function EditarArticuloModal({ articulo, abierto, onCerrar }: EditarArtic
     formState: { errors },
   } = useForm<EdicionArticuloForm>({
     resolver: zodResolver(esquemaEdicionArticulo),
-    values: {
+    defaultValues: {
       titulo: articulo.titulo,
       tipo: articulo.tipo,
       numeroPublicacion: articulo.numeroPublicacion ?? '',
