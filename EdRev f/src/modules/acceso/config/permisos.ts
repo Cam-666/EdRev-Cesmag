@@ -18,8 +18,12 @@ export type Accion =
   | 'marcar-entrega'
   /** Issue or reissue constancias (RF-30, RF-33). */
   | 'emitir-constancia'
+  /** Block a peer by hand (RF-15). */
+  | 'bloquear-par'
   /** Unblock a peer (RF-16). */
   | 'desbloquear-par'
+  /** Register the answer of a peer to the invitation (RF-22). */
+  | 'registrar-respuesta'
   /** Reopen an archived article (RF-08). */
   | 'reabrir-articulo'
   /** Accounts, templates, parameters (RF-40, RNF-19). */
@@ -32,7 +36,9 @@ const TODAS: readonly Accion[] = [
   'registrar-concepto',
   'marcar-entrega',
   'emitir-constancia',
+  'bloquear-par',
   'desbloquear-par',
+  'registrar-respuesta',
   'reabrir-articulo',
   'administrar',
 ]

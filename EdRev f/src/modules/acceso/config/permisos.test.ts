@@ -6,7 +6,9 @@ const SOLO_ADMINISTRADOR: Accion[] = [
   'registrar-concepto',
   'marcar-entrega',
   'emitir-constancia',
+  'bloquear-par',
   'desbloquear-par',
+  'registrar-respuesta',
   'reabrir-articulo',
   'administrar',
 ]
