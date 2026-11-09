@@ -398,9 +398,11 @@ describe('reopening an archived article (/reabrir)', () => {
     )
     await user.click(within(dialogo).getByRole('button', { name: 'Retomar' }))
     await waitFor(() => expect(router.state.location.pathname).toBe('/reep/articulos/2026-007'))
+    // The navigation commits in a low-priority transition: wait for the dialog to be gone.
+    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull(), { timeout: 10000 })
     expect((await screen.findAllByText('En revisión')).length).toBeGreaterThan(0)
 
-    await user.click(screen.getByRole('tab', { name: 'Observaciones' }))
+    await user.click(await screen.findByRole('tab', { name: 'Observaciones' }))
     expect(
       await screen.findByText(/Se retomó el proceso: El autor escribió el 2 de noviembre/),
     ).toBeInTheDocument()
