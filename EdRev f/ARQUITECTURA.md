@@ -95,3 +95,9 @@ Mientras no exista backend, MSW responde a `lib/api` (se activa en `main.tsx`; s
 Contraseña de todos: `Editorial2026*` (solo en el mock). Tres intentos fallidos bloquean la cuenta 15
 minutos. Una vez dentro, el recuadro "Demostración · Usuario" cambia entre las cuentas activas para mostrar
 los permisos de cada perfil.
+
+## Cómo demostrar un correo rebotado
+
+En la API simulada, un par cuyo correo termina en `@invalido.test` hace que la invitación rebote. Para
+verlo: registre un par con ese correo, asígnelo a un artículo (la invitación aparece como rebotada y la
+asignación se conserva), corrija el correo desde la ficha del par y use «Reenviar invitación».
