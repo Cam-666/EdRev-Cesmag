@@ -21,6 +21,9 @@ export type EstadoDistintivo =
   | 'acepto'
   | 'no-acepto'
   | 'entrego'
+  // Peer availability
+  | 'disponible'
+  | 'conflicto'
   // Constancia / mail result
   | 'emitida'
   | 'entregado'
@@ -49,6 +52,8 @@ export const DEFINICIONES_ESTADO: Record<EstadoDistintivo, Definicion> = {
   acepto: { texto: 'Aceptó', simbolo: '✓', tono: 'info' },
   'no-acepto': { texto: 'No aceptó', simbolo: '✕', tono: 'error' },
   entrego: { texto: 'Entregó', simbolo: '✓', tono: 'exito' },
+  disponible: { texto: 'Disponible', simbolo: '✓', tono: 'exito' },
+  conflicto: { texto: 'Conflicto posible', simbolo: '!', tono: 'alerta' },
   emitida: { texto: 'Emitida', simbolo: '✓', tono: 'exito' },
   entregado: { texto: 'Entregado', simbolo: '✓', tono: 'exito' },
   rebotado: { texto: 'Rebotado', simbolo: '✕', tono: 'error' },
