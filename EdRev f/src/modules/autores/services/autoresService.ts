@@ -3,7 +3,7 @@
  * Covers: RF-10 (search by name or ORCID), RF-09 (edit the record), RF-11.
  */
 import { solicitar } from '@/lib/api/cliente'
-import type { Autor, DatosAutor } from '@/types/autor'
+import type { ArticuloDeAutor, Autor, DatosAutor } from '@/types/autor'
 import type { Revista } from '@/types/revista'
 
 export interface AutorConTotal extends Autor {
@@ -29,4 +29,12 @@ export function editarAutor(
     method: 'PATCH',
     body: JSON.stringify(datos),
   })
+}
+
+export function registrarAutor(revista: Revista, datos: DatosAutor): Promise<Autor> {
+  return solicitar<Autor>(`/${revista}/autores`, { method: 'POST', body: JSON.stringify(datos) })
+}
+
+export function articulosDeAutor(revista: Revista, id: string): Promise<ArticuloDeAutor[]> {
+  return solicitar<ArticuloDeAutor[]>(`/${revista}/autores/${encodeURIComponent(id)}/articulos`)
 }

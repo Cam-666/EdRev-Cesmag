@@ -31,6 +31,11 @@ export interface FormularioAutorProps {
   idsExcluidos?: string[]
   cargando?: boolean
   error?: string
+  /**
+   * Clear the form after submitting (step 2 adds several authors one after another). Leave it off in
+   * dialogs: if the server rejects the data, the person must not lose what they typed.
+   */
+  reiniciar?: boolean
 }
 
 const VACIO: AutorForm = { nombre: '', correo: '', orcid: '', filiacion: '', pais: 'Colombia' }
@@ -43,6 +48,7 @@ export function FormularioAutor({
   idsExcluidos = [],
   cargando = false,
   error,
+  reiniciar = false,
 }: FormularioAutorProps) {
   const [busqueda, setBusqueda] = useState('')
   const [elegido, setElegido] = useState<Autor | null>(null)
@@ -82,9 +88,11 @@ export function FormularioAutor({
 
   function enviar(datos: AutorForm) {
     onGuardar({ autorId: elegido?.id ?? null, datos })
-    setElegido(null)
-    setBusqueda('')
-    reset(VACIO)
+    if (reiniciar) {
+      setElegido(null)
+      setBusqueda('')
+      reset(VACIO)
+    }
   }
 
   const soloLectura = elegido !== null
