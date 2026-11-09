@@ -1,3 +1,4 @@
+import type { EstadoArticulo } from './articulo'
 import type { Revista } from './revista'
 
 /** Author record, reusable across articles of the same journal (RF-10). Never shared between journals. */
@@ -19,3 +20,10 @@ export interface AutorDeArticulo extends Autor {
 
 /** Data typed in the author form (no id yet). */
 export type DatosAutor = Omit<Autor, 'id' | 'revista'>
+
+export interface ArticuloDeAutor {
+  id: string
+  numeroOjs: string
+  titulo: string
+  estado: EstadoArticulo
+}

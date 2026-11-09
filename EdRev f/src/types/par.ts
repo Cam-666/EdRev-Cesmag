@@ -52,3 +52,68 @@ export interface AsignacionDetalle extends Asignacion {
   par: Pick<ParEvaluador, 'id' | 'nombre' | 'correo' | 'universidad'>
   constanciaEmitida: boolean
 }
+
+export type EstadoDisponibilidad = 'disponible' | 'bloqueado' | 'conflicto'
+
+/** Row of the peers list; `conflicto` = "Conflicto posible" (peer from Universidad CESMAG or from the author's university). */
+export interface ParListado extends Pick<
+  ParEvaluador,
+  'id' | 'nombre' | 'correo' | 'universidad' | 'area' | 'bloqueo'
+> {
+  evaluaciones: number
+  estado: EstadoDisponibilidad
+}
+
+export interface Participacion {
+  asignacionId: string
+  articuloId: string
+  numeroOjs: string
+  titulo: string
+  estado: EstadoAsignacion
+  concepto: ConceptoPar | null
+  constancia: EstadoConstancia | null
+  fechaInvitacion: string
+  fechaEntrega: string | null
+}
+
+export interface ParDetalle extends ParEvaluador {
+  evaluacionesEntregadas: number
+  invitacionesSinResponder: number
+  /** ISO date of the last participation. */
+  ultimaParticipacion: string | null
+  participaciones: Participacion[]
+}
+
+export interface NuevoPar {
+  nombre: string
+  correo: string
+  universidad: string
+  area: string
+  /** RNF-06: authorization of personal-data treatment; its date is stored. */
+  autorizoDatos: boolean
+}
+
+export interface Conflicto {
+  /** Human sentence, e.g. "El par y el autor X pertenecen a la Universidad CESMAG." */
+  mensaje: string
+}
+
+/** What the invitation mail will look like before it is sent (RF-24, RF-25). */
+export interface VistaPreviaInvitacion {
+  de: string
+  para: string
+  asunto: string
+  cuerpo: string
+  adjuntos: string
+  orden: 1 | 2 | 3
+  esDesempate: boolean
+  conflicto: Conflicto | null
+}
+
+export interface ResultadoAsignacion {
+  asignacion: Asignacion
+  correo: { estado: 'entregado' | 'rebotado' | 'en-cola'; destinatario: string }
+}
+
+/** How the dependency registers the answer of a peer to the invitation (RF-22, RF-15). */
+export type RespuestaPar = 'acepto' | 'no-acepto' | 'sin-respuesta'
