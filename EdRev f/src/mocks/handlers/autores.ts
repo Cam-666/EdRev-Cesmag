@@ -4,7 +4,7 @@
  */
 import { http, HttpResponse } from 'msw'
 import { ahoraIso, contexto, error, sinTildes } from './util'
-import type { DatosAutor } from '@/types/autor'
+import type { ArticuloDeAutor, Autor, DatosAutor } from '@/types/autor'
 
 export const handlersAutores = [
   http.get('*/api/:revista/autores', ({ params, request }) => {
@@ -51,5 +51,33 @@ export const handlersAutores = [
       })
     }
     return HttpResponse.json(autor)
+  }),
+
+  http.get('*/api/:revista/autores/:id/articulos', ({ params, request }) => {
+    const c = contexto(params, request)
+    if (!c.ok) return c.respuesta
+    const autor = c.base.autores.find((a) => a.id === params.id)
+    if (!autor) return error(404, 'Autor no encontrado')
+    const articulos: ArticuloDeAutor[] = c.base.articulos
+      .filter((a) => a.autoresIds.includes(autor.id))
+      .sort((x, y) => y.fechaPostulacion.localeCompare(x.fechaPostulacion))
+      .map((a) => ({ id: a.id, numeroOjs: a.numeroOjs, titulo: a.titulo, estado: a.estado }))
+    return HttpResponse.json(articulos)
+  }),
+
+  http.post('*/api/:revista/autores', async ({ params, request }) => {
+    const c = contexto(params, request, 'registrar-datos')
+    if (!c.ok) return c.respuesta
+    const datos = (await request.json()) as DatosAutor
+    if (c.base.autores.some((a) => a.orcid === datos.orcid.trim())) {
+      return error(409, 'Ya existe un autor con ese ORCID en esta revista')
+    }
+    const nuevo: Autor = {
+      id: `${c.revista}-au-n${c.base.autores.length + 1}`,
+      revista: c.revista,
+      ...datos,
+    }
+    c.base.autores.push(nuevo)
+    return HttpResponse.json(nuevo, { status: 201 })
   }),
 ]
