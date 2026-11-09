@@ -184,7 +184,9 @@ describe('password recovery', () => {
     await user.type(screen.getByLabelText('Correo institucional'), 'maria.lopez@unicesmag.edu.co')
     await user.click(screen.getByRole('button', { name: 'Enviar enlace de recuperación' }))
     await waitFor(() => expect(router.state.location.pathname).toBe('/acceso/recuperar/enviado'))
-    expect(screen.getByRole('heading', { level: 1, name: 'Revise su correo' })).toBeInTheDocument()
+    expect(
+      await screen.findByRole('heading', { level: 1, name: 'Revise su correo' }),
+    ).toBeInTheDocument()
     expect(screen.getByText(/Enlace enviado a m·····z@unicesmag\.edu\.co/)).toBeInTheDocument()
     expect(screen.getByText(/Caduca en 30 minutos y solo puede usarse una vez/)).toBeInTheDocument()
     expect(screen.queryByText(/maria\.lopez@/)).toBeNull()
