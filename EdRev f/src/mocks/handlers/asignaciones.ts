@@ -9,7 +9,9 @@ import { http, HttpResponse } from 'msw'
 import { autoresDeArticulo } from './pares'
 import type { SeedRevista } from '../seed/fabrica'
 import { ahoraIso, contexto, error } from './util'
-import { CUENTA_REMITENTE, NOMBRE_EN_CORREO, PLANTILLA_INVITACION, rellenar } from '../plantillas'
+import { cuentas, plantillaDe } from '../db'
+import { NOMBRE_EN_CORREO } from '../plantillas'
+import { rellenar } from '@/lib/plantillas'
 import { detectarConflicto } from '@/lib/dominio/conflicto'
 import type { Articulo } from '@/types/articulo'
 import type { EstadoCorreo, TipoCorreo } from '@/types/historial'
@@ -114,8 +116,8 @@ function textosInvitacion(revista: Revista, par: ParEvaluador, articulo: Articul
     articulo: articulo.titulo,
   }
   return {
-    asunto: rellenar(PLANTILLA_INVITACION.asunto, variables),
-    cuerpo: rellenar(PLANTILLA_INVITACION.cuerpo, variables),
+    asunto: rellenar(plantillaDe('invitacion').asunto ?? '', variables),
+    cuerpo: rellenar(plantillaDe('invitacion').cuerpo, variables),
   }
 }
 
@@ -132,7 +134,7 @@ export const handlersAsignaciones = [
 
     const { asunto, cuerpo } = textosInvitacion(c.revista, par, articulo)
     const vista: VistaPreviaInvitacion = {
-      de: CUENTA_REMITENTE[c.revista],
+      de: cuentas().find((x) => x.revista === c.revista)?.provisional ?? '',
       para: par.correo,
       asunto,
       cuerpo,

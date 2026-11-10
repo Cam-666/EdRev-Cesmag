@@ -81,6 +81,8 @@ export interface FiltrosArticulos {
   /** ISO dates, inclusive range over the postulation date (HU-26). */
   desde?: string
   hasta?: string
+  /** Only articles with peers that have not answered the invitation (dashboard alert, HU-25). */
+  sinResponder?: boolean
   pagina: number
   porPagina: number
 }

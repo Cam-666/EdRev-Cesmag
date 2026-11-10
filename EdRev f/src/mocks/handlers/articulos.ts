@@ -107,6 +107,7 @@ export const handlersArticulos = [
     const publicacion = url.searchParams.get('publicacion')
     const desde = url.searchParams.get('desde')
     const hasta = url.searchParams.get('hasta')
+    const sinResponder = url.searchParams.get('sinResponder') === '1'
     const pagina = Math.max(1, Number(url.searchParams.get('pagina') ?? 1))
     const porPagina = Math.max(1, Number(url.searchParams.get('porPagina') ?? 6))
 
@@ -116,6 +117,14 @@ export const handlersArticulos = [
       .filter((a) => !publicacion || a.numeroPublicacion === publicacion)
       .filter((a) => !desde || a.fechaPostulacion >= desde)
       .filter((a) => !hasta || a.fechaPostulacion <= hasta)
+      .filter(
+        (a) =>
+          !sinResponder ||
+          c.base.asignaciones.some(
+            (x) =>
+              x.articuloId === a.id && (x.estado === 'invitado' || x.estado === 'segundo-intento'),
+          ),
+      )
       .sort((a, b) =>
         a.fechaPostulacion === b.fechaPostulacion
           ? b.numeroOjs.localeCompare(a.numeroOjs)

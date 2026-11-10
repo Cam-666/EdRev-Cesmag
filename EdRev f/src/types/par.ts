@@ -1,3 +1,4 @@
+import type { EstadoCorreo } from './historial'
 import type { Revista } from './revista'
 
 export type MotivoBloqueo = 'sin-respuesta' | 'no-desea'
@@ -112,7 +113,7 @@ export interface VistaPreviaInvitacion {
 
 export interface ResultadoAsignacion {
   asignacion: Asignacion
-  correo: { estado: 'entregado' | 'rebotado' | 'en-cola'; destinatario: string }
+  correo: { estado: EstadoCorreo; destinatario: string }
 }
 
 /** How the dependency registers the answer of a peer to the invitation (RF-22, RF-15). */

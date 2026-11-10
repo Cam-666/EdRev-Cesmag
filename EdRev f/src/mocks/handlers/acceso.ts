@@ -5,7 +5,7 @@
  */
 import { http, HttpResponse } from 'msw'
 import { CONTRASENA_DEMO } from '../seed/credenciales'
-import { USUARIOS_SEED } from '../seed/usuarios'
+import { usuarios } from '../db'
 import { tokenMock } from '../token'
 import { POLITICA_ACCESO } from '@/modules/acceso/config/politicaAcceso'
 import type { CredencialesIngreso, DetalleErrorIngreso } from '@/types/acceso'
@@ -36,7 +36,7 @@ export const handlersAcceso = [
       })
     }
 
-    const usuario = USUARIOS_SEED.find((u) => u.correo === clave)
+    const usuario = usuarios().find((u) => u.correo === clave)
     if (usuario?.estado === 'inhabilitado') return error(403, { motivo: 'inhabilitada' })
 
     if (!usuario || contrasena !== CONTRASENA_DEMO) {

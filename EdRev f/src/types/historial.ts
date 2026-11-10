@@ -12,7 +12,8 @@ export interface Observacion {
 
 export type TipoCorreo = 'invitacion' | 'reenvio' | 'recordatorio' | 'agradecimiento'
 
-export type EstadoCorreo = 'entregado' | 'rebotado' | 'en-cola'
+/** `reintentado`: a failed mail whose resend (after fixing the address) already went out. */
+export type EstadoCorreo = 'entregado' | 'rebotado' | 'en-cola' | 'reintentado'
 
 export interface CorreoEnviado {
   id: string
