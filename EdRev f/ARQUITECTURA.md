@@ -101,3 +101,18 @@ los permisos de cada perfil.
 En la API simulada, un par cuyo correo termina en `@invalido.test` hace que la invitación rebote. Para
 verlo: registre un par con ese correo, asígnelo a un artículo (la invitación aparece como rebotada y la
 asignación se conserva), corrija el correo desde la ficha del par y use «Reenviar invitación».
+
+## Constancias, correos, paneles y administración (fase 6)
+
+- `modules/constancias`: pendientes y emitidas; la constancia pasa a «pendiente» al entregar la evaluación y la
+  Administradora la emite con «Emitir y enviar» (o «Emitir pendientes»). Cada emisión envía el correo de
+  agradecimiento y queda en Correos enviados y en la auditoría. La descarga simula el PDF con HTML.
+- `modules/correos`: bitácora por revista con contadores, «Reintentar fallidos» y «Corregir y reenviar»
+  (el correo fallido queda «Reintentado»).
+- `modules/inicio`: Tablero por revista (pares sin responder, constancias pendientes) e Inicio general
+  (resumen de las dos revistas).
+- `modules/informes`: informe comparativo, solo Administradora; exporta CSV.
+- `modules/administracion`: usuarios y matriz de permisos, plantillas (invitación, agradecimiento, constancia)
+  con validación de marcadores, cuenta remitente por revista y auditoría de las dos revistas.
+- Las plantillas y cuentas son estado compartido del mock (`mocks/db.ts`); cambiarlas afecta los siguientes
+  envíos sin tocar código (RNF-19). Las credenciales de las cuentas nunca viajan al frontend.
