@@ -22,6 +22,7 @@ export function useFiltrosArticulos() {
     publicacion: params.get('publicacion') ?? undefined,
     desde: params.get('desde') ?? undefined,
     hasta: params.get('hasta') ?? undefined,
+    sinResponder: params.get('sinResponder') === '1' ? true : undefined,
     pagina: Math.max(1, Number(params.get('pagina') ?? 1) || 1),
     porPagina: POR_PAGINA,
   }
@@ -37,7 +38,12 @@ export function useFiltrosArticulos() {
   }
 
   const hayFiltros = Boolean(
-    filtros.q || filtros.estado || filtros.publicacion || filtros.desde || filtros.hasta,
+    filtros.q ||
+    filtros.estado ||
+    filtros.publicacion ||
+    filtros.desde ||
+    filtros.hasta ||
+    filtros.sinResponder,
   )
 
   return { filtros, cambiar, hayFiltros }

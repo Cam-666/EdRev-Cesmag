@@ -8,6 +8,8 @@ import { TablaArticulos } from '../components/TablaArticulos'
 import { useArticulos } from '../hooks/useArticulos'
 import { useFiltrosArticulos } from '../hooks/useFiltrosArticulos'
 import { usePermiso } from '@/modules/acceso/hooks/usePermiso'
+import { Alerta } from '@/components/common/Alerta'
+import { Boton } from '@/components/common/Boton'
 import { EnlaceBoton } from '@/components/common/EnlaceBoton'
 import { EstadoConsulta } from '@/components/common/EstadoConsulta'
 import { Paginacion } from '@/components/common/Paginacion'
@@ -36,6 +38,24 @@ export function ArticulosPage() {
           {lista.data ? `${total} ${hayFiltros ? 'resultados' : 'registrados'}` : ' '}
         </p>
       </header>
+
+      {filtros.sinResponder && (
+        <Alerta
+          tipo="advertencia"
+          titulo="Artículos con pares sin responder"
+          accion={
+            <Boton
+              variante="secundario"
+              tamano="sm"
+              onClick={() => cambiar({ sinResponder: undefined })}
+            >
+              Quitar este filtro
+            </Boton>
+          }
+        >
+          Se muestran solo los artículos que tienen pares con la invitación sin responder.
+        </Alerta>
+      )}
 
       <FiltrosArticulos filtros={filtros} onCambio={cambiar} />
 
