@@ -24,10 +24,14 @@ export type EstadoDistintivo =
   // Peer availability
   | 'disponible'
   | 'conflicto'
+  // Account status
+  | 'activo'
+  | 'inhabilitado'
   // Constancia / mail result
   | 'emitida'
   | 'entregado'
   | 'rebotado'
+  | 'reintentado'
   | 'en-cola'
 
 type Tono = 'exito' | 'alerta' | 'error' | 'info' | 'neutro'
@@ -54,9 +58,12 @@ export const DEFINICIONES_ESTADO: Record<EstadoDistintivo, Definicion> = {
   entrego: { texto: 'Entregó', simbolo: '✓', tono: 'exito' },
   disponible: { texto: 'Disponible', simbolo: '✓', tono: 'exito' },
   conflicto: { texto: 'Conflicto posible', simbolo: '!', tono: 'alerta' },
+  activo: { texto: 'Activo', simbolo: '✓', tono: 'exito' },
+  inhabilitado: { texto: 'Inhabilitado', simbolo: '⊘', tono: 'neutro' },
   emitida: { texto: 'Emitida', simbolo: '✓', tono: 'exito' },
   entregado: { texto: 'Entregado', simbolo: '✓', tono: 'exito' },
   rebotado: { texto: 'Rebotado', simbolo: '✕', tono: 'error' },
+  reintentado: { texto: 'Reintentado', simbolo: '↻', tono: 'info' },
   'en-cola': { texto: 'En cola', simbolo: '◷', tono: 'alerta' },
 }
 

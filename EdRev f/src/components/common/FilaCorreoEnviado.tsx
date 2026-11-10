@@ -14,7 +14,7 @@ export interface FilaCorreoEnviadoProps {
   numeroOjs?: string
   /** ISO 8601 date-time. */
   fechaEnvio: string
-  resultado: Extract<EstadoDistintivo, 'entregado' | 'rebotado' | 'en-cola'>
+  resultado: Extract<EstadoDistintivo, 'entregado' | 'rebotado' | 'en-cola' | 'reintentado'>
   accion?: ReactNode
 }
 
