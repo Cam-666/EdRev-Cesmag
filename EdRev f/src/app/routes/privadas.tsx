@@ -45,7 +45,10 @@ export const rutasPrivadas: RouteObject[] = [
         element: <AppLayout />,
         children: [
           { path: '/inicio', element: <InicioGeneralPage /> },
-          { path: '/informes', element: <InformesPage /> },
+          {
+            element: <RutaPorPermiso accion="administrar" />,
+            children: [{ path: '/informes', element: <InformesPage /> }],
+          },
           { path: '/administracion', element: <Navigate to="/administracion/usuarios" replace /> },
           {
             element: <RutaPorPermiso accion="administrar" />,
