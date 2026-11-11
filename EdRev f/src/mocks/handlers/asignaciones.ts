@@ -9,7 +9,7 @@ import { http, HttpResponse } from 'msw'
 import { autoresDeArticulo } from './pares'
 import type { SeedRevista } from '../seed/fabrica'
 import { ahoraIso, contexto, error } from './util'
-import { cuentas, plantillaDe } from '../db'
+import { cuentas, plantillaEnUso } from '../db'
 import { NOMBRE_EN_CORREO } from '../plantillas'
 import { rellenar } from '@/lib/plantillas'
 import { detectarConflicto } from '@/lib/dominio/conflicto'
@@ -43,13 +43,17 @@ function asignadas(base: SeedRevista, articuloId: string): Asignacion[] {
 }
 
 type Validacion =
-  | { ok: true; orden: 1 | 2 | 3; esDesempate: boolean }
-  | { ok: false; estado: number; mensaje: string }
+  { ok: true; orden: number; esDesempate: boolean } | { ok: false; estado: number; mensaje: string }
 
-/** RF-19 (max three, ordered), RF-15 (blocked peers get no invitation), RF-21 (tiebreaker). */
+/**
+ * RF-19 (up to three evaluators, ordered), RF-15 (blocked peers get no invitation), RF-21
+ * (tiebreaker). Invitations run in parallel: a peer who did not accept stays in the record but
+ * frees the slot, so the dependency keeps looking for evaluators while the others go on.
+ */
 function validar(base: SeedRevista, articulo: Articulo, par: ParEvaluador): Validacion {
   const actuales = asignadas(base, articulo.id)
-  if (actuales.length >= 3) {
+  const vigentes = actuales.filter((a) => a.estado !== 'no-acepto')
+  if (vigentes.length >= 3) {
     return { ok: false, estado: 409, mensaje: 'El artículo ya tiene los tres pares permitidos' }
   }
   if (par.bloqueo) {
@@ -62,8 +66,12 @@ function validar(base: SeedRevista, articulo: Articulo, par: ParEvaluador): Vali
   if (actuales.some((a) => a.parId === par.id)) {
     return { ok: false, estado: 409, mensaje: 'El par ya está asignado a este artículo' }
   }
-  const orden = (actuales.length + 1) as 1 | 2 | 3
-  return { ok: true, orden, esDesempate: orden === 3 && contradictorios(actuales[0], actuales[1]) }
+  const orden = actuales.length + 1
+  return {
+    ok: true,
+    orden,
+    esDesempate: vigentes.length === 2 && contradictorios(vigentes[0], vigentes[1]),
+  }
 }
 
 function correoDe(
@@ -116,8 +124,8 @@ function textosInvitacion(revista: Revista, par: ParEvaluador, articulo: Articul
     articulo: articulo.titulo,
   }
   return {
-    asunto: rellenar(plantillaDe('invitacion').asunto ?? '', variables),
-    cuerpo: rellenar(plantillaDe('invitacion').cuerpo, variables),
+    asunto: rellenar(plantillaEnUso('invitacion').asunto ?? '', variables),
+    cuerpo: rellenar(plantillaEnUso('invitacion').cuerpo, variables),
   }
 }
 
@@ -134,7 +142,7 @@ export const handlersAsignaciones = [
 
     const { asunto, cuerpo } = textosInvitacion(c.revista, par, articulo)
     const vista: VistaPreviaInvitacion = {
-      de: cuentas().find((x) => x.revista === c.revista)?.provisional ?? '',
+      de: cuentas().find((x) => x.revista === c.revista)?.remitente ?? '',
       para: par.correo,
       asunto,
       cuerpo,

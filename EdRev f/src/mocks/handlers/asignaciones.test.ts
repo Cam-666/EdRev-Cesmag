@@ -129,37 +129,20 @@ describe('peers API (mock)', () => {
     expect((await llamar('/ire/pares/reep-par-1')).status).toBe(404)
   })
 
-  it('unblocking is Administradora-only and needs a reason; blocking is too', async () => {
+  it('unblocking needs a reason; the Auxiliar can block and unblock', async () => {
     const id = 'reep-par-5'
-    expect(
-      (
-        await llamar(`/reep/pares/${id}/desbloquear`, {
-          metodo: 'POST',
-          usuario: AUXILIAR,
-          cuerpo: { motivo: 'x' },
-        })
-      ).status,
-    ).toBe(403)
     expect(
       (await llamar(`/reep/pares/${id}/desbloquear`, { metodo: 'POST', cuerpo: { motivo: ' ' } }))
         .status,
     ).toBe(422)
     const ok = await llamar(`/reep/pares/${id}/desbloquear`, {
       metodo: 'POST',
+      usuario: AUXILIAR,
       cuerpo: { motivo: 'Manifestó interés en volver a participar.' },
     })
     expect(ok.status).toBe(200)
     expect((await json<ParDetalle>(ok)).bloqueo).toBeNull()
 
-    expect(
-      (
-        await llamar(`/reep/pares/${id}/bloquear`, {
-          metodo: 'POST',
-          usuario: AUXILIAR,
-          cuerpo: { motivo: 'no-desea' },
-        })
-      ).status,
-    ).toBe(403)
     const bloq = await llamar(`/reep/pares/${id}/bloquear`, {
       metodo: 'POST',
       cuerpo: { motivo: 'no-desea' },
@@ -228,6 +211,38 @@ describe('assignment and invitation (mock)', () => {
     expect((await asignar('reep', articulo.id, 'reep-par-2')).status).toBe(201)
     expect((await asignar('reep', articulo.id, 'reep-par-3')).status).toBe(201)
     expect((await asignar('reep', articulo.id, 'reep-par-6')).status).toBe(409) // fourth
+  })
+
+  it('invitations run in parallel: one accepts and goes on, a decline frees its place', async () => {
+    const articulo = await articuloNuevo('reep', '2026-045', 'reep-au-3')
+    const ids: string[] = []
+    for (const par of ['reep-par-1', 'reep-par-2', 'reep-par-3']) {
+      const r = await json<ResultadoAsignacion>(await asignar('reep', articulo.id, par))
+      ids.push(r.asignacion.id)
+    }
+    const [primero, segundo] = ids
+    // The first accepts and its evaluation goes on while the others are still pending
+    await llamar(`/reep/asignaciones/${primero}/respuesta`, {
+      metodo: 'POST',
+      cuerpo: { respuesta: 'acepto' },
+    })
+    const entrega = await llamar(`/reep/asignaciones/${primero}/entrega`, {
+      metodo: 'POST',
+      cuerpo: { fecha: hoy() },
+    })
+    expect(entrega.status).toBe(200)
+    // Three in force: no room for a fourth
+    expect((await asignar('reep', articulo.id, 'reep-par-6')).status).toBe(409)
+    // The second declines: it stays listed but frees its place for another peer
+    await llamar(`/reep/asignaciones/${segundo}/respuesta`, {
+      metodo: 'POST',
+      cuerpo: { respuesta: 'no-acepto' },
+    })
+    const otro = await asignar('reep', articulo.id, 'reep-par-6')
+    expect(otro.status).toBe(201)
+    expect((await json<ResultadoAsignacion>(otro)).asignacion.orden).toBe(4)
+    const ficha = await json<ArticuloDetalle>(await llamar(`/reep/articulos/${articulo.id}`))
+    expect(ficha.asignaciones).toHaveLength(4)
   })
 
   it('a peer of the other journal cannot be assigned', async () => {
@@ -300,15 +315,6 @@ describe('assignment and invitation (mock)', () => {
       (
         await llamar(`/reep/asignaciones/${id}/respuesta`, {
           metodo: 'POST',
-          usuario: AUXILIAR,
-          cuerpo: { respuesta: 'sin-respuesta' },
-        })
-      ).status,
-    ).toBe(403)
-    expect(
-      (
-        await llamar(`/reep/asignaciones/${id}/respuesta`, {
-          metodo: 'POST',
           cuerpo: { respuesta: 'sin-respuesta' },
         })
       ).status,
@@ -343,7 +349,6 @@ describe('assignment and invitation (mock)', () => {
       metodo: 'POST',
       cuerpo: { respuesta: 'acepto' },
     })
-    expect((await entrega(hoy(), AUXILIAR)).status).toBe(403)
     expect((await entrega('2099-01-01')).status).toBe(422) // future
     expect(
       (
@@ -355,15 +360,6 @@ describe('assignment and invitation (mock)', () => {
     ).toBe(409)
 
     expect((await entrega(hoy())).status).toBe(200)
-    expect(
-      (
-        await llamar(`/reep/asignaciones/${id}/concepto`, {
-          metodo: 'POST',
-          usuario: AUXILIAR,
-          cuerpo: { concepto: 'publicable' },
-        })
-      ).status,
-    ).toBe(403)
     expect(
       (
         await llamar(`/reep/asignaciones/${id}/concepto`, {

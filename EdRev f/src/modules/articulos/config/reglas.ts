@@ -4,7 +4,7 @@
  * concepts contradict each other).
  */
 import { UMBRAL_COINCIDENCIAS } from './listas'
-import type { ConceptoPar } from '@/types/par'
+import type { ConceptoPar, EstadoAsignacion } from '@/types/par'
 
 /** RF-05: only the matches percentage triggers the warning; the AI percentage never does. */
 export function superaUmbral(coincidencias: number): boolean {
@@ -17,6 +17,14 @@ export function conceptosContradictorios(a: ConceptoPar | null, b: ConceptoPar |
   return (
     (a === 'publicable' && b === 'no-publicable') || (a === 'no-publicable' && b === 'publicable')
   )
+}
+
+/**
+ * RF-19: up to three evaluators. A peer who did not accept stays listed but frees the slot, so the
+ * process goes on with whoever accepted while other peers are invited.
+ */
+export function paresVigentes<T extends { estado: EstadoAsignacion }>(asignaciones: T[]): T[] {
+  return asignaciones.filter((a) => a.estado !== 'no-acepto')
 }
 
 export function aNumero(texto: string): number {

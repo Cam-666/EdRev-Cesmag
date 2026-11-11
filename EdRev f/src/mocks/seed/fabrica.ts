@@ -239,7 +239,7 @@ export function construirSeed(entrada: EntradaSeed): SeedRevista {
     }
 
     ;(s.as ?? []).forEach((a, idx) => {
-      const orden = (idx + 1) as 1 | 2 | 3
+      const orden = idx + 1
       const par = pares[a.par]
       if (!par) throw new Error(`Seed ${revista}: unknown peer ${a.par} in ${s.n}`)
       const asigId = `${s.n}-p${orden}`

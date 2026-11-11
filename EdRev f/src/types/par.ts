@@ -26,7 +26,8 @@ export interface Asignacion {
   id: string
   articuloId: string
   parId: string
-  orden: 1 | 2 | 3
+  /** Order of assignment (1, 2, 3…). Peers who did not accept keep their number. */
+  orden: number
   esDesempate: boolean
   estado: EstadoAsignacion
   /** ISO 8601 dates. */
@@ -106,7 +107,8 @@ export interface VistaPreviaInvitacion {
   asunto: string
   cuerpo: string
   adjuntos: string
-  orden: 1 | 2 | 3
+  /** Order of assignment (1, 2, 3…). Peers who did not accept keep their number. */
+  orden: number
   esDesempate: boolean
   conflicto: Conflicto | null
 }
