@@ -4,12 +4,7 @@
  */
 import { solicitar } from '@/lib/api/cliente'
 import type { EntradaAuditoria, TipoAuditoria } from '@/types/historial'
-import type {
-  CuentaRemitente,
-  DatosNuevaPlantilla,
-  DatosPlantillas,
-  Plantilla,
-} from '@/types/plantilla'
+import type { DatosNuevaPlantilla, DatosPlantillas, Plantilla } from '@/types/plantilla'
 import type { Revista } from '@/types/revista'
 import type { DatosUsuario, Usuario } from '@/types/usuario'
 
@@ -72,13 +67,6 @@ export function guardarPlantilla(
   return solicitar<Plantilla>(`/plantillas/${encodeURIComponent(id)}`, {
     method: 'PUT',
     ...json(datos),
-  })
-}
-
-export function guardarCuenta(revista: Revista, remitente: string): Promise<CuentaRemitente> {
-  return solicitar<CuentaRemitente>(`/cuentas/${revista}`, {
-    method: 'PUT',
-    ...json({ remitente }),
   })
 }
 

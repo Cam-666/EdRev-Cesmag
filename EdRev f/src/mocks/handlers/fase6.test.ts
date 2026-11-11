@@ -167,14 +167,10 @@ describe('constancias API (mock)', () => {
 })
 
 describe('templates API (mock, RNF-19)', () => {
-  it('lists the three templates and the sender account of each journal, Administradora only', async () => {
+  it('lists the three templates, Administradora only', async () => {
     expect((await llamar('/plantillas', { usuario: AUXILIAR })).status).toBe(403)
     const d = await json<DatosPlantillas>(await llamar('/plantillas'))
     expect(d.plantillas.map((p) => p.id)).toEqual(['invitacion', 'agradecimiento', 'constancia'])
-    expect(d.cuentas.map((c) => c.remitente)).toEqual([
-      'editorial.eyp@gmail.com',
-      'editorial.ire@gmail.com',
-    ])
     expect(JSON.stringify(d)).not.toMatch(/password|contrase|secret/i)
   })
 
@@ -208,7 +204,7 @@ describe('templates API (mock, RNF-19)', () => {
     expect((await put('constancia', '   ')).status).toBe(422)
   })
 
-  it('an edited invitation template and sender account reach the assignment preview', async () => {
+  it('an edited invitation template reaches the assignment preview, sent from the journal account', async () => {
     await llamar('/plantillas/invitacion', {
       metodo: 'PUT',
       cuerpo: {
@@ -216,14 +212,10 @@ describe('templates API (mock, RNF-19)', () => {
         cuerpo: 'Estimado(a) {{par}}, evalúe «{{articulo}}».',
       },
     })
-    await llamar('/cuentas/reep', {
-      metodo: 'PUT',
-      cuerpo: { remitente: 'otra.cuenta@gmail.com' },
-    })
     const v = await json<{ de: string; asunto: string; cuerpo: string }>(
       await llamar('/reep/articulos/2026-033/asignaciones/vista-previa?parId=reep-par-2'),
     )
-    expect(v.de).toBe('otra.cuenta@gmail.com')
+    expect(v.de).toBe('editorial.eyp@gmail.com')
     expect(v.asunto).toBe('Nueva invitación · Revista Electrónica en Educación y Pedagogía')
     expect(v.cuerpo).toContain('Estimado(a) Jorge Andrés Rosero')
   })

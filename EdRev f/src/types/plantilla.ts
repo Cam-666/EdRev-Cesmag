@@ -23,7 +23,7 @@ export interface DatosNuevaPlantilla {
   uso: UsoPlantilla
 }
 
-/** Address the mails of a journal leave from (a verified sender in the mail service). */
+/** Address the mails of a journal leave from: configured in the mail service, not on screen. */
 export interface CuentaRemitente {
   revista: Revista
   remitente: string
@@ -31,5 +31,4 @@ export interface CuentaRemitente {
 
 export interface DatosPlantillas {
   plantillas: Plantilla[]
-  cuentas: CuentaRemitente[]
 }

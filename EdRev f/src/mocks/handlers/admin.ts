@@ -1,11 +1,10 @@
 /*
  * MSW handlers for Administración: user accounts, mail / constancia templates (edit, create a new
- * one for a use and choose the one in use) with the sender address of each journal, and the
- * cross-journal audit log. Administradora only (RNF-05).
+ * one for a use and choose the one in use), and the cross-journal audit log. Administradora only (RNF-05).
  * Covers: RF-40, RF-41, RNF-07 (credentials are never returned), RNF-19, HU-29, HU-30.
  */
 import { http, HttpResponse } from 'msw'
-import { baseDe, cuentas, plantillas, usuarios } from '../db'
+import { baseDe, plantillas, usuarios } from '../db'
 import { contextoGlobal, error, sinTildes } from './util'
 import { marcadores } from '@/lib/plantillas'
 import type { EntradaAuditoria } from '@/types/historial'
@@ -94,7 +93,7 @@ export const handlersAdmin = [
   http.get('*/api/plantillas', ({ request }) => {
     const c = contextoGlobal(request, 'administrar')
     if (!c.ok) return c.respuesta
-    return HttpResponse.json({ plantillas: plantillas(), cuentas: cuentas() })
+    return HttpResponse.json({ plantillas: plantillas() })
   }),
 
   http.post('*/api/plantillas', async ({ request }) => {
@@ -141,18 +140,6 @@ export const handlersAdmin = [
     if (plantilla.asunto !== null) plantilla.asunto = asunto ?? plantilla.asunto
     plantilla.cuerpo = cuerpo
     return HttpResponse.json(plantilla)
-  }),
-
-  http.put('*/api/cuentas/:revista', async ({ params, request }) => {
-    const c = contextoGlobal(request, 'administrar')
-    if (!c.ok) return c.respuesta
-    const cuenta = cuentas().find((x) => x.revista === params.revista)
-    if (!cuenta) return error(404, 'Revista no encontrada')
-    const { remitente } = (await request.json()) as { remitente: string }
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(remitente.trim()))
-      return error(422, 'Escriba un correo válido')
-    cuenta.remitente = remitente.trim()
-    return HttpResponse.json(cuenta)
   }),
 
   http.get('*/api/auditoria', ({ request }) => {

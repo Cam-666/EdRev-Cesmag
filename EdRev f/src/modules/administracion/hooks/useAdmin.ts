@@ -7,7 +7,6 @@ import {
   crearPlantilla,
   crearUsuario,
   editarUsuario,
-  guardarCuenta,
   guardarPlantilla,
   listarAuditoria,
   listarUsuarios,
@@ -16,7 +15,6 @@ import {
 } from '../services/adminService'
 import type { FiltrosAuditoria } from '../services/adminService'
 import type { DatosNuevaPlantilla } from '@/types/plantilla'
-import type { Revista } from '@/types/revista'
 import type { DatosUsuario, Usuario } from '@/types/usuario'
 
 export function useUsuarios() {
@@ -70,15 +68,6 @@ export function useUsarPlantilla() {
   const cliente = useQueryClient()
   return useMutation({
     mutationFn: (id: string) => usarPlantilla(id),
-    onSuccess: () => cliente.invalidateQueries({ queryKey: ['admin', 'plantillas'] }),
-  })
-}
-
-export function useGuardarCuenta() {
-  const cliente = useQueryClient()
-  return useMutation({
-    mutationFn: ({ revista, remitente }: { revista: Revista; remitente: string }) =>
-      guardarCuenta(revista, remitente),
     onSuccess: () => cliente.invalidateQueries({ queryKey: ['admin', 'plantillas'] }),
   })
 }

@@ -142,7 +142,7 @@ describe('reports', () => {
 describe('administration', () => {
   it('rejects a constancia template without the required markers and shows the error', async () => {
     const { user } = montarRuta('/administracion/plantillas')
-    await screen.findByRole('heading', { level: 2, name: 'Plantillas y cuentas de correo' })
+    await screen.findByRole('heading', { level: 2, name: 'Plantillas' })
     await user.click(await screen.findByRole('combobox', { name: 'Plantilla' }))
     await user.click(await screen.findByRole('option', { name: /^Constancia de participación/ }))
     const texto = await screen.findByLabelText('Texto')
@@ -153,11 +153,12 @@ describe('administration', () => {
     expect(screen.queryByText(/Plantilla guardada/)).toBeNull()
   })
 
-  it('shows the sender accounts without any credential', async () => {
+  it('shows only the templates: no sender account box and no credentials', async () => {
     montarRuta('/administracion/plantillas')
-    expect(await screen.findByDisplayValue('editorial.eyp@gmail.com')).toBeInTheDocument()
+    await screen.findByRole('combobox', { name: 'Plantilla' })
+    expect(screen.queryByRole('heading', { name: /Cuenta remitente/ })).toBeNull()
+    expect(screen.queryByDisplayValue('editorial.eyp@gmail.com')).toBeNull()
     expect(screen.queryByLabelText(/contraseña/i)).toBeNull()
-    expect(screen.queryByText(/Pendiente de TI|Institucional prevista|provisional/i)).toBeNull()
   })
 
   it('creates a new template from the one in use and puts it in use', async () => {

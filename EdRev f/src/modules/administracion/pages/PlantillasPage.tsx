@@ -1,12 +1,10 @@
 /*
- * PlantillasPage — Plantillas y cuentas de correo (/administracion/plantillas): the templates of
- * the invitation, the thank-you mail and the constancia, edited without touching code; new
- * templates can be created for any of those uses and one of them is chosen as the one in use.
- * Also the sender address of each journal. Administradora only.
- * Covers: RNF-19, RNF-07, RF-25, RF-30, HU-17. The thank-you and constancia editors have no Figma design.
+ * PlantillasPage — Plantillas (/administracion/plantillas): the templates of the invitation, the
+ * thank-you mail and the constancia, edited without touching code; new templates can be created
+ * for any of those uses and one of them is chosen as the one in use. Administradora only.
+ * Covers: RNF-19, RF-25, RF-30. The thank-you and constancia editors have no Figma design.
  */
 import { useState } from 'react'
-import { CuentaRemitente } from '../components/CuentaRemitente'
 import { FormularioPlantilla } from '../components/FormularioPlantilla'
 import { NuevaPlantillaModal } from '../components/NuevaPlantillaModal'
 import { usePlantillas } from '../hooks/useAdmin'
@@ -26,7 +24,7 @@ export function PlantillasPage() {
     <section className="flex flex-col gap-4">
       <EncabezadoPagina
         nivel="h2"
-        titulo="Plantillas y cuentas de correo"
+        titulo="Plantillas"
         acciones={
           <Boton tamano="sm" onClick={() => setCreando(true)}>
             Nueva plantilla
@@ -41,28 +39,17 @@ export function PlantillasPage() {
         descripcion="las plantillas"
       >
         {consulta.data && (
-          <div className="grid grid-cols-1 gap-6 xl:grid-cols-[1fr_360px]">
-            <div className="flex flex-col gap-4">
-              <ListaDesplegable
-                etiqueta="Plantilla"
-                opciones={plantillas.map((p) => ({
-                  valor: p.id,
-                  etiqueta: p.enUso ? `${p.nombre} (en uso)` : p.nombre,
-                }))}
-                valor={plantilla?.id}
-                onCambio={setElegida}
-              />
-              {plantilla && <FormularioPlantilla key={plantilla.id} plantilla={plantilla} />}
-            </div>
-
-            <section aria-labelledby="titulo-cuentas" className="flex h-fit flex-col gap-4">
-              <h3 id="titulo-cuentas" className="text-titulo-16">
-                Cuenta remitente
-              </h3>
-              {consulta.data.cuentas.map((c) => (
-                <CuentaRemitente key={c.revista} cuenta={c} />
-              ))}
-            </section>
+          <div className="flex max-w-3xl flex-col gap-4">
+            <ListaDesplegable
+              etiqueta="Plantilla"
+              opciones={plantillas.map((p) => ({
+                valor: p.id,
+                etiqueta: p.enUso ? `${p.nombre} (en uso)` : p.nombre,
+              }))}
+              valor={plantilla?.id}
+              onCambio={setElegida}
+            />
+            {plantilla && <FormularioPlantilla key={plantilla.id} plantilla={plantilla} />}
           </div>
         )}
       </EstadoConsulta>

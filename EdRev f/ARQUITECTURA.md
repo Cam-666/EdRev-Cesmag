@@ -113,16 +113,17 @@ asignación se conserva), corrija el correo desde la ficha del par y use «Reenv
   (resumen de ambas revistas, cada tarjeta con los colores de su revista, y «Pendiente»).
 - `modules/informes`: informe comparativo para ambos perfiles; exporta CSV.
 - `modules/administracion`: usuarios, plantillas (invitación, agradecimiento, constancia) con validación de
-  marcadores, cuenta remitente por revista y auditoría de ambas revistas. Se pueden crear plantillas nuevas
+  marcadores y auditoría de ambas revistas. Se pueden crear plantillas nuevas
   para cualquiera de los tres usos: parten del texto de la que está en uso y solo se envían cuando se elige
   «Usar en los envíos» (hay exactamente una en uso por cada uso).
-- Las plantillas y cuentas son estado compartido del mock (`mocks/db.ts`); cambiarlas afecta los siguientes
-  envíos sin tocar código (RNF-19). Las credenciales de las cuentas nunca viajan al frontend.
+- Las plantillas son estado compartido del mock (`mocks/db.ts`); cambiarlas afecta los siguientes envíos sin
+  tocar código (RNF-19). La cuenta remitente de cada revista no se edita en pantalla: es configuración del
+  servicio de correo (remitente verificado en Brevo) y sus credenciales nunca viajan al frontend.
 
 ## Permisos, acciones de pantalla y pares (ajustes previos a la fase 7)
 
 - Permisos (`modules/acceso/config/permisos.ts`, tabla única): la Auxiliar hace todo el trabajo editorial de
-  ambas revistas; solo Administración (usuarios, plantillas, cuentas, auditoría) queda para la
+  ambas revistas; solo Administración (usuarios, plantillas, auditoría) queda para la
   Administradora. Informes e Inicio son para ambos perfiles; el panel lateral oculta Administración a la
   Auxiliar y el mock responde 403 si lo intenta por la API.
 - Las acciones de cada pantalla («Registrar artículo», «Editar», «Asignar par»…) van junto al título, en el
