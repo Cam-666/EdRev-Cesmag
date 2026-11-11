@@ -15,44 +15,40 @@ import type { Revista } from '@/types/revista'
 export const PLANTILLAS_INICIALES: Plantilla[] = [
   {
     id: 'invitacion',
+    uso: 'invitacion',
     nombre: 'Invitación a evaluar',
     asunto: 'Invitación a evaluar un artículo · {{revista}}',
     cuerpo:
       'Apreciado(a) {{par}}:\n\nLa {{revista}} lo(a) invita a participar como par evaluador del artículo «{{articulo}}». Si acepta, recibirá los documentos desde el OJS.\n\nDependencia de Editorial',
     variables: ['revista', 'par', 'articulo'],
+    enUso: true,
   },
   {
     id: 'agradecimiento',
+    uso: 'agradecimiento',
     nombre: 'Agradecimiento con constancia',
     asunto: 'Gracias por su evaluación · {{revista}}',
     cuerpo:
       'Apreciado(a) {{par}}:\n\nAgradecemos su participación como par evaluador del artículo «{{articulo}}». Adjuntamos su constancia.\n\nDependencia de Editorial',
     variables: ['revista', 'par', 'articulo'],
+    enUso: true,
   },
   {
     id: 'constancia',
+    uso: 'constancia',
     nombre: 'Constancia de participación',
     asunto: null,
     cuerpo:
       'HACE CONSTAR QUE\n\n{{nombrePar}}\n\nparticipó como par evaluador del artículo «{{articulo}}» y entregó su concepto.',
     variables: ['nombrePar', 'articulo', 'revista'],
+    enUso: true,
   },
 ]
 
-/** Provisional Gmail accounts in this first phase; institutional ones when authorized (HU-17). */
+/** Sender address of each journal (a verified sender in the mail service). */
 export const CUENTAS_INICIALES: CuentaRemitente[] = [
-  {
-    revista: 'reep',
-    provisional: 'editorial.eyp@gmail.com',
-    institucionalPrevista: 'revistas@unicesmag.edu.co',
-    estadoInstitucional: 'pendiente-ti',
-  },
-  {
-    revista: 'ire',
-    provisional: 'editorial.ire@gmail.com',
-    institucionalPrevista: 'revistas@unicesmag.edu.co',
-    estadoInstitucional: 'pendiente-ti',
-  },
+  { revista: 'reep', remitente: 'editorial.eyp@gmail.com' },
+  { revista: 'ire', remitente: 'editorial.ire@gmail.com' },
 ]
 
 export const NOMBRE_EN_CORREO: Record<Revista, string> = {

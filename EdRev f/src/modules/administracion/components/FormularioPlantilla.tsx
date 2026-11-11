@@ -2,11 +2,12 @@
  * FormularioPlantilla — edits one template (subject and text) with the markers it accepts, a
  * live preview filled with sample data, and validation before saving: it may only use its own
  * markers and must keep the required ones. For the constancia only the text between the fixed
- * letterhead and signature is editable (RF-30). Covers: RNF-19, RF-25, RF-30.
+ * letterhead and signature is editable (RF-30). A template not in use can be chosen as the one
+ * the system sends for its use. Covers: RNF-19, RF-25, RF-30.
  */
 import { useState } from 'react'
 import { DATOS_EJEMPLO, validarPlantilla } from '../config/plantillas'
-import { useGuardarPlantilla } from '../hooks/useAdmin'
+import { useGuardarPlantilla, useUsarPlantilla } from '../hooks/useAdmin'
 import { Alerta } from '@/components/common/Alerta'
 import { AreaTexto } from '@/components/common/AreaTexto'
 import { Boton } from '@/components/common/Boton'
@@ -25,6 +26,7 @@ export function FormularioPlantilla({ plantilla }: FormularioPlantillaProps) {
   const [error, setError] = useState<string | null>(null)
   const [guardada, setGuardada] = useState(false)
   const mutacion = useGuardarPlantilla()
+  const usar = useUsarPlantilla()
   const tieneAsunto = plantilla.asunto !== null
 
   function guardar() {
@@ -40,15 +42,14 @@ export function FormularioPlantilla({ plantilla }: FormularioPlantillaProps) {
 
   return (
     <div className="flex flex-col gap-4">
-      {plantilla.id === 'constancia' && (
-        <Alerta tipo="informacion">
-          El membrete de la universidad y la firma son fijos. Solo se reemplazan el nombre del par y
-          el título del artículo; la constancia no lleva consecutivo.
-        </Alerta>
-      )}
       {mutacion.isError && (
         <Alerta tipo="error">
           {mensajeDeApi(mutacion.error, 'No fue posible guardar la plantilla.')}
+        </Alerta>
+      )}
+      {usar.isError && (
+        <Alerta tipo="error">
+          {mensajeDeApi(usar.error, 'No fue posible poner la plantilla en uso.')}
         </Alerta>
       )}
       <div role="status" aria-live="polite">
@@ -82,10 +83,21 @@ export function FormularioPlantilla({ plantilla }: FormularioPlantillaProps) {
         <p className="whitespace-pre-line text-cuerpo-15">{rellenar(cuerpo, DATOS_EJEMPLO)}</p>
       </section>
 
-      <div>
+      <div className="flex flex-wrap items-center gap-3">
         <Boton onClick={guardar} cargando={mutacion.isPending}>
           Guardar plantilla
         </Boton>
+        {plantilla.enUso ? (
+          <span className="text-cuerpo-13 text-texto-secundario">En uso</span>
+        ) : (
+          <Boton
+            variante="secundario"
+            cargando={usar.isPending}
+            onClick={() => usar.mutate(plantilla.id)}
+          >
+            Usar en los envíos
+          </Boton>
+        )}
       </div>
     </div>
   )

@@ -4,7 +4,12 @@
  */
 import { solicitar } from '@/lib/api/cliente'
 import type { EntradaAuditoria, TipoAuditoria } from '@/types/historial'
-import type { CuentaRemitente, DatosPlantillas, Plantilla, PlantillaId } from '@/types/plantilla'
+import type {
+  CuentaRemitente,
+  DatosNuevaPlantilla,
+  DatosPlantillas,
+  Plantilla,
+} from '@/types/plantilla'
 import type { Revista } from '@/types/revista'
 import type { DatosUsuario, Usuario } from '@/types/usuario'
 
@@ -51,17 +56,29 @@ export function obtenerPlantillas(): Promise<DatosPlantillas> {
   return solicitar<DatosPlantillas>('/plantillas')
 }
 
-export function guardarPlantilla(
-  id: PlantillaId,
-  datos: { asunto: string | null; cuerpo: string },
-): Promise<Plantilla> {
-  return solicitar<Plantilla>(`/plantillas/${id}`, { method: 'PUT', ...json(datos) })
+export function crearPlantilla(datos: DatosNuevaPlantilla): Promise<Plantilla> {
+  return solicitar<Plantilla>('/plantillas', { method: 'POST', ...json(datos) })
 }
 
-export function guardarCuenta(revista: Revista, provisional: string): Promise<CuentaRemitente> {
+/** Makes this template the one the system sends for its use. */
+export function usarPlantilla(id: string): Promise<Plantilla> {
+  return solicitar<Plantilla>(`/plantillas/${encodeURIComponent(id)}/usar`, { method: 'POST' })
+}
+
+export function guardarPlantilla(
+  id: string,
+  datos: { asunto: string | null; cuerpo: string },
+): Promise<Plantilla> {
+  return solicitar<Plantilla>(`/plantillas/${encodeURIComponent(id)}`, {
+    method: 'PUT',
+    ...json(datos),
+  })
+}
+
+export function guardarCuenta(revista: Revista, remitente: string): Promise<CuentaRemitente> {
   return solicitar<CuentaRemitente>(`/cuentas/${revista}`, {
     method: 'PUT',
-    ...json({ provisional }),
+    ...json({ remitente }),
   })
 }
 

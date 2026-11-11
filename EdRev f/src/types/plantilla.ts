@@ -1,25 +1,32 @@
 import type { Revista } from './revista'
 
-/** The three templates the dependency edits without touching code (RNF-19). */
-export type PlantillaId = 'invitacion' | 'agradecimiento' | 'constancia'
+/** What a template is used for. Each use has exactly one template in use at a time. */
+export type UsoPlantilla = 'invitacion' | 'agradecimiento' | 'constancia'
 
 export interface Plantilla {
-  id: PlantillaId
+  /** The three base templates keep their use as id; new ones get a generated id. */
+  id: string
+  uso: UsoPlantilla
   nombre: string
   /** Mail subject; the constancia has none. */
   asunto: string | null
   cuerpo: string
   /** Markers that may appear, e.g. {{revista}}, {{par}}, {{articulo}}. */
   variables: string[]
+  /** True for the template the system uses when it sends this kind of mail / constancia. */
+  enUso: boolean
 }
 
+/** A new template: its name and use; it starts from the text of the one in use (RNF-19). */
+export interface DatosNuevaPlantilla {
+  nombre: string
+  uso: UsoPlantilla
+}
+
+/** Address the mails of a journal leave from (a verified sender in the mail service). */
 export interface CuentaRemitente {
   revista: Revista
-  /** Provisional account in this first phase (RF-25, HU-17). */
-  provisional: string
-  /** Institutional account foreseen once authorized. */
-  institucionalPrevista: string
-  estadoInstitucional: 'pendiente-ti' | 'autorizada'
+  remitente: string
 }
 
 export interface DatosPlantillas {

@@ -18,7 +18,7 @@ import type { ColumnaTabla } from '@/components/common/Tabla'
 import { csv, descargarTexto } from '@/lib/descarga'
 import { abreviarNombre, formatearFechaHora } from '@/lib/format'
 import { useRetardo } from '@/lib/useRetardo'
-import { AccionesEncabezado } from '@/lib/encabezado/AccionesEncabezado'
+import { EncabezadoPagina } from '@/components/common/EncabezadoPagina'
 import type { TipoAuditoria } from '@/types/historial'
 import { REVISTAS } from '@/types/revista'
 import type { Revista } from '@/types/revista'
@@ -77,17 +77,19 @@ export function AuditoriaPage() {
 
   return (
     <section className="flex flex-col gap-4">
-      <AccionesEncabezado>
-        <Boton variante="neutro" tamano="sm" onClick={exportar} disabled={!datos}>
-          Exportar
-        </Boton>
-      </AccionesEncabezado>
-      <div>
-        <h2 className="text-titulo-16">Registro de auditoría</h2>
+      <EncabezadoPagina
+        nivel="h2"
+        titulo="Registro de auditoría"
+        acciones={
+          <Boton variante="neutro" tamano="sm" onClick={exportar} disabled={!datos}>
+            Exportar
+          </Boton>
+        }
+      >
         <p role="status" className="text-cuerpo-13 text-texto-secundario">
-          {datos ? `${datos.total} acciones registradas en las dos revistas` : ' '}
+          {datos ? `${datos.total} acciones registradas en ambas revistas` : ' '}
         </p>
-      </div>
+      </EncabezadoPagina>
 
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
         <ListaDesplegable
@@ -98,7 +100,7 @@ export function AuditoriaPage() {
             setPagina(1)
           }}
           opciones={[
-            { valor: TODAS, etiqueta: 'Las dos' },
+            { valor: TODAS, etiqueta: 'Ambas' },
             { valor: 'reep', etiqueta: REVISTAS.reep.nombreCorto },
             { valor: 'ire', etiqueta: REVISTAS.ire.nombreCorto },
           ]}
@@ -137,7 +139,7 @@ export function AuditoriaPage() {
         descripcion="el registro de auditoría"
       >
         <Tabla
-          etiqueta="Registro de auditoría de las dos revistas"
+          etiqueta="Registro de auditoría de ambas revistas"
           columnas={columnas}
           filas={datos?.items ?? []}
           obtenerClave={(e) => `${e.revista}-${e.id}`}

@@ -4,6 +4,7 @@
  */
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
+  crearPlantilla,
   crearUsuario,
   editarUsuario,
   guardarCuenta,
@@ -11,9 +12,10 @@ import {
   listarAuditoria,
   listarUsuarios,
   obtenerPlantillas,
+  usarPlantilla,
 } from '../services/adminService'
 import type { FiltrosAuditoria } from '../services/adminService'
-import type { PlantillaId } from '@/types/plantilla'
+import type { DatosNuevaPlantilla } from '@/types/plantilla'
 import type { Revista } from '@/types/revista'
 import type { DatosUsuario, Usuario } from '@/types/usuario'
 
@@ -50,15 +52,24 @@ export function usePlantillas() {
 export function useGuardarPlantilla() {
   const cliente = useQueryClient()
   return useMutation({
-    mutationFn: ({
-      id,
-      asunto,
-      cuerpo,
-    }: {
-      id: PlantillaId
-      asunto: string | null
-      cuerpo: string
-    }) => guardarPlantilla(id, { asunto, cuerpo }),
+    mutationFn: ({ id, asunto, cuerpo }: { id: string; asunto: string | null; cuerpo: string }) =>
+      guardarPlantilla(id, { asunto, cuerpo }),
+    onSuccess: () => cliente.invalidateQueries({ queryKey: ['admin', 'plantillas'] }),
+  })
+}
+
+export function useCrearPlantilla() {
+  const cliente = useQueryClient()
+  return useMutation({
+    mutationFn: (datos: DatosNuevaPlantilla) => crearPlantilla(datos),
+    onSuccess: () => cliente.invalidateQueries({ queryKey: ['admin', 'plantillas'] }),
+  })
+}
+
+export function useUsarPlantilla() {
+  const cliente = useQueryClient()
+  return useMutation({
+    mutationFn: (id: string) => usarPlantilla(id),
     onSuccess: () => cliente.invalidateQueries({ queryKey: ['admin', 'plantillas'] }),
   })
 }
@@ -66,8 +77,8 @@ export function useGuardarPlantilla() {
 export function useGuardarCuenta() {
   const cliente = useQueryClient()
   return useMutation({
-    mutationFn: ({ revista, provisional }: { revista: Revista; provisional: string }) =>
-      guardarCuenta(revista, provisional),
+    mutationFn: ({ revista, remitente }: { revista: Revista; remitente: string }) =>
+      guardarCuenta(revista, remitente),
     onSuccess: () => cliente.invalidateQueries({ queryKey: ['admin', 'plantillas'] }),
   })
 }

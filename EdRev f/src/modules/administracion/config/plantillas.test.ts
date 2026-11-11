@@ -1,7 +1,7 @@
 import { validarPlantilla } from './plantillas'
 
-const INVITACION = { id: 'invitacion' as const, variables: ['revista', 'par', 'articulo'] }
-const CONSTANCIA = { id: 'constancia' as const, variables: ['nombrePar', 'articulo', 'revista'] }
+const INVITACION = { uso: 'invitacion' as const, variables: ['revista', 'par', 'articulo'] }
+const CONSTANCIA = { uso: 'constancia' as const, variables: ['nombrePar', 'articulo', 'revista'] }
 
 describe('validarPlantilla (RNF-19)', () => {
   it('accepts a template that keeps its required markers', () => {

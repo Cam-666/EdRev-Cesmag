@@ -5,7 +5,7 @@
  * Covers: RF-30..RF-34, RNF-19. Issuing is Administradora-only (RNF-05).
  */
 import { http, HttpResponse } from 'msw'
-import { plantillaDe } from '../db'
+import { plantillaEnUso } from '../db'
 import { FIRMA_CONSTANCIA, NOMBRE_EN_CORREO, UNIVERSIDAD_MEMBRETE } from '../plantillas'
 import { rellenar } from '@/lib/plantillas'
 import type { SeedRevista } from '../seed/fabrica'
@@ -66,7 +66,7 @@ function vistaDe(revista: Revista, fila: FilaConstancia): VistaConstancia {
   return {
     universidad: UNIVERSIDAD_MEMBRETE,
     revista: nombreRevista,
-    cuerpo: rellenar(plantillaDe('constancia').cuerpo, {
+    cuerpo: rellenar(plantillaEnUso('constancia').cuerpo, {
       nombrePar: fila.par.nombre,
       articulo: fila.articulo.titulo,
       revista: nombreRevista,
@@ -90,7 +90,7 @@ function emitir(
   const ahora = ahoraIso()
   c.estado = 'emitida'
   c.fechaEmision = ahora
-  const plantilla = plantillaDe('agradecimiento')
+  const plantilla = plantillaEnUso('agradecimiento')
   const asunto = rellenar(plantilla.asunto ?? '', {
     revista: NOMBRE_EN_CORREO[revista],
     par: fila.par.nombre,

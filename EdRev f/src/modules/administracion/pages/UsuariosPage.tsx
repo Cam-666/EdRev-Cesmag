@@ -4,7 +4,6 @@
  * Administradora only. Covers: RF-40, HU-29, RNF-05.
  */
 import { useState } from 'react'
-import { MatrizPermisos } from '../components/MatrizPermisos'
 import { UsuarioModal } from '../components/UsuarioModal'
 import { PERFILES } from '../config/perfiles'
 import { useUsuarios } from '../hooks/useAdmin'
@@ -13,7 +12,7 @@ import { DistintivoEstado } from '@/components/common/DistintivoEstado'
 import { EstadoConsulta } from '@/components/common/EstadoConsulta'
 import { Tabla } from '@/components/common/Tabla'
 import type { ColumnaTabla } from '@/components/common/Tabla'
-import { AccionesEncabezado } from '@/lib/encabezado/AccionesEncabezado'
+import { EncabezadoPagina } from '@/components/common/EncabezadoPagina'
 import { formatearFechaHora } from '@/lib/format'
 import type { Usuario } from '@/types/usuario'
 
@@ -65,23 +64,22 @@ export function UsuariosPage() {
 
   return (
     <section className="flex flex-col gap-6">
-      <AccionesEncabezado>
-        <Boton tamano="sm" onClick={() => setCreando(true)}>
-          Crear usuario
-        </Boton>
-      </AccionesEncabezado>
-
       <section aria-labelledby="titulo-usuarios" className="flex flex-col gap-3">
-        <div>
-          <h2 id="titulo-usuarios" className="text-titulo-16">
-            Usuarios
-          </h2>
+        <EncabezadoPagina
+          nivel="h2"
+          titulo={<span id="titulo-usuarios">Usuarios</span>}
+          acciones={
+            <Boton tamano="sm" onClick={() => setCreando(true)}>
+              Crear usuario
+            </Boton>
+          }
+        >
           <p role="status" className="text-cuerpo-13 text-texto-secundario">
             {consulta.data
               ? `${total} ${total === 1 ? 'cuenta' : 'cuentas'} de la dependencia`
               : ' '}
           </p>
-        </div>
+        </EncabezadoPagina>
         <EstadoConsulta
           cargando={false}
           error={consulta.isError}
@@ -97,8 +95,6 @@ export function UsuariosPage() {
           />
         </EstadoConsulta>
       </section>
-
-      <MatrizPermisos />
 
       <UsuarioModal abierto={creando} onCerrar={() => setCreando(false)} />
       <UsuarioModal

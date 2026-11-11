@@ -8,7 +8,7 @@ import { SEED_IRE } from './seed/ire'
 import { SEED_REEP } from './seed/reep'
 import type { SeedRevista } from './seed/fabrica'
 import { USUARIOS_SEED } from './seed/usuarios'
-import type { CuentaRemitente, Plantilla } from '@/types/plantilla'
+import type { CuentaRemitente, Plantilla, UsoPlantilla } from '@/types/plantilla'
 import type { Revista } from '@/types/revista'
 import type { Usuario } from '@/types/usuario'
 
@@ -42,9 +42,10 @@ export function plantillas(): Plantilla[] {
   return base.plantillas
 }
 
-export function plantillaDe(id: Plantilla['id']): Plantilla {
-  const p = base.plantillas.find((x) => x.id === id)
-  if (!p) throw new Error(`Unknown template ${id}`)
+/** The template the system sends for a use (there is always exactly one in use). */
+export function plantillaEnUso(uso: UsoPlantilla): Plantilla {
+  const p = base.plantillas.find((x) => x.uso === uso && x.enUso)
+  if (!p) throw new Error(`No template in use for ${uso}`)
   return p
 }
 

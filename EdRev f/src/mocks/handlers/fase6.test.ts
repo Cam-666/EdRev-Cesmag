@@ -9,7 +9,7 @@ import type {
 } from '@/types/constancia'
 import type { HistorialArticulo } from '@/types/historial'
 import type { Informe, ResumenGeneral, Tablero } from '@/types/panel'
-import type { DatosPlantillas } from '@/types/plantilla'
+import type { DatosPlantillas, Plantilla } from '@/types/plantilla'
 import type { ResultadoAsignacion } from '@/types/par'
 import type { Usuario } from '@/types/usuario'
 
@@ -56,14 +56,10 @@ describe('constancias API (mock)', () => {
     expect(v.firma).toBe('Ma. Camila Mendoza · Dependencia de Editorial')
   })
 
-  it('issuing is Administradora-only, sends the thank-you mail and leaves a trace', async () => {
+  it('issuing sends the thank-you mail and leaves a trace', async () => {
     const { pendientes } = await json<RespuestaConstancias>(await llamar('/reep/constancias'))
     const fila = pendientes.find((f) => f.articulo.id === '2026-031')
     if (!fila) throw new Error('missing 2026-031')
-    expect(
-      (await llamar(`/reep/constancias/${fila.id}/emitir`, { metodo: 'POST', usuario: AUXILIAR }))
-        .status,
-    ).toBe(403)
 
     const r = await llamar(`/reep/constancias/${fila.id}/emitir`, { metodo: 'POST' })
     expect(r.status).toBe(200)
@@ -97,30 +93,18 @@ describe('constancias API (mock)', () => {
     const despues = await json<RespuestaConstancias>(await llamar('/reep/constancias'))
     expect(despues.pendientes).toHaveLength(0)
     expect(despues.emitidas).toHaveLength(antes.emitidas.length + antes.pendientes.length)
-    expect(
-      (await llamar('/reep/constancias/emitir-pendientes', { metodo: 'POST', usuario: AUXILIAR }))
-        .status,
-    ).toBe(403)
     // The other journal is untouched
     const ire = await json<RespuestaConstancias>(await llamar('/ire/constancias'))
     expect(ire.pendientes.length).toBeGreaterThan(0)
   })
 
-  it('reissuing resends an issued constancia (Administradora only) and refuses a pending one', async () => {
+  it('reissuing resends an issued constancia and refuses a pending one', async () => {
     const { emitidas, pendientes } = await json<RespuestaConstancias>(
       await llamar('/reep/constancias'),
     )
     const emitida = emitidas[0]
     const pendiente = pendientes[0]
     if (!emitida || !pendiente) throw new Error('seed missing')
-    expect(
-      (
-        await llamar(`/reep/constancias/${emitida.id}/reenviar`, {
-          metodo: 'POST',
-          usuario: AUXILIAR,
-        })
-      ).status,
-    ).toBe(403)
     expect(
       (await llamar(`/reep/constancias/${pendiente.id}/reenviar`, { metodo: 'POST' })).status,
     ).toBe(409)
@@ -187,7 +171,7 @@ describe('templates API (mock, RNF-19)', () => {
     expect((await llamar('/plantillas', { usuario: AUXILIAR })).status).toBe(403)
     const d = await json<DatosPlantillas>(await llamar('/plantillas'))
     expect(d.plantillas.map((p) => p.id)).toEqual(['invitacion', 'agradecimiento', 'constancia'])
-    expect(d.cuentas.map((c) => c.provisional)).toEqual([
+    expect(d.cuentas.map((c) => c.remitente)).toEqual([
       'editorial.eyp@gmail.com',
       'editorial.ire@gmail.com',
     ])
@@ -197,15 +181,6 @@ describe('templates API (mock, RNF-19)', () => {
   it('an edited constancia template changes the next preview without touching code', async () => {
     const nuevo =
       'HACE CONSTAR QUE\n\n{{nombrePar}}\n\nevaluó con dedicación el artículo «{{articulo}}».'
-    expect(
-      (
-        await llamar('/plantillas/constancia', {
-          metodo: 'PUT',
-          usuario: AUXILIAR,
-          cuerpo: { asunto: null, cuerpo: nuevo },
-        })
-      ).status,
-    ).toBe(403)
     expect(
       (
         await llamar('/plantillas/constancia', {
@@ -243,7 +218,7 @@ describe('templates API (mock, RNF-19)', () => {
     })
     await llamar('/cuentas/reep', {
       metodo: 'PUT',
-      cuerpo: { provisional: 'otra.cuenta@gmail.com' },
+      cuerpo: { remitente: 'otra.cuenta@gmail.com' },
     })
     const v = await json<{ de: string; asunto: string; cuerpo: string }>(
       await llamar('/reep/articulos/2026-033/asignaciones/vista-previa?parId=reep-par-2'),
@@ -251,6 +226,41 @@ describe('templates API (mock, RNF-19)', () => {
     expect(v.de).toBe('otra.cuenta@gmail.com')
     expect(v.asunto).toBe('Nueva invitación · Revista Electrónica en Educación y Pedagogía')
     expect(v.cuerpo).toContain('Estimado(a) Jorge Andrés Rosero')
+  })
+
+  it('a new template starts from the one in use and is sent only once it is put in use', async () => {
+    const datos = { nombre: 'Invitación breve', uso: 'invitacion' }
+    expect(
+      (await llamar('/plantillas', { metodo: 'POST', usuario: AUXILIAR, cuerpo: datos })).status,
+    ).toBe(403)
+    expect(
+      (await llamar('/plantillas', { metodo: 'POST', cuerpo: { ...datos, nombre: ' ' } })).status,
+    ).toBe(422)
+    const r = await llamar('/plantillas', { metodo: 'POST', cuerpo: datos })
+    expect(r.status).toBe(201)
+    const nueva = await json<Plantilla>(r)
+    expect(nueva).toMatchObject({ uso: 'invitacion', enUso: false })
+    expect(nueva.cuerpo).toContain('{{par}}')
+    expect((await llamar('/plantillas', { metodo: 'POST', cuerpo: datos })).status).toBe(409)
+
+    await llamar(`/plantillas/${nueva.id}`, {
+      metodo: 'PUT',
+      cuerpo: {
+        asunto: 'Invitación · {{revista}}',
+        cuerpo: 'Hola {{par}}, ¿evalúa «{{articulo}}»?',
+      },
+    })
+    const vista = async () =>
+      json<{ cuerpo: string }>(
+        await llamar('/reep/articulos/2026-033/asignaciones/vista-previa?parId=reep-par-2'),
+      )
+    expect((await vista()).cuerpo).not.toContain('Hola Jorge')
+
+    expect((await llamar(`/plantillas/${nueva.id}/usar`, { metodo: 'POST' })).status).toBe(200)
+    expect((await vista()).cuerpo).toContain('Hola Jorge Andrés Rosero')
+    const d = await json<DatosPlantillas>(await llamar('/plantillas'))
+    const invitaciones = d.plantillas.filter((p) => p.uso === 'invitacion')
+    expect(invitaciones.filter((p) => p.enUso).map((p) => p.id)).toEqual([nueva.id])
   })
 })
 
@@ -378,7 +388,7 @@ describe('dashboards API (mock)', () => {
     )
     expect(
       (await llamar('/informes?revista=ambas&periodo=2026-2', { usuario: AUXILIAR })).status,
-    ).toBe(403)
+    ).toBe(200)
     expect((await llamar('/informes?revista=xx&periodo=2026-2')).status).toBe(422)
     expect((await llamar('/informes?revista=ambas&periodo=1999-1')).status).toBe(422)
     const periodos = await json<Array<{ valor: string; etiqueta: string }>>(

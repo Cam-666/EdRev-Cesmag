@@ -1,6 +1,7 @@
 /*
- * MSW handlers for Administración: user accounts, mail / constancia templates with the sender
- * accounts, and the cross-journal audit log. Administradora only (RNF-05).
+ * MSW handlers for Administración: user accounts, mail / constancia templates (edit, create a new
+ * one for a use and choose the one in use) with the sender address of each journal, and the
+ * cross-journal audit log. Administradora only (RNF-05).
  * Covers: RF-40, RF-41, RNF-07 (credentials are never returned), RNF-19, HU-29, HU-30.
  */
 import { http, HttpResponse } from 'msw'
@@ -8,22 +9,28 @@ import { baseDe, cuentas, plantillas, usuarios } from '../db'
 import { contextoGlobal, error, sinTildes } from './util'
 import { marcadores } from '@/lib/plantillas'
 import type { EntradaAuditoria } from '@/types/historial'
-import type { Plantilla, PlantillaId } from '@/types/plantilla'
+import type { DatosNuevaPlantilla, Plantilla, UsoPlantilla } from '@/types/plantilla'
 import type { Revista } from '@/types/revista'
 import type { DatosUsuario, Usuario } from '@/types/usuario'
 
 /** Markers every template must keep, or its mail / constancia loses the data it exists for. */
-const OBLIGATORIOS: Record<PlantillaId, string[]> = {
+const OBLIGATORIOS: Record<UsoPlantilla, string[]> = {
   invitacion: ['par', 'articulo'],
   agradecimiento: ['par', 'articulo'],
   constancia: ['nombrePar', 'articulo'],
 }
 
-function validarPlantilla(p: Plantilla, asunto: string | null, cuerpo: string): string | null {
+const USOS: readonly UsoPlantilla[] = ['invitacion', 'agradecimiento', 'constancia']
+
+function validarPlantilla(
+  p: Pick<Plantilla, 'uso' | 'variables'>,
+  asunto: string | null,
+  cuerpo: string,
+): string | null {
   const usados = [...marcadores(cuerpo), ...marcadores(asunto ?? '')]
   const desconocido = usados.find((m) => !p.variables.includes(m))
   if (desconocido) return `El marcador {{${desconocido}}} no existe en esta plantilla`
-  const falta = OBLIGATORIOS[p.id].find((m) => !marcadores(cuerpo).includes(m))
+  const falta = OBLIGATORIOS[p.uso].find((m) => !marcadores(cuerpo).includes(m))
   if (falta) return `Falta el marcador obligatorio {{${falta}}}`
   if (!cuerpo.trim()) return 'El texto no puede estar vacío'
   return null
@@ -90,6 +97,39 @@ export const handlersAdmin = [
     return HttpResponse.json({ plantillas: plantillas(), cuentas: cuentas() })
   }),
 
+  http.post('*/api/plantillas', async ({ request }) => {
+    const c = contextoGlobal(request, 'administrar')
+    if (!c.ok) return c.respuesta
+    const { nombre, uso } = (await request.json()) as DatosNuevaPlantilla
+    if (!USOS.includes(uso)) return error(422, 'Uso no válido')
+    if (!nombre.trim()) return error(422, 'Escriba el nombre de la plantilla')
+    const repetido = plantillas().some(
+      (p) => p.nombre.trim().toLowerCase() === nombre.trim().toLowerCase(),
+    )
+    if (repetido) return error(409, 'Ya existe una plantilla con ese nombre')
+    // Starts from the text of the template in use, so it is valid from the first moment.
+    const modelo = plantillas().find((p) => p.uso === uso && p.enUso)
+    if (!modelo) return error(409, 'No hay una plantilla en uso para copiar')
+    const nueva: Plantilla = {
+      ...modelo,
+      variables: [...modelo.variables],
+      id: `pl-n${plantillas().length + 1}`,
+      nombre: nombre.trim(),
+      enUso: false,
+    }
+    plantillas().push(nueva)
+    return HttpResponse.json(nueva, { status: 201 })
+  }),
+
+  http.post('*/api/plantillas/:id/usar', ({ params, request }) => {
+    const c = contextoGlobal(request, 'administrar')
+    if (!c.ok) return c.respuesta
+    const plantilla = plantillas().find((p) => p.id === params.id)
+    if (!plantilla) return error(404, 'Plantilla no encontrada')
+    for (const p of plantillas()) if (p.uso === plantilla.uso) p.enUso = p.id === plantilla.id
+    return HttpResponse.json(plantilla)
+  }),
+
   http.put('*/api/plantillas/:id', async ({ params, request }) => {
     const c = contextoGlobal(request, 'administrar')
     if (!c.ok) return c.respuesta
@@ -108,10 +148,10 @@ export const handlersAdmin = [
     if (!c.ok) return c.respuesta
     const cuenta = cuentas().find((x) => x.revista === params.revista)
     if (!cuenta) return error(404, 'Revista no encontrada')
-    const { provisional } = (await request.json()) as { provisional: string }
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(provisional.trim()))
+    const { remitente } = (await request.json()) as { remitente: string }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(remitente.trim()))
       return error(422, 'Escriba un correo válido')
-    cuenta.provisional = provisional.trim()
+    cuenta.remitente = remitente.trim()
     return HttpResponse.json(cuenta)
   }),
 
