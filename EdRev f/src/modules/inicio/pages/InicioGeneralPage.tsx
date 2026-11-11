@@ -1,7 +1,8 @@
 /*
- * InicioGeneralPage — Inicio general (/inicio): summary of the two journals and what is stopped
- * in each. It is one of the few cross-journal screens (with Informes and Auditoría): it shows both
- * journals side by side, never mixed, and every case opens inside its own journal.
+ * InicioGeneralPage — Inicio (/inicio): summary of both journals and what is pending in each.
+ * It is one of the few cross-journal screens (with Informes and Auditoría): it shows both
+ * journals side by side, never mixed, each card softly tinted with its journal's colours
+ * (data-revista), and every case opens inside its own journal.
  * Covers: RF-37, HU-25.
  */
 import { useResumen } from '../hooks/usePanel'
@@ -14,7 +15,7 @@ import { REVISTAS } from '@/types/revista'
 import type { ResumenRevista } from '@/types/panel'
 import type { Revista } from '@/types/revista'
 
-interface CasoDetenido {
+interface CasoPendiente {
   clave: string
   revista: Revista
   situacion: string
@@ -22,7 +23,7 @@ interface CasoDetenido {
   destino: string
 }
 
-function casosDetenidos(resumen: ResumenRevista[]): CasoDetenido[] {
+function casosPendientes(resumen: ResumenRevista[]): CasoPendiente[] {
   return resumen.flatMap((r) => [
     {
       clave: `${r.revista}-pares`,
@@ -45,7 +46,7 @@ export function InicioGeneralPage() {
   const consulta = useResumen()
   const resumen = consulta.data
 
-  const columnas: Array<ColumnaTabla<CasoDetenido>> = [
+  const columnas: Array<ColumnaTabla<CasoPendiente>> = [
     { clave: 'revista', encabezado: 'Revista', render: (c) => REVISTAS[c.revista].nombreCorto },
     { clave: 'situacion', encabezado: 'Situación', render: (c) => c.situacion },
     { clave: 'casos', encabezado: 'Casos', render: (c) => c.casos },
@@ -66,11 +67,11 @@ export function InicioGeneralPage() {
   return (
     <section className="flex flex-col gap-6">
       <header>
-        <h1 className="text-titulo-24">Inicio general</h1>
+        <h1 className="text-titulo-24">Inicio</h1>
         <p className="text-cuerpo-13 text-texto-secundario">
           {resumen
-            ? `Resumen de las dos revistas al ${formatearFechaLarga(resumen.fecha)}`
-            : 'Resumen de las dos revistas'}
+            ? `Resumen de ambas revistas al ${formatearFechaLarga(resumen.fecha)}`
+            : 'Resumen de ambas revistas'}
         </p>
       </header>
 
@@ -86,14 +87,18 @@ export function InicioGeneralPage() {
               {resumen.revistas.map((r) => (
                 <section
                   key={r.revista}
+                  data-revista={r.revista}
                   aria-labelledby={`titulo-modulo-${r.revista}`}
-                  className="flex flex-col gap-4 rounded-lg border border-borde-base bg-superficie-tarjeta p-5 shadow-tarjeta"
+                  className="flex flex-col gap-4 rounded-lg border border-t-4 border-borde-base border-t-revista-primario bg-revista-suave p-5 shadow-tarjeta"
                 >
                   <div>
                     <p className="text-micro-11 uppercase text-texto-secundario">
                       Módulo {REVISTAS[r.revista].modulo}
                     </p>
-                    <h2 id={`titulo-modulo-${r.revista}`} className="text-titulo-20">
+                    <h2
+                      id={`titulo-modulo-${r.revista}`}
+                      className="text-titulo-20 text-revista-profundo"
+                    >
                       {REVISTAS[r.revista].nombreCorto}
                     </h2>
                   </div>
@@ -125,14 +130,14 @@ export function InicioGeneralPage() {
               ))}
             </div>
 
-            <section aria-labelledby="titulo-detenido" className="flex flex-col gap-3">
-              <h2 id="titulo-detenido" className="text-titulo-16">
-                Lo que está detenido en las dos revistas
+            <section aria-labelledby="titulo-pendiente" className="flex flex-col gap-3">
+              <h2 id="titulo-pendiente" className="text-titulo-16">
+                Pendiente
               </h2>
               <Tabla
-                etiqueta="Situaciones detenidas en las dos revistas"
+                etiqueta="Situaciones pendientes en ambas revistas"
                 columnas={columnas}
-                filas={casosDetenidos(resumen.revistas)}
+                filas={casosPendientes(resumen.revistas)}
                 obtenerClave={(c) => c.clave}
               />
             </section>

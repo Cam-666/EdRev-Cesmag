@@ -18,7 +18,11 @@ import { mensajeDeApi } from '@/lib/api/errores'
 import { useRevista } from '@/lib/revista/useRevista'
 import type { EstadoTrasAsignar } from '../config/navegacion'
 
-const ORDINAL = { 1: 'primer par', 2: 'segundo par', 3: 'tercer par' } as const
+const ORDINAL = ['primer par', 'segundo par', 'tercer par', 'cuarto par', 'quinto par']
+
+function ordinal(orden: number): string {
+  return ORDINAL[orden - 1] ?? `par ${orden}`
+}
 
 export function ParesAsignarPage() {
   const { revista } = useRevista()
@@ -132,7 +136,7 @@ export function ParesAsignarPage() {
                   <dt className="text-micro-11 uppercase text-texto-secundario">Orden</dt>
                   <dd className="text-cuerpo-15">
                     {vista.data.orden} ·{' '}
-                    {vista.data.esDesempate ? 'par de desempate' : ORDINAL[vista.data.orden]}
+                    {vista.data.esDesempate ? 'par de desempate' : ordinal(vista.data.orden)}
                   </dd>
                 </div>
                 <div>

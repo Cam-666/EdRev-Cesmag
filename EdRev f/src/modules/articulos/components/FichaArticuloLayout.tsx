@@ -15,7 +15,6 @@ import { Boton } from '@/components/common/Boton'
 import { EnlaceBoton } from '@/components/common/EnlaceBoton'
 import { EstadoConsulta } from '@/components/common/EstadoConsulta'
 import { Pestanas } from '@/components/common/Pestanas'
-import { AccionesEncabezado } from '@/lib/encabezado/AccionesEncabezado'
 import { ErrorApi } from '@/lib/api/cliente'
 import { useRevista } from '@/lib/revista/useRevista'
 
@@ -66,14 +65,16 @@ export function FichaArticuloLayout() {
     >
       {articulo && (
         <div className="flex flex-col gap-4">
-          {puedeEditar && (
-            <AccionesEncabezado>
-              <Boton variante="neutro" tamano="sm" onClick={() => setEditando(true)}>
-                Editar
-              </Boton>
-            </AccionesEncabezado>
-          )}
-          <EncabezadoFicha articulo={articulo} />
+          <EncabezadoFicha
+            articulo={articulo}
+            acciones={
+              puedeEditar && (
+                <Boton variante="secundario" tamano="sm" onClick={() => setEditando(true)}>
+                  Editar
+                </Boton>
+              )
+            }
+          />
           <Pestanas
             etiqueta="Secciones del artículo"
             valor={pestanaActiva(pathname, base)}

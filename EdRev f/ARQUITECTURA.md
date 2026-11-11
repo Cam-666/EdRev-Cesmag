@@ -104,15 +104,31 @@ asignación se conserva), corrija el correo desde la ficha del par y use «Reenv
 
 ## Constancias, correos, paneles y administración (fase 6)
 
-- `modules/constancias`: pendientes y emitidas; la constancia pasa a «pendiente» al entregar la evaluación y la
-  Administradora la emite con «Emitir y enviar» (o «Emitir pendientes»). Cada emisión envía el correo de
+- `modules/constancias`: pendientes y emitidas; la constancia pasa a «pendiente» al entregar la evaluación y se
+  emite con «Emitir y enviar» (o «Emitir pendientes»). Cada emisión envía el correo de
   agradecimiento y queda en Correos enviados y en la auditoría. La descarga simula el PDF con HTML.
 - `modules/correos`: bitácora por revista con contadores, «Reintentar fallidos» y «Corregir y reenviar»
   (el correo fallido queda «Reintentado»).
-- `modules/inicio`: Tablero por revista (pares sin responder, constancias pendientes) e Inicio general
-  (resumen de las dos revistas).
-- `modules/informes`: informe comparativo, solo Administradora; exporta CSV.
-- `modules/administracion`: usuarios y matriz de permisos, plantillas (invitación, agradecimiento, constancia)
-  con validación de marcadores, cuenta remitente por revista y auditoría de las dos revistas.
+- `modules/inicio`: Tablero por revista (pares sin responder, constancias pendientes) e Inicio
+  (resumen de ambas revistas, cada tarjeta con los colores de su revista, y «Pendiente»).
+- `modules/informes`: informe comparativo para ambos perfiles; exporta CSV.
+- `modules/administracion`: usuarios, plantillas (invitación, agradecimiento, constancia) con validación de
+  marcadores, cuenta remitente por revista y auditoría de ambas revistas. Se pueden crear plantillas nuevas
+  para cualquiera de los tres usos: parten del texto de la que está en uso y solo se envían cuando se elige
+  «Usar en los envíos» (hay exactamente una en uso por cada uso).
 - Las plantillas y cuentas son estado compartido del mock (`mocks/db.ts`); cambiarlas afecta los siguientes
   envíos sin tocar código (RNF-19). Las credenciales de las cuentas nunca viajan al frontend.
+
+## Permisos, acciones de pantalla y pares (ajustes previos a la fase 7)
+
+- Permisos (`modules/acceso/config/permisos.ts`, tabla única): la Auxiliar hace todo el trabajo editorial de
+  ambas revistas; solo Administración (usuarios, plantillas, cuentas, auditoría) queda para la
+  Administradora. Informes e Inicio son para ambos perfiles; el panel lateral oculta Administración a la
+  Auxiliar y el mock responde 403 si lo intenta por la API.
+- Las acciones de cada pantalla («Registrar artículo», «Editar», «Asignar par»…) van junto al título, en el
+  contenido (`components/common/EncabezadoPagina`), no en la barra de la revista.
+- Pares: cada revista tiene su propia base (no se comparten). Las invitaciones corren en paralelo: hasta tres
+  pares vigentes por artículo; quien acepta sigue con su evaluación mientras se buscan los demás, y quien no
+  acepta queda en la lista pero libera su lugar para invitar a otro (`paresVigentes` en
+  `modules/articulos/config/reglas.ts`). `orden` es el orden de asignación.
+- Sin recuadros que expliquen el uso del sistema: solo avisos de estado (errores, conflictos, rebotes, éxito).

@@ -1,7 +1,7 @@
 /*
  * ArticuloAntiplagioPage — Antiplagio y revisión del comité (/:revista/articulos/:id/antiplagio):
  * edit screen of the anti-plagiarism report and the committee review, with what was registered
- * before. Administradora only (RNF-05).
+ * before. Both profiles (RNF-05).
  * Covers: RF-05, RF-06, HU-02, HU-03.
  */
 import { useNavigate, useParams } from 'react-router-dom'
@@ -10,7 +10,7 @@ import { ETIQUETA_RESULTADO } from '../config/listas'
 import { useArticulo } from '../hooks/useArticulo'
 import { Boton } from '@/components/common/Boton'
 import { EstadoConsulta } from '@/components/common/EstadoConsulta'
-import { AccionesEncabezado } from '@/lib/encabezado/AccionesEncabezado'
+import { EncabezadoPagina } from '@/components/common/EncabezadoPagina'
 import { abreviarNombre, formatearFechaHora } from '@/lib/format'
 import { useRevista } from '@/lib/revista/useRevista'
 import type { ArticuloDetalle } from '@/types/articulo'
@@ -58,14 +58,6 @@ export function ArticuloAntiplagioPage() {
 
   return (
     <section className="flex flex-col gap-4">
-      <AccionesEncabezado>
-        <Boton type="submit" form={FORMULARIO} tamano="sm">
-          Guardar
-        </Boton>
-        <Boton variante="neutro" tamano="sm" onClick={volver}>
-          Cancelar
-        </Boton>
-      </AccionesEncabezado>
       <EstadoConsulta
         cargando={consulta.isPending}
         error={consulta.isError}
@@ -74,12 +66,23 @@ export function ArticuloAntiplagioPage() {
       >
         {consulta.data && (
           <>
-            <header>
-              <h1 className="text-titulo-24">Antiplagio y revisión del comité</h1>
+            <EncabezadoPagina
+              titulo="Antiplagio y revisión del comité"
+              acciones={
+                <>
+                  <Boton type="submit" form={FORMULARIO} tamano="sm">
+                    Guardar
+                  </Boton>
+                  <Boton variante="neutro" tamano="sm" onClick={volver}>
+                    Cancelar
+                  </Boton>
+                </>
+              }
+            >
               <p className="text-cuerpo-13 text-texto-secundario">
                 {consulta.data.numeroOjs} · {consulta.data.titulo}
               </p>
-            </header>
+            </EncabezadoPagina>
             <div className="grid grid-cols-1 gap-6 xl:grid-cols-[1fr_320px]">
               <FormularioRevision
                 articulo={consulta.data}

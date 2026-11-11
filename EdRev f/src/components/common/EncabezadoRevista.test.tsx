@@ -23,14 +23,4 @@ describe('EncabezadoRevista', () => {
     expect(screen.queryByText(/2357-5239/)).toBeNull()
     expect(screen.queryByText(/Investigium/)).toBeNull()
   })
-
-  it('renders the actions slot', () => {
-    render(
-      <EncabezadoRevista
-        revista="ire"
-        acciones={<button type="button">Registrar artículo</button>}
-      />,
-    )
-    expect(screen.getByRole('button', { name: 'Registrar artículo' })).toBeInTheDocument()
-  })
 })

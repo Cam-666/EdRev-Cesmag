@@ -5,6 +5,7 @@
  * "Emitir pendientes" does the same for all of them. Issuing and reissuing are Administradora-only.
  * Covers: RF-30, RF-31, RF-32, RF-33, RF-34, HU-21..HU-24, RNF-05.
  */
+import { cn } from '@/lib/cn'
 import { useState } from 'react'
 import { TablaEmitidas, TablaPendientes } from '../components/TablaConstancias'
 import { VistaPreviaConstancia } from '../components/VistaPreviaConstancia'
@@ -23,7 +24,7 @@ import { Boton } from '@/components/common/Boton'
 import { EstadoConsulta } from '@/components/common/EstadoConsulta'
 import { Modal } from '@/components/common/Modal'
 import { mensajeDeApi } from '@/lib/api/errores'
-import { AccionesEncabezado } from '@/lib/encabezado/AccionesEncabezado'
+import { EncabezadoPagina } from '@/components/common/EncabezadoPagina'
 import { useRevista } from '@/lib/revista/useRevista'
 import type { FilaConstancia, ResultadoEmision } from '@/types/constancia'
 
@@ -108,20 +109,21 @@ export function ConstanciasPage() {
 
   return (
     <section className="flex flex-col gap-6">
-      {puedeEmitir && pendientes.length > 0 && (
-        <AccionesEncabezado>
-          <Boton tamano="sm" onClick={() => setConfirmando(true)}>
-            Emitir pendientes
-          </Boton>
-        </AccionesEncabezado>
-      )}
-
-      <header>
-        <h1 className="text-titulo-24">Constancias</h1>
+      <EncabezadoPagina
+        titulo="Constancias"
+        acciones={
+          puedeEmitir &&
+          pendientes.length > 0 && (
+            <Boton tamano="sm" onClick={() => setConfirmando(true)}>
+              Emitir pendientes
+            </Boton>
+          )
+        }
+      >
         <p className="text-cuerpo-13 text-texto-secundario">
           Pendientes y emitidas de esta revista
         </p>
-      </header>
+      </EncabezadoPagina>
 
       <div role="status" aria-live="polite">
         {aviso && <Alerta tipo={aviso.tipo}>{aviso.texto}</Alerta>}
@@ -133,7 +135,12 @@ export function ConstanciasPage() {
         onReintentar={() => void consulta.refetch()}
         descripcion="las constancias"
       >
-        <div className="grid grid-cols-1 gap-6 xl:grid-cols-[1fr_360px]">
+        <div
+          className={cn(
+            'grid grid-cols-1 gap-6',
+            vigente && vista.data && 'xl:grid-cols-[1fr_360px]',
+          )}
+        >
           <div className="flex flex-col gap-6">
             <section aria-labelledby="titulo-pendientes" className="flex flex-col gap-3">
               <h2 id="titulo-pendientes" className="text-titulo-16">
@@ -174,25 +181,17 @@ export function ConstanciasPage() {
             </section>
           </div>
 
-          <aside aria-labelledby="titulo-vista-constancia" className="flex h-fit flex-col gap-3">
-            <h2 id="titulo-vista-constancia" className="text-titulo-16">
-              Vista previa
-            </h2>
-            {vigente && vista.data ? (
-              <>
-                <VistaPreviaConstancia vista={vista.data} />
-                <Boton onClick={emitirElegida} cargando={emitir.isPending}>
-                  Emitir y enviar
-                </Boton>
-              </>
-            ) : (
-              <p className="rounded-lg border border-borde-base bg-superficie-tarjeta p-5 text-cuerpo-13 text-texto-secundario">
-                {puedeEmitir
-                  ? 'Elija «Emitir» en una constancia pendiente para ver cómo quedará.'
-                  : 'Solo la Administradora emite constancias. Puede descargar las ya emitidas.'}
-              </p>
-            )}
-          </aside>
+          {vigente && vista.data && (
+            <aside aria-labelledby="titulo-vista-constancia" className="flex h-fit flex-col gap-3">
+              <h2 id="titulo-vista-constancia" className="text-titulo-16">
+                Vista previa
+              </h2>
+              <VistaPreviaConstancia vista={vista.data} />
+              <Boton onClick={emitirElegida} cargando={emitir.isPending}>
+                Emitir y enviar
+              </Boton>
+            </aside>
+          )}
         </div>
       </EstadoConsulta>
 

@@ -1,7 +1,7 @@
 /*
  * InformesPage — Informe de gestión (/informes): management report of a period (semester) for one
- * journal or both, exportable. It is a cross-journal screen: in "Las dos" each journal keeps its own
- * column. Optional scope (RF-38 is "Deseable"). Administradora only (RNF-05).
+ * journal or both, exportable. It is a cross-journal screen: in "Ambas" each journal keeps its own
+ * column. Optional scope (RF-38 is "Deseable"). Open to both profiles.
  * Covers: RF-38, HU-27.
  */
 import { useState } from 'react'
@@ -15,11 +15,11 @@ import { EstadoConsulta } from '@/components/common/EstadoConsulta'
 import { ListaDesplegable } from '@/components/common/ListaDesplegable'
 import { TarjetaMetrica } from '@/components/common/TarjetaMetrica'
 import { descargarTexto } from '@/lib/descarga'
-import { AccionesEncabezado } from '@/lib/encabezado/AccionesEncabezado'
+import { EncabezadoPagina } from '@/components/common/EncabezadoPagina'
 import type { FiltroRevistaInforme } from '@/types/panel'
 
 const REVISTAS_FILTRO = [
-  { valor: 'ambas', etiqueta: 'Las dos' },
+  { valor: 'ambas', etiqueta: 'Ambas' },
   { valor: 'reep', etiqueta: 'Educación y Pedagogía' },
   { valor: 'ire', etiqueta: 'Investigium IRE' },
 ]
@@ -39,25 +39,26 @@ export function InformesPage() {
 
   return (
     <section className="flex flex-col gap-6">
-      {datos && (
-        <AccionesEncabezado>
-          <Boton
-            variante="neutro"
-            tamano="sm"
-            onClick={() =>
-              descargarTexto(nombreArchivoInforme(datos), csvInforme(datos), 'text/csv')
-            }
-          >
-            Exportar
-          </Boton>
-        </AccionesEncabezado>
-      )}
-      <header>
-        <h1 className="text-titulo-24">Informe de gestión</h1>
+      <EncabezadoPagina
+        titulo="Informe de gestión"
+        acciones={
+          datos && (
+            <Boton
+              variante="neutro"
+              tamano="sm"
+              onClick={() =>
+                descargarTexto(nombreArchivoInforme(datos), csvInforme(datos), 'text/csv')
+              }
+            >
+              Exportar
+            </Boton>
+          )
+        }
+      >
         <p role="status" className="text-cuerpo-13 text-texto-secundario">
           {datos ? datos.etiquetaPeriodo : ' '}
         </p>
-      </header>
+      </EncabezadoPagina>
 
       <form
         className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-[1fr_1fr_1fr_auto] xl:items-end"
@@ -78,7 +79,7 @@ export function InformesPage() {
           valor={elegido ?? undefined}
           onCambio={setPeriodo}
         />
-        <CampoTexto etiqueta="Formato" value=".csv (se abre en Excel)" readOnly disabled />
+        <CampoTexto etiqueta="Formato" value=".csv" readOnly disabled />
         <Boton type="submit">Generar</Boton>
       </form>
 

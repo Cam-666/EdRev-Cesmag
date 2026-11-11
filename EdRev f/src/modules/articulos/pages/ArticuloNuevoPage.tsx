@@ -8,7 +8,7 @@ import { FormularioDatosArticulo } from '../components/FormularioDatosArticulo'
 import { PasosAlta } from '../components/PasosAlta'
 import { useBorradorArticulo } from '../hooks/useBorradorArticulo'
 import { Boton } from '@/components/common/Boton'
-import { AccionesEncabezado } from '@/lib/encabezado/AccionesEncabezado'
+import { EncabezadoPagina } from '@/components/common/EncabezadoPagina'
 import { useRevista } from '@/lib/revista/useRevista'
 
 const FORMULARIO = 'formulario-datos-articulo'
@@ -20,25 +20,28 @@ export function ArticuloNuevoPage() {
 
   return (
     <section className="flex flex-col gap-4">
-      <AccionesEncabezado>
-        <Boton type="submit" form={FORMULARIO} tamano="sm">
-          Continuar
-        </Boton>
-        <Boton
-          variante="neutro"
-          tamano="sm"
-          onClick={() => {
-            limpiar()
-            navigate(`/${revista}/articulos`)
-          }}
-        >
-          Cancelar
-        </Boton>
-      </AccionesEncabezado>
-      <header>
-        <h1 className="text-titulo-24">Registrar artículo</h1>
+      <EncabezadoPagina
+        titulo="Registrar artículo"
+        acciones={
+          <>
+            <Boton type="submit" form={FORMULARIO} tamano="sm">
+              Continuar
+            </Boton>
+            <Boton
+              variante="neutro"
+              tamano="sm"
+              onClick={() => {
+                limpiar()
+                navigate(`/${revista}/articulos`)
+              }}
+            >
+              Cancelar
+            </Boton>
+          </>
+        }
+      >
         <p className="text-cuerpo-13 text-texto-secundario">Paso 1 de 2 · Datos</p>
-      </header>
+      </EncabezadoPagina>
       <div className="grid grid-cols-1 gap-6 xl:grid-cols-[1fr_280px]">
         <FormularioDatosArticulo
           idFormulario={FORMULARIO}

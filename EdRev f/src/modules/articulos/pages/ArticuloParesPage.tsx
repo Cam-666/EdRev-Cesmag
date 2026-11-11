@@ -8,13 +8,13 @@
 import { useLocation } from 'react-router-dom'
 import { ListaParesAsignados } from '../components/ListaParesAsignados'
 import { MAX_PARES } from '../config/listas'
-import { conceptosContradictorios } from '../config/reglas'
+import { conceptosContradictorios, paresVigentes } from '../config/reglas'
 import { useArticuloActual } from '../hooks/useArticuloActual'
 import { esEstadoTrasAsignar } from '@/modules/pares/config/navegacion'
 import { usePermiso } from '@/modules/acceso/hooks/usePermiso'
 import { Alerta } from '@/components/common/Alerta'
 import { EnlaceBoton } from '@/components/common/EnlaceBoton'
-import { AccionesEncabezado } from '@/lib/encabezado/AccionesEncabezado'
+import { EncabezadoPagina } from '@/components/common/EncabezadoPagina'
 import { useRevista } from '@/lib/revista/useRevista'
 
 export function ArticuloParesPage() {
@@ -24,25 +24,34 @@ export function ArticuloParesPage() {
   const puedeAsignar = usePermiso('asignar-pares')
   const envio = esEstadoTrasAsignar(state) ? state.envio : null
 
-  const [primero, segundo] = articulo.asignaciones
-  const hayLugar = articulo.asignaciones.length < MAX_PARES
+  const vigentes = paresVigentes(articulo.asignaciones)
+  const [primero, segundo] = vigentes
+  const hayLugar = vigentes.length < MAX_PARES
   const divergen = conceptosContradictorios(primero?.concepto ?? null, segundo?.concepto ?? null)
   const hacia = `/${revista}/pares?articulo=${encodeURIComponent(articulo.id)}`
 
   return (
     <section className="flex flex-col gap-4">
-      {puedeAsignar && hayLugar && articulo.estado !== 'archivado' && (
-        <AccionesEncabezado>
-          <EnlaceBoton tamano="sm" to={hacia}>
-            Asignar par
-          </EnlaceBoton>
-          {divergen && (
-            <EnlaceBoton variante="neutro" tamano="sm" to={hacia}>
-              Asignar desempate
-            </EnlaceBoton>
-          )}
-        </AccionesEncabezado>
-      )}
+      <EncabezadoPagina
+        nivel="h2"
+        titulo="Pares y evaluación"
+        acciones={
+          puedeAsignar &&
+          hayLugar &&
+          articulo.estado !== 'archivado' && (
+            <>
+              <EnlaceBoton tamano="sm" to={hacia}>
+                Asignar par
+              </EnlaceBoton>
+              {divergen && (
+                <EnlaceBoton variante="secundario" tamano="sm" to={hacia}>
+                  Asignar desempate
+                </EnlaceBoton>
+              )}
+            </>
+          )
+        }
+      />
 
       {envio?.estado === 'entregado' && (
         <Alerta tipo="exito" titulo="Par asignado e invitación enviada">

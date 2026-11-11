@@ -14,7 +14,7 @@ import { EnlaceBoton } from '@/components/common/EnlaceBoton'
 import { EstadoConsulta } from '@/components/common/EstadoConsulta'
 import { Tabla } from '@/components/common/Tabla'
 import type { ColumnaTabla } from '@/components/common/Tabla'
-import { AccionesEncabezado } from '@/lib/encabezado/AccionesEncabezado'
+import { EncabezadoPagina } from '@/components/common/EncabezadoPagina'
 import { formatearFecha } from '@/lib/format'
 import { useRevista } from '@/lib/revista/useRevista'
 import type { ParListado } from '@/types/par'
@@ -55,19 +55,20 @@ export function ParesBloqueadosPage() {
 
   return (
     <section className="flex flex-col gap-4">
-      <AccionesEncabezado>
-        <EnlaceBoton variante="neutro" tamano="sm" to={`/${revista}/pares`}>
-          Volver a la base
-        </EnlaceBoton>
-      </AccionesEncabezado>
-      <header>
-        <h1 className="text-titulo-24">Pares bloqueados</h1>
+      <EncabezadoPagina
+        titulo="Pares bloqueados"
+        acciones={
+          <EnlaceBoton variante="neutro" tamano="sm" to={`/${revista}/pares`}>
+            Volver a la base
+          </EnlaceBoton>
+        }
+      >
         <p role="status" className="text-cuerpo-13 text-texto-secundario">
           {lista.data
             ? `${total} ${total === 1 ? 'par no recibe' : 'pares no reciben'} nuevas invitaciones`
             : ' '}
         </p>
-      </header>
+      </EncabezadoPagina>
       <EstadoConsulta
         cargando={false}
         error={lista.isError}

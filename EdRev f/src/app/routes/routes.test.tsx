@@ -102,7 +102,7 @@ describe('route table', () => {
   ])('cross-journal module %s has no journal palette and no open journal group', (ruta) => {
     const { container } = montar(ruta)
     expect(container.querySelector('[data-revista]')).toBeNull()
-    expect(screen.getByText('Las dos revistas')).toBeInTheDocument()
+    expect(screen.getByText('Ambas revistas')).toBeInTheDocument()
     const nav = screen.getByRole('navigation', { name: 'Principal', hidden: true })
     expect(within(nav).queryByRole('link', { name: 'Tablero' })).toBeNull()
   })

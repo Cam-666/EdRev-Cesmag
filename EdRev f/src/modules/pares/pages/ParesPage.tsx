@@ -16,11 +16,11 @@ import { Boton } from '@/components/common/Boton'
 import { EnlaceBoton } from '@/components/common/EnlaceBoton'
 import { EstadoConsulta } from '@/components/common/EstadoConsulta'
 import { Paginacion } from '@/components/common/Paginacion'
-import { AccionesEncabezado } from '@/lib/encabezado/AccionesEncabezado'
+import { EncabezadoPagina } from '@/components/common/EncabezadoPagina'
 import { useRevista } from '@/lib/revista/useRevista'
 
 export function ParesPage() {
-  const { revista, datos } = useRevista()
+  const { revista } = useRevista()
   const { filtros, cambiar, hayFiltros } = useFiltrosPares()
   const lista = usePares(filtros)
   const puedeRegistrar = usePermiso('registrar-datos')
@@ -31,29 +31,25 @@ export function ParesPage() {
 
   return (
     <section className="flex flex-col gap-4">
-      <AccionesEncabezado>
-        {puedeRegistrar && (
-          <Boton tamano="sm" onClick={() => setRegistrando(true)}>
-            Registrar par
-          </Boton>
-        )}
-        <EnlaceBoton variante="neutro" tamano="sm" to={`/${revista}/pares/bloqueados`}>
-          Bloqueados
-        </EnlaceBoton>
-      </AccionesEncabezado>
-
-      <header>
-        <h1 className="text-titulo-24">Pares evaluadores</h1>
+      <EncabezadoPagina
+        titulo="Pares evaluadores"
+        acciones={
+          <>
+            {puedeRegistrar && (
+              <Boton tamano="sm" onClick={() => setRegistrando(true)}>
+                Registrar par
+              </Boton>
+            )}
+            <EnlaceBoton variante="neutro" tamano="sm" to={`/${revista}/pares/bloqueados`}>
+              Bloqueados
+            </EnlaceBoton>
+          </>
+        }
+      >
         <p className="text-cuerpo-13 text-texto-secundario">
           {lista.data ? `${base} pares · base propia de esta revista` : ' '}
         </p>
-      </header>
-      <Alerta tipo="informacion">
-        {lista.data
-          ? `Estos ${base} pares pertenecen solo a ${datos.nombreCorto}.`
-          : 'Cargando la base de pares…'}
-      </Alerta>
-
+      </EncabezadoPagina>
       {filtros.articulo && (
         <Alerta
           tipo="advertencia"
@@ -68,8 +64,7 @@ export function ParesPage() {
             </EnlaceBoton>
           }
         >
-          Busque entre los pares de la revista y pulse «Asignar». Los pares con conflicto posible se
-          pueden asignar de todos modos.
+          Elija un par de la lista.
         </Alerta>
       )}
 

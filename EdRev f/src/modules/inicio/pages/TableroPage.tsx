@@ -11,7 +11,7 @@ import { usePermiso } from '@/modules/acceso/hooks/usePermiso'
 import { EnlaceBoton } from '@/components/common/EnlaceBoton'
 import { EstadoConsulta } from '@/components/common/EstadoConsulta'
 import { TarjetaMetrica } from '@/components/common/TarjetaMetrica'
-import { AccionesEncabezado } from '@/lib/encabezado/AccionesEncabezado'
+import { EncabezadoPagina } from '@/components/common/EncabezadoPagina'
 import { formatearFechaLarga } from '@/lib/format'
 import { useRevista } from '@/lib/revista/useRevista'
 
@@ -24,19 +24,20 @@ export function TableroPage() {
 
   return (
     <section className="flex flex-col gap-6">
-      {puedeRegistrar && (
-        <AccionesEncabezado>
-          <EnlaceBoton variante="neutro" tamano="sm" to={`/${revista}/articulos/nuevo`}>
-            Registrar artículo
-          </EnlaceBoton>
-        </AccionesEncabezado>
-      )}
-      <header>
-        <h1 className="text-titulo-24">Tablero</h1>
+      <EncabezadoPagina
+        titulo="Tablero"
+        acciones={
+          puedeRegistrar && (
+            <EnlaceBoton tamano="sm" to={`/${revista}/articulos/nuevo`}>
+              Registrar artículo
+            </EnlaceBoton>
+          )
+        }
+      >
         <p className="text-cuerpo-13 text-texto-secundario">
           {t ? `Al ${formatearFechaLarga(t.fecha)}` : ' '}
         </p>
-      </header>
+      </EncabezadoPagina>
 
       <EstadoConsulta
         cargando={consulta.isPending}

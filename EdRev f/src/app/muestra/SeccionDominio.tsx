@@ -104,22 +104,8 @@ export function SeccionDominio() {
 
       <Seccion titulo="EncabezadoRevista (60 px, solo la barra cambia entre revistas)">
         <div className="flex flex-col gap-3">
-          <EncabezadoRevista
-            revista="reep"
-            acciones={
-              <Boton variante="neutro" tamano="sm">
-                Registrar artículo
-              </Boton>
-            }
-          />
-          <EncabezadoRevista
-            revista="ire"
-            acciones={
-              <Boton variante="neutro" tamano="sm">
-                Registrar artículo
-              </Boton>
-            }
-          />
+          <EncabezadoRevista revista="reep" />
+          <EncabezadoRevista revista="ire" />
         </div>
       </Seccion>
     </>

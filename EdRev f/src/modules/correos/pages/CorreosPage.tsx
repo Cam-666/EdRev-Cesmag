@@ -21,7 +21,7 @@ import { ListaDesplegable } from '@/components/common/ListaDesplegable'
 import { Paginacion } from '@/components/common/Paginacion'
 import { TarjetaMetrica } from '@/components/common/TarjetaMetrica'
 import { mensajeDeApi } from '@/lib/api/errores'
-import { AccionesEncabezado } from '@/lib/encabezado/AccionesEncabezado'
+import { EncabezadoPagina } from '@/components/common/EncabezadoPagina'
 import type { EstadoCorreo, TipoCorreo } from '@/types/historial'
 
 const TODOS = 'todos'
@@ -70,18 +70,18 @@ export function CorreosPage() {
 
   return (
     <section className="flex flex-col gap-4">
-      {puedeReintentar && (
-        <AccionesEncabezado>
-          <Boton tamano="sm" cargando={fallidos.isPending} onClick={reintentarTodos}>
-            Reintentar fallidos
-          </Boton>
-        </AccionesEncabezado>
-      )}
-
-      <header>
-        <h1 className="text-titulo-24">Correos enviados</h1>
+      <EncabezadoPagina
+        titulo="Correos enviados"
+        acciones={
+          puedeReintentar && (
+            <Boton tamano="sm" cargando={fallidos.isPending} onClick={reintentarTodos}>
+              Reintentar fallidos
+            </Boton>
+          )
+        }
+      >
         <p className="text-cuerpo-13 text-texto-secundario">Registro de envíos de la revista</p>
-      </header>
+      </EncabezadoPagina>
 
       <div role="status" aria-live="polite">
         {aviso && <Alerta tipo={aviso.tipo}>{aviso.texto}</Alerta>}

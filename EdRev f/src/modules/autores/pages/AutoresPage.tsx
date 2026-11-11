@@ -4,6 +4,7 @@
  * Authors of one journal never appear in the other.
  * Covers: RF-09, RF-10, RF-11, HU-06, HU-07.
  */
+import { cn } from '@/lib/cn'
 import { useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { DetalleAutor } from '../components/DetalleAutor'
@@ -16,7 +17,7 @@ import { Buscador } from '@/components/common/Buscador'
 import { EstadoConsulta } from '@/components/common/EstadoConsulta'
 import { Tabla } from '@/components/common/Tabla'
 import type { ColumnaTabla } from '@/components/common/Tabla'
-import { AccionesEncabezado } from '@/lib/encabezado/AccionesEncabezado'
+import { EncabezadoPagina } from '@/components/common/EncabezadoPagina'
 import { useRevista } from '@/lib/revista/useRevista'
 
 export function AutoresPage() {
@@ -59,19 +60,20 @@ export function AutoresPage() {
 
   return (
     <section className="flex flex-col gap-4">
-      {puedeRegistrar && (
-        <AccionesEncabezado>
-          <Boton tamano="sm" onClick={() => setRegistrando(true)}>
-            Registrar autor
-          </Boton>
-        </AccionesEncabezado>
-      )}
-      <header>
-        <h1 className="text-titulo-24">Autores</h1>
+      <EncabezadoPagina
+        titulo="Autores"
+        acciones={
+          puedeRegistrar && (
+            <Boton tamano="sm" onClick={() => setRegistrando(true)}>
+              Registrar autor
+            </Boton>
+          )
+        }
+      >
         <p role="status" className="text-cuerpo-13 text-texto-secundario">
           {base.data ? `${base.data.total} fichas reutilizables` : ' '}
         </p>
-      </header>
+      </EncabezadoPagina>
 
       <Buscador
         className="max-w-md"
@@ -81,7 +83,7 @@ export function AutoresPage() {
         onChange={(e) => setTexto(e.target.value)}
       />
 
-      <div className="grid grid-cols-1 gap-6 xl:grid-cols-[1fr_380px]">
+      <div className={cn('grid grid-cols-1 gap-6', elegido && 'xl:grid-cols-[1fr_380px]')}>
         <EstadoConsulta
           cargando={false}
           error={lista.isError}
@@ -101,13 +103,7 @@ export function AutoresPage() {
             }
           />
         </EstadoConsulta>
-        {elegido ? (
-          <DetalleAutor revista={revista} autor={elegido} />
-        ) : (
-          <p className="h-fit rounded-lg border border-borde-base bg-superficie-tarjeta p-5 text-cuerpo-13 text-texto-secundario">
-            Elija «Ver» en un autor para consultar sus artículos.
-          </p>
-        )}
+        {elegido && <DetalleAutor revista={revista} autor={elegido} />}
       </div>
 
       <RegistrarAutorModal

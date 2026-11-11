@@ -18,7 +18,7 @@ import { Boton } from '@/components/common/Boton'
 import { DistintivoEstado } from '@/components/common/DistintivoEstado'
 import { EnlaceBoton } from '@/components/common/EnlaceBoton'
 import { EstadoConsulta } from '@/components/common/EstadoConsulta'
-import { AccionesEncabezado } from '@/lib/encabezado/AccionesEncabezado'
+import { EncabezadoPagina } from '@/components/common/EncabezadoPagina'
 import { ErrorApi } from '@/lib/api/cliente'
 import { formatearFecha, formatearFechaLarga } from '@/lib/format'
 import { useRevista } from '@/lib/revista/useRevista'
@@ -67,37 +67,39 @@ export function ParDetallePage() {
     >
       {par && (
         <section className="flex flex-col gap-6">
-          <AccionesEncabezado>
-            {articulo && puedeAsignar && !bloqueado && (
-              <EnlaceBoton
-                tamano="sm"
-                to={`/${revista}/pares/asignar?articulo=${encodeURIComponent(articulo)}&par=${encodeURIComponent(par.id)}`}
-              >
-                Asignar
-              </EnlaceBoton>
-            )}
-            {puedeEditar && (
-              <Boton variante="neutro" tamano="sm" onClick={() => setEditando(true)}>
-                Editar
-              </Boton>
-            )}
-            {bloqueado
-              ? puedeDesbloquear && (
-                  <Boton variante="neutro" tamano="sm" onClick={() => setDesbloqueando(true)}>
-                    Desbloquear
-                  </Boton>
-                )
-              : puedeBloquear && (
-                  <Boton variante="peligro" tamano="sm" onClick={() => setBloqueando(true)}>
-                    Bloquear
+          <EncabezadoPagina
+            titulo={par.nombre}
+            acciones={
+              <>
+                {articulo && puedeAsignar && !bloqueado && (
+                  <EnlaceBoton
+                    tamano="sm"
+                    to={`/${revista}/pares/asignar?articulo=${encodeURIComponent(articulo)}&par=${encodeURIComponent(par.id)}`}
+                  >
+                    Asignar
+                  </EnlaceBoton>
+                )}
+                {puedeEditar && (
+                  <Boton variante="neutro" tamano="sm" onClick={() => setEditando(true)}>
+                    Editar
                   </Boton>
                 )}
-          </AccionesEncabezado>
-
-          <header>
-            <h1 className="text-titulo-24">{par.nombre}</h1>
+                {bloqueado
+                  ? puedeDesbloquear && (
+                      <Boton variante="neutro" tamano="sm" onClick={() => setDesbloqueando(true)}>
+                        Desbloquear
+                      </Boton>
+                    )
+                  : puedeBloquear && (
+                      <Boton variante="peligro" tamano="sm" onClick={() => setBloqueando(true)}>
+                        Bloquear
+                      </Boton>
+                    )}
+              </>
+            }
+          >
             <p className="text-cuerpo-13 text-texto-secundario">Par evaluador de esta revista</p>
-          </header>
+          </EncabezadoPagina>
 
           {par.bloqueo && (
             <Alerta tipo="error" titulo="Par bloqueado">

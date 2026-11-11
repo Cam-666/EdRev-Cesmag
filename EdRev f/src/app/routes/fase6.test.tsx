@@ -34,13 +34,18 @@ describe('constancias screen', () => {
     expect(await screen.findByText(/No hay constancias pendientes/)).toBeInTheDocument()
   })
 
-  it('the Auxiliar can download but neither issue nor reissue', async () => {
+  it('the Auxiliar can issue, reissue and download', async () => {
     montarRuta('/reep/constancias', AUXILIAR)
     await screen.findByRole('table', { name: 'Constancias pendientes de emisión' })
-    expect(screen.queryByRole('button', { name: /^Emitir/ })).toBeNull()
-    expect(screen.queryByRole('button', { name: /^Reenviar/ })).toBeNull()
+    expect(await screen.findByRole('button', { name: 'Emitir pendientes' })).toBeInTheDocument()
+    expect((await screen.findAllByRole('button', { name: /^Reenviar/ })).length).toBeGreaterThan(0)
     expect((await screen.findAllByRole('button', { name: /^Descargar/ })).length).toBeGreaterThan(0)
-    expect(screen.getByText(/Solo la Administradora emite constancias/)).toBeInTheDocument()
+  })
+
+  it('shows no preview box until a constancia is chosen', async () => {
+    montarRuta('/reep/constancias')
+    await screen.findByRole('table', { name: 'Constancias pendientes de emisión' })
+    expect(screen.queryByRole('heading', { name: 'Vista previa' })).toBeNull()
   })
 
   it('has no accessibility violations', async () => {
@@ -95,17 +100,20 @@ describe('dashboards', () => {
     expect(enlaces.every((e) => e.getAttribute('href')?.startsWith('/ire/'))).toBe(true)
   })
 
-  it('Inicio general summarises both journals', async () => {
-    montarRuta('/inicio')
-    await screen.findByRole('heading', { level: 1, name: 'Inicio general' })
+  it('Inicio summarises both journals, each card in its journal colours', async () => {
+    const { container } = montarRuta('/inicio')
+    await screen.findByRole('heading', { level: 1, name: 'Inicio' })
     expect(
       await screen.findByRole('heading', { level: 2, name: 'Educación y Pedagogía' }),
     ).toBeInTheDocument()
     expect(screen.getByRole('heading', { level: 2, name: 'Investigium IRE' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { level: 2, name: 'Pendiente' })).toBeInTheDocument()
+    const tarjetas = [...container.querySelectorAll('section[data-revista]')]
+    expect(tarjetas.map((t) => t.getAttribute('data-revista'))).toEqual(['reep', 'ire'])
   })
 })
 
-describe('reports (Administradora only)', () => {
+describe('reports', () => {
   it('generates the comparative report', async () => {
     montarRuta('/informes')
     expect(
@@ -116,12 +124,18 @@ describe('reports (Administradora only)', () => {
     ).toBeInTheDocument()
   })
 
-  it('the Auxiliar is turned away', async () => {
+  it('the Auxiliar can open the reports too', async () => {
     montarRuta('/informes', AUXILIAR)
-    await waitFor(() =>
-      expect(screen.queryByRole('heading', { level: 1, name: 'Informe de gestión' })).toBeNull(),
-    )
-    expect(await screen.findByRole('heading', { name: 'Acceso restringido' })).toBeInTheDocument()
+    expect(
+      await screen.findByRole('heading', { level: 2, name: /Comparativo/i }),
+    ).toBeInTheDocument()
+    expect(screen.queryByRole('heading', { name: 'Acceso restringido' })).toBeNull()
+  })
+
+  it('the journal filter says "Ambas" and the format is plain .csv', async () => {
+    montarRuta('/informes')
+    expect(await screen.findByRole('combobox', { name: 'Revista' })).toHaveTextContent('Ambas')
+    expect(screen.getByLabelText('Formato')).toHaveValue('.csv')
   })
 })
 
@@ -130,7 +144,7 @@ describe('administration', () => {
     const { user } = montarRuta('/administracion/plantillas')
     await screen.findByRole('heading', { level: 2, name: 'Plantillas y cuentas de correo' })
     await user.click(await screen.findByRole('combobox', { name: 'Plantilla' }))
-    await user.click(await screen.findByRole('option', { name: 'Constancia de participación' }))
+    await user.click(await screen.findByRole('option', { name: /^Constancia de participación/ }))
     const texto = await screen.findByLabelText('Texto')
     await user.clear(texto)
     await user.type(texto, 'HACE CONSTAR QUE alguien evaluó.')
@@ -143,11 +157,32 @@ describe('administration', () => {
     montarRuta('/administracion/plantillas')
     expect(await screen.findByDisplayValue('editorial.eyp@gmail.com')).toBeInTheDocument()
     expect(screen.queryByLabelText(/contraseña/i)).toBeNull()
+    expect(screen.queryByText(/Pendiente de TI|Institucional prevista|provisional/i)).toBeNull()
+  })
+
+  it('creates a new template from the one in use and puts it in use', async () => {
+    const { user } = montarRuta('/administracion/plantillas')
+    await user.click(await screen.findByRole('button', { name: 'Nueva plantilla' }))
+    const dialogo = await screen.findByRole('dialog', { name: 'Nueva plantilla' })
+    await user.click(within(dialogo).getByRole('button', { name: 'Crear plantilla' }))
+    expect(
+      await within(dialogo).findByText('Escriba el nombre de la plantilla.'),
+    ).toBeInTheDocument()
+    await user.type(within(dialogo).getByLabelText('Nombre'), 'Invitación en inglés')
+    await user.click(within(dialogo).getByRole('button', { name: 'Crear plantilla' }))
+    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull())
+
+    const lista = await screen.findByRole('combobox', { name: 'Plantilla' })
+    await waitFor(() => expect(lista).toHaveTextContent('Invitación en inglés'))
+    expect((screen.getByLabelText('Texto') as HTMLTextAreaElement).value).toContain('{{par}}')
+    await user.click(screen.getByRole('button', { name: 'Usar en los envíos' }))
+    await waitFor(() => expect(lista).toHaveTextContent('Invitación en inglés (en uso)'))
+    expect(screen.getByText('En uso')).toBeInTheDocument()
   })
 
   it('the audit log shows the two journals and can be filtered by journal', async () => {
     const { user } = montarRuta('/administracion/auditoria')
-    expect(await screen.findByText(/acciones registradas en las dos revistas/)).toBeInTheDocument()
+    expect(await screen.findByText(/acciones registradas en ambas revistas/)).toBeInTheDocument()
     await user.click(screen.getByRole('combobox', { name: 'Revista' }))
     await user.click(await screen.findByRole('option', { name: 'Investigium IRE' }))
     await waitFor(() => {
@@ -158,9 +193,13 @@ describe('administration', () => {
     })
   })
 
-  it('the Auxiliar cannot open administration', async () => {
+  it('the Auxiliar cannot open administration and does not see it in the side panel', async () => {
     montarRuta('/administracion/usuarios', AUXILIAR)
     await waitFor(() => expect(screen.queryByRole('heading', { name: /Usuarios/ })).toBeNull())
+    const nav = screen.getByRole('navigation', { name: 'Principal' })
+    expect(within(nav).queryByRole('link', { name: 'Administración' })).toBeNull()
+    expect(within(nav).getByRole('link', { name: 'Informes' })).toBeInTheDocument()
+    expect(within(nav).getByRole('link', { name: 'Inicio' })).toBeInTheDocument()
   })
 
   it('a constancia issued from the screen is traced in the sent mail', async () => {

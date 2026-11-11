@@ -14,7 +14,7 @@ import { FormularioAutor } from '@/modules/autores/components/FormularioAutor'
 import { Alerta } from '@/components/common/Alerta'
 import { Boton } from '@/components/common/Boton'
 import { EnlaceBoton } from '@/components/common/EnlaceBoton'
-import { AccionesEncabezado } from '@/lib/encabezado/AccionesEncabezado'
+import { EncabezadoPagina } from '@/components/common/EncabezadoPagina'
 import { useRevista } from '@/lib/revista/useRevista'
 import type { TipoArticulo } from '@/types/articulo'
 
@@ -57,18 +57,21 @@ export function ArticuloNuevoAutoresPage() {
 
   return (
     <section className="flex flex-col gap-4">
-      <AccionesEncabezado>
-        <Boton tamano="sm" onClick={guardar} cargando={crear.isPending}>
-          Guardar
-        </Boton>
-        <EnlaceBoton variante="neutro" tamano="sm" to={`/${revista}/articulos/nuevo`}>
-          Volver
-        </EnlaceBoton>
-      </AccionesEncabezado>
-      <header>
-        <h1 className="text-titulo-24">Autores del artículo</h1>
+      <EncabezadoPagina
+        titulo="Autores del artículo"
+        acciones={
+          <>
+            <Boton tamano="sm" onClick={guardar} cargando={crear.isPending}>
+              Guardar
+            </Boton>
+            <EnlaceBoton tamano="sm" to={`/${revista}/articulos/nuevo`}>
+              Volver
+            </EnlaceBoton>
+          </>
+        }
+      >
         <p className="text-cuerpo-13 text-texto-secundario">Paso 2 de 2 · {datos.numeroOjs}</p>
-      </header>
+      </EncabezadoPagina>
 
       {sinAutores && borrador.autores.length === 0 && (
         <Alerta tipo="error">Agregue al menos un autor antes de guardar el artículo.</Alerta>
