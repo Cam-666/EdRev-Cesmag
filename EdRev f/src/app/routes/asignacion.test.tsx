@@ -192,7 +192,7 @@ describe('bounced invitation (RF-27)', () => {
 })
 
 describe('actions on an assigned peer', () => {
-  it('Administradora: resend, reminder and register the answer; Auxiliar: only resend and reminder', async () => {
+  it('both profiles can resend, send a reminder and register the answer', async () => {
     const admin = montarRuta('/reep/articulos/2026-012/pares')
     expect(
       await screen.findByRole('button', { name: /Reenviar invitación a Rodrigo Eraso/ }),
@@ -207,7 +207,9 @@ describe('actions on an assigned peer', () => {
     expect(
       await screen.findByRole('button', { name: /Reenviar invitación a Rodrigo Eraso/ }),
     ).toBeInTheDocument()
-    expect(screen.queryByRole('button', { name: /Registrar respuesta/ })).toBeNull()
+    expect(
+      screen.getByRole('button', { name: /Registrar respuesta de Rodrigo Eraso/ }),
+    ).toBeInTheDocument()
   })
 
   it('a reminder is queued and says so', async () => {

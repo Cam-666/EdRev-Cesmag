@@ -31,7 +31,7 @@ export interface TablaPendientesProps {
   /** Constancia whose preview is open. */
   seleccionada: string | null
   onElegir: (fila: FilaConstancia) => void
-  /** Whether the user may issue (Administradora only, RNF-05). */
+  /** Whether the user may issue (RNF-05). */
   puedeEmitir: boolean
 }
 

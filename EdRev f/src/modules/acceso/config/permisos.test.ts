@@ -1,7 +1,7 @@
 import { puede } from './permisos'
 import type { Accion } from './permisos'
 
-const SOLO_ADMINISTRADOR: Accion[] = [
+const EDITORIALES: Accion[] = [
   'registrar-revision',
   'registrar-concepto',
   'marcar-entrega',
@@ -10,19 +10,24 @@ const SOLO_ADMINISTRADOR: Accion[] = [
   'desbloquear-par',
   'registrar-respuesta',
   'reabrir-articulo',
-  'administrar',
 ]
 
 describe('permisos', () => {
   it('administrador can do everything', () => {
-    for (const a of [...SOLO_ADMINISTRADOR, 'registrar-datos', 'asignar-pares'] as Accion[]) {
+    for (const a of [
+      ...EDITORIALES,
+      'registrar-datos',
+      'asignar-pares',
+      'administrar',
+    ] as Accion[]) {
       expect(puede('administrador', a)).toBe(true)
     }
   })
 
-  it('auxiliar only registers and assigns', () => {
-    expect(puede('auxiliar', 'registrar-datos')).toBe(true)
-    expect(puede('auxiliar', 'asignar-pares')).toBe(true)
-    for (const a of SOLO_ADMINISTRADOR) expect(puede('auxiliar', a)).toBe(false)
+  it('auxiliar does all the editorial work but not administration', () => {
+    for (const a of [...EDITORIALES, 'registrar-datos', 'asignar-pares'] as Accion[]) {
+      expect(puede('auxiliar', a)).toBe(true)
+    }
+    expect(puede('auxiliar', 'administrar')).toBe(false)
   })
 })

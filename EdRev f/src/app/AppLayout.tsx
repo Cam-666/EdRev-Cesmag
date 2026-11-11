@@ -3,14 +3,13 @@
  * skip link. data-revista on the root rewrites the journal CSS variables; only the top bar and
  * ISSN pill consume them. Covers: RF-02, RNF-11 (skip link, landmarks).
  */
-import { useState } from 'react'
 import { Outlet, useLocation, useNavigate } from 'react-router-dom'
-import { DestinoAcciones } from '@/lib/encabezado/DestinoAcciones'
 import { useRevistaOpcional } from '@/lib/revista/useRevista'
 import { EncabezadoComun } from '@/components/common/EncabezadoComun'
 import { EncabezadoRevista } from '@/components/common/EncabezadoRevista'
 import { PanelLateral } from '@/components/common/PanelLateral'
 import { SelectorUsuarioDemo } from '@/modules/acceso/components/SelectorUsuarioDemo'
+import { puede } from '@/modules/acceso/config/permisos'
 import { POLITICA_ACCESO } from '@/modules/acceso/config/politicaAcceso'
 import { useCierrePorInactividad } from '@/modules/acceso/hooks/useCierrePorInactividad'
 import { useSesion, useUsuarioActual } from '@/modules/acceso/hooks/useSesion'
@@ -23,12 +22,9 @@ export function AppLayout() {
   const navigate = useNavigate()
   const usuario = useUsuarioActual()
   const { cerrarSesion } = useSesion()
-  const [destino, setDestino] = useState<HTMLElement | null>(null)
 
   // RNF-05: the session closes after a period of inactivity.
   useCierrePorInactividad(POLITICA_ACCESO.inactividadMinutos, () => cerrarSesion('inactividad'))
-
-  const acciones = <div ref={setDestino} className="flex items-center gap-2" />
 
   return (
     <div data-revista={revista ?? undefined} className="flex min-h-screen">
@@ -44,17 +40,12 @@ export function AppLayout() {
         usuario={{ nombre: usuario.nombre, perfil: ETIQUETA_PERFIL[usuario.perfil] }}
         onAbrirRevista={(r) => navigate(`/${r}/tablero`)}
         onCerrarSesion={() => cerrarSesion('manual')}
+        mostrarAdministracion={puede(usuario.perfil, 'administrar')}
       />
       <div className="flex min-w-0 flex-1 flex-col">
-        {revista ? (
-          <EncabezadoRevista revista={revista} acciones={acciones} />
-        ) : (
-          <EncabezadoComun acciones={acciones} />
-        )}
+        {revista ? <EncabezadoRevista revista={revista} /> : <EncabezadoComun />}
         <main id="contenido" tabIndex={-1} className="flex-1 p-6">
-          <DestinoAcciones.Provider value={destino}>
-            <Outlet />
-          </DestinoAcciones.Provider>
+          <Outlet />
         </main>
       </div>
       <SelectorUsuarioDemo />

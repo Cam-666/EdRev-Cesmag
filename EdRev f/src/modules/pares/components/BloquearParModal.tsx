@@ -1,7 +1,7 @@
 /*
  * BloquearParModal — blocks a peer by hand, choosing the reason (does not want to take part, or
  * did not answer). A blocked peer gets no new invitations. No Figma design for the dialog.
- * Covers: RF-15, HU-10. Administradora only (RNF-05).
+ * Covers: RF-15, HU-10. Both profiles (RNF-05).
  */
 import { useState } from 'react'
 import { MOTIVOS_BLOQUEO } from '../config/listas'

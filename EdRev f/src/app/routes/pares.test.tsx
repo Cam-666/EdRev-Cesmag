@@ -7,9 +7,6 @@ describe('peer base (/:revista/pares)', () => {
   it('shows the journal own base and hides blocked peers by default', async () => {
     montarRuta('/reep/pares')
     expect(await screen.findByText('15 pares · base propia de esta revista')).toBeInTheDocument()
-    expect(
-      screen.getByText('Estos 15 pares pertenecen solo a Educación y Pedagogía.'),
-    ).toBeInTheDocument()
     expect(await screen.findByText('11 pares')).toBeInTheDocument()
     expect(screen.queryByText('Paula Andrea Narváez')).toBeNull()
     expect(screen.getAllByText('Conflicto posible').length).toBeGreaterThan(0)
@@ -18,9 +15,7 @@ describe('peer base (/:revista/pares)', () => {
 
   it('never shows peers of the other journal', async () => {
     montarRuta('/ire/pares')
-    expect(
-      await screen.findByText('Estos 15 pares pertenecen solo a Investigium IRE.'),
-    ).toBeInTheDocument()
+    expect(await screen.findByText('15 pares · base propia de esta revista')).toBeInTheDocument()
     expect(await screen.findByText('Alberto Portilla Rosas')).toBeInTheDocument()
     expect(screen.queryByText('Luz Marina Burbano')).toBeNull()
     expect(screen.queryByRole('button', { name: 'Educación inclusiva' })).toBeNull()
@@ -108,7 +103,7 @@ describe('registering a peer', () => {
     unmount()
 
     montarRuta('/ire/pares')
-    await screen.findByText('Estos 15 pares pertenecen solo a Investigium IRE.')
+    await screen.findByText('15 pares · base propia de esta revista')
     expect(screen.queryByText('Marta Lucía Gómez')).toBeNull()
   })
 
@@ -149,10 +144,10 @@ describe('blocked peers (/pares/bloqueados)', () => {
     expect(screen.queryByText('Paula Andrea Narváez')).toBeNull()
   })
 
-  it('the Auxiliar can see the list but not unblock', async () => {
+  it('the Auxiliar can see the list and unblock', async () => {
     montarRuta('/reep/pares/bloqueados', AUXILIAR)
     expect(await screen.findByText('4 pares no reciben nuevas invitaciones')).toBeInTheDocument()
-    expect(screen.queryByRole('button', { name: /Desbloquear/ })).toBeNull()
+    expect(screen.getAllByRole('button', { name: /Desbloquear/ }).length).toBeGreaterThan(0)
   })
 })
 
@@ -189,11 +184,11 @@ describe('peer record (/pares/:id)', () => {
     expect(await screen.findByText('Par bloqueado')).toBeInTheDocument()
   })
 
-  it('the Auxiliar can edit but not block or unblock', async () => {
+  it('the Auxiliar can edit and block', async () => {
     montarRuta('/reep/pares/reep-par-1', AUXILIAR)
     await screen.findByRole('heading', { level: 1, name: 'Luz Marina Burbano' })
     expect(screen.getByRole('button', { name: 'Editar' })).toBeInTheDocument()
-    expect(screen.queryByRole('button', { name: 'Bloquear' })).toBeNull()
+    expect(screen.getByRole('button', { name: 'Bloquear' })).toBeInTheDocument()
   })
 
   it('a peer of the other journal is not found', async () => {

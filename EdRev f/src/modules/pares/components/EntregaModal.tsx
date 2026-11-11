@@ -1,7 +1,7 @@
 /*
  * EntregaModal — marks that a peer delivered the evaluation (done in the OJS, so the mark is
  * manual) with its date. The evaluation then shows a pending constancia.
- * Covers: RF-22, RF-23, HU-16. Administradora only (RNF-05).
+ * Covers: RF-22, RF-23, HU-16. Both profiles (RNF-05).
  */
 import { useState } from 'react'
 import { useMarcarEntrega } from '../hooks/useAsignaciones'

@@ -1,7 +1,7 @@
 /*
  * DesbloquearParModal — "Desbloquear a {par}": asks the reason and returns the peer to the list
  * of peers who can receive invitations. The change is recorded with user and date.
- * Covers: RF-16, HU-11. Administradora only (RNF-05).
+ * Covers: RF-16, HU-11. Both profiles (RNF-05).
  */
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useForm } from 'react-hook-form'

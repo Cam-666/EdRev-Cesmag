@@ -229,7 +229,6 @@ describe('article sheet', () => {
     expect(
       screen.getByText('Los conceptos de los dos primeros pares se contradicen.'),
     ).toBeInTheDocument()
-    expect(screen.getByText('Cómo se resuelve')).toBeInTheDocument()
   })
 
   it('Pares y evaluación does not show the notice when concepts agree', async () => {
@@ -370,11 +369,10 @@ describe('anti-plagiarism and committee review (/antiplagio)', () => {
     expect(screen.getByText('Antiplagio: 21 % y 8 %.')).toBeInTheDocument()
   })
 
-  it('is closed to the Auxiliar profile', async () => {
+  it('is open to the Auxiliar profile', async () => {
     montarRuta('/reep/articulos/2026-034/antiplagio', AUXILIAR)
-    expect(
-      await screen.findByRole('heading', { level: 1, name: 'Acceso restringido' }),
-    ).toBeInTheDocument()
+    expect(await screen.findByText('Registrado antes')).toBeInTheDocument()
+    expect(screen.queryByRole('heading', { name: 'Acceso restringido' })).toBeNull()
   })
 })
 
@@ -410,10 +408,9 @@ describe('reopening an archived article (/reabrir)', () => {
     expect(screen.getByText('Se solicitaron modificaciones al autor.')).toBeInTheDocument()
   })
 
-  it('is closed to the Auxiliar profile', async () => {
+  it('is open to the Auxiliar profile', async () => {
     montarRuta('/reep/articulos/2026-007/reabrir', AUXILIAR)
-    expect(await screen.findByRole('heading', { name: 'Acceso restringido' })).toBeInTheDocument()
-    expect(screen.queryByRole('dialog')).toBeNull()
+    expect(await screen.findByRole('dialog', { name: 'Retomar el proceso' })).toBeInTheDocument()
   })
 
   it('explains that a non-archived article has nothing to resume', async () => {

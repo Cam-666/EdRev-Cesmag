@@ -26,10 +26,12 @@ export interface PanelLateralProps {
   /** Called when a closed journal group is opened (the app navigates to its dashboard). */
   onAbrirRevista: (revista: Revista) => void
   onCerrarSesion: () => void
+  /** False hides the Administración module (the Auxiliar has no access to it). */
+  mostrarAdministracion?: boolean
 }
 
 const MODULOS_COMUNES = [
-  { etiqueta: 'Inicio general', ruta: '/inicio' },
+  { etiqueta: 'Inicio', ruta: '/inicio' },
   { etiqueta: 'Informes', ruta: '/informes' },
   { etiqueta: 'Administración', ruta: '/administracion/usuarios' },
 ]
@@ -86,7 +88,11 @@ export function PanelLateral({
   usuario,
   onAbrirRevista,
   onCerrarSesion,
+  mostrarAdministracion = true,
 }: PanelLateralProps) {
+  const comunes = mostrarAdministracion
+    ? MODULOS_COMUNES
+    : MODULOS_COMUNES.filter((m) => !m.ruta.startsWith('/administracion'))
   return (
     <aside className="flex w-panel min-w-panel flex-col bg-cesmag-azul-panel text-texto-inverso">
       <div className="flex items-center gap-3 px-4 py-5">
@@ -99,7 +105,7 @@ export function PanelLateral({
 
       <nav aria-label="Principal" className="flex flex-1 flex-col gap-1 overflow-y-auto px-2">
         <ul className="flex flex-col gap-1">
-          {MODULOS_COMUNES.map((m) => (
+          {comunes.map((m) => (
             <li key={m.ruta}>
               <ItemNav
                 etiqueta={m.etiqueta}

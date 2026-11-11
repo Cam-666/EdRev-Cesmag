@@ -2,7 +2,7 @@
  * RespuestaParModal — registers how the peer answered the invitation: accepted, declined, or no
  * answer after the 2nd attempt. Declining or not answering sends the peer to the blocked list
  * (the dialog says so before confirming). No Figma design for the dialog.
- * Covers: RF-15, RF-22, HU-10. Administradora only (RNF-05).
+ * Covers: RF-15, RF-22, HU-10. Both profiles (RNF-05).
  */
 import { useState } from 'react'
 import { useRegistrarRespuesta } from '../hooks/useAsignaciones'

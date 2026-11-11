@@ -208,7 +208,7 @@ export const handlersPanel = [
   }),
 
   http.get('*/api/informes', ({ request }) => {
-    const c = contextoGlobal(request, 'administrar')
+    const c = contextoGlobal(request)
     if (!c.ok) return c.respuesta
     const url = new URL(request.url)
     const revista = url.searchParams.get('revista') ?? 'ambas'

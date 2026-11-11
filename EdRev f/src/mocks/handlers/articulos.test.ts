@@ -152,18 +152,13 @@ describe('articles API (mock)', () => {
     })
   })
 
-  it('anti-plagiarism and committee review are Administradora-only (RNF-05)', async () => {
+  it('anti-plagiarism and committee review can be registered by the Auxiliar too', async () => {
     const cuerpo = { antiplagio: { coincidencias: 12, atribuidoIa: 4, observacion: '' } }
-    expect(
-      (
-        await llamar('/reep/articulos/2026-034/revision', {
-          metodo: 'PUT',
-          usuario: AUXILIAR,
-          cuerpo,
-        })
-      ).status,
-    ).toBe(403)
-    const ok = await llamar('/reep/articulos/2026-034/revision', { metodo: 'PUT', cuerpo })
+    const ok = await llamar('/reep/articulos/2026-034/revision', {
+      metodo: 'PUT',
+      usuario: AUXILIAR,
+      cuerpo,
+    })
     expect(ok.status).toBe(200)
     expect(((await ok.json()) as ArticuloDetalle).antiplagio).toMatchObject({
       coincidencias: 12,
@@ -171,20 +166,11 @@ describe('articles API (mock)', () => {
     })
   })
 
-  it('reopening keeps the history, records the reason as an observation and is Administradora-only', async () => {
+  it('reopening keeps the history, records the reason as an observation', async () => {
     const cuerpo = {
       motivo: 'El autor escribió anunciando las modificaciones.',
       estado: 'en-revision',
     }
-    expect(
-      (
-        await llamar('/reep/articulos/2026-007/reabrir', {
-          metodo: 'POST',
-          usuario: AUXILIAR,
-          cuerpo,
-        })
-      ).status,
-    ).toBe(403)
     expect(
       (await llamar('/reep/articulos/2026-034/reabrir', { metodo: 'POST', cuerpo })).status,
     ).toBe(409)
