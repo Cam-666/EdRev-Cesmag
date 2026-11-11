@@ -3,7 +3,7 @@
  * skip link. data-revista on the root rewrites the journal CSS variables; only the top bar and
  * ISSN pill consume them. Covers: RF-02, RNF-11 (skip link, landmarks).
  */
-import { Outlet, useLocation, useNavigate } from 'react-router-dom'
+import { Outlet, useLocation } from 'react-router-dom'
 import { useRevistaOpcional } from '@/lib/revista/useRevista'
 import { EncabezadoComun } from '@/components/common/EncabezadoComun'
 import { EncabezadoRevista } from '@/components/common/EncabezadoRevista'
@@ -19,7 +19,6 @@ export function AppLayout() {
   const contexto = useRevistaOpcional()
   const revista = contexto?.revista ?? null
   const { pathname } = useLocation()
-  const navigate = useNavigate()
   const usuario = useUsuarioActual()
   const { cerrarSesion } = useSesion()
 
@@ -38,7 +37,6 @@ export function AppLayout() {
         revistaActiva={revista}
         rutaActual={pathname}
         usuario={{ nombre: usuario.nombre, perfil: ETIQUETA_PERFIL[usuario.perfil] }}
-        onAbrirRevista={(r) => navigate(`/${r}/tablero`)}
         onCerrarSesion={() => cerrarSesion('manual')}
         mostrarAdministracion={puede(usuario.perfil, 'administrar')}
       />

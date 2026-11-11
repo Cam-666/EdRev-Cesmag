@@ -107,9 +107,12 @@ describe('route table', () => {
     expect(within(nav).queryByRole('link', { name: 'Tablero' })).toBeNull()
   })
 
-  it('opening the other journal in the side panel switches the top bar only', async () => {
+  it('opening the other journal in the side panel and choosing a submodule switches the top bar only', async () => {
     const { router, container } = montar('/reep/articulos')
-    await userEvent.click(screen.getByRole('button', { name: /Investigium IRE/ }))
+    await userEvent.click(screen.getByRole('button', { name: 'Investigium IRE' }))
+    expect(router.state.location.pathname).toBe('/reep/articulos')
+    const nav = screen.getByRole('navigation', { name: 'Principal' })
+    await userEvent.click(nav.querySelector('[href="/ire/tablero"]') as HTMLElement)
     expect(router.state.location.pathname).toBe('/ire/tablero')
     expect(container.querySelector('[data-revista]')).toHaveAttribute('data-revista', 'ire')
     expect(screen.getByText(/ISSN: 2357-5239/)).toBeInTheDocument()
