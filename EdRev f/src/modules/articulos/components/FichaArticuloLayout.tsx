@@ -4,6 +4,7 @@
  * article once and hands it to the tabs through the outlet context.
  * Covers: RF-36, HU-26 (criterion 3), RF-01/RF-04 (edit).
  */
+import { BotonVolver } from '@/components/common/BotonVolver'
 import { useState } from 'react'
 import { Outlet, useLocation, useNavigate, useParams } from 'react-router-dom'
 import { EditarArticuloModal } from './EditarArticuloModal'
@@ -65,6 +66,7 @@ export function FichaArticuloLayout() {
     >
       {articulo && (
         <div className="flex flex-col gap-4">
+          <BotonVolver to={`/${revista}/articulos`}>Volver a artículos</BotonVolver>
           <EncabezadoFicha
             articulo={articulo}
             acciones={

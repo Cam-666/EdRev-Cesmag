@@ -112,7 +112,7 @@ export function PanelLateral({
     ? MODULOS_COMUNES
     : MODULOS_COMUNES.filter((m) => !m.ruta.startsWith('/administracion'))
   return (
-    <aside className="flex w-panel min-w-panel flex-col bg-cesmag-azul-panel text-texto-inverso">
+    <aside className="sticky top-0 flex h-screen w-panel min-w-panel flex-col self-start bg-cesmag-azul-panel text-texto-inverso">
       <div className="flex items-center gap-3 px-4 py-5">
         <Escudo tamano="lg" alt="Escudo de la Universidad CESMAG" />
         <div>

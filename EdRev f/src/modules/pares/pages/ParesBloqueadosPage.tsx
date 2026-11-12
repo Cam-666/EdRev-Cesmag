@@ -4,6 +4,7 @@
  * and the date. Only the Administradora can unblock.
  * Covers: RF-15, RF-16, HU-10, HU-11.
  */
+import { BotonVolver } from '@/components/common/BotonVolver'
 import { useState } from 'react'
 import { DesbloquearParModal } from '../components/DesbloquearParModal'
 import { ETIQUETA_MOTIVO } from '../config/listas'
@@ -55,6 +56,7 @@ export function ParesBloqueadosPage() {
 
   return (
     <section className="flex flex-col gap-4">
+      <BotonVolver to={`/${revista}/pares`}>Volver a pares evaluadores</BotonVolver>
       <EncabezadoPagina
         titulo="Pares bloqueados"
         acciones={

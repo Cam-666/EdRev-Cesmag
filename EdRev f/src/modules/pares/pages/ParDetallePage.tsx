@@ -4,6 +4,7 @@
  * every participation with concept and constancia. Edit, block / unblock and assign from here.
  * Covers: RF-15, RF-16, RF-18, RNF-06, HU-23 (constancias visible from the peer's record).
  */
+import { BotonVolver } from '@/components/common/BotonVolver'
 import { useState } from 'react'
 import { useParams, useSearchParams } from 'react-router-dom'
 import { BloquearParModal } from '../components/BloquearParModal'
@@ -67,6 +68,7 @@ export function ParDetallePage() {
     >
       {par && (
         <section className="flex flex-col gap-6">
+          <BotonVolver to={`/${revista}/pares`}>Volver a pares evaluadores</BotonVolver>
           <EncabezadoPagina
             titulo={par.nombre}
             acciones={
