@@ -7,6 +7,7 @@ import type { ReactNode } from 'react'
 import { ETIQUETA_TIPO } from '../config/listas'
 import { superaUmbral } from '../config/reglas'
 import { DistintivoEstado } from '@/components/common/DistintivoEstado'
+import { etiquetaPublicacion } from '@/lib/dominio/publicacion'
 import type { ArticuloDetalle } from '@/types/articulo'
 
 export interface EncabezadoFichaProps {
@@ -27,7 +28,7 @@ export function EncabezadoFicha({ articulo, acciones }: EncabezadoFichaProps) {
       </div>
       <p className="text-cuerpo-13 text-texto-secundario">
         {ETIQUETA_TIPO[articulo.tipo]}
-        {articulo.numeroPublicacion && ` · ${articulo.numeroPublicacion}`}
+        {articulo.publicacion && ` · ${etiquetaPublicacion(articulo.publicacion)}`}
       </p>
       <ul className="flex flex-wrap items-center gap-2">
         <li>

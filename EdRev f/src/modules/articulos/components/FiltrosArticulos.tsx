@@ -53,10 +53,7 @@ export function FiltrosArticulos({ filtros, onCambio }: FiltrosArticulosProps) {
         etiqueta="Publicación"
         valor={filtros.publicacion ?? TODOS}
         onCambio={(v) => onCambio({ publicacion: v === TODOS ? undefined : v })}
-        opciones={[
-          { valor: TODOS, etiqueta: 'Todas' },
-          ...(publicaciones.data ?? []).map((p) => ({ valor: p, etiqueta: p })),
-        ]}
+        opciones={[{ valor: TODOS, etiqueta: 'Todas' }, ...(publicaciones.data ?? [])]}
       />
       <div className="grid grid-cols-2 gap-2">
         <CampoTexto

@@ -9,6 +9,7 @@ import { BotonVolver } from '@/components/common/BotonVolver'
 import { useState } from 'react'
 import { Outlet, useLocation, useNavigate, useParams } from 'react-router-dom'
 import { CambiarRevistaModal } from './CambiarRevistaModal'
+import { CerrarProcesoModal } from './CerrarProcesoModal'
 import { EditarArticuloModal } from './EditarArticuloModal'
 import { EncabezadoFicha } from './EncabezadoFicha'
 import { useArticulo } from '../hooks/useArticulo'
@@ -21,6 +22,10 @@ import { Pestanas } from '@/components/common/Pestanas'
 import { ErrorApi } from '@/lib/api/cliente'
 import { puedeTrasladar } from '@/lib/dominio/comite'
 import { useRevista } from '@/lib/revista/useRevista'
+import type { EstadoArticulo } from '@/types/articulo'
+
+/** States whose process is still open (RF-08). */
+const ABIERTOS: readonly EstadoArticulo[] = ['postulado', 'en-revision', 'en-evaluacion']
 
 const SEGMENTOS = ['comite', 'autores', 'pares', 'observaciones', 'historial'] as const
 
@@ -39,6 +44,8 @@ export function FichaArticuloLayout() {
   const puedeCambiar = usePermiso('registrar-revision')
   const [editando, setEditando] = useState(false)
   const [cambiando, setCambiando] = useState(false)
+  const puedeCerrar = usePermiso('cerrar-articulo')
+  const [cerrando, setCerrando] = useState(false)
   const base = `/${revista}/articulos/${encodeURIComponent(id)}`
 
   if (consulta.error instanceof ErrorApi && consulta.error.estado === 404) {
@@ -86,6 +93,11 @@ export function FichaArticuloLayout() {
                     Editar
                   </Boton>
                 )}
+                {puedeCerrar && ABIERTOS.includes(articulo.estado) && (
+                  <Boton variante="secundario" tamano="sm" onClick={() => setCerrando(true)}>
+                    Cerrar proceso
+                  </Boton>
+                )}
               </>
             }
           />
@@ -101,6 +113,11 @@ export function FichaArticuloLayout() {
               { valor: 'observaciones', etiqueta: 'Observaciones', contenido: panel },
               { valor: 'historial', etiqueta: 'Historial', contenido: panel },
             ]}
+          />
+          <CerrarProcesoModal
+            articulo={articulo}
+            abierto={cerrando}
+            onCerrar={() => setCerrando(false)}
           />
           <CambiarRevistaModal
             articulo={articulo}

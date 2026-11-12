@@ -21,5 +21,6 @@ export const ETIQUETA_TIPO_AUDITORIA: Record<TipoAuditoria, string> = {
   fallo: 'Fallo',
   reapertura: 'Reapertura',
   traslado: 'Cambio de revista',
+  cierre: 'Cierre del proceso',
   observacion: 'Observación',
 }

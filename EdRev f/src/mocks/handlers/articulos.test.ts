@@ -232,6 +232,45 @@ describe('articles API (mock)', () => {
     )
   })
 
+  it('closes the process with a reason; approving needs volume and number together', async () => {
+    const cerrar = (cuerpo: Record<string, unknown>, usuario?: typeof AUXILIAR) =>
+      llamar('/reep/articulos/2026-034/cerrar', { metodo: 'POST', cuerpo, usuario })
+    expect((await cerrar({ estado: 'aprobado', motivo: ' ', publicacion: null })).status).toBe(422)
+    expect(
+      (await cerrar({ estado: 'aprobado', motivo: 'Publicable', publicacion: null })).status,
+    ).toBe(422)
+    const ok = await cerrar(
+      { estado: 'aprobado', motivo: 'Publicable', publicacion: { volumen: 11, numero: 1 } },
+      AUXILIAR,
+    )
+    expect(ok.status).toBe(200)
+    const cerrado = (await ok.json()) as ArticuloDetalle
+    expect(cerrado.estado).toBe('aprobado')
+    expect(cerrado.publicacion).toEqual({ volumen: 11, numero: 1 })
+    expect(cerrado.asignaciones.length).toBeGreaterThan(0) // everything is kept
+    expect((await cerrar({ estado: 'rechazado', motivo: 'x', publicacion: null })).status).toBe(409)
+    const historial = (await (await llamar('/reep/articulos/2026-034/historial')).json()) as {
+      auditoria: Array<{ tipo: string }>
+    }
+    expect(historial.auditoria[0]?.tipo).toBe('cierre')
+  })
+
+  it('lists the publications most recent first and filters by them', async () => {
+    const lista = (await (await llamar('/reep/publicaciones')).json()) as Array<{
+      valor: string
+      etiqueta: string
+    }>
+    expect(lista[0]).toEqual({ valor: '10-2', etiqueta: 'Vol. 10 n.º 2' })
+    expect(lista.map((p) => p.valor)).toEqual(['10-2', '10-1', '9-2', '9-1', '8-2'])
+    const filtrados = (await (
+      await llamar('/reep/articulos?publicacion=10-2&porPagina=50')
+    ).json()) as { items: Array<{ publicacion: unknown }> }
+    expect(filtrados.items.length).toBe(2)
+    expect(
+      filtrados.items.every((a) => JSON.stringify(a.publicacion) === '{"volumen":10,"numero":2}'),
+    ).toBe(true)
+  })
+
   it('reopening keeps the history, records the reason as an observation', async () => {
     const cuerpo = {
       motivo: 'El autor escribió anunciando las modificaciones.',

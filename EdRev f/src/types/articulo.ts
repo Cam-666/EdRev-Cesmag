@@ -25,6 +25,20 @@ export interface RondaComite {
   usuario: string
 }
 
+/** Volume and number of the journal issue (RF-04): they go together. */
+export interface Publicacion {
+  volumen: number
+  numero: number
+}
+
+/** Closing the process of an article (RF-08): the reason stays in its history. */
+export interface CierreArticulo {
+  estado: Extract<EstadoArticulo, 'aprobado' | 'rechazado' | 'archivado'>
+  motivo: string
+  /** Required when it is approved (HU-05, criterion 2). */
+  publicacion: Publicacion | null
+}
+
 /** Stored article. `id` is the OJS number; authors are ordered ids (first = main author). */
 export interface Articulo {
   id: string
@@ -35,8 +49,8 @@ export interface Articulo {
   estado: EstadoArticulo
   /** ISO 8601 date. */
   fechaPostulacion: string
-  /** Journal issue where the approved article will be published, e.g. "Vol. 10 n.º 2" (RF-04). */
-  numeroPublicacion: string | null
+  /** Volume and number where the approved article will be published, always together (RF-04). */
+  publicacion: Publicacion | null
   /** Anti-plagiarism report, registered in the committee review (RF-05); null until then. */
   coincidencias: number | null
   /** Percentage attributed to AI; never a cause of rejection. */
@@ -56,7 +70,7 @@ export interface ArticuloListado {
   tipo: TipoArticulo
   estado: EstadoArticulo
   fechaPostulacion: string
-  numeroPublicacion: string | null
+  publicacion: Publicacion | null
   /** Peers that already answered (accepted, declined or delivered) over peers assigned. */
   paresRespondieron: number
   paresAsignados: number
@@ -99,7 +113,7 @@ export interface NuevoArticulo {
 export interface EdicionArticulo {
   titulo?: string
   tipo?: TipoArticulo
-  numeroPublicacion?: string | null
+  publicacion?: Publicacion | null
 }
 
 /** A new round of the committee review, with the anti-plagiarism percentages (RF-05, RF-06). */

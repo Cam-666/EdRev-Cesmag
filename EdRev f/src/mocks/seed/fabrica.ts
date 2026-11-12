@@ -137,6 +137,12 @@ function fechaHora(fecha: string, hora: string): string {
   return `${fecha}T${hora}:00`
 }
 
+/** "Vol. 10 n.º 2" → { volumen: 10, numero: 2 } */
+function leerPublicacion(texto: string): { volumen: number; numero: number } {
+  const [volumen = 0, numero = 0] = (texto.match(/\d+/g) ?? []).map(Number)
+  return { volumen, numero }
+}
+
 const OBSERVACION_RONDA: Record<ResultadoRonda, string> = {
   aprobado: 'Cumple con la política editorial y el formato. Pasa a pares evaluadores.',
   ajustes: 'Ajustar el resumen, las normas de citación y la estructura del método.',
@@ -202,7 +208,7 @@ export function construirSeed(entrada: EntradaSeed): SeedRevista {
       tipo: s.tipo,
       estado: s.e,
       fechaPostulacion: s.f,
-      numeroPublicacion: s.pub ?? null,
+      publicacion: s.pub ? leerPublicacion(s.pub) : null,
       coincidencias: s.ap ? s.ap[0] : null,
       atribuidoIa: s.ap ? s.ap[1] : null,
       rondasComite,

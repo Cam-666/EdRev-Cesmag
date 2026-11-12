@@ -4,6 +4,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import {
   agregarAutorAArticulo,
+  cerrarArticulo,
   crearArticulo,
   editarArticulo,
   reabrirArticulo,
@@ -12,7 +13,13 @@ import {
 } from '../services/articulosService'
 import { useInvalidarArticulos } from './useInvalidarArticulos'
 import { useRevista } from '@/lib/revista/useRevista'
-import type { EdicionArticulo, EstadoArticulo, NuevaRonda, NuevoArticulo } from '@/types/articulo'
+import type {
+  CierreArticulo,
+  EdicionArticulo,
+  EstadoArticulo,
+  NuevaRonda,
+  NuevoArticulo,
+} from '@/types/articulo'
 import type { DatosAutor } from '@/types/autor'
 
 export function useCrearArticulo() {
@@ -59,6 +66,15 @@ export function useTrasladarArticulo(id: string) {
   return useMutation({
     mutationFn: () => trasladarArticulo(revista, id),
     onSuccess: () => cliente.invalidateQueries({ queryKey: ['articulos'] }),
+  })
+}
+
+export function useCerrarArticulo(id: string) {
+  const { revista } = useRevista()
+  const invalidar = useInvalidarArticulos()
+  return useMutation({
+    mutationFn: (cierre: CierreArticulo) => cerrarArticulo(revista, id, cierre),
+    onSuccess: invalidar,
   })
 }
 

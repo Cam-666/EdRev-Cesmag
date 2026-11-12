@@ -307,17 +307,68 @@ describe('article sheet', () => {
     )
   })
 
-  it('edits title, type and publication number', async () => {
+  it('edits title, type and publication (volume and number together)', async () => {
     const { user } = montarRuta('/reep/articulos/2026-032')
     await user.click(await screen.findByRole('button', { name: 'Editar' }))
     const dialogo = await screen.findByRole('dialog', { name: 'Editar artículo' })
-    await user.type(within(dialogo).getByLabelText('Nº de publicación'), 'Vol. 10 n.º 2')
+    await user.type(within(dialogo).getByLabelText('Volumen'), '10')
+    await user.click(within(dialogo).getByRole('button', { name: 'Guardar cambios' }))
+    expect(
+      await within(dialogo).findByText('Escriba el número junto con el volumen.'),
+    ).toBeInTheDocument()
+    await user.type(within(dialogo).getByLabelText('Número'), '2')
     await user.click(within(dialogo).getByRole('button', { name: 'Guardar cambios' }))
     await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull())
     expect(
       await screen.findByText('Educación emocional y clima de aula', { exact: false }),
     ).toBeInTheDocument()
     expect(await screen.findByText(/Reflexión · Vol\. 10 n\.º 2/)).toBeInTheDocument()
+  })
+})
+
+describe('closing the process (RF-08)', () => {
+  it('approving asks for the reason and the volume and number together', async () => {
+    const { user } = montarRuta('/reep/articulos/2026-034')
+    await user.click(await screen.findByRole('button', { name: 'Cerrar proceso' }))
+    const dialogo = await screen.findByRole('dialog', { name: 'Cerrar el proceso' })
+    await elegirOpcion(user, 'Nuevo estado', 'Aprobado')
+    await user.click(within(dialogo).getByRole('button', { name: 'Cerrar el proceso' }))
+    expect(await within(dialogo).findByText('Escriba el motivo del cierre.')).toBeInTheDocument()
+    await user.type(within(dialogo).getByLabelText('Motivo'), 'Los pares lo consideran publicable.')
+    // The article already had Vol. 10 n.º 2: it comes filled in; without the volume it is refused
+    const volumen = within(dialogo).getByLabelText('Volumen')
+    expect(volumen).toHaveValue('10')
+    await user.clear(volumen)
+    await user.click(within(dialogo).getByRole('button', { name: 'Cerrar el proceso' }))
+    expect(
+      await within(dialogo).findByText('Escriba el volumen de la publicación.'),
+    ).toBeInTheDocument()
+
+    await user.type(volumen, '11')
+    const numero = within(dialogo).getByLabelText('Número')
+    await user.clear(numero)
+    await user.type(numero, '1')
+    await user.click(within(dialogo).getByRole('button', { name: 'Cerrar el proceso' }))
+    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull())
+    expect((await screen.findAllByText(/Vol\. 11 n\.º 1/)).length).toBeGreaterThan(0)
+    expect(screen.queryByRole('button', { name: 'Cerrar proceso' })).toBeNull()
+
+    await user.click(screen.getByRole('tab', { name: 'Observaciones' }))
+    expect(
+      await screen.findByText(/Se cerró el proceso como Aprobado: Los pares lo consideran/),
+    ).toBeInTheDocument()
+  })
+
+  it('archiving leaves the article ready to be reopened later', async () => {
+    const { user } = montarRuta('/reep/articulos/2026-032')
+    await user.click(await screen.findByRole('button', { name: 'Cerrar proceso' }))
+    const dialogo = await screen.findByRole('dialog', { name: 'Cerrar el proceso' })
+    await elegirOpcion(user, 'Nuevo estado', 'Archivado')
+    expect(within(dialogo).queryByLabelText('Volumen')).toBeNull()
+    await user.type(within(dialogo).getByLabelText('Motivo'), 'El autor no respondió.')
+    await user.click(within(dialogo).getByRole('button', { name: 'Cerrar el proceso' }))
+    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull())
+    expect((await screen.findAllByText('Archivado')).length).toBeGreaterThan(0)
   })
 })
 

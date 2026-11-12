@@ -1,7 +1,7 @@
 /*
  * MSW handlers for articles of a journal: list with filters and pagination, sheet, creation,
  * edition, rounds of the committee review with the anti-plagiarism report, change of journal
- * during that review, observations, history and reopening.
+ * during that review, observations, history, closing (approved / rejected / archived) and reopening.
  * Covers: RF-01..RF-08, RF-26, RF-35, RF-36, RF-41. Simulates the backend; permissions are
  * enforced here the way the real API will (the frontend guards are only for experience).
  */
@@ -10,14 +10,21 @@ import { autorPorId, baseDe, registrarAutor } from '../db'
 import type { SeedRevista } from '../seed/fabrica'
 import { ahoraIso, contexto, error, sinTildes } from './util'
 import { puedeRegistrarRonda, puedeTrasladar } from '@/lib/dominio/comite'
+import {
+  clavePublicacion,
+  compararPublicaciones,
+  etiquetaPublicacion,
+} from '@/lib/dominio/publicacion'
 import type {
   Articulo,
   ArticuloDetalle,
   ArticuloListado,
+  CierreArticulo,
   EdicionArticulo,
   EstadoArticulo,
   NuevaRonda,
   NuevoArticulo,
+  Publicacion,
   ResultadoRonda,
 } from '@/types/articulo'
 import type { AutorDeArticulo } from '@/types/autor'
@@ -26,6 +33,17 @@ import type { Revista } from '@/types/revista'
 import type { EntradaAuditoria, TipoAuditoria } from '@/types/historial'
 
 const MAX_AUTORES = 7
+const CERRADOS: readonly EstadoArticulo[] = ['aprobado', 'rechazado', 'archivado']
+const ETIQUETA_CIERRE: Record<CierreArticulo['estado'], string> = {
+  aprobado: 'Aprobado',
+  rechazado: 'Rechazado',
+  archivado: 'Archivado',
+}
+
+function publicacionValida(p: Publicacion): boolean {
+  return Number.isInteger(p.volumen) && Number.isInteger(p.numero) && p.volumen > 0 && p.numero > 0
+}
+
 const RESULTADOS: readonly ResultadoRonda[] = ['aprobado', 'rechazado', 'ajustes']
 const ETIQUETA_RONDA: Record<ResultadoRonda, string> = {
   aprobado: 'Aprobado',
@@ -72,7 +90,7 @@ function listado(base: SeedRevista, a: Articulo): ArticuloListado {
     tipo: a.tipo,
     estado: a.estado,
     fechaPostulacion: a.fechaPostulacion,
-    numeroPublicacion: a.numeroPublicacion,
+    publicacion: a.publicacion,
     paresRespondieron: asignadas.filter(
       (x) => x.estado !== 'invitado' && x.estado !== 'segundo-intento',
     ).length,
@@ -117,7 +135,9 @@ export const handlersArticulos = [
     const filtrados = c.base.articulos
       .filter((a) => !q || sinTildes(a.titulo).includes(q) || sinTildes(a.numeroOjs).includes(q))
       .filter((a) => !estado || a.estado === estado)
-      .filter((a) => !publicacion || a.numeroPublicacion === publicacion)
+      .filter(
+        (a) => !publicacion || (a.publicacion && clavePublicacion(a.publicacion) === publicacion),
+      )
       .filter((a) => !desde || a.fechaPostulacion >= desde)
       .filter((a) => !hasta || a.fechaPostulacion <= hasta)
       .filter(
@@ -150,12 +170,15 @@ export const handlersArticulos = [
   http.get('*/api/:revista/publicaciones', ({ params, request }) => {
     const c = contexto(params, request)
     if (!c.ok) return c.respuesta
-    const lista = [
-      ...new Set(
-        c.base.articulos.flatMap((a) => (a.numeroPublicacion ? [a.numeroPublicacion] : [])),
-      ),
-    ]
-    return HttpResponse.json(lista.sort().reverse())
+    const unicas = new Map<string, Publicacion>()
+    for (const a of c.base.articulos) {
+      if (a.publicacion) unicas.set(clavePublicacion(a.publicacion), a.publicacion)
+    }
+    // RF-35: from the most recent to the oldest.
+    const lista = [...unicas.values()]
+      .sort(compararPublicaciones)
+      .map((p) => ({ valor: clavePublicacion(p), etiqueta: etiquetaPublicacion(p) }))
+    return HttpResponse.json(lista)
   }),
 
   http.get('*/api/:revista/articulos/:id', ({ params, request }) => {
@@ -193,7 +216,7 @@ export const handlersArticulos = [
       tipo: datos.tipo,
       estado: 'postulado',
       fechaPostulacion: datos.fechaPostulacion,
-      numeroPublicacion: null,
+      publicacion: null,
       coincidencias: null,
       atribuidoIa: null,
       rondasComite: [],
@@ -221,8 +244,11 @@ export const handlersArticulos = [
     const cambios = (await request.json()) as EdicionArticulo
     if (cambios.titulo !== undefined) articulo.titulo = cambios.titulo.trim()
     if (cambios.tipo !== undefined) articulo.tipo = cambios.tipo
-    if (cambios.numeroPublicacion !== undefined) {
-      articulo.numeroPublicacion = cambios.numeroPublicacion?.trim() || null
+    if (cambios.publicacion !== undefined) {
+      if (cambios.publicacion && !publicacionValida(cambios.publicacion)) {
+        return error(422, 'Escriba el volumen y el número juntos')
+      }
+      articulo.publicacion = cambios.publicacion
     }
     auditar(
       c.base,
@@ -384,6 +410,47 @@ export const handlersArticulos = [
       correos: c.base.correos.filter((x) => x.articuloId === params.id),
       auditoria: c.base.auditoria.filter((x) => x.articuloId === params.id),
     })
+  }),
+
+  http.post('*/api/:revista/articulos/:id/cerrar', async ({ params, request }) => {
+    const c = contexto(params, request, 'cerrar-articulo')
+    if (!c.ok) return c.respuesta
+    const articulo = c.base.articulos.find((a) => a.id === params.id)
+    if (!articulo) return error(404, 'Artículo no encontrado')
+    if (CERRADOS.includes(articulo.estado))
+      return error(409, 'El proceso del artículo ya está cerrado')
+    const cierre = (await request.json()) as CierreArticulo
+    if (!CERRADOS.includes(cierre.estado)) return error(422, 'Elija cómo se cierra el proceso')
+    if (!cierre.motivo.trim()) return error(422, 'Escriba el motivo del cierre')
+    if (cierre.estado === 'aprobado') {
+      if (!cierre.publicacion || !publicacionValida(cierre.publicacion)) {
+        return error(422, 'Al aprobarlo, registre el volumen y el número de la publicación')
+      }
+      articulo.publicacion = cierre.publicacion
+    }
+    // RF-08: everything registered so far is kept; only the state changes.
+    articulo.estado = cierre.estado
+    if (cierre.estado === 'archivado') {
+      articulo.archivadoEn = ahoraIso()
+      articulo.motivoArchivo = cierre.motivo.trim()
+    }
+    const etiqueta = ETIQUETA_CIERRE[cierre.estado]
+    c.base.observaciones.unshift({
+      id: `${c.revista}-obs-n${c.base.observaciones.length + 1}`,
+      articuloId: articulo.id,
+      texto: `Se cerró el proceso como ${etiqueta}: ${cierre.motivo.trim()}`,
+      fecha: ahoraIso(),
+      usuario: c.usuario.nombre,
+    })
+    auditar(
+      c.base,
+      c.revista,
+      articulo.id,
+      'cierre',
+      `Cerró el proceso como ${etiqueta}`,
+      c.usuario.nombre,
+    )
+    return HttpResponse.json(detalle(c.base, articulo))
   }),
 
   http.post('*/api/:revista/articulos/:id/reabrir', async ({ params, request }) => {

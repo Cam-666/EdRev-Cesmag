@@ -6,6 +6,7 @@
 import { solicitar } from '@/lib/api/cliente'
 import type {
   ArticuloDetalle,
+  CierreArticulo,
   EdicionArticulo,
   FiltrosArticulos,
   NuevoArticulo,
@@ -32,8 +33,11 @@ export function listarArticulos(revista: Revista, f: FiltrosArticulos): Promise<
   return solicitar<RespuestaListado>(`/${revista}/articulos?${q.toString()}`)
 }
 
-export function listarPublicaciones(revista: Revista): Promise<string[]> {
-  return solicitar<string[]>(`/${revista}/publicaciones`)
+/** Issues used by the journal's articles, most recent first (RF-35). */
+export function listarPublicaciones(
+  revista: Revista,
+): Promise<Array<{ valor: string; etiqueta: string }>> {
+  return solicitar<Array<{ valor: string; etiqueta: string }>>(`/${revista}/publicaciones`)
 }
 
 export function obtenerArticulo(revista: Revista, id: string): Promise<ArticuloDetalle> {
@@ -108,6 +112,18 @@ export function agregarObservacion(
 
 export function obtenerHistorial(revista: Revista, id: string): Promise<HistorialArticulo> {
   return solicitar<HistorialArticulo>(`/${revista}/articulos/${encodeURIComponent(id)}/historial`)
+}
+
+/** Closes the process as approved, rejected or archived, with its reason (RF-08). */
+export function cerrarArticulo(
+  revista: Revista,
+  id: string,
+  cierre: CierreArticulo,
+): Promise<ArticuloDetalle> {
+  return solicitar<ArticuloDetalle>(`/${revista}/articulos/${encodeURIComponent(id)}/cerrar`, {
+    method: 'POST',
+    ...json(cierre),
+  })
 }
 
 export function reabrirArticulo(

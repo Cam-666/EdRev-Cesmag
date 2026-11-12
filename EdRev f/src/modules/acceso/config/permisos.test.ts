@@ -10,6 +10,7 @@ const EDITORIALES: Accion[] = [
   'desbloquear-par',
   'registrar-respuesta',
   'reabrir-articulo',
+  'cerrar-articulo',
 ]
 
 describe('permisos', () => {

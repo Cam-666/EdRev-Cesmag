@@ -1,5 +1,6 @@
 /*
- * EditarArticuloModal — edits title, type and publication number of an article. The OJS number
+ * EditarArticuloModal — edits title, type and publication (volume and number, together) of an
+ * article. The OJS number
  * is not editable (it identifies the article). No Figma design for the dialog itself.
  * Covers: RF-01, RF-04 (publication number), RNF-05 (Auxiliar can register data).
  */
@@ -41,7 +42,8 @@ function ContenidoEditarArticulo({ articulo, abierto, onCerrar }: EditarArticulo
     defaultValues: {
       titulo: articulo.titulo,
       tipo: articulo.tipo,
-      numeroPublicacion: articulo.numeroPublicacion ?? '',
+      volumen: articulo.publicacion ? String(articulo.publicacion.volumen) : '',
+      numero: articulo.publicacion ? String(articulo.publicacion.numero) : '',
     },
   })
 
@@ -50,7 +52,10 @@ function ContenidoEditarArticulo({ articulo, abierto, onCerrar }: EditarArticulo
       {
         titulo: datos.titulo,
         tipo: datos.tipo as TipoArticulo,
-        numeroPublicacion: datos.numeroPublicacion || null,
+        publicacion:
+          datos.volumen && datos.numero
+            ? { volumen: Number(datos.volumen), numero: Number(datos.numero) }
+            : null,
       },
       { onSuccess: onCerrar },
     )
@@ -96,12 +101,20 @@ function ContenidoEditarArticulo({ articulo, abierto, onCerrar }: EditarArticulo
             />
           )}
         />
-        <CampoTexto
-          etiqueta="Nº de publicación"
-          placeholder="Vol. 10 n.º 2"
-          ayuda="Número de la revista en que se publicará el artículo."
-          {...register('numeroPublicacion')}
-        />
+        <div className="grid grid-cols-2 gap-3">
+          <CampoTexto
+            etiqueta="Volumen"
+            inputMode="numeric"
+            error={errors.volumen?.message}
+            {...register('volumen')}
+          />
+          <CampoTexto
+            etiqueta="Número"
+            inputMode="numeric"
+            error={errors.numero?.message}
+            {...register('numero')}
+          />
+        </div>
       </form>
     </Modal>
   )

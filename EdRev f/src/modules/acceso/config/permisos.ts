@@ -27,6 +27,8 @@ export type Accion =
   | 'registrar-respuesta'
   /** Reopen an archived article (RF-08). */
   | 'reabrir-articulo'
+  /** Close the process of an article as approved, rejected or archived (RF-08). */
+  | 'cerrar-articulo'
   /** Accounts, templates, parameters (RF-40, RNF-19). */
   | 'administrar'
 
@@ -41,6 +43,7 @@ const TODAS: readonly Accion[] = [
   'desbloquear-par',
   'registrar-respuesta',
   'reabrir-articulo',
+  'cerrar-articulo',
   'administrar',
 ]
 
