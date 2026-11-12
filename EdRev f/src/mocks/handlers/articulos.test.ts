@@ -110,11 +110,14 @@ describe('articles API (mock)', () => {
     expect(creado.estado).toBe('postulado')
     expect(creado.autores.map((a) => a.orden)).toEqual([1, 2])
     expect(creado.autores[0]?.nombre).toBe('María Fernanda Ruano')
-    // The new author is a reusable record of REEP only.
-    const buscar = (await (await llamar('/reep/autores?q=rivera')).json()) as { total: number }
-    const buscarIre = (await (await llamar('/ire/autores?q=rivera')).json()) as { total: number }
-    expect(buscar.total).toBe(1)
-    expect(buscarIre.total).toBe(0)
+    // The new author joins the common directory of both journals (RF-10)
+    const total = async (ruta: string) =>
+      ((await (await llamar(ruta)).json()) as { total: number }).total
+    expect(await total('/reep/autores?q=rivera')).toBe(1)
+    expect(await total('/ire/autores?q=rivera')).toBe(1)
+    // …and the journal filter shows it only where it has articles
+    expect(await total('/ire/autores?q=rivera&en=reep')).toBe(1)
+    expect(await total('/reep/autores?q=rivera&en=ire')).toBe(0)
   })
 
   it('refuses more than seven authors', async () => {

@@ -8,6 +8,7 @@ import { SEED_IRE } from './seed/ire'
 import { SEED_REEP } from './seed/reep'
 import type { SeedRevista } from './seed/fabrica'
 import { USUARIOS_SEED } from './seed/usuarios'
+import type { Autor, DatosAutor } from '@/types/autor'
 import type { CuentaRemitente, Plantilla, UsoPlantilla } from '@/types/plantilla'
 import type { Revista } from '@/types/revista'
 import type { Usuario } from '@/types/usuario'
@@ -36,6 +37,25 @@ let base = crear()
 
 export function baseDe(revista: Revista): SeedRevista {
   return base.revistas[revista]
+}
+
+/**
+ * Common author directory (RF-10): each author is stored in the journal where it was registered,
+ * but it is searched, reused and shown as one directory for both journals.
+ */
+export function autores(): Autor[] {
+  return [...base.revistas.reep.autores, ...base.revistas.ire.autores]
+}
+
+export function autorPorId(id: string): Autor | undefined {
+  return autores().find((a) => a.id === id)
+}
+
+/** Registers an author in the directory (stored with the journal where it was first used). */
+export function registrarAutor(revista: Revista, datos: DatosAutor): Autor {
+  const nuevo: Autor = { id: `au-n${autores().length + 1}`, revista, ...datos }
+  base.revistas[revista].autores.push(nuevo)
+  return nuevo
 }
 
 export function plantillas(): Plantilla[] {

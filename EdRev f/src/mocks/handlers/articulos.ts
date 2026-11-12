@@ -5,6 +5,7 @@
  * enforced here the way the real API will (the frontend guards are only for experience).
  */
 import { http, HttpResponse } from 'msw'
+import { autorPorId, registrarAutor } from '../db'
 import type { SeedRevista } from '../seed/fabrica'
 import { ahoraIso, contexto, error, sinTildes } from './util'
 import type {
@@ -17,7 +18,7 @@ import type {
   RegistroRevision,
   ResultadoComite,
 } from '@/types/articulo'
-import type { Autor, AutorDeArticulo } from '@/types/autor'
+import type { AutorDeArticulo } from '@/types/autor'
 import type { EntradaAuditoria, TipoAuditoria } from '@/types/historial'
 
 const MAX_AUTORES = 7
@@ -25,7 +26,7 @@ const MAX_AUTORES = 7
 function detalle(base: SeedRevista, a: Articulo): ArticuloDetalle {
   const { autoresIds, ...resto } = a
   const autores: AutorDeArticulo[] = autoresIds.flatMap((id, i) => {
-    const autor = base.autores.find((x) => x.id === id)
+    const autor = autorPorId(id)
     return autor ? [{ ...autor, orden: i + 1 }] : []
   })
   const asignaciones = base.asignaciones
@@ -173,18 +174,11 @@ export const handlersArticulos = [
       return error(422, `El artículo admite de 1 a ${MAX_AUTORES} autores`)
     }
 
-    const autoresIds = datos.autores.map((a): string => {
-      if ('autorId' in a) return a.autorId
-      const nuevo: Autor = {
-        id: `${c.revista}-au-n${c.base.autores.length + 1}`,
-        revista: c.revista,
-        ...a.nuevo,
-      }
-      c.base.autores.push(nuevo)
-      return nuevo.id
-    })
-    if (autoresIds.some((id) => !c.base.autores.some((a) => a.id === id))) {
-      return error(422, 'Autor no encontrado en esta revista')
+    const autoresIds = datos.autores.map((a): string =>
+      'autorId' in a ? a.autorId : registrarAutor(c.revista, a.nuevo).id,
+    )
+    if (autoresIds.some((id) => !autorPorId(id))) {
+      return error(422, 'Autor no encontrado en el directorio')
     }
 
     const numero = datos.numeroOjs.trim()
@@ -296,18 +290,11 @@ export const handlersArticulos = [
     let autorId: string
     if ('autorId' in entrada) {
       autorId = entrada.autorId
-      if (!c.base.autores.some((a) => a.id === autorId))
-        return error(422, 'Autor no encontrado en esta revista')
+      if (!autorPorId(autorId)) return error(422, 'Autor no encontrado en el directorio')
       if (articulo.autoresIds.includes(autorId))
         return error(409, 'El autor ya está en el artículo')
     } else {
-      const nuevo: Autor = {
-        id: `${c.revista}-au-n${c.base.autores.length + 1}`,
-        revista: c.revista,
-        ...entrada.nuevo,
-      }
-      c.base.autores.push(nuevo)
-      autorId = nuevo.id
+      autorId = registrarAutor(c.revista, entrada.nuevo).id
     }
     articulo.autoresIds.push(autorId)
     auditar(

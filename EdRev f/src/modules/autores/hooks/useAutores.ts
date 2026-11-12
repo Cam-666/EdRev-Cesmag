@@ -1,15 +1,23 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { articulosDeAutor, registrarAutor } from '../services/autoresService'
+import { articulosDeAutor, obtenerAutor, registrarAutor } from '../services/autoresService'
 import { useRevista } from '@/lib/revista/useRevista'
 import type { DatosAutor } from '@/types/autor'
 
-/** Articles of one author (RF-11); enabled only when an author is selected. */
-export function useArticulosDeAutor(id: string | null) {
+/** One author of the common directory (RF-11). */
+export function useAutor(id: string) {
   const { revista } = useRevista()
   return useQuery({
-    queryKey: ['autores', revista, 'articulos', id],
-    queryFn: () => articulosDeAutor(revista, id ?? ''),
-    enabled: id !== null,
+    queryKey: ['autores', 'ficha', id],
+    queryFn: () => obtenerAutor(revista, id),
+  })
+}
+
+/** Articles of one author in both journals (RF-11). */
+export function useArticulosDeAutor(id: string) {
+  const { revista } = useRevista()
+  return useQuery({
+    queryKey: ['autores', 'articulos', id],
+    queryFn: () => articulosDeAutor(revista, id),
   })
 }
 
@@ -18,6 +26,6 @@ export function useRegistrarAutor() {
   const cliente = useQueryClient()
   return useMutation({
     mutationFn: (datos: DatosAutor) => registrarAutor(revista, datos),
-    onSuccess: () => cliente.invalidateQueries({ queryKey: ['autores', revista] }),
+    onSuccess: () => cliente.invalidateQueries({ queryKey: ['autores'] }),
   })
 }

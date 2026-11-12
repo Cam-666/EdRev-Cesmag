@@ -1,5 +1,5 @@
 /*
- * RegistrarAutorModal — registers a new reusable author record in the journal. No Figma design
+ * RegistrarAutorModal — registers a new author in the common directory of both journals. No Figma design
  * for the dialog; it reuses the author form (without the existing-record search).
  * Covers: RF-09, RF-10.
  */
@@ -21,7 +21,7 @@ export function RegistrarAutorModal({ abierto, onCerrar, onRegistrado }: Registr
       abierto={abierto}
       onCerrar={onCerrar}
       titulo="Registrar autor"
-      descripcion="La ficha queda disponible para reutilizarla en los próximos artículos de esta revista."
+      descripcion="La ficha queda disponible para reutilizarla en los próximos artículos de ambas revistas."
     >
       <FormularioAutor
         permitirBuscar={false}

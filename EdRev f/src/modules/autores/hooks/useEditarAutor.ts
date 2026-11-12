@@ -10,8 +10,8 @@ export function useEditarAutor() {
     mutationFn: ({ id, datos }: { id: string; datos: Partial<DatosAutor> }) =>
       editarAutor(revista, id, datos),
     onSuccess: () => {
-      void cliente.invalidateQueries({ queryKey: ['autores', revista] })
-      void cliente.invalidateQueries({ queryKey: ['articulos', revista] })
+      void cliente.invalidateQueries({ queryKey: ['autores'] })
+      void cliente.invalidateQueries({ queryKey: ['articulos'] })
     },
   })
 }

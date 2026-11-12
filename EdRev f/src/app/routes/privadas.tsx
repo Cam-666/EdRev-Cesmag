@@ -25,6 +25,7 @@ import { ArticuloParesPage } from '@/modules/articulos/pages/ArticuloParesPage'
 import { ArticuloReabrirPage } from '@/modules/articulos/pages/ArticuloReabrirPage'
 import { ArticuloResumenPage } from '@/modules/articulos/pages/ArticuloResumenPage'
 import { ArticulosPage } from '@/modules/articulos/pages/ArticulosPage'
+import { AutorDetallePage } from '@/modules/autores/pages/AutorDetallePage'
 import { AutoresPage } from '@/modules/autores/pages/AutoresPage'
 import { ConstanciasPage } from '@/modules/constancias/pages/ConstanciasPage'
 import { CorreosPage } from '@/modules/correos/pages/CorreosPage'
@@ -102,6 +103,7 @@ export const rutasPrivadas: RouteObject[] = [
                 ],
               },
               { path: 'autores', element: <AutoresPage /> },
+              { path: 'autores/:id', element: <AutorDetallePage /> },
               { path: 'pares', element: <ParesPage /> },
               { path: 'pares/bloqueados', element: <ParesBloqueadosPage /> },
               {

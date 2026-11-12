@@ -1,61 +1,53 @@
 /*
- * AutoresPage — Autores (/:revista/autores): the journal's reusable author records, searchable by
- * name or ORCID, with the number of articles of each and, for the selected one, its articles.
- * Authors of one journal never appear in the other.
+ * AutoresPage — Autores (/:revista/autores): the common author directory of both journals,
+ * searchable by name or ORCID and filterable by journal, with the number of articles of each.
+ * A click on an author opens its own screen (AutorDetallePage).
  * Covers: RF-09, RF-10, RF-11, HU-06, HU-07.
  */
-import { cn } from '@/lib/cn'
 import { useState } from 'react'
-import { useSearchParams } from 'react-router-dom'
-import { DetalleAutor } from '../components/DetalleAutor'
+import { useNavigate } from 'react-router-dom'
 import { RegistrarAutorModal } from '../components/RegistrarAutorModal'
 import { useBuscarAutores } from '../hooks/useBuscarAutores'
 import type { AutorConTotal } from '../services/autoresService'
 import { usePermiso } from '@/modules/acceso/hooks/usePermiso'
 import { Boton } from '@/components/common/Boton'
 import { Buscador } from '@/components/common/Buscador'
+import { EncabezadoPagina } from '@/components/common/EncabezadoPagina'
 import { EstadoConsulta } from '@/components/common/EstadoConsulta'
+import { ListaDesplegable } from '@/components/common/ListaDesplegable'
 import { Tabla } from '@/components/common/Tabla'
 import type { ColumnaTabla } from '@/components/common/Tabla'
-import { EncabezadoPagina } from '@/components/common/EncabezadoPagina'
 import { useRevista } from '@/lib/revista/useRevista'
+import { REVISTAS } from '@/types/revista'
+import type { Revista } from '@/types/revista'
+
+const FILTRO_REVISTA = [
+  { valor: 'ambas', etiqueta: 'Ambas' },
+  { valor: 'reep', etiqueta: REVISTAS.reep.nombreCorto },
+  { valor: 'ire', etiqueta: REVISTAS.ire.nombreCorto },
+]
 
 export function AutoresPage() {
   const { revista } = useRevista()
-  const [params, setParams] = useSearchParams()
+  const navigate = useNavigate()
   const [texto, setTexto] = useState('')
+  const [filtro, setFiltro] = useState('ambas')
   const [registrando, setRegistrando] = useState(false)
   const puedeRegistrar = usePermiso('registrar-datos')
-  const lista = useBuscarAutores(texto, 100)
-  const base = useBuscarAutores('', 1)
-  const elegidoId = params.get('autor')
-  const elegido = lista.data?.items.find((a) => a.id === elegidoId) ?? null
-
-  function elegir(id: string) {
-    const siguiente = new URLSearchParams(params)
-    siguiente.set('autor', id)
-    setParams(siguiente, { replace: true })
-  }
+  const en = filtro === 'ambas' ? undefined : (filtro as Revista)
+  const lista = useBuscarAutores(texto, 100, true, en)
+  const ficha = (id: string) => `/${revista}/autores/${encodeURIComponent(id)}`
 
   const columnas: Array<ColumnaTabla<AutorConTotal>> = [
     { clave: 'autor', encabezado: 'Autor', render: (a) => a.nombre },
     { clave: 'orcid', encabezado: 'ORCID', render: (a) => a.orcid, className: 'whitespace-nowrap' },
     { clave: 'filiacion', encabezado: 'Filiación', render: (a) => a.filiacion },
-    { clave: 'articulos', encabezado: 'Artículos', render: (a) => a.totalArticulos },
     {
-      clave: 'ver',
-      encabezado: 'Ver',
-      render: (a) => (
-        <Boton
-          variante="texto"
-          tamano="sm"
-          aria-pressed={a.id === elegidoId}
-          onClick={() => elegir(a.id)}
-        >
-          Ver <span className="sr-only">los artículos de {a.nombre}</span>
-        </Boton>
-      ),
+      clave: 'revistas',
+      encabezado: 'Revistas',
+      render: (a) => a.revistas.map((r) => REVISTAS[r].nombreCorto).join(' · ') || 'Sin artículos',
     },
+    { clave: 'articulos', encabezado: 'Artículos', render: (a) => a.totalArticulos },
   ]
 
   return (
@@ -71,45 +63,53 @@ export function AutoresPage() {
         }
       >
         <p role="status" className="text-cuerpo-13 text-texto-secundario">
-          {base.data ? `${base.data.total} fichas reutilizables` : ' '}
+          {lista.data ? `${lista.data.total} autores · directorio común de ambas revistas` : ' '}
         </p>
       </EncabezadoPagina>
 
-      <Buscador
-        className="max-w-md"
-        etiqueta="Buscar por nombre u ORCID"
-        placeholder="Buscar por nombre u ORCID"
-        value={texto}
-        onChange={(e) => setTexto(e.target.value)}
-      />
-
-      <div className={cn('grid grid-cols-1 gap-6', elegido && 'xl:grid-cols-[1fr_380px]')}>
-        <EstadoConsulta
-          cargando={false}
-          error={lista.isError}
-          onReintentar={() => void lista.refetch()}
-          descripcion="las fichas de autor"
-        >
-          <Tabla
-            etiqueta="Fichas de autor de la revista"
-            columnas={columnas}
-            filas={lista.data?.items ?? []}
-            obtenerClave={(a) => a.id}
-            cargando={lista.isPending}
-            vacio={
-              texto.trim()
-                ? 'Ninguna ficha coincide con la búsqueda.'
-                : 'Aún no hay autores registrados en esta revista.'
-            }
-          />
-        </EstadoConsulta>
-        {elegido && <DetalleAutor revista={revista} autor={elegido} />}
+      <div className="flex flex-wrap items-end gap-4">
+        <Buscador
+          className="w-full max-w-md"
+          etiqueta="Buscar por nombre u ORCID"
+          placeholder="Buscar por nombre u ORCID"
+          value={texto}
+          onChange={(e) => setTexto(e.target.value)}
+        />
+        <ListaDesplegable
+          className="w-60"
+          etiqueta="Revista"
+          opciones={FILTRO_REVISTA}
+          valor={filtro}
+          onCambio={setFiltro}
+        />
       </div>
+
+      <EstadoConsulta
+        cargando={false}
+        error={lista.isError}
+        onReintentar={() => void lista.refetch()}
+        descripcion="el directorio de autores"
+      >
+        <Tabla
+          etiqueta="Directorio de autores"
+          columnas={columnas}
+          filas={lista.data?.items ?? []}
+          obtenerClave={(a) => a.id}
+          cargando={lista.isPending}
+          hrefFila={(a) => ficha(a.id)}
+          etiquetaEnlace={(a) => `Ver la ficha de ${a.nombre}`}
+          vacio={
+            texto.trim() || en
+              ? 'Ningún autor coincide con la búsqueda.'
+              : 'Aún no hay autores registrados.'
+          }
+        />
+      </EstadoConsulta>
 
       <RegistrarAutorModal
         abierto={registrando}
         onCerrar={() => setRegistrando(false)}
-        onRegistrado={elegir}
+        onRegistrado={(id) => navigate(ficha(id))}
       />
     </section>
   )

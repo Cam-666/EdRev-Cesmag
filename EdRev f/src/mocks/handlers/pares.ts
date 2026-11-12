@@ -4,6 +4,7 @@
  * Covers: RF-12..RF-18, RNF-06. Simulates the backend; permissions are enforced here.
  */
 import { http, HttpResponse } from 'msw'
+import { autorPorId } from '../db'
 import type { SeedRevista } from '../seed/fabrica'
 import { ahoraIso, contexto, error, sinTildes } from './util'
 import { detectarConflicto } from '@/lib/dominio/conflicto'
@@ -19,7 +20,10 @@ import type {
 export function autoresDeArticulo(base: SeedRevista, articuloId: string) {
   const articulo = base.articulos.find((a) => a.id === articuloId)
   if (!articulo) return []
-  return articulo.autoresIds.flatMap((id) => base.autores.filter((a) => a.id === id))
+  return articulo.autoresIds.flatMap((id) => {
+    const autor = autorPorId(id)
+    return autor ? [autor] : []
+  })
 }
 
 function evaluaciones(base: SeedRevista, parId: string): number {
