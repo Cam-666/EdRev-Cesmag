@@ -16,7 +16,7 @@ export interface EncabezadoFichaProps {
 }
 
 export function EncabezadoFicha({ articulo, acciones }: EncabezadoFichaProps) {
-  const { antiplagio, asignaciones } = articulo
+  const { coincidencias, asignaciones } = articulo
   return (
     <header className="flex flex-col gap-2">
       <div className="flex flex-wrap items-start justify-between gap-4">
@@ -33,16 +33,16 @@ export function EncabezadoFicha({ articulo, acciones }: EncabezadoFichaProps) {
         <li>
           <DistintivoEstado estado={articulo.estado} />
         </li>
-        {antiplagio && (
+        {coincidencias !== null && (
           <li
             className={
-              superaUmbral(antiplagio.coincidencias)
+              superaUmbral(coincidencias)
                 ? 'rounded-full bg-estado-alerta-fondo px-3 py-1 text-etiqueta-13 text-estado-alerta'
                 : 'rounded-full bg-superficie-sutil px-3 py-1 text-etiqueta-13 text-neutro-800'
             }
           >
-            {superaUmbral(antiplagio.coincidencias) && <span aria-hidden="true">! </span>}
-            Antiplagio {antiplagio.coincidencias} %
+            {superaUmbral(coincidencias) && <span aria-hidden="true">! </span>}
+            Antiplagio {coincidencias} %
           </li>
         )}
         <li className="rounded-full bg-superficie-sutil px-3 py-1 text-etiqueta-13 text-neutro-800">

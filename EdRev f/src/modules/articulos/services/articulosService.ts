@@ -9,7 +9,7 @@ import type {
   EdicionArticulo,
   FiltrosArticulos,
   NuevoArticulo,
-  RegistroRevision,
+  NuevaRonda,
   RespuestaListado,
   EstadoArticulo,
 } from '@/types/articulo'
@@ -73,14 +73,21 @@ export function agregarAutorAArticulo(
   })
 }
 
-export function registrarRevision(
+export function registrarRonda(
   revista: Revista,
   id: string,
-  datos: RegistroRevision,
+  ronda: NuevaRonda,
 ): Promise<ArticuloDetalle> {
-  return solicitar<ArticuloDetalle>(`/${revista}/articulos/${encodeURIComponent(id)}/revision`, {
-    method: 'PUT',
-    ...json(datos),
+  return solicitar<ArticuloDetalle>(`/${revista}/articulos/${encodeURIComponent(id)}/rondas`, {
+    method: 'POST',
+    ...json(ronda),
+  })
+}
+
+/** Moves the article to the other journal while it is in the committee review (RF-07). */
+export function trasladarArticulo(revista: Revista, id: string): Promise<ArticuloDetalle> {
+  return solicitar<ArticuloDetalle>(`/${revista}/articulos/${encodeURIComponent(id)}/trasladar`, {
+    method: 'POST',
   })
 }
 

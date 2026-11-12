@@ -13,15 +13,15 @@ const VISTAS = [
   'tablero',
   'articulos',
   'articulos/nuevo',
-  'articulos/nuevo/autores',
   'articulos/{id}',
   'articulos/{id}/autores',
   'articulos/{id}/pares',
   'articulos/{id}/observaciones',
   'articulos/{id}/historial',
-  'articulos/{id}/antiplagio',
+  'articulos/{id}/comite',
   'articulos/{archivado}/reabrir',
   'autores',
+  'autores/{autor}',
   'pares',
   'pares/bloqueados',
   'pares/asignar',
@@ -43,9 +43,9 @@ function montar(ruta: string, usuario: Usuario | null = ADMINISTRADORA) {
 const REVISTAS_IDS: Revista[] = ['reep', 'ire']
 
 /** Each journal has its own articles: an ordinary one and an archived one. */
-const ARTICULOS: Record<Revista, { id: string; archivado: string }> = {
-  reep: { id: '2026-034', archivado: '2026-007' },
-  ire: { id: '2026-077', archivado: '2026-022' },
+const ARTICULOS: Record<Revista, { id: string; archivado: string; autor: string }> = {
+  reep: { id: '2026-034', archivado: '2026-007', autor: 'reep-au-3' },
+  ire: { id: '2026-077', archivado: '2026-022', autor: 'ire-au-1' },
 }
 
 describe('route table', () => {
@@ -62,6 +62,7 @@ describe('route table', () => {
         const ruta = vista
           .replace('{archivado}', ARTICULOS[revista].archivado)
           .replace('{id}', ARTICULOS[revista].id)
+          .replace('{autor}', ARTICULOS[revista].autor)
         const { container } = montar(`/${revista}/${ruta}`)
         // Article views load their data first: wait until the page title is there.
         await waitFor(() =>

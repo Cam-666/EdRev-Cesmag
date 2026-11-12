@@ -15,6 +15,8 @@ export type EstadoDistintivo =
   | 'archivado'
   | 'bloqueado'
   | 'pendiente'
+  // Committee round result (RF-06)
+  | 'ajustes'
   // Assignment status (RF-22)
   | 'invitado'
   | 'segundo-intento'
@@ -51,6 +53,7 @@ export const DEFINICIONES_ESTADO: Record<EstadoDistintivo, Definicion> = {
   archivado: { texto: 'Archivado', simbolo: '▣', tono: 'neutro' },
   bloqueado: { texto: 'Bloqueado', simbolo: '⊘', tono: 'error' },
   pendiente: { texto: 'Pendiente', simbolo: '!', tono: 'alerta' },
+  ajustes: { texto: 'Requiere ajustes', simbolo: '!', tono: 'alerta' },
   invitado: { texto: 'Invitado', simbolo: '✉', tono: 'alerta' },
   'segundo-intento': { texto: '2.º intento', simbolo: '↻', tono: 'alerta' },
   acepto: { texto: 'Aceptó', simbolo: '✓', tono: 'info' },

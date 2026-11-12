@@ -149,7 +149,7 @@ export const SEED_IRE: SeedRevista = construirSeed({
       f: '2026-09-28',
       pub: 'Vol. 13 n.º 2',
       ap: [9, 3],
-      ri: 'pasa-a-pares',
+      com: ['aprobado'],
       au: [1, 2, 3],
       as: [
         {
@@ -173,7 +173,7 @@ export const SEED_IRE: SeedRevista = construirSeed({
       e: 'en-evaluacion',
       f: '2026-09-19',
       ap: [11, 4],
-      ri: 'pasa-a-pares',
+      com: ['aprobado'],
       au: [6, 7],
       as: [
         {
@@ -196,7 +196,7 @@ export const SEED_IRE: SeedRevista = construirSeed({
       e: 'en-evaluacion',
       f: '2026-06-12',
       ap: [8, 1],
-      ri: 'pasa-a-pares',
+      com: ['aprobado'],
       au: [8, 9],
       as: [
         {
@@ -219,8 +219,7 @@ export const SEED_IRE: SeedRevista = construirSeed({
       f: '2026-05-24',
       pub: 'Vol. 13 n.º 1',
       ap: [7, 2],
-      ri: 'pasa-a-pares',
-      rf: 'sin-modificaciones',
+      com: ['aprobado'],
       au: [10, 11],
       as: [
         {
@@ -262,8 +261,7 @@ export const SEED_IRE: SeedRevista = construirSeed({
       f: '2026-04-11',
       pub: 'Vol. 13 n.º 1',
       ap: [6, 1],
-      ri: 'pasa-a-pares',
-      rf: 'sin-modificaciones',
+      com: ['aprobado'],
       au: [12],
       as: [
         {
@@ -294,7 +292,7 @@ export const SEED_IRE: SeedRevista = construirSeed({
       e: 'en-revision',
       f: '2026-07-29',
       ap: [10, 3],
-      ri: 'modificaciones-basicas',
+      com: ['ajustes'],
       au: [13, 14],
     },
     {
@@ -304,7 +302,7 @@ export const SEED_IRE: SeedRevista = construirSeed({
       e: 'archivado',
       f: '2026-06-18',
       ap: [7, 2],
-      ri: 'faltan-documentos',
+      com: ['ajustes'],
       au: [15, 16],
       arch: [
         '2026-06-30',
@@ -319,8 +317,7 @@ export const SEED_IRE: SeedRevista = construirSeed({
       f: '2025-02-10',
       pub: 'Vol. 12 n.º 1',
       ap: [8, 2],
-      ri: 'pasa-a-pares',
-      rf: 'sin-modificaciones',
+      com: ['aprobado'],
       au: [3, 17],
       as: [
         {
@@ -353,8 +350,7 @@ export const SEED_IRE: SeedRevista = construirSeed({
       f: '2024-04-08',
       pub: 'Vol. 11 n.º 2',
       ap: [5, 0],
-      ri: 'pasa-a-pares',
-      rf: 'sin-modificaciones',
+      com: ['aprobado'],
       au: [3],
       as: [
         {
@@ -386,7 +382,7 @@ export const SEED_IRE: SeedRevista = construirSeed({
       e: 'en-evaluacion',
       f: '2026-09-05',
       ap: [12, 5],
-      ri: 'pasa-a-pares',
+      com: ['aprobado'],
       au: [18, 19],
       as: [
         { par: 10, e: 'acepto', inv: '2026-09-10', resp: '2026-09-12' },
@@ -400,7 +396,7 @@ export const SEED_IRE: SeedRevista = construirSeed({
       e: 'en-evaluacion',
       f: '2026-09-12',
       ap: [10, 6],
-      ri: 'pasa-a-pares',
+      com: ['aprobado'],
       au: [20],
       as: [
         { par: 6, e: 'acepto', inv: '2026-09-18', resp: '2026-09-20' },
@@ -424,8 +420,7 @@ export const SEED_IRE: SeedRevista = construirSeed({
       f: '2026-01-20',
       pub: 'Vol. 13 n.º 1',
       ap: [4, 0],
-      ri: 'pasa-a-pares',
-      rf: 'sin-modificaciones',
+      com: ['aprobado'],
       au: [23],
       as: [
         {
@@ -458,8 +453,7 @@ export const SEED_IRE: SeedRevista = construirSeed({
       f: '2026-02-03',
       pub: 'Vol. 13 n.º 1',
       ap: [6, 1],
-      ri: 'pasa-a-pares',
-      rf: 'sin-modificaciones',
+      com: ['aprobado'],
       au: [24],
       as: [
         {
@@ -507,7 +501,7 @@ export const SEED_IRE: SeedRevista = construirSeed({
       e: 'rechazado',
       f: '2025-08-14',
       ap: [29, 10],
-      ri: 'no-publicable',
+      com: ['rechazado'],
       au: [5],
     },
     {
@@ -517,8 +511,7 @@ export const SEED_IRE: SeedRevista = construirSeed({
       e: 'rechazado',
       f: '2025-10-22',
       ap: [9, 2],
-      ri: 'pasa-a-pares',
-      rf: 'no-publicable',
+      com: ['aprobado'],
       au: [7],
       as: [
         {
@@ -550,7 +543,7 @@ export const SEED_IRE: SeedRevista = construirSeed({
       e: 'en-revision',
       f: '2026-10-02',
       ap: [13, 5],
-      ri: 'modificaciones-basicas',
+      com: ['ajustes'],
       au: [9],
     },
     {

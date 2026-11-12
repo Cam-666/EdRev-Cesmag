@@ -4,10 +4,10 @@
  * Each journal is built separately: nothing here ever mixes REEP and IRE.
  */
 import type {
-  Antiplagio,
   Articulo,
   EstadoArticulo,
-  ResultadoComite,
+  ResultadoRonda,
+  RondaComite,
   TipoArticulo,
 } from '@/types/articulo'
 import type { Autor } from '@/types/autor'
@@ -72,8 +72,8 @@ export interface ArtSeed {
   pub?: string
   /** [coincidences %, AI %] */
   ap?: [number, number]
-  ri?: ResultadoComite
-  rf?: ResultadoComite
+  /** Results of the committee rounds, oldest first. An article with peers always ends approved. */
+  com?: ResultadoRonda[]
   /** 1-based indices in the authors list, in order. */
   au: number[]
   as?: AsigSeed[]
@@ -137,6 +137,12 @@ function fechaHora(fecha: string, hora: string): string {
   return `${fecha}T${hora}:00`
 }
 
+const OBSERVACION_RONDA: Record<ResultadoRonda, string> = {
+  aprobado: 'Cumple con la política editorial y el formato. Pasa a pares evaluadores.',
+  ajustes: 'Ajustar el resumen, las normas de citación y la estructura del método.',
+  rechazado: 'No corresponde al enfoque temático de la revista.',
+}
+
 export function construirSeed(entrada: EntradaSeed): SeedRevista {
   const { revista } = entrada
   const p = revista
@@ -175,16 +181,18 @@ export function construirSeed(entrada: EntradaSeed): SeedRevista {
   const nid = () => String(++seq).padStart(4, '0')
 
   for (const s of entrada.articulos) {
-    const fechaAp = sumarDias(s.f, 3)
-    const antiplagio: Antiplagio | null = s.ap
-      ? {
-          coincidencias: s.ap[0],
-          atribuidoIa: s.ap[1],
-          observacion: `Antiplagio: ${s.ap[0]} % y ${s.ap[1]} %.`,
-          fecha: fechaHora(fechaAp, '08:52'),
-          usuario: AUXILIAR,
-        }
-      : null
+    const resultados = [...(s.com ?? [])]
+    if ((s.as ?? []).length > 0 && resultados[resultados.length - 1] !== 'aprobado') {
+      resultados.push('aprobado')
+    }
+    const rondasComite: RondaComite[] = resultados.map((resultado, i) => ({
+      id: `${s.n}-r${i + 1}`,
+      numero: i + 1,
+      resultado,
+      observacion: OBSERVACION_RONDA[resultado],
+      fecha: fechaHora(sumarDias(s.f, 9 + i * 6), '10:24'),
+      usuario: i % 2 === 0 ? ADMIN : AUXILIAR,
+    }))
 
     articulos.push({
       id: s.n,
@@ -195,23 +203,9 @@ export function construirSeed(entrada: EntradaSeed): SeedRevista {
       estado: s.e,
       fechaPostulacion: s.f,
       numeroPublicacion: s.pub ?? null,
-      antiplagio,
-      revisionInicial: s.ri
-        ? {
-            resultado: s.ri,
-            observacion: '',
-            fecha: fechaHora(sumarDias(s.f, 9), '10:24'),
-            usuario: ADMIN,
-          }
-        : null,
-      revisionFinal: s.rf
-        ? {
-            resultado: s.rf,
-            observacion: '',
-            fecha: fechaHora(sumarDias(s.f, 12), '10:30'),
-            usuario: ADMIN,
-          }
-        : null,
+      coincidencias: s.ap ? s.ap[0] : null,
+      atribuidoIa: s.ap ? s.ap[1] : null,
+      rondasComite,
       autoresIds: s.au.map((i) => `${p}-au-${i}`),
       archivadoEn: s.arch ? s.arch[0] : null,
       motivoArchivo: s.arch ? s.arch[1] : null,
@@ -226,15 +220,15 @@ export function construirSeed(entrada: EntradaSeed): SeedRevista {
       fecha: fechaHora(s.f, '09:15'),
       usuario: AUXILIAR,
     })
-    if (antiplagio) {
+    for (const r of rondasComite) {
       auditoria.push({
         id: `${p}-aud-${nid()}`,
         revista,
         articuloId: s.n,
         tipo: 'revision',
-        accion: 'Registró el porcentaje de antiplagio',
-        fecha: antiplagio.fecha,
-        usuario: AUXILIAR,
+        accion: `Registró la ronda ${r.numero} de la revisión del comité`,
+        fecha: r.fecha,
+        usuario: r.usuario,
       })
     }
 

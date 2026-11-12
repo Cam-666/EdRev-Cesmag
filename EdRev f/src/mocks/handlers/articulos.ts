@@ -1,27 +1,37 @@
 /*
  * MSW handlers for articles of a journal: list with filters and pagination, sheet, creation,
- * edition, anti-plagiarism + committee review, observations, history and reopening.
+ * edition, rounds of the committee review with the anti-plagiarism report, change of journal
+ * during that review, observations, history and reopening.
  * Covers: RF-01..RF-08, RF-26, RF-35, RF-36, RF-41. Simulates the backend; permissions are
  * enforced here the way the real API will (the frontend guards are only for experience).
  */
 import { http, HttpResponse } from 'msw'
-import { autorPorId, registrarAutor } from '../db'
+import { autorPorId, baseDe, registrarAutor } from '../db'
 import type { SeedRevista } from '../seed/fabrica'
 import { ahoraIso, contexto, error, sinTildes } from './util'
+import { puedeRegistrarRonda, puedeTrasladar } from '@/lib/dominio/comite'
 import type {
   Articulo,
   ArticuloDetalle,
   ArticuloListado,
   EdicionArticulo,
   EstadoArticulo,
+  NuevaRonda,
   NuevoArticulo,
-  RegistroRevision,
-  ResultadoComite,
+  ResultadoRonda,
 } from '@/types/articulo'
 import type { AutorDeArticulo } from '@/types/autor'
+import { REVISTAS } from '@/types/revista'
+import type { Revista } from '@/types/revista'
 import type { EntradaAuditoria, TipoAuditoria } from '@/types/historial'
 
 const MAX_AUTORES = 7
+const RESULTADOS: readonly ResultadoRonda[] = ['aprobado', 'rechazado', 'ajustes']
+const ETIQUETA_RONDA: Record<ResultadoRonda, string> = {
+  aprobado: 'Aprobado',
+  rechazado: 'Rechazado',
+  ajustes: 'Requiere ajustes',
+}
 
 function detalle(base: SeedRevista, a: Articulo): ArticuloDetalle {
   const { autoresIds, ...resto } = a
@@ -87,15 +97,6 @@ function auditar(
     usuario,
   }
   base.auditoria.unshift(entrada)
-}
-
-/** RF-06: the committee result moves an article that is still being screened. */
-function estadoTrasRevision(actual: EstadoArticulo, resultado: ResultadoComite): EstadoArticulo {
-  if (actual !== 'postulado' && actual !== 'en-revision') return actual
-  if (resultado === 'no-publicable') return 'rechazado'
-  if (resultado === 'publicable-siea') return 'aprobado'
-  if (resultado === 'sin-modificaciones' || resultado === 'pasa-a-pares') return 'en-evaluacion'
-  return 'en-revision'
 }
 
 export const handlersArticulos = [
@@ -192,9 +193,9 @@ export const handlersArticulos = [
       estado: 'postulado',
       fechaPostulacion: datos.fechaPostulacion,
       numeroPublicacion: null,
-      antiplagio: null,
-      revisionInicial: null,
-      revisionFinal: null,
+      coincidencias: null,
+      atribuidoIa: null,
+      rondasComite: [],
       autoresIds,
       archivadoEn: null,
       motivoArchivo: null,
@@ -233,49 +234,83 @@ export const handlersArticulos = [
     return HttpResponse.json(detalle(c.base, articulo))
   }),
 
-  http.put('*/api/:revista/articulos/:id/revision', async ({ params, request }) => {
+  http.post('*/api/:revista/articulos/:id/rondas', async ({ params, request }) => {
     const c = contexto(params, request, 'registrar-revision')
     if (!c.ok) return c.respuesta
     const articulo = c.base.articulos.find((a) => a.id === params.id)
     if (!articulo) return error(404, 'Artículo no encontrado')
-    const { antiplagio, revision } = (await request.json()) as RegistroRevision
-    const fecha = ahoraIso()
+    const tienePares = c.base.asignaciones.some((x) => x.articuloId === articulo.id)
+    if (!puedeRegistrarRonda(articulo, tienePares)) {
+      return error(409, 'La revisión del comité ya terminó para este artículo')
+    }
+    const ronda = (await request.json()) as NuevaRonda
+    const valido = (n: number | null) => n === null || (Number.isFinite(n) && n >= 0 && n <= 100)
+    if (!valido(ronda.coincidencias) || !valido(ronda.atribuidoIa)) {
+      return error(422, 'Los porcentajes deben estar entre 0 y 100')
+    }
+    if (!RESULTADOS.includes(ronda.resultado)) return error(422, 'Seleccione el resultado')
 
-    if (antiplagio) {
-      const valido = (n: number) => Number.isFinite(n) && n >= 0 && n <= 100
-      if (!valido(antiplagio.coincidencias) || !valido(antiplagio.atribuidoIa)) {
-        return error(422, 'Los porcentajes deben estar entre 0 y 100')
-      }
-      articulo.antiplagio = { ...antiplagio, fecha, usuario: c.usuario.nombre }
-      auditar(
-        c.base,
-        c.revista,
-        articulo.id,
-        'revision',
-        'Editó el porcentaje de antiplagio',
-        c.usuario.nombre,
+    articulo.coincidencias = ronda.coincidencias
+    articulo.atribuidoIa = ronda.atribuidoIa
+    const numero = articulo.rondasComite.length + 1
+    articulo.rondasComite.push({
+      id: `${articulo.id}-r${numero}`,
+      numero,
+      resultado: ronda.resultado,
+      observacion: ronda.observacion.trim(),
+      fecha: ahoraIso(),
+      usuario: c.usuario.nombre,
+    })
+    // Rechazado closes the article without peers; otherwise it stays in review until a peer accepts.
+    articulo.estado = ronda.resultado === 'rechazado' ? 'rechazado' : 'en-revision'
+    auditar(
+      c.base,
+      c.revista,
+      articulo.id,
+      'revision',
+      `Registró la ronda ${numero} de la revisión del comité: ${ETIQUETA_RONDA[ronda.resultado]}`,
+      c.usuario.nombre,
+    )
+    return HttpResponse.json(detalle(c.base, articulo), { status: 201 })
+  }),
+
+  http.post('*/api/:revista/articulos/:id/trasladar', ({ params, request }) => {
+    const c = contexto(params, request, 'registrar-revision')
+    if (!c.ok) return c.respuesta
+    const articulo = c.base.articulos.find((a) => a.id === params.id)
+    if (!articulo) return error(404, 'Artículo no encontrado')
+    const tienePares = c.base.asignaciones.some((x) => x.articuloId === articulo.id)
+    if (!puedeTrasladar(articulo, tienePares)) {
+      return error(
+        409,
+        'El artículo ya no está en revisión del comité: no puede cambiar de revista',
       )
     }
-    if (revision) {
-      const registro = {
-        resultado: revision.resultado,
-        observacion: revision.observacion,
-        fecha,
-        usuario: c.usuario.nombre,
-      }
-      if (revision.etapa === 'inicial') articulo.revisionInicial = registro
-      else articulo.revisionFinal = registro
-      articulo.estado = estadoTrasRevision(articulo.estado, revision.resultado)
-      auditar(
-        c.base,
-        c.revista,
-        articulo.id,
-        'revision',
-        `Registró la revisión ${revision.etapa} del comité`,
-        c.usuario.nombre,
-      )
+    const destino: Revista = c.revista === 'reep' ? 'ire' : 'reep'
+    const otra = baseDe(destino)
+    if (otra.articulos.some((a) => a.id === articulo.id)) {
+      return error(409, `Ya existe un artículo con el número ${articulo.id} en la otra revista`)
     }
-    return HttpResponse.json(detalle(c.base, articulo))
+    // The article moves with its own records; nothing of the old journal keeps pointing at it.
+    const propio = (x: { articuloId: string | null }) => x.articuloId === articulo.id
+    c.base.articulos = c.base.articulos.filter((a) => a.id !== articulo.id)
+    otra.observaciones.unshift(...c.base.observaciones.filter(propio))
+    c.base.observaciones = c.base.observaciones.filter((x) => !propio(x))
+    otra.auditoria.unshift(
+      ...c.base.auditoria.filter(propio).map((x) => ({ ...x, revista: destino })),
+    )
+    c.base.auditoria = c.base.auditoria.filter((x) => !propio(x))
+    articulo.revista = destino
+    otra.articulos.unshift(articulo)
+    auditar(
+      otra,
+      destino,
+      articulo.id,
+      'traslado',
+      `Cambió el artículo de ${REVISTAS[c.revista].nombreCorto} a ${REVISTAS[destino].nombreCorto}`,
+      c.usuario.nombre,
+    )
+    return HttpResponse.json(detalle(otra, articulo))
   }),
 
   http.post('*/api/:revista/articulos/:id/autores', async ({ params, request }) => {

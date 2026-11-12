@@ -20,5 +20,6 @@ export const ETIQUETA_TIPO_AUDITORIA: Record<TipoAuditoria, string> = {
   bloqueo: 'Bloqueo',
   fallo: 'Fallo',
   reapertura: 'Reapertura',
+  traslado: 'Cambio de revista',
   observacion: 'Observación',
 }

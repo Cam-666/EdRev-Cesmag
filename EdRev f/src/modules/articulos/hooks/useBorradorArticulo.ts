@@ -1,7 +1,7 @@
 /*
- * useBorradorArticulo — the two-step registration keeps its draft (step 1 data and the authors
- * chosen so far) in sessionStorage, per journal, so a reload or going back does not lose it.
- * Nothing is sent to the API until step 2 is saved. Covers: RF-01, RF-09, HU-01, HU-06.
+ * useBorradorArticulo — the registration form keeps its draft (the data and the authors chosen
+ * so far) in sessionStorage, per journal, so a reload does not lose it. Nothing is sent to the
+ * API until the article is saved. Covers: RF-01, RF-09, HU-01, HU-06.
  */
 import { useCallback, useState } from 'react'
 import { useRevista } from '@/lib/revista/useRevista'
@@ -70,7 +70,7 @@ export function useBorradorArticulo() {
     quitarAutor: (indice: number) =>
       actualizar((b) => ({ ...b, autores: b.autores.filter((_, i) => i !== indice) })),
     limpiar: () => actualizar(() => VACIO),
-    /** Removes the stored draft without re-rendering (used right before leaving step 2). */
+    /** Removes the stored draft without re-rendering (used right before leaving the form). */
     descartar: () => {
       try {
         window.sessionStorage.removeItem(clave(revista))

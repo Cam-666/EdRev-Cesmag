@@ -36,6 +36,7 @@ export type TipoAuditoria =
   | 'bloqueo'
   | 'fallo'
   | 'reapertura'
+  | 'traslado'
   | 'observacion'
 
 /** Who changed what, and when (RF-41). */

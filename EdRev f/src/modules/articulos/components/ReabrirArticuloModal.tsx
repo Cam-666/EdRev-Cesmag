@@ -53,8 +53,8 @@ export function ReabrirArticuloModal({
     ],
     [
       'Antiplagio',
-      articulo.antiplagio
-        ? `${articulo.antiplagio.coincidencias} % · ${articulo.antiplagio.atribuidoIa} % de IA`
+      articulo.coincidencias !== null
+        ? `${articulo.coincidencias} % · ${articulo.atribuidoIa ?? 0} % de IA`
         : 'Ninguno',
     ],
     ['Observaciones', `${articulo.totalObservaciones} fechadas`],

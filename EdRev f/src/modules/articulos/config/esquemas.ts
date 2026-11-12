@@ -6,14 +6,7 @@ import { z } from 'zod'
 import { aNumero } from './reglas'
 
 const TIPOS = ['investigacion', 'reflexion', 'revision']
-const RESULTADOS = [
-  'sin-modificaciones',
-  'modificaciones-basicas',
-  'pasa-a-pares',
-  'faltan-documentos',
-  'no-publicable',
-  'publicable-siea',
-]
+const RESULTADOS = ['aprobado', 'rechazado', 'ajustes']
 
 const porcentaje = z
   .string()
@@ -39,17 +32,15 @@ export const esquemaEdicionArticulo = z.object({
 })
 export type EdicionArticuloForm = z.infer<typeof esquemaEdicionArticulo>
 
-export const esquemaRevision = z.object({
+export const esquemaRonda = z.object({
   coincidencias: porcentaje,
   atribuidoIa: porcentaje,
-  observacionAntiplagio: z.string().trim(),
-  etapa: z.enum(['inicial', 'final']),
   resultado: z
     .string()
-    .refine((v) => v === '' || RESULTADOS.includes(v), 'Seleccione un resultado.'),
-  observacionComite: z.string().trim(),
+    .refine((v) => RESULTADOS.includes(v), 'Seleccione el resultado del comité.'),
+  observacion: z.string().trim(),
 })
-export type RevisionForm = z.infer<typeof esquemaRevision>
+export type RondaForm = z.infer<typeof esquemaRonda>
 
 export const esquemaObservacion = z.object({
   texto: z.string().trim().min(1, 'Escriba la observación.'),

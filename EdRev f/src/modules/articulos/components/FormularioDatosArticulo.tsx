@@ -1,5 +1,5 @@
 /*
- * FormularioDatosArticulo — step 1 of the registration: OJS number, postulation date, title, type
+ * FormularioDatosArticulo — data of the article in the registration form: OJS number, postulation date, title, type
  * and the journal (fixed by the URL, shown read-only). Warns, without blocking, when the OJS
  * number already exists in this journal. Covers: RF-01, RF-02, RF-03, HU-01.
  */
@@ -17,7 +17,7 @@ import { ListaDesplegable } from '@/components/common/ListaDesplegable'
 import { useRevista } from '@/lib/revista/useRevista'
 
 export interface FormularioDatosArticuloProps {
-  /** Id of the <form>, so header buttons ("Continuar") can submit it. */
+  /** Id of the <form>, so the header button («Guardar artículo») can submit it. */
   idFormulario: string
   valoresIniciales: DatosBorrador | null
   onContinuar: (datos: DatosBorrador) => void

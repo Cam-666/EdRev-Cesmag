@@ -15,10 +15,9 @@ import { AuditoriaPage } from '@/modules/administracion/pages/AuditoriaPage'
 import { PlantillasPage } from '@/modules/administracion/pages/PlantillasPage'
 import { UsuariosPage } from '@/modules/administracion/pages/UsuariosPage'
 import { FichaArticuloLayout } from '@/modules/articulos/components/FichaArticuloLayout'
-import { ArticuloAntiplagioPage } from '@/modules/articulos/pages/ArticuloAntiplagioPage'
 import { ArticuloAutoresPage } from '@/modules/articulos/pages/ArticuloAutoresPage'
+import { ArticuloComitePage } from '@/modules/articulos/pages/ArticuloComitePage'
 import { ArticuloHistorialPage } from '@/modules/articulos/pages/ArticuloHistorialPage'
-import { ArticuloNuevoAutoresPage } from '@/modules/articulos/pages/ArticuloNuevoAutoresPage'
 import { ArticuloNuevoPage } from '@/modules/articulos/pages/ArticuloNuevoPage'
 import { ArticuloObservacionesPage } from '@/modules/articulos/pages/ArticuloObservacionesPage'
 import { ArticuloParesPage } from '@/modules/articulos/pages/ArticuloParesPage'
@@ -76,22 +75,14 @@ export const rutasPrivadas: RouteObject[] = [
               { path: 'articulos', element: <ArticulosPage /> },
               {
                 element: <RutaPorPermiso accion="registrar-datos" />,
-                children: [
-                  { path: 'articulos/nuevo', element: <ArticuloNuevoPage /> },
-                  { path: 'articulos/nuevo/autores', element: <ArticuloNuevoAutoresPage /> },
-                ],
-              },
-              {
-                element: <RutaPorPermiso accion="registrar-revision" />,
-                children: [
-                  { path: 'articulos/:id/antiplagio', element: <ArticuloAntiplagioPage /> },
-                ],
+                children: [{ path: 'articulos/nuevo', element: <ArticuloNuevoPage /> }],
               },
               {
                 path: 'articulos/:id',
                 element: <FichaArticuloLayout />,
                 children: [
                   { index: true, element: <ArticuloResumenPage /> },
+                  { path: 'comite', element: <ArticuloComitePage /> },
                   { path: 'autores', element: <ArticuloAutoresPage /> },
                   { path: 'pares', element: <ArticuloParesPage /> },
                   { path: 'observaciones', element: <ArticuloObservacionesPage /> },

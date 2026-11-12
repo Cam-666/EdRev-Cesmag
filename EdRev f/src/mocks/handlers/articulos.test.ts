@@ -155,18 +155,81 @@ describe('articles API (mock)', () => {
     })
   })
 
-  it('anti-plagiarism and committee review can be registered by the Auxiliar too', async () => {
-    const cuerpo = { antiplagio: { coincidencias: 12, atribuidoIa: 4, observacion: '' } }
-    const ok = await llamar('/reep/articulos/2026-034/revision', {
-      metodo: 'PUT',
+  it('registers committee rounds with the anti-plagiarism report, without a limit of rounds', async () => {
+    const ronda = (cuerpo: Record<string, unknown>, usuario?: typeof AUXILIAR) =>
+      llamar('/reep/articulos/2026-032/rondas', { metodo: 'POST', cuerpo, usuario })
+    const base = { coincidencias: 18, atribuidoIa: 5, observacion: 'Ajustar el resumen.' }
+
+    expect((await ronda({ ...base, coincidencias: 120, resultado: 'ajustes' })).status).toBe(422)
+    expect((await ronda({ ...base, resultado: 'otro' })).status).toBe(422)
+
+    const primera = await ronda({ ...base, resultado: 'ajustes' }, AUXILIAR)
+    expect(primera.status).toBe(201)
+    const tras1 = (await primera.json()) as ArticuloDetalle
+    expect(tras1.estado).toBe('en-revision')
+    expect(tras1.coincidencias).toBe(18)
+    expect(tras1.rondasComite).toHaveLength(1)
+
+    await ronda({ ...base, resultado: 'ajustes' })
+    const tercera = (await (
+      await ronda({ ...base, coincidencias: 9, resultado: 'aprobado', observacion: '' })
+    ).json()) as ArticuloDetalle
+    expect(tercera.rondasComite.map((r) => [r.numero, r.resultado])).toEqual([
+      [1, 'ajustes'],
+      [2, 'ajustes'],
+      [3, 'aprobado'],
+    ])
+    expect(tercera.coincidencias).toBe(9)
+    expect(tercera.rondasComite[0]?.usuario).toBe('Andrea Villota')
+    // Approved: the article can no longer change journal
+    expect((await llamar('/reep/articulos/2026-032/trasladar', { metodo: 'POST' })).status).toBe(
+      409,
+    )
+  })
+
+  it('a rejected round leaves the article Rechazado, with no more rounds', async () => {
+    const r = await llamar('/reep/articulos/2026-032/rondas', {
+      metodo: 'POST',
+      cuerpo: { coincidencias: 40, atribuidoIa: 10, resultado: 'rechazado', observacion: 'x' },
+    })
+    expect(((await r.json()) as ArticuloDetalle).estado).toBe('rechazado')
+    const otra = await llamar('/reep/articulos/2026-032/rondas', {
+      metodo: 'POST',
+      cuerpo: { coincidencias: 40, atribuidoIa: 10, resultado: 'aprobado', observacion: '' },
+    })
+    expect(otra.status).toBe(409)
+  })
+
+  it('moves an article in committee review to the other journal, as many times as needed', async () => {
+    const ida = await llamar('/reep/articulos/2026-021/trasladar', {
+      metodo: 'POST',
       usuario: AUXILIAR,
-      cuerpo,
     })
-    expect(ok.status).toBe(200)
-    expect(((await ok.json()) as ArticuloDetalle).antiplagio).toMatchObject({
-      coincidencias: 12,
-      atribuidoIa: 4,
+    expect(ida.status).toBe(200)
+    expect(((await ida.json()) as ArticuloDetalle).revista).toBe('ire')
+    expect((await llamar('/reep/articulos/2026-021')).status).toBe(404)
+    const enIre = (await (await llamar('/ire/articulos/2026-021')).json()) as ArticuloDetalle
+    expect(enIre.rondasComite).toHaveLength(1)
+    expect(enIre.autores.length).toBeGreaterThan(0)
+    const historial = (await (await llamar('/ire/articulos/2026-021/historial')).json()) as {
+      auditoria: Array<{ tipo: string; accion: string }>
+    }
+    expect(historial.auditoria[0]).toMatchObject({
+      tipo: 'traslado',
+      accion: 'Cambió el artículo de Educación y Pedagogía a Investigium IRE',
     })
+    // …and back again
+    expect((await llamar('/ire/articulos/2026-021/trasladar', { metodo: 'POST' })).status).toBe(200)
+    expect((await llamar('/reep/articulos/2026-021')).status).toBe(200)
+  })
+
+  it('an article with peers or already approved cannot change journal', async () => {
+    expect((await llamar('/reep/articulos/2026-034/trasladar', { metodo: 'POST' })).status).toBe(
+      409,
+    )
+    expect((await llamar('/reep/articulos/2026-033/trasladar', { metodo: 'POST' })).status).toBe(
+      409,
+    )
   })
 
   it('reopening keeps the history, records the reason as an observation', async () => {
@@ -184,7 +247,8 @@ describe('articles API (mock)', () => {
     const despues = (await ok.json()) as ArticuloDetalle
     expect(despues.estado).toBe('en-revision')
     expect(despues.autores).toEqual(antes.autores)
-    expect(despues.antiplagio).toEqual(antes.antiplagio)
+    expect(despues.coincidencias).toEqual(antes.coincidencias)
+    expect(despues.rondasComite).toEqual(antes.rondasComite)
     expect(despues.totalObservaciones).toBe(antes.totalObservaciones + 1)
     const obs = (await (await llamar('/reep/articulos/2026-007/observaciones')).json()) as Array<{
       texto: string

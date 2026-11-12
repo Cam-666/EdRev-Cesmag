@@ -1,5 +1,5 @@
 /*
- * ListaAutoresBorrador — authors chosen so far in step 2, in order (the first is the main
+ * ListaAutoresBorrador — authors chosen so far in the registration form, in order (the first is the main
  * author), each removable. Covers: RF-09, HU-06 (up to seven authors, order kept).
  */
 import { MAX_AUTORES } from '../config/listas'
