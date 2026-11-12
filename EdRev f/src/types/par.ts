@@ -17,11 +17,17 @@ export interface ParEvaluador {
   autorizoDatosEn: string | null
 }
 
-export type EstadoAsignacion = 'invitado' | 'segundo-intento' | 'acepto' | 'no-acepto' | 'entrego'
+/** State of a peer in an article (RF-22). `segundo-intento` is «Invitado» after the resend. */
+export type EstadoAsignacion =
+  'invitado' | 'segundo-intento' | 'acepto' | 'no-acepto' | 'sin-respuesta' | 'entrego'
 
-export type ConceptoPar = 'publicable' | 'publicable-con-modificaciones' | 'no-publicable'
+export type ConceptoPar =
+  'publicable' | 'publicable-con-modificaciones' | 'no-publicable' | 'pendiente-formato'
 
-/** A peer assigned to an article, in order (max 3); the third can be the tiebreaker (RF-19, RF-21). */
+/**
+ * A peer assigned to an article, in order. At most three peers who accepted or delivered; those
+ * who decline or do not answer take no place. The tiebreaker is flagged (RF-19, RF-21).
+ */
 export interface Asignacion {
   id: string
   articuloId: string
@@ -100,23 +106,29 @@ export interface Conflicto {
   mensaje: string
 }
 
-/** What the invitation mail will look like before it is sent (RF-24, RF-25). */
-export interface VistaPreviaInvitacion {
-  de: string
-  para: string
-  asunto: string
-  cuerpo: string
-  adjuntos: string
-  /** Order of assignment (1, 2, 3…). Peers who did not accept keep their number. */
-  orden: number
-  esDesempate: boolean
-  conflicto: Conflicto | null
-}
-
 export interface ResultadoAsignacion {
   asignacion: Asignacion
+  /** The peer assigned (the new candidate, when one was registered). */
+  par: Pick<ParEvaluador, 'id' | 'nombre' | 'correo'>
+  /** «Conflicto posible» with an author of the article; it never blocks (RF-17). */
+  conflicto: Conflicto | null
   correo: { estado: EstadoCorreo; destinatario: string }
 }
 
 /** How the dependency registers the answer of a peer to the invitation (RF-22, RF-15). */
-export type RespuestaPar = 'acepto' | 'no-acepto' | 'sin-respuesta'
+/**
+ * The peer's answer (RF-22): accepted; did not accept this invitation (not blocked); does not want
+ * to take part any more (blocked); no answer after the second attempt (blocked by the system).
+ */
+export type RespuestaPar = 'acepto' | 'no-acepto' | 'no-desea' | 'sin-respuesta'
+
+/** A brand-new candidate typed while assigning peers (RF-12, RF-19). */
+export interface CandidatoPar {
+  nombre: string
+  correo: string
+  universidad: string
+  area: string
+}
+
+/** Body of an assignment: a peer of the base, or a new candidate saved in the base first. */
+export type DatosAsignacion = { parId: string } | { nuevo: CandidatoPar }

@@ -20,4 +20,5 @@ export const OPCIONES_CONCEPTO: Array<{ valor: string; etiqueta: string }> = [
     etiqueta: 'Publicable con modificaciones sustanciales',
   },
   { valor: 'no-publicable', etiqueta: 'No publicable' },
+  { valor: 'pendiente-formato', etiqueta: 'Pendiente formato de evaluación' },
 ]

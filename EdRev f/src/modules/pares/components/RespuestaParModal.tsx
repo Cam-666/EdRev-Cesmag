@@ -1,7 +1,8 @@
 /*
- * RespuestaParModal — registers how the peer answered the invitation: accepted, declined, or no
- * answer after the 2nd attempt. Declining or not answering sends the peer to the blocked list
- * (the dialog says so before confirming). No Figma design for the dialog.
+ * RespuestaParModal — registers how the peer answered the invitation: accepted, did not accept
+ * this invitation (not blocked), does not want to take part any more (blocked), or no answer after
+ * the 2nd attempt (blocked). The dialog says when the peer will be blocked. No Figma design.
+ * The article goes to «En evaluación» when the first peer accepts (RF-22).
  * Covers: RF-15, RF-22, HU-10. Both profiles (RNF-05).
  */
 import { useState } from 'react'
@@ -32,7 +33,8 @@ export function RespuestaParModal({
 
   const opciones = [
     { valor: 'acepto', etiqueta: 'Aceptó la invitación' },
-    { valor: 'no-acepto', etiqueta: 'No aceptó (no desea participar)' },
+    { valor: 'no-acepto', etiqueta: 'No aceptó esta invitación' },
+    { valor: 'no-desea', etiqueta: 'No desea participar más' },
     ...(segundoIntento
       ? [{ valor: 'sin-respuesta', etiqueta: 'No respondió tras el 2.º intento' }]
       : []),
@@ -46,7 +48,9 @@ export function RespuestaParModal({
           onRegistrada(
             respuesta === 'acepto'
               ? `${asignacion.par.nombre} aceptó la invitación.`
-              : `${asignacion.par.nombre} pasó a la lista de bloqueados.`,
+              : respuesta === 'no-acepto'
+                ? `${asignacion.par.nombre} no aceptó esta invitación.`
+                : `${asignacion.par.nombre} pasó a la lista de bloqueados.`,
           )
           onCerrar()
         },
@@ -82,7 +86,7 @@ export function RespuestaParModal({
         valor={respuesta}
         onCambio={(v) => setRespuesta(v as RespuestaPar)}
       />
-      {respuesta !== 'acepto' && (
+      {(respuesta === 'no-desea' || respuesta === 'sin-respuesta') && (
         <Alerta tipo="advertencia">
           El par pasará a la lista de bloqueados y no recibirá nuevas invitaciones.
         </Alerta>

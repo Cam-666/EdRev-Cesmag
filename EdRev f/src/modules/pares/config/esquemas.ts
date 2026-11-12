@@ -19,6 +19,10 @@ export const esquemaPar = z.object({
 })
 export type ParForm = z.infer<typeof esquemaPar>
 
+/** A new candidate typed while assigning peers to an article (RF-12, RF-19). */
+export const esquemaCandidato = esquemaPar.omit({ autorizoDatos: true })
+export type CandidatoForm = z.infer<typeof esquemaCandidato>
+
 export const esquemaMotivo = z.object({
   motivo: z.string().trim().min(1, 'Escriba el motivo.'),
 })

@@ -1,15 +1,15 @@
 /*
  * asignacionesService — HTTP calls to assign peers to an article and follow their answer:
- * invitation preview, assignment (the server sends the invitation), resend / reminder, the peer's
+ * assignment of an available peer or a new candidate (the server sends the invitation), resend / reminder, the peer's
  * answer, delivery mark and concept. Covers: RF-17, RF-19..RF-29.
  */
 import { solicitar } from '@/lib/api/cliente'
 import type {
   Asignacion,
   ConceptoPar,
+  DatosAsignacion,
   ResultadoAsignacion,
   RespuestaPar,
-  VistaPreviaInvitacion,
 } from '@/types/par'
 import type { Revista } from '@/types/revista'
 
@@ -19,24 +19,14 @@ function json(cuerpo: unknown): { body: string } {
 
 const art = (id: string) => encodeURIComponent(id)
 
-export function obtenerVistaPrevia(
-  revista: Revista,
-  articuloId: string,
-  parId: string,
-): Promise<VistaPreviaInvitacion> {
-  return solicitar<VistaPreviaInvitacion>(
-    `/${revista}/articulos/${art(articuloId)}/asignaciones/vista-previa?parId=${encodeURIComponent(parId)}`,
-  )
-}
-
 export function asignarPar(
   revista: Revista,
   articuloId: string,
-  parId: string,
+  datos: DatosAsignacion,
 ): Promise<ResultadoAsignacion> {
   return solicitar<ResultadoAsignacion>(`/${revista}/articulos/${art(articuloId)}/asignaciones`, {
     method: 'POST',
-    ...json({ parId }),
+    ...json(datos),
   })
 }
 

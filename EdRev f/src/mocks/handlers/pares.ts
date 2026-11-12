@@ -8,6 +8,7 @@ import { autorPorId } from '../db'
 import type { SeedRevista } from '../seed/fabrica'
 import { ahoraIso, contexto, error, sinTildes } from './util'
 import { detectarConflicto } from '@/lib/dominio/conflicto'
+import { enCurso } from '@/lib/dominio/pares'
 import type {
   EstadoDisponibilidad,
   MotivoBloqueo,
@@ -101,6 +102,12 @@ export const handlersPares = [
     const porPagina = Math.max(1, Number(url.searchParams.get('porPagina') ?? 10))
 
     const todos = c.base.pares.map((p) => listado(c.base, p, articulo))
+    // RF-19: peers that can be assigned have no evaluation in progress and are not in the article.
+    const ocupados = new Set(
+      c.base.asignaciones
+        .filter((a) => enCurso(a) || a.articuloId === articulo)
+        .map((a) => a.parId),
+    )
     const filtrados = todos
       .filter((p) => !q || sinTildes(p.nombre).includes(q) || sinTildes(p.correo).includes(q))
       .filter((p) => !area || sinTildes(p.area).includes(area))
@@ -110,7 +117,9 @@ export const handlersPares = [
           ? p.estado === 'bloqueado'
           : estado === 'disponibles'
             ? p.estado !== 'bloqueado'
-            : true,
+            : estado === 'asignables'
+              ? p.estado !== 'bloqueado' && !ocupados.has(p.id)
+              : true,
       )
       .sort((a, b) => a.nombre.localeCompare(b.nombre))
     return HttpResponse.json({

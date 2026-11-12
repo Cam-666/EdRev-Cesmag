@@ -1,7 +1,7 @@
 /*
  * ParesPage — Pares evaluadores (/:revista/pares): the journal's own peer base, searchable by
- * thematic area and university, with the availability of each peer. With `?articulo=` it is the
- * place to pick the peer to assign to that article.
+ * thematic area and university, with the availability of each peer. Peers are assigned from the
+ * article sheet (Pares y evaluación).
  * Covers: RF-12, RF-13, RF-14, RF-15, RF-17, RNF-06, HU-08, HU-09.
  */
 import { useState } from 'react'
@@ -11,7 +11,6 @@ import { TablaPares } from '../components/TablaPares'
 import { useFiltrosPares } from '../hooks/useFiltrosPares'
 import { usePares } from '../hooks/usePares'
 import { usePermiso } from '@/modules/acceso/hooks/usePermiso'
-import { Alerta } from '@/components/common/Alerta'
 import { Boton } from '@/components/common/Boton'
 import { EnlaceBoton } from '@/components/common/EnlaceBoton'
 import { EstadoConsulta } from '@/components/common/EstadoConsulta'
@@ -24,7 +23,6 @@ export function ParesPage() {
   const { filtros, cambiar, hayFiltros } = useFiltrosPares()
   const lista = usePares(filtros)
   const puedeRegistrar = usePermiso('registrar-datos')
-  const puedeAsignar = usePermiso('asignar-pares')
   const [registrando, setRegistrando] = useState(false)
   const total = lista.data?.total ?? 0
   const base = lista.data?.totalBase ?? 0
@@ -50,24 +48,6 @@ export function ParesPage() {
           {lista.data ? `${base} pares · base propia de esta revista` : ' '}
         </p>
       </EncabezadoPagina>
-      {filtros.articulo && (
-        <Alerta
-          tipo="advertencia"
-          titulo={`Asignar un par al artículo ${filtros.articulo}`}
-          accion={
-            <EnlaceBoton
-              variante="secundario"
-              tamano="sm"
-              to={`/${revista}/articulos/${encodeURIComponent(filtros.articulo)}/pares`}
-            >
-              Cancelar
-            </EnlaceBoton>
-          }
-        >
-          Elija un par de la lista.
-        </Alerta>
-      )}
-
       <FiltrosPares filtros={filtros} onCambio={cambiar} />
 
       <EstadoConsulta
@@ -85,8 +65,6 @@ export function ParesPage() {
           revista={revista}
           pares={lista.data?.items ?? []}
           cargando={lista.isPending}
-          articulo={filtros.articulo}
-          puedeAsignar={puedeAsignar}
           vacio={
             hayFiltros || filtros.estado !== 'disponibles'
               ? 'Ningún par coincide con los filtros.'

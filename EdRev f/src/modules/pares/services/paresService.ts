@@ -7,7 +7,8 @@ import { solicitar } from '@/lib/api/cliente'
 import type { MotivoBloqueo, NuevoPar, ParDetalle, ParEvaluador, ParListado } from '@/types/par'
 import type { Revista } from '@/types/revista'
 
-export type FiltroEstadoPares = 'disponibles' | 'bloqueados' | 'todos'
+/** `asignables`: not blocked, no evaluation in progress and not yet in the article (RF-19). */
+export type FiltroEstadoPares = 'disponibles' | 'bloqueados' | 'todos' | 'asignables'
 
 export interface FiltrosPares {
   q?: string

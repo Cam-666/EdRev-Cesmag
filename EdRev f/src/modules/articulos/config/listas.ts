@@ -56,4 +56,5 @@ export const ETIQUETA_CONCEPTO: Record<ConceptoPar, string> = {
   publicable: 'Publicable',
   'publicable-con-modificaciones': 'Con modificaciones',
   'no-publicable': 'No publicable',
+  'pendiente-formato': 'Pendiente formato de evaluación',
 }

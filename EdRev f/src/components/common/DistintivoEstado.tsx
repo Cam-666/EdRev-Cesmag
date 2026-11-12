@@ -22,6 +22,7 @@ export type EstadoDistintivo =
   | 'segundo-intento'
   | 'acepto'
   | 'no-acepto'
+  | 'sin-respuesta'
   | 'entrego'
   // Peer availability
   | 'disponible'
@@ -58,6 +59,7 @@ export const DEFINICIONES_ESTADO: Record<EstadoDistintivo, Definicion> = {
   'segundo-intento': { texto: '2.º intento', simbolo: '↻', tono: 'alerta' },
   acepto: { texto: 'Aceptó', simbolo: '✓', tono: 'info' },
   'no-acepto': { texto: 'No aceptó', simbolo: '✕', tono: 'error' },
+  'sin-respuesta': { texto: 'Sin respuesta', simbolo: '⊘', tono: 'error' },
   entrego: { texto: 'Entregó', simbolo: '✓', tono: 'exito' },
   disponible: { texto: 'Disponible', simbolo: '✓', tono: 'exito' },
   conflicto: { texto: 'Conflicto posible', simbolo: '!', tono: 'alerta' },

@@ -26,6 +26,32 @@ interface RespuestaCorreos {
   enCola: number
 }
 
+const CANDIDATO = {
+  nombre: 'Candidato de prueba',
+  correo: 'candidato.prueba@udenar.edu.co',
+  universidad: 'Universidad de Nariño',
+  area: 'Educación rural',
+}
+
+function aprobar(id: string) {
+  return llamar(`/reep/articulos/${id}/rondas`, {
+    metodo: 'POST',
+    cuerpo: { coincidencias: 5, atribuidoIa: 1, resultado: 'aprobado', observacion: '' },
+  })
+}
+
+/** Invites a new candidate to 2026-033 (approved) and returns the subject of that invitation. */
+async function asuntoDeLaInvitacion(n = 1): Promise<string> {
+  await llamar('/reep/articulos/2026-033/asignaciones', {
+    metodo: 'POST',
+    cuerpo: { nuevo: { ...CANDIDATO, correo: `candidato${n}@udenar.edu.co` } },
+  })
+  const h = await json<{ correos: Array<{ tipo: string; asunto: string }> }>(
+    await llamar('/reep/articulos/2026-033/historial'),
+  )
+  return h.correos.find((c) => c.tipo === 'invitacion')?.asunto ?? ''
+}
+
 describe('constancias API (mock)', () => {
   it('lists pending and issued constancias of the journal only', async () => {
     const reep = await json<RespuestaConstancias>(await llamar('/reep/constancias'))
@@ -129,10 +155,11 @@ describe('constancias API (mock)', () => {
         },
       }),
     )
+    await aprobar(a.id)
     const asig = await json<ResultadoAsignacion>(
       await llamar(`/reep/articulos/${a.id}/asignaciones`, {
         metodo: 'POST',
-        cuerpo: { parId: 'reep-par-1' },
+        cuerpo: { nuevo: CANDIDATO },
       }),
     )
     await llamar(`/reep/asignaciones/${asig.asignacion.id}/respuesta`, {
@@ -204,7 +231,7 @@ describe('templates API (mock, RNF-19)', () => {
     expect((await put('constancia', '   ')).status).toBe(422)
   })
 
-  it('an edited invitation template reaches the assignment preview, sent from the journal account', async () => {
+  it('an edited invitation template is used by the next invitation, sent from the journal account', async () => {
     await llamar('/plantillas/invitacion', {
       metodo: 'PUT',
       cuerpo: {
@@ -212,12 +239,9 @@ describe('templates API (mock, RNF-19)', () => {
         cuerpo: 'Estimado(a) {{par}}, evalúe «{{articulo}}».',
       },
     })
-    const v = await json<{ de: string; asunto: string; cuerpo: string }>(
-      await llamar('/reep/articulos/2026-033/asignaciones/vista-previa?parId=reep-par-2'),
+    expect(await asuntoDeLaInvitacion()).toBe(
+      'Nueva invitación · Revista Electrónica en Educación y Pedagogía',
     )
-    expect(v.de).toBe('editorial.eyp@gmail.com')
-    expect(v.asunto).toBe('Nueva invitación · Revista Electrónica en Educación y Pedagogía')
-    expect(v.cuerpo).toContain('Estimado(a) Jorge Andrés Rosero')
   })
 
   it('a new template starts from the one in use and is sent only once it is put in use', async () => {
@@ -242,14 +266,14 @@ describe('templates API (mock, RNF-19)', () => {
         cuerpo: 'Hola {{par}}, ¿evalúa «{{articulo}}»?',
       },
     })
-    const vista = async () =>
-      json<{ cuerpo: string }>(
-        await llamar('/reep/articulos/2026-033/asignaciones/vista-previa?parId=reep-par-2'),
-      )
-    expect((await vista()).cuerpo).not.toContain('Hola Jorge')
+    expect(await asuntoDeLaInvitacion()).toBe(
+      'Invitación a evaluar un artículo · Revista Electrónica en Educación y Pedagogía',
+    )
 
     expect((await llamar(`/plantillas/${nueva.id}/usar`, { metodo: 'POST' })).status).toBe(200)
-    expect((await vista()).cuerpo).toContain('Hola Jorge Andrés Rosero')
+    expect(await asuntoDeLaInvitacion(2)).toBe(
+      'Invitación · Revista Electrónica en Educación y Pedagogía',
+    )
     const d = await json<DatosPlantillas>(await llamar('/plantillas'))
     const invitaciones = d.plantillas.filter((p) => p.uso === 'invitacion')
     expect(invitaciones.filter((p) => p.enUso).map((p) => p.id)).toEqual([nueva.id])

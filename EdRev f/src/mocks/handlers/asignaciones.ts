@@ -1,7 +1,7 @@
 /*
- * MSW handlers for assigning peers to an article and following their answer: preview of the
- * invitation, assignment (which sends the invitation by itself), resend / reminder, the peer's
- * answer, delivery mark and concept. Simulates the mail sending: it records a sent mail and, when
+ * MSW handlers for assigning peers to an article and following their answer: assignment of an
+ * available peer or of a brand-new candidate (both send the invitation by themselves), resend /
+ * reminder, the peer's answer, delivery mark and concept. Simulates the mail sending: it records a sent mail and, when
  * the address bounces, keeps the assignment so it can be fixed and resent (RF-27).
  * Covers: RF-15, RF-17, RF-19..RF-29. Permissions are enforced here as the real API will.
  */
@@ -9,19 +9,21 @@ import { http, HttpResponse } from 'msw'
 import { autoresDeArticulo } from './pares'
 import type { SeedRevista } from '../seed/fabrica'
 import { ahoraIso, contexto, error } from './util'
-import { cuentas, plantillaEnUso } from '../db'
+import { plantillaEnUso } from '../db'
 import { NOMBRE_EN_CORREO } from '../plantillas'
 import { rellenar } from '@/lib/plantillas'
+import { puedeAsignarPares } from '@/lib/dominio/comite'
 import { detectarConflicto } from '@/lib/dominio/conflicto'
+import { enCurso, MAX_PARES_ACTIVOS, ocupaCupo } from '@/lib/dominio/pares'
 import type { Articulo } from '@/types/articulo'
 import type { EstadoCorreo, TipoCorreo } from '@/types/historial'
 import type {
   Asignacion,
   ConceptoPar,
+  DatosAsignacion,
   ParEvaluador,
   ResultadoAsignacion,
   RespuestaPar,
-  VistaPreviaInvitacion,
 } from '@/types/par'
 import type { Revista } from '@/types/revista'
 
@@ -46,16 +48,27 @@ type Validacion =
   { ok: true; orden: number; esDesempate: boolean } | { ok: false; estado: number; mensaje: string }
 
 /**
- * RF-19 (up to three evaluators, ordered), RF-15 (blocked peers get no invitation), RF-21
- * (tiebreaker). Invitations run in parallel: a peer who did not accept stays in the record but
- * frees the slot, so the dependency keeps looking for evaluators while the others go on.
+ * RF-19: peers are assigned once the committee approved the article (most recent round). At most
+ * three peers who accepted or delivered; those who decline or do not answer take no place, so the
+ * dependency keeps inviting while the others go on. RF-15: blocked peers get no invitation.
  */
-function validar(base: SeedRevista, articulo: Articulo, par: ParEvaluador): Validacion {
-  const actuales = asignadas(base, articulo.id)
-  const vigentes = actuales.filter((a) => a.estado !== 'no-acepto')
-  if (vigentes.length >= 3) {
-    return { ok: false, estado: 409, mensaje: 'El artículo ya tiene los tres pares permitidos' }
+function validarArticulo(base: SeedRevista, articulo: Articulo): Validacion | null {
+  if (!puedeAsignarPares(articulo)) {
+    return {
+      ok: false,
+      estado: 409,
+      mensaje: 'El comité aún no aprueba el artículo: no se pueden asignar pares',
+    }
   }
+  if (asignadas(base, articulo.id).filter(ocupaCupo).length >= MAX_PARES_ACTIVOS) {
+    return { ok: false, estado: 409, mensaje: 'El artículo ya tiene tres pares que aceptaron' }
+  }
+  return null
+}
+
+function validar(base: SeedRevista, articulo: Articulo, par: ParEvaluador): Validacion {
+  const delArticulo = validarArticulo(base, articulo)
+  if (delArticulo) return delArticulo
   if (par.bloqueo) {
     return {
       ok: false,
@@ -63,15 +76,47 @@ function validar(base: SeedRevista, articulo: Articulo, par: ParEvaluador): Vali
       mensaje: 'El par está bloqueado y no recibe nuevas invitaciones',
     }
   }
+  const actuales = asignadas(base, articulo.id)
   if (actuales.some((a) => a.parId === par.id)) {
     return { ok: false, estado: 409, mensaje: 'El par ya está asignado a este artículo' }
   }
-  const orden = actuales.length + 1
+  if (base.asignaciones.some((a) => a.parId === par.id && enCurso(a))) {
+    return { ok: false, estado: 409, mensaje: 'El par tiene otra evaluación en curso' }
+  }
+  const [primero, segundo] = actuales.filter(ocupaCupo)
   return {
     ok: true,
-    orden,
-    esDesempate: vigentes.length === 2 && contradictorios(vigentes[0], vigentes[1]),
+    orden: actuales.length + 1,
+    // RF-21: called when the concepts of the first two peers contradict.
+    esDesempate: contradictorios(primero, segundo) && !actuales.some((a) => a.esDesempate),
   }
+}
+
+/** RF-12: a new candidate is saved in the journal's base before being invited. */
+function registrarCandidato(
+  base: SeedRevista,
+  revista: Revista,
+  datos: Extract<DatosAsignacion, { nuevo: unknown }>['nuevo'],
+): ParEvaluador | { estado: number; mensaje: string } {
+  const correo = datos.correo.trim().toLowerCase()
+  if (!datos.nombre.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(correo)) {
+    return { estado: 422, mensaje: 'Escriba el nombre y un correo válido del candidato' }
+  }
+  if (base.pares.some((p) => p.correo.toLowerCase() === correo)) {
+    return { estado: 409, mensaje: 'Ya existe un par con ese correo en esta revista' }
+  }
+  const par: ParEvaluador = {
+    id: `${revista}-par-n${base.pares.length + 1}`,
+    revista,
+    nombre: datos.nombre.trim(),
+    correo,
+    universidad: datos.universidad.trim(),
+    area: datos.area.trim(),
+    bloqueo: null,
+    autorizoDatosEn: null,
+  }
+  base.pares.push(par)
+  return par
 }
 
 function correoDe(
@@ -130,37 +175,22 @@ function textosInvitacion(revista: Revista, par: ParEvaluador, articulo: Articul
 }
 
 export const handlersAsignaciones = [
-  http.get('*/api/:revista/articulos/:id/asignaciones/vista-previa', ({ params, request }) => {
-    const c = contexto(params, request, 'asignar-pares')
-    if (!c.ok) return c.respuesta
-    const articulo = c.base.articulos.find((a) => a.id === params.id)
-    if (!articulo) return error(404, 'Artículo no encontrado')
-    const par = c.base.pares.find((p) => p.id === new URL(request.url).searchParams.get('parId'))
-    if (!par) return error(404, 'Par evaluador no encontrado')
-    const v = validar(c.base, articulo, par)
-    if (!v.ok) return error(v.estado, v.mensaje)
-
-    const { asunto, cuerpo } = textosInvitacion(c.revista, par, articulo)
-    const vista: VistaPreviaInvitacion = {
-      de: cuentas().find((x) => x.revista === c.revista)?.remitente ?? '',
-      para: par.correo,
-      asunto,
-      cuerpo,
-      adjuntos: 'Sin adjuntos: se envían desde el OJS cuando el par acepta.',
-      orden: v.orden,
-      esDesempate: v.esDesempate,
-      conflicto: detectarConflicto(par, autoresDeArticulo(c.base, articulo.id)),
-    }
-    return HttpResponse.json(vista)
-  }),
-
   http.post('*/api/:revista/articulos/:id/asignaciones', async ({ params, request }) => {
     const c = contexto(params, request, 'asignar-pares')
     if (!c.ok) return c.respuesta
     const articulo = c.base.articulos.find((a) => a.id === params.id)
     if (!articulo) return error(404, 'Artículo no encontrado')
-    const { parId } = (await request.json()) as { parId: string }
-    const par = c.base.pares.find((p) => p.id === parId)
+    const datos = (await request.json()) as DatosAsignacion
+    let par: ParEvaluador | undefined
+    if ('nuevo' in datos) {
+      const previa = validarArticulo(c.base, articulo)
+      if (previa && !previa.ok) return error(previa.estado, previa.mensaje)
+      const nuevo = registrarCandidato(c.base, c.revista, datos.nuevo)
+      if ('mensaje' in nuevo) return error(nuevo.estado, nuevo.mensaje)
+      par = nuevo
+    } else {
+      par = c.base.pares.find((p) => p.id === datos.parId)
+    }
     if (!par) return error(404, 'Par evaluador no encontrado')
     const v = validar(c.base, articulo, par)
     if (!v.ok) return error(v.estado, v.mensaje)
@@ -179,9 +209,6 @@ export const handlersAsignaciones = [
       concepto: null,
     }
     c.base.asignaciones.push(asignacion)
-    if (articulo.estado === 'postulado' || articulo.estado === 'en-revision') {
-      articulo.estado = 'en-evaluacion'
-    }
 
     // The invitation goes out by itself when the assignment is saved (RF-24).
     const { asunto } = textosInvitacion(c.revista, par, articulo)
@@ -214,6 +241,8 @@ export const handlersAsignaciones = [
     }
     const cuerpo: ResultadoAsignacion = {
       asignacion,
+      par: { id: par.id, nombre: par.nombre, correo: par.correo },
+      conflicto: detectarConflicto(par, autoresDeArticulo(c.base, articulo.id)),
       correo: { estado: estadoCorreo, destinatario: par.correo },
     }
     return HttpResponse.json(cuerpo, { status: 201 })
@@ -271,7 +300,12 @@ export const handlersAsignaciones = [
         'Sistema',
       )
     }
-    const cuerpo: ResultadoAsignacion = { asignacion, correo: { estado, destinatario: par.correo } }
+    const cuerpo: ResultadoAsignacion = {
+      asignacion,
+      par: { id: par.id, nombre: par.nombre, correo: par.correo },
+      conflicto: null,
+      correo: { estado, destinatario: par.correo },
+    }
     return HttpResponse.json(cuerpo)
   }),
 
@@ -288,9 +322,16 @@ export const handlersAsignaciones = [
     }
 
     const ahora = ahoraIso()
+    const articulo = c.base.articulos.find((a) => a.id === asignacion.articuloId)
     if (respuesta === 'acepto') {
+      const ocupados = asignadas(c.base, asignacion.articuloId).filter(ocupaCupo).length
+      if (ocupados >= MAX_PARES_ACTIVOS) {
+        return error(409, 'El artículo ya tiene tres pares que aceptaron')
+      }
       asignacion.estado = 'acepto'
       asignacion.fechaRespuesta = ahora
+      // RF-22: the article goes to «En evaluación» when the first peer accepts.
+      if (articulo?.estado === 'en-revision') articulo.estado = 'en-evaluacion'
       auditar(
         c.base,
         c.revista,
@@ -300,7 +341,19 @@ export const handlersAsignaciones = [
         c.usuario.nombre,
       )
     } else if (respuesta === 'no-acepto') {
-      // RF-15: a peer who says they do not want to take part goes to the blocked list.
+      // Declining this invitation does not block the peer: it can be invited again later.
+      asignacion.estado = 'no-acepto'
+      asignacion.fechaRespuesta = ahora
+      auditar(
+        c.base,
+        c.revista,
+        asignacion.articuloId,
+        'asignacion',
+        `Registró que el par ${asignacion.orden} no aceptó esta invitación`,
+        c.usuario.nombre,
+      )
+    } else if (respuesta === 'no-desea') {
+      // RF-15: a peer who does not want to take part any more goes to the blocked list.
       asignacion.estado = 'no-acepto'
       asignacion.fechaRespuesta = ahora
       par.bloqueo = { motivo: 'no-desea', fecha: ahora.slice(0, 10) }
@@ -313,11 +366,11 @@ export const handlersAsignaciones = [
         c.usuario.nombre,
       )
     } else {
-      // RF-15: blocked after the second attempt without an answer.
+      // RF-15, RF-29: blocked after the second attempt without an answer.
       if (asignacion.estado !== 'segundo-intento') {
         return error(409, 'El bloqueo por falta de respuesta se aplica tras el segundo intento')
       }
-      asignacion.estado = 'no-acepto'
+      asignacion.estado = 'sin-respuesta'
       par.bloqueo = { motivo: 'sin-respuesta', fecha: ahora.slice(0, 10) }
       auditar(
         c.base,

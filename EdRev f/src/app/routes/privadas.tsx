@@ -32,7 +32,6 @@ import { InicioGeneralPage } from '@/modules/inicio/pages/InicioGeneralPage'
 import { TableroPage } from '@/modules/inicio/pages/TableroPage'
 import { InformesPage } from '@/modules/informes/pages/InformesPage'
 import { ParDetallePage } from '@/modules/pares/pages/ParDetallePage'
-import { ParesAsignarPage } from '@/modules/pares/pages/ParesAsignarPage'
 import { ParesBloqueadosPage } from '@/modules/pares/pages/ParesBloqueadosPage'
 import { ParesPage } from '@/modules/pares/pages/ParesPage'
 
@@ -97,10 +96,6 @@ export const rutasPrivadas: RouteObject[] = [
               { path: 'autores/:id', element: <AutorDetallePage /> },
               { path: 'pares', element: <ParesPage /> },
               { path: 'pares/bloqueados', element: <ParesBloqueadosPage /> },
-              {
-                element: <RutaPorPermiso accion="asignar-pares" />,
-                children: [{ path: 'pares/asignar', element: <ParesAsignarPage /> }],
-              },
               { path: 'pares/:id', element: <ParDetallePage /> },
               { path: 'constancias', element: <ConstanciasPage /> },
               { path: 'correos', element: <CorreosPage /> },

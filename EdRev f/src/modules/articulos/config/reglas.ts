@@ -24,7 +24,7 @@ export function conceptosContradictorios(a: ConceptoPar | null, b: ConceptoPar |
  * process goes on with whoever accepted while other peers are invited.
  */
 export function paresVigentes<T extends { estado: EstadoAsignacion }>(asignaciones: T[]): T[] {
-  return asignaciones.filter((a) => a.estado !== 'no-acepto')
+  return asignaciones.filter((a) => a.estado === 'acepto' || a.estado === 'entrego')
 }
 
 export function aNumero(texto: string): number {

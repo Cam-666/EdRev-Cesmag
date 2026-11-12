@@ -2,12 +2,7 @@ import { AUXILIAR } from '../seed/usuarios'
 import { json, llamar } from '@/test/llamarApi'
 import type { ArticuloDetalle } from '@/types/articulo'
 import type { HistorialArticulo } from '@/types/historial'
-import type {
-  ParDetalle,
-  ParListado,
-  ResultadoAsignacion,
-  VistaPreviaInvitacion,
-} from '@/types/par'
+import type { ParDetalle, ParListado, ResultadoAsignacion } from '@/types/par'
 
 /** Today as yyyy-MM-dd (an invitation is dated now, so a delivery cannot be earlier). */
 function hoy(): string {
@@ -22,7 +17,13 @@ interface ListaPares {
   totalBloqueados: number
 }
 
-async function articuloNuevo(revista: 'reep' | 'ire', numero: string, autorId: string) {
+/** A new article; by default the committee approves it so it can receive peers (RF-19). */
+async function articuloNuevo(
+  revista: 'reep' | 'ire',
+  numero: string,
+  autorId: string,
+  aprobado = true,
+) {
   const r = await llamar(`/${revista}/articulos`, {
     metodo: 'POST',
     cuerpo: {
@@ -34,7 +35,42 @@ async function articuloNuevo(revista: 'reep' | 'ire', numero: string, autorId: s
     },
   })
   expect(r.status).toBe(201)
-  return json<ArticuloDetalle>(r)
+  const articulo = await json<ArticuloDetalle>(r)
+  if (aprobado) await ronda(revista, articulo.id, 'aprobado')
+  return articulo
+}
+
+function ronda(revista: 'reep' | 'ire', id: string, resultado: string) {
+  return llamar(`/${revista}/articulos/${id}/rondas`, {
+    metodo: 'POST',
+    cuerpo: { coincidencias: 6, atribuidoIa: 2, resultado, observacion: '' },
+  })
+}
+
+/** Peers that can be assigned to the article: not blocked and with no evaluation in progress. */
+async function disponibles(revista: 'reep' | 'ire', articuloId: string): Promise<ParListado[]> {
+  const r = await llamar(`/${revista}/pares?estado=asignables&articulo=${articuloId}&porPagina=50`)
+  return (await json<ListaPares>(r)).items
+}
+
+/** Assigns a brand-new candidate (saved in the base and invited); the seed has few free peers. */
+async function candidato(articuloId: string, n: number): Promise<ResultadoAsignacion> {
+  const r = await llamar(`/reep/articulos/${articuloId}/asignaciones`, {
+    metodo: 'POST',
+    cuerpo: {
+      nuevo: {
+        nombre: `Candidato ${n}`,
+        correo: `candidato${n}.${articuloId}@udenar.edu.co`,
+        universidad: 'Universidad de Nariño',
+        area: 'Educación rural',
+      },
+    },
+  })
+  return json<ResultadoAsignacion>(r)
+}
+
+function responder(id: string, respuesta: string) {
+  return llamar(`/reep/asignaciones/${id}/respuesta`, { metodo: 'POST', cuerpo: { respuesta } })
 }
 
 async function asignar(
@@ -152,124 +188,166 @@ describe('peers API (mock)', () => {
 })
 
 describe('assignment and invitation (mock)', () => {
-  it('previews the invitation with the journal sender, fixed template and no attachments', async () => {
-    const articulo = await articuloNuevo('reep', '2026-035', 'reep-au-3')
-    const v = await json<VistaPreviaInvitacion>(
-      await llamar(`/reep/articulos/${articulo.id}/asignaciones/vista-previa?parId=reep-par-1`),
-    )
-    expect(v.de).toBe('editorial.eyp@gmail.com')
-    expect(v.para).toBe('lm.burbano@udenar.edu.co')
-    expect(v.asunto).toBe(
-      'Invitación a evaluar un artículo · Revista Electrónica en Educación y Pedagogía',
-    )
-    expect(v.cuerpo).toContain('Apreciado(a) Luz Marina Burbano')
-    expect(v.cuerpo).toContain('«Artículo 2026-035»')
-    expect(v.adjuntos).toMatch(/Sin adjuntos/)
-    expect(v.orden).toBe(1)
-    expect(v.conflicto).toBeNull()
+  it('only an article approved by the committee (most recent round) receives peers', async () => {
+    const articulo = await articuloNuevo('reep', '2026-035', 'reep-au-3', false)
+    const [par] = await disponibles('reep', articulo.id)
+    if (!par) throw new Error('no available peer')
+    expect((await asignar('reep', articulo.id, par.id)).status).toBe(409)
+    await ronda('reep', articulo.id, 'ajustes')
+    expect((await asignar('reep', articulo.id, par.id)).status).toBe(409)
+    await ronda('reep', articulo.id, 'aprobado')
+    expect((await asignar('reep', articulo.id, par.id)).status).toBe(201)
   })
 
-  it('warns about a conflict of interest without blocking the assignment', async () => {
-    const articulo = await articuloNuevo('reep', '2026-036', 'reep-au-2') // author from Universidad CESMAG
-    const v = await json<VistaPreviaInvitacion>(
-      await llamar(`/reep/articulos/${articulo.id}/asignaciones/vista-previa?parId=reep-par-4`),
-    )
-    expect(v.conflicto?.mensaje).toContain('Diego Fernando Erazo')
-    expect((await asignar('reep', articulo.id, 'reep-par-4')).status).toBe(201)
+  it('lists as available only peers not blocked, without evaluations in progress and not in the article', async () => {
+    const articulo = await articuloNuevo('reep', '2026-036', 'reep-au-3')
+    const antes = await disponibles('reep', articulo.id)
+    expect(antes.length).toBeGreaterThan(0)
+    expect(antes.some((p) => p.estado === 'bloqueado')).toBe(false)
+    const ocupados = await json<ArticuloDetalle>(await llamar('/reep/articulos/2026-012'))
+    const enCurso = ocupados.asignaciones
+      .filter((a) => ['invitado', 'segundo-intento', 'acepto'].includes(a.estado))
+      .map((a) => a.par.id)
+    expect(enCurso.length).toBeGreaterThan(0)
+    expect(antes.some((p) => enCurso.includes(p.id))).toBe(false)
+
+    const elegido = antes[0] as ParListado
+    await asignar('reep', articulo.id, elegido.id)
+    const despues = await disponibles('reep', articulo.id)
+    expect(despues.some((p) => p.id === elegido.id)).toBe(false)
   })
 
-  it('assigning sends the invitation by itself and leaves a trace in the history', async () => {
+  it('assigning sends the invitation by itself; the article is «En evaluación» once a peer accepts', async () => {
     const articulo = await articuloNuevo('reep', '2026-037', 'reep-au-3')
-    const r = await asignar('reep', articulo.id, 'reep-par-1', AUXILIAR)
+    const [par] = await disponibles('reep', articulo.id)
+    if (!par) throw new Error('no available peer')
+    const r = await asignar('reep', articulo.id, par.id, AUXILIAR)
     expect(r.status).toBe(201)
     const cuerpo = await json<ResultadoAsignacion>(r)
     expect(cuerpo.asignacion).toMatchObject({ orden: 1, estado: 'invitado', intento: 1 })
-    expect(cuerpo.correo).toEqual({ estado: 'entregado', destinatario: 'lm.burbano@udenar.edu.co' })
+    expect(cuerpo.correo).toEqual({ estado: 'entregado', destinatario: par.correo })
 
     const h = await json<HistorialArticulo>(
       await llamar(`/reep/articulos/${articulo.id}/historial`),
     )
-    expect(h.correos[0]).toMatchObject({
-      tipo: 'invitacion',
-      destinatario: 'lm.burbano@udenar.edu.co',
-      estado: 'entregado',
-    })
+    expect(h.correos[0]).toMatchObject({ tipo: 'invitacion', destinatario: par.correo })
     expect(
       h.auditoria.some((a) => a.accion === 'Asignó el par 1' && a.usuario === 'Andrea Villota'),
     ).toBe(true)
 
-    const art = await json<ArticuloDetalle>(await llamar(`/reep/articulos/${articulo.id}`))
-    expect(art.estado).toBe('en-evaluacion')
-    expect(art.asignaciones).toHaveLength(1)
+    const enRevision = await json<ArticuloDetalle>(await llamar(`/reep/articulos/${articulo.id}`))
+    expect(enRevision.estado).toBe('en-revision')
+    await responder(cuerpo.asignacion.id, 'acepto')
+    const enEvaluacion = await json<ArticuloDetalle>(await llamar(`/reep/articulos/${articulo.id}`))
+    expect(enEvaluacion.estado).toBe('en-evaluacion')
   })
 
-  it('refuses blocked peers, repeated peers and a fourth peer', async () => {
+  it('a new candidate is saved in the journal base and invited right away', async () => {
     const articulo = await articuloNuevo('reep', '2026-038', 'reep-au-3')
-    expect((await asignar('reep', articulo.id, 'reep-par-5')).status).toBe(409) // blocked
-    expect((await asignar('reep', articulo.id, 'reep-par-1')).status).toBe(201)
-    expect((await asignar('reep', articulo.id, 'reep-par-1')).status).toBe(409) // repeated
-    expect((await asignar('reep', articulo.id, 'reep-par-2')).status).toBe(201)
-    expect((await asignar('reep', articulo.id, 'reep-par-3')).status).toBe(201)
-    expect((await asignar('reep', articulo.id, 'reep-par-6')).status).toBe(409) // fourth
+    const nuevo = {
+      nombre: 'Marta Lucía Gómez',
+      correo: 'ML.Gomez@udenar.edu.co',
+      universidad: 'Universidad de Nariño',
+      area: 'Educación rural',
+    }
+    const r = await llamar(`/reep/articulos/${articulo.id}/asignaciones`, {
+      metodo: 'POST',
+      cuerpo: { nuevo },
+      usuario: AUXILIAR,
+    })
+    expect(r.status).toBe(201)
+    const cuerpo = await json<ResultadoAsignacion>(r)
+    expect(cuerpo.par).toMatchObject({
+      nombre: 'Marta Lucía Gómez',
+      correo: 'ml.gomez@udenar.edu.co',
+    })
+    expect(cuerpo.correo.estado).toBe('entregado')
+    const base = await json<ListaPares>(await llamar('/reep/pares?estado=todos&q=gomez'))
+    expect(base.items.map((p) => p.correo)).toContain('ml.gomez@udenar.edu.co')
+    const enIre = await json<ListaPares>(await llamar('/ire/pares?estado=todos&q=gomez'))
+    expect(enIre.total).toBe(0)
+
+    const repetido = await llamar(`/reep/articulos/${articulo.id}/asignaciones`, {
+      metodo: 'POST',
+      cuerpo: { nuevo },
+    })
+    expect(repetido.status).toBe(409)
+    const invalido = await llamar(`/reep/articulos/${articulo.id}/asignaciones`, {
+      metodo: 'POST',
+      cuerpo: { nuevo: { ...nuevo, correo: 'sin-arroba' } },
+    })
+    expect(invalido.status).toBe(422)
   })
 
-  it('invitations run in parallel: one accepts and goes on, a decline frees its place', async () => {
-    const articulo = await articuloNuevo('reep', '2026-045', 'reep-au-3')
-    const ids: string[] = []
-    for (const par of ['reep-par-1', 'reep-par-2', 'reep-par-3']) {
-      const r = await json<ResultadoAsignacion>(await asignar('reep', articulo.id, par))
-      ids.push(r.asignacion.id)
-    }
-    const [primero, segundo] = ids
-    // The first accepts and its evaluation goes on while the others are still pending
-    await llamar(`/reep/asignaciones/${primero}/respuesta`, {
-      metodo: 'POST',
-      cuerpo: { respuesta: 'acepto' },
-    })
-    const entrega = await llamar(`/reep/asignaciones/${primero}/entrega`, {
-      metodo: 'POST',
-      cuerpo: { fecha: hoy() },
-    })
-    expect(entrega.status).toBe(200)
-    // Three in force: no room for a fourth
-    expect((await asignar('reep', articulo.id, 'reep-par-6')).status).toBe(409)
-    // The second declines: it stays listed but frees its place for another peer
-    await llamar(`/reep/asignaciones/${segundo}/respuesta`, {
-      metodo: 'POST',
-      cuerpo: { respuesta: 'no-acepto' },
-    })
-    const otro = await asignar('reep', articulo.id, 'reep-par-6')
-    expect(otro.status).toBe(201)
-    expect((await json<ResultadoAsignacion>(otro)).asignacion.orden).toBe(4)
-    const ficha = await json<ArticuloDetalle>(await llamar(`/reep/articulos/${articulo.id}`))
-    expect(ficha.asignaciones).toHaveLength(4)
+  it('warns about a conflict of interest without blocking the assignment', async () => {
+    const articulo = await articuloNuevo('reep', '2026-039', 'reep-au-2') // author from Universidad CESMAG
+    const conflicto = (await disponibles('reep', articulo.id)).find((p) => p.estado === 'conflicto')
+    if (!conflicto) throw new Error('no peer in conflict')
+    const r = await asignar('reep', articulo.id, conflicto.id)
+    expect(r.status).toBe(201)
+    expect((await json<ResultadoAsignacion>(r)).conflicto?.mensaje).toBeTruthy()
+  })
+
+  it('refuses blocked peers, repeated peers and peers busy with another evaluation', async () => {
+    const articulo = await articuloNuevo('reep', '2026-040', 'reep-au-3')
+    const otro = await articuloNuevo('reep', '2026-041', 'reep-au-3')
+    expect((await asignar('reep', articulo.id, 'reep-par-5')).status).toBe(409) // blocked
+    const [par] = await disponibles('reep', articulo.id)
+    if (!par) throw new Error('no available peer')
+    expect((await asignar('reep', articulo.id, par.id)).status).toBe(201)
+    expect((await asignar('reep', articulo.id, par.id)).status).toBe(409) // repeated
+    expect((await asignar('reep', otro.id, par.id)).status).toBe(409) // evaluation in progress
+  })
+
+  it('at most three peers who accepted or delivered; declines and missing answers take no place', async () => {
+    const articulo = await articuloNuevo('reep', '2026-042', 'reep-au-3')
+    // Five invitations in parallel: an invitation does not take a place
+    const asignados: ResultadoAsignacion[] = []
+    for (const n of [1, 2, 3, 4, 5]) asignados.push(await candidato(articulo.id, n))
+    const [a, b, c, d, e] = asignados.map((x) => x.asignacion.id) as [
+      string,
+      string,
+      string,
+      string,
+      string,
+    ]
+    // One does not accept this invitation: not blocked, no place taken
+    await responder(a, 'no-acepto')
+    const primero = await json<ParDetalle>(
+      await llamar(`/reep/pares/${asignados[0]?.par.id ?? ''}`),
+    )
+    expect(primero.bloqueo).toBeNull()
+    // Three accept: the article is full
+    for (const id of [b, c, d]) expect((await responder(id, 'acepto')).status).toBe(200)
+    expect((await responder(e, 'acepto')).status).toBe(409)
+    const [libre] = await disponibles('reep', articulo.id)
+    expect((await asignar('reep', articulo.id, libre?.id ?? '')).status).toBe(409)
   })
 
   it('a peer of the other journal cannot be assigned', async () => {
-    const articulo = await articuloNuevo('reep', '2026-039', 'reep-au-3')
+    const articulo = await articuloNuevo('reep', '2026-043', 'reep-au-3')
     expect((await asignar('reep', articulo.id, 'ire-par-1')).status).toBe(404)
   })
 
   it('a bounced address keeps the assignment so it can be fixed and resent (RF-27)', async () => {
-    const articulo = await articuloNuevo('reep', '2026-040', 'reep-au-3')
-    const creado = await json<ParDetalle>(
-      await llamar('/reep/pares', {
+    const articulo = await articuloNuevo('reep', '2026-044', 'reep-au-3')
+    const r = await json<ResultadoAsignacion>(
+      await llamar(`/reep/articulos/${articulo.id}/asignaciones`, {
         metodo: 'POST',
         cuerpo: {
-          nombre: 'Par Rebote',
-          correo: 'par@invalido.test',
-          universidad: 'Universidad del Valle',
-          area: 'Educación rural',
-          autorizoDatos: false,
+          nuevo: {
+            nombre: 'Par Rebote',
+            correo: 'par@invalido.test',
+            universidad: 'Universidad del Valle',
+            area: 'Educación rural',
+          },
         },
       }),
     )
-    const r = await json<ResultadoAsignacion>(await asignar('reep', articulo.id, creado.id))
     expect(r.correo.estado).toBe('rebotado')
     expect(r.asignacion.estado).toBe('invitado')
 
-    // Correct the address and resend: it is delivered now
-    await llamar(`/reep/pares/${creado.id}`, {
+    await llamar(`/reep/pares/${r.par.id}`, {
       metodo: 'PATCH',
       cuerpo: { correo: 'par.corregido@univalle.edu.co' },
     })
@@ -283,26 +361,19 @@ describe('assignment and invitation (mock)', () => {
     const h = await json<HistorialArticulo>(
       await llamar(`/reep/articulos/${articulo.id}/historial`),
     )
-    expect(h.correos.map((c) => c.estado)).toEqual(
+    expect(h.correos.map((x) => x.estado)).toEqual(
       expect.arrayContaining(['rebotado', 'entregado']),
     )
   })
 
-  it('resending moves to 2nd attempt; a missing answer after it blocks the peer; accepting does not', async () => {
-    const articulo = await articuloNuevo('reep', '2026-041', 'reep-au-3')
-    const r = await json<ResultadoAsignacion>(await asignar('reep', articulo.id, 'reep-par-1'))
+  it('resending moves to 2nd attempt; a missing answer after it leaves «Sin respuesta» and blocks', async () => {
+    const articulo = await articuloNuevo('reep', '2026-045', 'reep-au-3')
+    const [par] = await disponibles('reep', articulo.id)
+    if (!par) throw new Error('no available peer')
+    const r = await json<ResultadoAsignacion>(await asignar('reep', articulo.id, par.id))
     const id = r.asignacion.id
 
-    // "no response" is only valid after the second attempt
-    expect(
-      (
-        await llamar(`/reep/asignaciones/${id}/respuesta`, {
-          metodo: 'POST',
-          cuerpo: { respuesta: 'sin-respuesta' },
-        })
-      ).status,
-    ).toBe(409)
-
+    expect((await responder(id, 'sin-respuesta')).status).toBe(409) // only after the 2nd attempt
     const reenvio = await json<ResultadoAsignacion>(
       await llamar(`/reep/asignaciones/${id}/reenviar`, {
         metodo: 'POST',
@@ -310,68 +381,45 @@ describe('assignment and invitation (mock)', () => {
       }),
     )
     expect(reenvio.asignacion).toMatchObject({ estado: 'segundo-intento', intento: 2 })
-
-    expect(
-      (
-        await llamar(`/reep/asignaciones/${id}/respuesta`, {
-          metodo: 'POST',
-          cuerpo: { respuesta: 'sin-respuesta' },
-        })
-      ).status,
-    ).toBe(200)
-    const par = await json<ParDetalle>(await llamar('/reep/pares/reep-par-1'))
-    expect(par.bloqueo?.motivo).toBe('sin-respuesta')
-    // A blocked peer gets no new invitations
-    const otro = await articuloNuevo('reep', '2026-042', 'reep-au-3')
-    expect((await asignar('reep', otro.id, 'reep-par-1')).status).toBe(409)
+    const sin = await responder(id, 'sin-respuesta')
+    expect((await json<{ estado: string }>(sin)).estado).toBe('sin-respuesta')
+    const ficha = await json<ParDetalle>(await llamar(`/reep/pares/${par.id}`))
+    expect(ficha.bloqueo?.motivo).toBe('sin-respuesta')
+    const otro = await articuloNuevo('reep', '2026-046', 'reep-au-3')
+    expect((await asignar('reep', otro.id, par.id)).status).toBe(409)
   })
 
-  it('a peer who declines goes to the blocked list as "no desea participar"', async () => {
-    const articulo = await articuloNuevo('reep', '2026-043', 'reep-au-3')
-    const r = await json<ResultadoAsignacion>(await asignar('reep', articulo.id, 'reep-par-6'))
-    await llamar(`/reep/asignaciones/${r.asignacion.id}/respuesta`, {
-      metodo: 'POST',
-      cuerpo: { respuesta: 'no-acepto' },
-    })
-    const par = await json<ParDetalle>(await llamar('/reep/pares/reep-par-6'))
-    expect(par.bloqueo?.motivo).toBe('no-desea')
+  it('«No desea participar más» blocks the peer as "no desea participar"', async () => {
+    const articulo = await articuloNuevo('reep', '2026-047', 'reep-au-3')
+    const [par] = await disponibles('reep', articulo.id)
+    if (!par) throw new Error('no available peer')
+    const r = await json<ResultadoAsignacion>(await asignar('reep', articulo.id, par.id))
+    await responder(r.asignacion.id, 'no-desea')
+    const ficha = await json<ParDetalle>(await llamar(`/reep/pares/${par.id}`))
+    expect(ficha.bloqueo?.motivo).toBe('no-desea')
   })
 
   it('delivery needs acceptance, creates a pending constancia and enables the concept', async () => {
-    const articulo = await articuloNuevo('reep', '2026-044', 'reep-au-3')
-    const r = await json<ResultadoAsignacion>(await asignar('reep', articulo.id, 'reep-par-2'))
+    const articulo = await articuloNuevo('reep', '2026-048', 'reep-au-3')
+    const [par] = await disponibles('reep', articulo.id)
+    if (!par) throw new Error('no available peer')
+    const r = await json<ResultadoAsignacion>(await asignar('reep', articulo.id, par.id))
     const id = r.asignacion.id
-    const entrega = (fecha: string, usuario?: typeof AUXILIAR) =>
-      llamar(`/reep/asignaciones/${id}/entrega`, { metodo: 'POST', cuerpo: { fecha }, usuario })
+    const entrega = (fecha: string) =>
+      llamar(`/reep/asignaciones/${id}/entrega`, { metodo: 'POST', cuerpo: { fecha } })
+    const concepto = (c: string) =>
+      llamar(`/reep/asignaciones/${id}/concepto`, { metodo: 'POST', cuerpo: { concepto: c } })
 
     expect((await entrega(hoy())).status).toBe(409) // not accepted yet
-    await llamar(`/reep/asignaciones/${id}/respuesta`, {
-      metodo: 'POST',
-      cuerpo: { respuesta: 'acepto' },
-    })
+    await responder(id, 'acepto')
     expect((await entrega('2099-01-01')).status).toBe(422) // future
-    expect(
-      (
-        await llamar(`/reep/asignaciones/${id}/concepto`, {
-          metodo: 'POST',
-          cuerpo: { concepto: 'publicable' },
-        })
-      ).status,
-    ).toBe(409)
-
+    expect((await concepto('publicable')).status).toBe(409)
     expect((await entrega(hoy())).status).toBe(200)
-    expect(
-      (
-        await llamar(`/reep/asignaciones/${id}/concepto`, {
-          metodo: 'POST',
-          cuerpo: { concepto: 'publicable' },
-        })
-      ).status,
-    ).toBe(200)
+    expect((await concepto('pendiente-formato')).status).toBe(200)
+    expect((await concepto('publicable')).status).toBe(200) // corrected
 
-    const par = await json<ParDetalle>(await llamar('/reep/pares/reep-par-2'))
-    const part = par.participaciones.find((x) => x.asignacionId === id)
-    expect(part).toMatchObject({
+    const ficha = await json<ParDetalle>(await llamar(`/reep/pares/${par.id}`))
+    expect(ficha.participaciones.find((x) => x.asignacionId === id)).toMatchObject({
       estado: 'entrego',
       concepto: 'publicable',
       constancia: 'pendiente',
@@ -379,51 +427,31 @@ describe('assignment and invitation (mock)', () => {
   })
 
   it('the third peer is the tiebreaker only when the first two concepts contradict', async () => {
-    async function entregar(
-      revistaArt: string,
-      id: string,
-      concepto: 'publicable' | 'no-publicable',
-    ) {
-      await llamar(`/reep/asignaciones/${id}/respuesta`, {
-        metodo: 'POST',
-        cuerpo: { respuesta: 'acepto' },
-      })
+    async function entregar(id: string, concepto: 'publicable' | 'no-publicable') {
+      await responder(id, 'acepto')
       await llamar(`/reep/asignaciones/${id}/entrega`, {
         metodo: 'POST',
         cuerpo: { fecha: hoy() },
       })
       await llamar(`/reep/asignaciones/${id}/concepto`, { metodo: 'POST', cuerpo: { concepto } })
-      return revistaArt
     }
-
-    const coinciden = await articuloNuevo('reep', '2026-045', 'reep-au-3')
-    const a1 = await json<ResultadoAsignacion>(await asignar('reep', coinciden.id, 'reep-par-1'))
-    const a2 = await json<ResultadoAsignacion>(await asignar('reep', coinciden.id, 'reep-par-2'))
-    await entregar(coinciden.id, a1.asignacion.id, 'publicable')
-    await entregar(coinciden.id, a2.asignacion.id, 'publicable')
-    const v1 = await json<VistaPreviaInvitacion>(
-      await llamar(`/reep/articulos/${coinciden.id}/asignaciones/vista-previa?parId=reep-par-3`),
-    )
-    expect(v1).toMatchObject({ orden: 3, esDesempate: false })
-
-    const divergen = await articuloNuevo('reep', '2026-046', 'reep-au-3')
-    const b1 = await json<ResultadoAsignacion>(await asignar('reep', divergen.id, 'reep-par-1'))
-    const b2 = await json<ResultadoAsignacion>(await asignar('reep', divergen.id, 'reep-par-2'))
-    await entregar(divergen.id, b1.asignacion.id, 'publicable')
-    await entregar(divergen.id, b2.asignacion.id, 'no-publicable')
-    const v2 = await json<VistaPreviaInvitacion>(
-      await llamar(`/reep/articulos/${divergen.id}/asignaciones/vista-previa?parId=reep-par-3`),
-    )
-    expect(v2).toMatchObject({ orden: 3, esDesempate: true })
-    const tercera = await json<ResultadoAsignacion>(
-      await asignar('reep', divergen.id, 'reep-par-3'),
-    )
-    expect(tercera.asignacion.esDesempate).toBe(true)
+    async function tresPares(numero: string, segundo: 'publicable' | 'no-publicable') {
+      const articulo = await articuloNuevo('reep', numero, 'reep-au-3')
+      const a1 = await candidato(articulo.id, 1)
+      const a2 = await candidato(articulo.id, 2)
+      await entregar(a1.asignacion.id, 'publicable')
+      await entregar(a2.asignacion.id, segundo)
+      return candidato(articulo.id, 3)
+    }
+    expect((await tresPares('2026-049', 'publicable')).asignacion.esDesempate).toBe(false)
+    expect((await tresPares('2026-050', 'no-publicable')).asignacion.esDesempate).toBe(true)
   })
 
-  it('a reminder is queued, not sent now (simulated; RF-29 is still under review)', async () => {
-    const articulo = await articuloNuevo('reep', '2026-047', 'reep-au-3')
-    const r = await json<ResultadoAsignacion>(await asignar('reep', articulo.id, 'reep-par-1'))
+  it('a reminder is queued, not sent now (simulated)', async () => {
+    const articulo = await articuloNuevo('reep', '2026-051', 'reep-au-3')
+    const [par] = await disponibles('reep', articulo.id)
+    if (!par) throw new Error('no available peer')
+    const r = await json<ResultadoAsignacion>(await asignar('reep', articulo.id, par.id))
     const rec = await json<ResultadoAsignacion>(
       await llamar(`/reep/asignaciones/${r.asignacion.id}/reenviar`, {
         metodo: 'POST',
