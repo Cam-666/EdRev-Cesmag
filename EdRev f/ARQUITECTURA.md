@@ -99,8 +99,9 @@ los permisos de cada perfil.
 ## Cómo demostrar un correo rebotado
 
 En la API simulada, un par cuyo correo termina en `@invalido.test` hace que la invitación rebote. Para
-verlo: registre un par con ese correo, asígnelo a un artículo (la invitación aparece como rebotada y la
-asignación se conserva), corrija el correo desde la ficha del par y use «Reenviar invitación».
+verlo: en un artículo aprobado por el comité, «Asignar par» › «Registrar un candidato nuevo» con ese correo
+(la invitación aparece como rebotada y la asignación se conserva), corrija el correo desde la ficha del par y
+use «Reenviar invitación».
 
 ## Constancias, correos, paneles y administración (fase 6)
 
@@ -112,10 +113,12 @@ asignación se conserva), corrija el correo desde la ficha del par y use «Reenv
 - `modules/inicio`: Tablero por revista (pares sin responder, constancias pendientes) e Inicio
   (resumen de ambas revistas, cada tarjeta con los colores de su revista, y «Pendiente»).
 - `modules/informes`: informe comparativo para ambos perfiles; exporta CSV.
-- `modules/administracion`: usuarios, plantillas (invitación, agradecimiento, constancia) con validación de
-  marcadores y auditoría de ambas revistas. Se pueden crear plantillas nuevas
-  para cualquiera de los tres usos: parten del texto de la que está en uso y solo se envían cuando se elige
-  «Usar en los envíos» (hay exactamente una en uso por cada uso).
+- `modules/administracion`: usuarios, plantillas de cada revista (invitación, agradecimiento, constancia) con
+  validación de marcadores `{{revista}}`, `{{par}}`, `{{articulo}}` y auditoría de ambas revistas. Se elige la
+  revista y se pueden crear plantillas nuevas para cualquiera de los tres usos: parten del texto (y del PDF de
+  fondo) de la que está en uso en esa revista y solo se envían cuando se elige «Usar en los envíos» (una en
+  uso por uso y revista). La constancia lleva un PDF de fondo (membrete, diseño y firma) que se sube como
+  archivo (`POST /plantillas/:id/fondo`, multipart); el texto se escribe sobre él.
 - Las plantillas son estado compartido del mock (`mocks/db.ts`); cambiarlas afecta los siguientes envíos sin
   tocar código (RNF-19). La cuenta remitente de cada revista no se edita en pantalla: es configuración del
   servicio de correo (remitente verificado en Brevo) y sus credenciales nunca viajan al frontend.
@@ -128,8 +131,32 @@ asignación se conserva), corrija el correo desde la ficha del par y use «Reenv
   Auxiliar y el mock responde 403 si lo intenta por la API.
 - Las acciones de cada pantalla («Registrar artículo», «Editar», «Asignar par»…) van junto al título, en el
   contenido (`components/common/EncabezadoPagina`), no en la barra de la revista.
-- Pares: cada revista tiene su propia base (no se comparten). Las invitaciones corren en paralelo: hasta tres
-  pares vigentes por artículo; quien acepta sigue con su evaluación mientras se buscan los demás, y quien no
-  acepta queda en la lista pero libera su lugar para invitar a otro (`paresVigentes` en
-  `modules/articulos/config/reglas.ts`). `orden` es el orden de asignación.
+- Pares: cada revista tiene su propia base (no se comparten). Las invitaciones corren en paralelo.
 - Sin recuadros que expliquen el uso del sistema: solo avisos de estado (errores, conflictos, rebotes, éxito).
+
+## Flujo del artículo (documentación v3.3)
+
+1. **Registrar artículo** (`/articulos/nuevo`): un solo formulario con los datos (número de OJS, fecha, título,
+   un solo tipo) y los autores (hasta siete, del directorio común). Al guardar queda Postulado y se abre la
+   pestaña «Revisión del comité» con el formulario de la ronda.
+2. **Revisión del comité** (`/articulos/:id/comite`): cada ronda registra coincidencias, IA (aviso sobre el
+   15 %, nunca bloquea), resultado (Aprobado · Requiere ajustes · Rechazado) y observaciones; sin límite de
+   rondas y sin sobrescribir. Rechazado deja el artículo Rechazado y sin pares; Aprobado lleva a la
+   asignación de pares. Reglas en `lib/dominio/comite.ts` (las usan pantallas y mock).
+3. **Cambiar de revista**: botón en la ficha mientras el artículo está en revisión del comité (sin ronda
+   aprobada y sin pares), las veces que haga falta; luego se bloquea. Queda en el historial («Cambio de
+   revista»).
+4. **Asignar par** (pestaña «Pares y evaluación»): solo si la ronda más reciente es Aprobado. Dos caminos:
+   elegir de los pares disponibles (no bloqueados y sin evaluaciones en curso: invitado o aceptó) o registrar
+   un candidato nuevo (queda en la base de la revista). En ambos la invitación sale sola. Como máximo tres
+   pares que aceptaron o entregaron (`lib/dominio/pares.ts`); los que no aceptan o no responden no ocupan
+   cupo. El artículo pasa a En evaluación cuando acepta el primer par.
+5. **Respuesta del par**: Aceptó · No aceptó esta invitación (no bloquea) · No desea participar más (bloquea) ·
+   Sin respuesta tras el 2.º intento (bloquea, estado «Sin respuesta»).
+6. **Entrega**: al marcarla se ofrece de inmediato «Emitir constancia» (vista previa con la plantilla de
+   constancia de la revista sobre su PDF de fondo); «Más tarde» la deja pendiente y se puede emitir desde
+   el par o desde Constancias.
+
+Autores: directorio común a las dos revistas (filtrable por revista); cada autor tiene su pantalla
+(`/autores/:id`) con todos sus artículos y su revista. Las pantallas de detalle tienen «Volver». El panel
+lateral queda fijo al desplazar el contenido.
