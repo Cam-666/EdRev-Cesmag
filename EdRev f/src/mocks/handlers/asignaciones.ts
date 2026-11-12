@@ -169,8 +169,8 @@ function textosInvitacion(revista: Revista, par: ParEvaluador, articulo: Articul
     articulo: articulo.titulo,
   }
   return {
-    asunto: rellenar(plantillaEnUso('invitacion').asunto ?? '', variables),
-    cuerpo: rellenar(plantillaEnUso('invitacion').cuerpo, variables),
+    asunto: rellenar(plantillaEnUso(revista, 'invitacion').asunto ?? '', variables),
+    cuerpo: rellenar(plantillaEnUso(revista, 'invitacion').cuerpo, variables),
   }
 }
 
@@ -419,7 +419,9 @@ export const handlersAsignaciones = [
       `Marcó la entrega del par ${asignacion.orden}`,
       c.usuario.nombre,
     )
-    return HttpResponse.json(asignacion)
+    // RF-23: the sheet offers to issue the constancia right away.
+    const constancia = c.base.constancias.find((k) => k.asignacionId === asignacion.id)
+    return HttpResponse.json({ ...asignacion, constanciaId: constancia?.id ?? null })
   }),
 
   http.post('*/api/:revista/asignaciones/:id/concepto', async ({ params, request }) => {

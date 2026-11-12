@@ -16,7 +16,7 @@ export const USOS_PLANTILLA: Array<{ valor: UsoPlantilla; etiqueta: string }> = 
 export const OBLIGATORIOS: Record<UsoPlantilla, string[]> = {
   invitacion: ['par', 'articulo'],
   agradecimiento: ['par', 'articulo'],
-  constancia: ['nombrePar', 'articulo'],
+  constancia: ['par', 'articulo'],
 }
 
 /** Returns the first problem found as a sentence, or null when the template is valid. */
@@ -35,10 +35,8 @@ export function validarPlantilla(
   return null
 }
 
-/** Sample data for the preview of a template. */
+/** Sample data for the preview of a template; {{revista}} is the journal of the template. */
 export const DATOS_EJEMPLO: Record<string, string> = {
-  revista: 'Revista Electrónica en Educación y Pedagogía',
   par: 'Luz Marina Burbano',
-  nombrePar: 'Luz Marina Burbano',
   articulo: 'Alfabetización mediática en la formación de maestros',
 }

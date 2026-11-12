@@ -51,6 +51,7 @@ function detalle(base: SeedRevista, a: Articulo): ArticuloDetalle {
           ...x,
           par: { id: par.id, nombre: par.nombre, correo: par.correo, universidad: par.universidad },
           constanciaEmitida: constancia?.estado === 'emitida',
+          constanciaId: constancia?.id ?? null,
         },
       ]
     })

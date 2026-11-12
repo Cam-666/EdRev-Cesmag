@@ -1,7 +1,7 @@
 /*
- * VistaPreviaConstancia — the constancia as it will be generated from the institutional template:
- * fixed letterhead, the text with only the peer name and the article title filled in, and the
- * signature. No sequence number. Covers: RF-30, HU-21.
+ * VistaPreviaConstancia — the constancia as it will be generated: the journal's constancia
+ * template written over its PDF background (letterhead, design and signature), with the peer, the
+ * article and the journal filled in. No sequence number. Covers: RF-30, HU-22.
  */
 import type { VistaConstancia } from '@/types/constancia'
 
@@ -29,6 +29,9 @@ export function VistaPreviaConstancia({ vista }: VistaPreviaConstanciaProps) {
       <footer className="mt-2 border-t border-borde-base pt-3 text-cuerpo-13 text-texto-secundario">
         {vista.firma}
       </footer>
+      <p className="text-cuerpo-13 text-texto-secundario">
+        {vista.fondo ? `Fondo: ${vista.fondo}` : 'Sin PDF de fondo'}
+      </p>
     </article>
   )
 }

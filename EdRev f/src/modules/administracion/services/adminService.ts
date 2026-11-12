@@ -55,7 +55,17 @@ export function crearPlantilla(datos: DatosNuevaPlantilla): Promise<Plantilla> {
   return solicitar<Plantilla>('/plantillas', { method: 'POST', ...json(datos) })
 }
 
-/** Makes this template the one the system sends for its use. */
+/** Uploads the PDF background of a constancia template (RF-45). */
+export function subirFondo(id: string, archivo: File): Promise<Plantilla> {
+  const datos = new FormData()
+  datos.append('archivo', archivo)
+  return solicitar<Plantilla>(`/plantillas/${encodeURIComponent(id)}/fondo`, {
+    method: 'POST',
+    body: datos,
+  })
+}
+
+/** Makes this template the one its journal sends for its use. */
 export function usarPlantilla(id: string): Promise<Plantilla> {
   return solicitar<Plantilla>(`/plantillas/${encodeURIComponent(id)}/usar`, { method: 'POST' })
 }

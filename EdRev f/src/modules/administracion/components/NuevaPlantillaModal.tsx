@@ -1,7 +1,8 @@
 /*
- * NuevaPlantillaModal — creates a new template for one use (invitation, thank-you mail or
- * constancia). It starts from the text of the template in use and is then edited like any other;
- * it is not sent until it is chosen with «Usar en los envíos». No Figma design for the dialog.
+ * NuevaPlantillaModal — creates a new template of a journal for one use (invitation, thank-you
+ * mail or constancia). It starts from the text (and PDF background) of that journal's template in
+ * use and is then edited like any other; it is not sent until it is chosen with «Usar en los
+ * envíos». No Figma design for the dialog.
  * Covers: RNF-19, RF-25, RF-30.
  */
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -15,6 +16,8 @@ import { CampoTexto } from '@/components/common/CampoTexto'
 import { ListaDesplegable } from '@/components/common/ListaDesplegable'
 import { Modal } from '@/components/common/Modal'
 import { mensajeDeApi } from '@/lib/api/errores'
+import { REVISTAS } from '@/types/revista'
+import type { Revista } from '@/types/revista'
 import type { Plantilla, UsoPlantilla } from '@/types/plantilla'
 
 const esquema = z.object({
@@ -24,6 +27,7 @@ const esquema = z.object({
 type Datos = z.infer<typeof esquema>
 
 export interface NuevaPlantillaModalProps {
+  revista: Revista
   abierto: boolean
   onCerrar: () => void
   /** Receives the created template so the screen can open it for editing. */
@@ -37,7 +41,7 @@ export function NuevaPlantillaModal(props: NuevaPlantillaModalProps) {
   return props.abierto ? <Contenido {...props} /> : null
 }
 
-function Contenido({ onCerrar, onCreada }: NuevaPlantillaModalProps) {
+function Contenido({ revista, onCerrar, onCreada }: NuevaPlantillaModalProps) {
   const crear = useCrearPlantilla()
   const {
     register,
@@ -50,7 +54,7 @@ function Contenido({ onCerrar, onCreada }: NuevaPlantillaModalProps) {
   })
 
   function enviar(datos: Datos) {
-    crear.mutate(datos, { onSuccess: onCreada })
+    crear.mutate({ ...datos, revista }, { onSuccess: onCreada })
   }
 
   return (
@@ -58,7 +62,7 @@ function Contenido({ onCerrar, onCreada }: NuevaPlantillaModalProps) {
       abierto
       onCerrar={onCerrar}
       titulo="Nueva plantilla"
-      descripcion="Parte del texto de la plantilla en uso."
+      descripcion={`${REVISTAS[revista].nombreCorto}: parte del texto de la plantilla en uso.`}
       acciones={
         <>
           <Boton variante="neutro" onClick={onCerrar}>

@@ -1,6 +1,6 @@
 /*
  * EntregaModal — marks that a peer delivered the evaluation (done in the OJS, so the mark is
- * manual) with its date. The evaluation then shows a pending constancia.
+ * manual) with its date. Right after saving, the sheet offers to issue the constancia (RF-23).
  * Covers: RF-22, RF-23, HU-16. Both profiles (RNF-05).
  */
 import { useState } from 'react'
@@ -16,7 +16,8 @@ export interface EntregaModalProps {
   asignacion: AsignacionDetalle
   abierto: boolean
   onCerrar: () => void
-  onRegistrada: (mensaje: string) => void
+  /** Receives the constancia that can be issued right away. */
+  onRegistrada: (constanciaId: string | null) => void
 }
 
 function hoy(): string {
@@ -38,11 +39,9 @@ export function EntregaModal({ asignacion, abierto, onCerrar, onRegistrada }: En
     mutacion.mutate(
       { asignacionId: asignacion.id, fecha },
       {
-        onSuccess: () => {
-          onRegistrada(
-            `Entrega de ${asignacion.par.nombre} registrada. Su constancia quedó pendiente.`,
-          )
+        onSuccess: ({ constanciaId }) => {
           onCerrar()
+          onRegistrada(constanciaId)
         },
       },
     )

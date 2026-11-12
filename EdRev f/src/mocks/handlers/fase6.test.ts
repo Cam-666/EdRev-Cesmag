@@ -193,46 +193,67 @@ describe('constancias API (mock)', () => {
   })
 })
 
-describe('templates API (mock, RNF-19)', () => {
-  it('lists the three templates, Administradora only', async () => {
+describe('templates API (mock, RF-45)', () => {
+  it('each journal has its own three templates, one in use per use; Administradora only', async () => {
     expect((await llamar('/plantillas', { usuario: AUXILIAR })).status).toBe(403)
     const d = await json<DatosPlantillas>(await llamar('/plantillas'))
-    expect(d.plantillas.map((p) => p.id)).toEqual(['invitacion', 'agradecimiento', 'constancia'])
+    expect(d.plantillas.map((p) => p.id)).toEqual([
+      'reep-invitacion',
+      'reep-agradecimiento',
+      'reep-constancia',
+      'ire-invitacion',
+      'ire-agradecimiento',
+      'ire-constancia',
+    ])
+    expect(d.plantillas.every((p) => p.enUso)).toBe(true)
+    // Only the constancia carries a PDF background
+    expect(d.plantillas.filter((p) => p.fondoPdf).map((p) => p.id)).toEqual([
+      'reep-constancia',
+      'ire-constancia',
+    ])
     expect(JSON.stringify(d)).not.toMatch(/password|contrase|secret/i)
   })
 
-  it('an edited constancia template changes the next preview without touching code', async () => {
-    const nuevo =
-      'HACE CONSTAR QUE\n\n{{nombrePar}}\n\nevaluó con dedicación el artículo «{{articulo}}».'
+  it("an edited constancia template changes only its journal's next constancia", async () => {
+    const nuevo = 'HACE CONSTAR QUE\n\n{{par}}\n\nevaluó con dedicación el artículo «{{articulo}}».'
     expect(
       (
-        await llamar('/plantillas/constancia', {
+        await llamar('/plantillas/reep-constancia', {
           metodo: 'PUT',
           cuerpo: { asunto: null, cuerpo: nuevo },
         })
       ).status,
     ).toBe(200)
-    const { pendientes } = await json<RespuestaConstancias>(await llamar('/reep/constancias'))
-    const fila = pendientes[0]
-    if (!fila) throw new Error('seed missing')
-    const v = await json<VistaConstancia>(await llamar(`/reep/constancias/${fila.id}/vista-previa`))
-    expect(v.cuerpo).toContain('evaluó con dedicación')
+    const vista = async (revista: 'reep' | 'ire') => {
+      const { pendientes } = await json<RespuestaConstancias>(
+        await llamar(`/${revista}/constancias`),
+      )
+      const fila = pendientes[0]
+      if (!fila) throw new Error('seed missing')
+      return json<VistaConstancia>(await llamar(`/${revista}/constancias/${fila.id}/vista-previa`))
+    }
+    const reep = await vista('reep')
+    expect(reep.cuerpo).toContain('evaluó con dedicación')
+    expect(reep.fondo).toBe('constancia-educacion-pedagogia.pdf')
+    const ire = await vista('ire')
+    expect(ire.cuerpo).not.toContain('evaluó con dedicación')
+    expect(ire.fondo).toBe('constancia-investigium-ire.pdf')
   })
 
-  it('refuses unknown or missing markers (the constancia must replace name and title)', async () => {
+  it('refuses unknown or missing markers (the constancia must replace peer and title)', async () => {
     const put = (id: string, cuerpo: string, asunto: string | null = null) =>
       llamar(`/plantillas/${id}`, { metodo: 'PUT', cuerpo: { asunto, cuerpo } })
     expect(
-      (await put('constancia', 'HACE CONSTAR QUE {{nombrePar}} {{articulo}} {{numeroConstancia}}'))
+      (await put('reep-constancia', 'HACE CONSTAR QUE {{par}} {{articulo}} {{numeroConstancia}}'))
         .status,
     ).toBe(422)
-    expect((await put('constancia', 'HACE CONSTAR QUE {{nombrePar}}')).status).toBe(422)
-    expect((await put('invitacion', 'Hola {{par}}', 'Asunto')).status).toBe(422)
-    expect((await put('constancia', '   ')).status).toBe(422)
+    expect((await put('reep-constancia', 'HACE CONSTAR QUE {{par}}')).status).toBe(422)
+    expect((await put('reep-invitacion', 'Hola {{par}}', 'Asunto')).status).toBe(422)
+    expect((await put('reep-constancia', '   ')).status).toBe(422)
   })
 
-  it('an edited invitation template is used by the next invitation, sent from the journal account', async () => {
-    await llamar('/plantillas/invitacion', {
+  it("an edited invitation template is used by its journal's next invitation", async () => {
+    await llamar('/plantillas/reep-invitacion', {
       metodo: 'PUT',
       cuerpo: {
         asunto: 'Nueva invitación · {{revista}}',
@@ -244,8 +265,8 @@ describe('templates API (mock, RNF-19)', () => {
     )
   })
 
-  it('a new template starts from the one in use and is sent only once it is put in use', async () => {
-    const datos = { nombre: 'Invitación breve', uso: 'invitacion' }
+  it('a new template starts from the one in use of its journal and is sent only once in use', async () => {
+    const datos = { revista: 'reep', nombre: 'Invitación breve', uso: 'invitacion' }
     expect(
       (await llamar('/plantillas', { metodo: 'POST', usuario: AUXILIAR, cuerpo: datos })).status,
     ).toBe(403)
@@ -255,9 +276,15 @@ describe('templates API (mock, RNF-19)', () => {
     const r = await llamar('/plantillas', { metodo: 'POST', cuerpo: datos })
     expect(r.status).toBe(201)
     const nueva = await json<Plantilla>(r)
-    expect(nueva).toMatchObject({ uso: 'invitacion', enUso: false })
+    expect(nueva).toMatchObject({ revista: 'reep', uso: 'invitacion', enUso: false })
     expect(nueva.cuerpo).toContain('{{par}}')
     expect((await llamar('/plantillas', { metodo: 'POST', cuerpo: datos })).status).toBe(409)
+    // The same name is fine in the other journal
+    const enIre = await llamar('/plantillas', {
+      metodo: 'POST',
+      cuerpo: { ...datos, revista: 'ire' },
+    })
+    expect(enIre.status).toBe(201)
 
     await llamar(`/plantillas/${nueva.id}`, {
       metodo: 'PUT',
@@ -275,8 +302,17 @@ describe('templates API (mock, RNF-19)', () => {
       'Invitación · Revista Electrónica en Educación y Pedagogía',
     )
     const d = await json<DatosPlantillas>(await llamar('/plantillas'))
-    const invitaciones = d.plantillas.filter((p) => p.uso === 'invitacion')
-    expect(invitaciones.filter((p) => p.enUso).map((p) => p.id)).toEqual([nueva.id])
+    const enUso = d.plantillas.filter((p) => p.uso === 'invitacion' && p.enUso).map((p) => p.id)
+    // One in use per journal: the IRE one did not change
+    expect(enUso).toEqual(['ire-invitacion', nueva.id])
+  })
+
+  it('a new constancia template keeps the PDF background of the one in use', async () => {
+    const r = await llamar('/plantillas', {
+      metodo: 'POST',
+      cuerpo: { revista: 'ire', nombre: 'Constancia 2027', uso: 'constancia' },
+    })
+    expect((await json<Plantilla>(r)).fondoPdf?.nombre).toBe('constancia-investigium-ire.pdf')
   })
 })
 

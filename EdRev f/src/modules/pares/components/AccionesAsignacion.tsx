@@ -3,8 +3,9 @@
  * the user's profile:
  *   invited / 2nd attempt → resend the invitation, send a reminder, register the answer;
  *   accepted              → mark the delivery (with date);
- *   delivered             → register the concept.
- * The Auxiliar can assign and resend; answers, deliveries and concepts are Administradora-only.
+ *   delivered             → register the concept and issue the constancia (offered right after
+ *                           the delivery is marked, RF-23).
+ * Both profiles can do all of it (RNF-05).
  * Covers: RF-20, RF-22, RF-23, RF-28, RF-29 (reminder: simulated, still "En revisión"), HU-14,
  * HU-16, HU-19.
  */
@@ -13,6 +14,7 @@ import { ConceptoModal } from './ConceptoModal'
 import { EntregaModal } from './EntregaModal'
 import { RespuestaParModal } from './RespuestaParModal'
 import { useReenviarInvitacion } from '../hooks/useAsignaciones'
+import { EmitirConstanciaModal } from '@/modules/constancias/components/EmitirConstanciaModal'
 import { usePermiso } from '@/modules/acceso/hooks/usePermiso'
 import { Boton } from '@/components/common/Boton'
 import { mensajeDeApi } from '@/lib/api/errores'
@@ -29,9 +31,11 @@ export function AccionesAsignacion({ asignacion }: AccionesAsignacionProps) {
   const puedeRespuesta = usePermiso('registrar-respuesta')
   const puedeEntrega = usePermiso('marcar-entrega')
   const puedeConcepto = usePermiso('registrar-concepto')
+  const puedeEmitir = usePermiso('emitir-constancia')
   const reenviar = useReenviarInvitacion()
   const [dialogo, setDialogo] = useState<Dialogo>(null)
   const [mensaje, setMensaje] = useState('')
+  const [emitiendo, setEmitiendo] = useState<{ id: string; aviso?: string } | null>(null)
 
   const sinResponder = asignacion.estado === 'invitado' || asignacion.estado === 'segundo-intento'
   const nombre = asignacion.par.nombre
@@ -59,7 +63,7 @@ export function AccionesAsignacion({ asignacion }: AccionesAsignacionProps) {
   const hayAcciones =
     (sinResponder && (puedeAsignar || puedeRespuesta)) ||
     (asignacion.estado === 'acepto' && puedeEntrega) ||
-    (asignacion.estado === 'entrego' && puedeConcepto)
+    (asignacion.estado === 'entrego' && (puedeConcepto || puedeEmitir))
 
   return (
     <div className="flex flex-col items-end gap-2">
@@ -95,6 +99,19 @@ export function AccionesAsignacion({ asignacion }: AccionesAsignacionProps) {
               Marcar entrega <span className="sr-only">de {nombre}</span>
             </Boton>
           )}
+          {asignacion.estado === 'entrego' &&
+            puedeEmitir &&
+            !asignacion.constanciaEmitida &&
+            asignacion.constanciaId && (
+              <Boton
+                tamano="sm"
+                onClick={() =>
+                  setEmitiendo({ id: asignacion.constanciaId ?? '', aviso: undefined })
+                }
+              >
+                Emitir constancia <span className="sr-only">de {nombre}</span>
+              </Boton>
+            )}
           {asignacion.estado === 'entrego' && puedeConcepto && (
             <Boton variante="secundario" tamano="sm" onClick={() => setDialogo('concepto')}>
               {asignacion.concepto ? 'Cambiar concepto' : 'Registrar concepto'}{' '}
@@ -120,7 +137,22 @@ export function AccionesAsignacion({ asignacion }: AccionesAsignacionProps) {
         asignacion={asignacion}
         abierto={dialogo === 'entrega'}
         onCerrar={() => setDialogo(null)}
-        onRegistrada={setMensaje}
+        onRegistrada={(constanciaId) => {
+          setMensaje(`Entrega de ${nombre} registrada.`)
+          if (constanciaId && puedeEmitir) {
+            setEmitiendo({
+              id: constanciaId,
+              aviso: 'Entrega registrada. ¿Emitir la constancia ahora?',
+            })
+          }
+        }}
+      />
+      <EmitirConstanciaModal
+        constanciaId={emitiendo?.id ?? null}
+        nombrePar={nombre}
+        aviso={emitiendo?.aviso}
+        onCerrar={() => setEmitiendo(null)}
+        onEmitida={setMensaje}
       />
       <ConceptoModal
         asignacion={asignacion}

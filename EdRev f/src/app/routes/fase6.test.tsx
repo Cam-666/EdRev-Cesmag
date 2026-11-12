@@ -153,6 +153,27 @@ describe('administration', () => {
     expect(screen.queryByText(/Plantilla guardada/)).toBeNull()
   })
 
+  it('each journal has its own templates; the constancia shows its PDF background', async () => {
+    const { user } = montarRuta('/administracion/plantillas')
+    await user.click(await screen.findByRole('combobox', { name: 'Plantilla' }))
+    await user.click(await screen.findByRole('option', { name: /^Constancia de participación/ }))
+    expect(await screen.findByText(/^constancia-educacion-pedagogia\.pdf/)).toBeInTheDocument()
+    expect(screen.getByLabelText('Nuevo PDF de fondo')).toHaveAttribute(
+      'accept',
+      'application/pdf,.pdf',
+    )
+
+    await user.click(screen.getByRole('combobox', { name: 'Revista' }))
+    await user.click(await screen.findByRole('option', { name: 'Investigium IRE' }))
+    await user.click(screen.getByRole('combobox', { name: 'Plantilla' }))
+    await user.click(await screen.findByRole('option', { name: /^Constancia de participación/ }))
+    expect(await screen.findByText(/^constancia-investigium-ire\.pdf/)).toBeInTheDocument()
+    // The preview uses the journal of the template
+    expect(
+      screen.getByText(/Revista Investigium IRE Ciencias Sociales y Humanas/),
+    ).toBeInTheDocument()
+  })
+
   it('shows only the templates: no sender account box and no credentials', async () => {
     montarRuta('/administracion/plantillas')
     await screen.findByRole('combobox', { name: 'Plantilla' })

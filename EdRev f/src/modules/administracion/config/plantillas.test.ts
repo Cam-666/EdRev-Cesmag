@@ -1,7 +1,7 @@
 import { validarPlantilla } from './plantillas'
 
 const INVITACION = { uso: 'invitacion' as const, variables: ['revista', 'par', 'articulo'] }
-const CONSTANCIA = { uso: 'constancia' as const, variables: ['nombrePar', 'articulo', 'revista'] }
+const CONSTANCIA = { uso: 'constancia' as const, variables: ['revista', 'par', 'articulo'] }
 
 describe('validarPlantilla (RNF-19)', () => {
   it('accepts a template that keeps its required markers', () => {
@@ -31,17 +31,11 @@ describe('validarPlantilla (RNF-19)', () => {
 
   it('the constancia must replace the peer name and the article title (RF-30)', () => {
     expect(
-      validarPlantilla(
-        CONSTANCIA,
-        null,
-        'HACE CONSTAR QUE {{nombrePar}} participó en «{{articulo}}».',
-      ),
+      validarPlantilla(CONSTANCIA, null, 'HACE CONSTAR QUE {{par}} participó en «{{articulo}}».'),
     ).toBeNull()
-    expect(validarPlantilla(CONSTANCIA, null, 'HACE CONSTAR QUE {{nombrePar}}')).toContain(
-      '{{articulo}}',
-    )
+    expect(validarPlantilla(CONSTANCIA, null, 'HACE CONSTAR QUE {{par}}')).toContain('{{articulo}}')
     expect(
-      validarPlantilla(CONSTANCIA, null, '{{nombrePar}} {{articulo}} {{numeroConstancia}}'),
+      validarPlantilla(CONSTANCIA, null, '{{par}} {{articulo}} {{numeroConstancia}}'),
     ).toContain('{{numeroConstancia}}')
   })
 

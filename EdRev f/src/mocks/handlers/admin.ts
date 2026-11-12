@@ -1,6 +1,7 @@
 /*
- * MSW handlers for Administración: user accounts, mail / constancia templates (edit, create a new
- * one for a use and choose the one in use), and the cross-journal audit log. Administradora only (RNF-05).
+ * MSW handlers for Administración: user accounts, the mail / constancia templates of each journal
+ * (edit, create a new one for a use, choose the one in use, upload the constancia's PDF
+ * background), and the cross-journal audit log. Administradora only (RNF-05).
  * Covers: RF-40, RF-41, RNF-07 (credentials are never returned), RNF-19, HU-29, HU-30.
  */
 import { http, HttpResponse } from 'msw'
@@ -16,10 +17,11 @@ import type { DatosUsuario, Usuario } from '@/types/usuario'
 const OBLIGATORIOS: Record<UsoPlantilla, string[]> = {
   invitacion: ['par', 'articulo'],
   agradecimiento: ['par', 'articulo'],
-  constancia: ['nombrePar', 'articulo'],
+  constancia: ['par', 'articulo'],
 }
 
 const USOS: readonly UsoPlantilla[] = ['invitacion', 'agradecimiento', 'constancia']
+const MAX_FONDO = 5 * 1024 * 1024
 
 function validarPlantilla(
   p: Pick<Plantilla, 'uso' | 'variables'>,
@@ -99,20 +101,22 @@ export const handlersAdmin = [
   http.post('*/api/plantillas', async ({ request }) => {
     const c = contextoGlobal(request, 'administrar')
     if (!c.ok) return c.respuesta
-    const { nombre, uso } = (await request.json()) as DatosNuevaPlantilla
+    const { revista, nombre, uso } = (await request.json()) as DatosNuevaPlantilla
+    if (revista !== 'reep' && revista !== 'ire') return error(422, 'Revista no válida')
     if (!USOS.includes(uso)) return error(422, 'Uso no válido')
     if (!nombre.trim()) return error(422, 'Escriba el nombre de la plantilla')
     const repetido = plantillas().some(
-      (p) => p.nombre.trim().toLowerCase() === nombre.trim().toLowerCase(),
+      (p) => p.revista === revista && p.nombre.trim().toLowerCase() === nombre.trim().toLowerCase(),
     )
-    if (repetido) return error(409, 'Ya existe una plantilla con ese nombre')
-    // Starts from the text of the template in use, so it is valid from the first moment.
-    const modelo = plantillas().find((p) => p.uso === uso && p.enUso)
+    if (repetido) return error(409, 'Ya existe una plantilla con ese nombre en esta revista')
+    // Starts from the text (and PDF background) of the journal's template in use.
+    const modelo = plantillas().find((p) => p.revista === revista && p.uso === uso && p.enUso)
     if (!modelo) return error(409, 'No hay una plantilla en uso para copiar')
     const nueva: Plantilla = {
       ...modelo,
       variables: [...modelo.variables],
-      id: `pl-n${plantillas().length + 1}`,
+      fondoPdf: modelo.fondoPdf ? { ...modelo.fondoPdf } : null,
+      id: `${revista}-pl-n${plantillas().length + 1}`,
       nombre: nombre.trim(),
       enUso: false,
     }
@@ -125,7 +129,27 @@ export const handlersAdmin = [
     if (!c.ok) return c.respuesta
     const plantilla = plantillas().find((p) => p.id === params.id)
     if (!plantilla) return error(404, 'Plantilla no encontrada')
-    for (const p of plantillas()) if (p.uso === plantilla.uso) p.enUso = p.id === plantilla.id
+    for (const p of plantillas()) {
+      if (p.revista === plantilla.revista && p.uso === plantilla.uso)
+        p.enUso = p.id === plantilla.id
+    }
+    return HttpResponse.json(plantilla)
+  }),
+
+  // RF-45: the constancia template carries its PDF background, uploaded as a file.
+  http.post('*/api/plantillas/:id/fondo', async ({ params, request }) => {
+    const c = contextoGlobal(request, 'administrar')
+    if (!c.ok) return c.respuesta
+    const plantilla = plantillas().find((p) => p.id === params.id)
+    if (!plantilla) return error(404, 'Plantilla no encontrada')
+    if (plantilla.uso !== 'constancia') return error(409, 'Solo la constancia lleva PDF de fondo')
+    const archivo = (await request.formData()).get('archivo')
+    if (archivo === null || typeof archivo === 'string')
+      return error(422, 'Adjunte el PDF de fondo')
+    const esPdf = archivo.type === 'application/pdf' || archivo.name.toLowerCase().endsWith('.pdf')
+    if (!esPdf) return error(422, 'El fondo debe ser un archivo PDF')
+    if (archivo.size > MAX_FONDO) return error(422, 'El PDF de fondo no puede pasar de 5 MB')
+    plantilla.fondoPdf = { nombre: archivo.name, tamano: archivo.size }
     return HttpResponse.json(plantilla)
   }),
 

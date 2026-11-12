@@ -1,8 +1,9 @@
 /*
- * PlantillasPage — Plantillas (/administracion/plantillas): the templates of the invitation, the
- * thank-you mail and the constancia, edited without touching code; new templates can be created
- * for any of those uses and one of them is chosen as the one in use. Administradora only.
- * Covers: RNF-19, RF-25, RF-30. The thank-you and constancia editors have no Figma design.
+ * PlantillasPage — Plantillas (/administracion/plantillas): each journal's templates of the
+ * invitation, the thank-you mail and the constancia (with its PDF background), edited without
+ * touching code. New templates can be created for any use, and one per use and journal is chosen
+ * as the one in use. Administradora only.
+ * Covers: RF-25, RF-30, RF-31, RF-45, RNF-12, HU-30.
  */
 import { useState } from 'react'
 import { FormularioPlantilla } from '../components/FormularioPlantilla'
@@ -12,12 +13,20 @@ import { Boton } from '@/components/common/Boton'
 import { EncabezadoPagina } from '@/components/common/EncabezadoPagina'
 import { EstadoConsulta } from '@/components/common/EstadoConsulta'
 import { ListaDesplegable } from '@/components/common/ListaDesplegable'
+import { REVISTAS } from '@/types/revista'
+import type { Revista } from '@/types/revista'
+
+const OPCIONES_REVISTA = (Object.keys(REVISTAS) as Revista[]).map((r) => ({
+  valor: r,
+  etiqueta: REVISTAS[r].nombreCorto,
+}))
 
 export function PlantillasPage() {
   const consulta = usePlantillas()
-  const [elegida, setElegida] = useState('invitacion')
+  const [revista, setRevista] = useState<Revista>('reep')
+  const [elegida, setElegida] = useState<string | null>(null)
   const [creando, setCreando] = useState(false)
-  const plantillas = consulta.data?.plantillas ?? []
+  const plantillas = (consulta.data?.plantillas ?? []).filter((p) => p.revista === revista)
   const plantilla = plantillas.find((p) => p.id === elegida) ?? plantillas[0]
 
   return (
@@ -40,21 +49,33 @@ export function PlantillasPage() {
       >
         {consulta.data && (
           <div className="flex max-w-3xl flex-col gap-4">
-            <ListaDesplegable
-              etiqueta="Plantilla"
-              opciones={plantillas.map((p) => ({
-                valor: p.id,
-                etiqueta: p.enUso ? `${p.nombre} (en uso)` : p.nombre,
-              }))}
-              valor={plantilla?.id}
-              onCambio={setElegida}
-            />
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+              <ListaDesplegable
+                etiqueta="Revista"
+                opciones={OPCIONES_REVISTA}
+                valor={revista}
+                onCambio={(v) => {
+                  setRevista(v as Revista)
+                  setElegida(null)
+                }}
+              />
+              <ListaDesplegable
+                etiqueta="Plantilla"
+                opciones={plantillas.map((p) => ({
+                  valor: p.id,
+                  etiqueta: p.enUso ? `${p.nombre} (en uso)` : p.nombre,
+                }))}
+                valor={plantilla?.id}
+                onCambio={setElegida}
+              />
+            </div>
             {plantilla && <FormularioPlantilla key={plantilla.id} plantilla={plantilla} />}
           </div>
         )}
       </EstadoConsulta>
 
       <NuevaPlantillaModal
+        revista={revista}
         abierto={creando}
         onCerrar={() => setCreando(false)}
         onCreada={(p) => {

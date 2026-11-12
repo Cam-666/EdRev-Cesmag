@@ -40,7 +40,10 @@ async function leerJson(respuesta: Response): Promise<unknown> {
 export async function solicitar<T>(ruta: string, init: RequestInit = {}): Promise<T> {
   const headers = new Headers(init.headers)
   headers.set('Accept', 'application/json')
-  if (init.body !== undefined) headers.set('Content-Type', 'application/json')
+  // A FormData body (file upload) sets its own multipart boundary.
+  if (init.body !== undefined && !(init.body instanceof FormData)) {
+    headers.set('Content-Type', 'application/json')
+  }
   if (token) headers.set('Authorization', `Bearer ${token}`)
 
   const respuesta = await fetch(`${baseApi()}${ruta}`, { ...init, headers })

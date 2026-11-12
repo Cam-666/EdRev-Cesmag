@@ -6,15 +6,15 @@
  *  - Invitation (RF-25): only the journal name, the peer name and the article title vary; no
  *    attachments (the documents are sent from the OJS once the peer accepts).
  *  - Thank-you mail (RF-31): carries the constancia as an attachment.
- *  - Constancia (RF-30): only the peer name and the article title change; letterhead and signature
- *    are fixed and it carries no sequence number.
+ *  - Constancia (RF-30): the text is written over the journal's PDF background (letterhead,
+ *    design and signature); only the peer, the article and the journal change; no sequence number.
+ * Each journal has its own three templates (RF-45).
  */
-import type { CuentaRemitente, Plantilla } from '@/types/plantilla'
+import type { CuentaRemitente, FondoPdf, Plantilla } from '@/types/plantilla'
 import type { Revista } from '@/types/revista'
 
-export const PLANTILLAS_INICIALES: Plantilla[] = [
+const BASE: Array<Omit<Plantilla, 'id' | 'revista' | 'fondoPdf'>> = [
   {
-    id: 'invitacion',
     uso: 'invitacion',
     nombre: 'Invitación a evaluar',
     asunto: 'Invitación a evaluar un artículo · {{revista}}',
@@ -24,7 +24,6 @@ export const PLANTILLAS_INICIALES: Plantilla[] = [
     enUso: true,
   },
   {
-    id: 'agradecimiento',
     uso: 'agradecimiento',
     nombre: 'Agradecimiento con constancia',
     asunto: 'Gracias por su evaluación · {{revista}}',
@@ -34,16 +33,31 @@ export const PLANTILLAS_INICIALES: Plantilla[] = [
     enUso: true,
   },
   {
-    id: 'constancia',
     uso: 'constancia',
     nombre: 'Constancia de participación',
     asunto: null,
     cuerpo:
-      'HACE CONSTAR QUE\n\n{{nombrePar}}\n\nparticipó como par evaluador del artículo «{{articulo}}» y entregó su concepto.',
-    variables: ['nombrePar', 'articulo', 'revista'],
+      'HACE CONSTAR QUE\n\n{{par}}\n\nparticipó como par evaluador del artículo «{{articulo}}» de la {{revista}} y entregó su concepto.',
+    variables: ['revista', 'par', 'articulo'],
     enUso: true,
   },
 ]
+
+/** PDF background of each journal's constancia (letterhead, design and signature). */
+const FONDOS: Record<Revista, FondoPdf> = {
+  reep: { nombre: 'constancia-educacion-pedagogia.pdf', tamano: 184_320 },
+  ire: { nombre: 'constancia-investigium-ire.pdf', tamano: 176_128 },
+}
+
+/** Each journal starts with its own invitation, thank-you mail and constancia (RF-45). */
+export const PLANTILLAS_INICIALES: Plantilla[] = (['reep', 'ire'] as const).flatMap((revista) =>
+  BASE.map((p) => ({
+    ...p,
+    id: `${revista}-${p.uso}`,
+    revista,
+    fondoPdf: p.uso === 'constancia' ? FONDOS[revista] : null,
+  })),
+)
 
 /** Sender address of each journal (a verified sender in the mail service). */
 export const CUENTAS_INICIALES: CuentaRemitente[] = [

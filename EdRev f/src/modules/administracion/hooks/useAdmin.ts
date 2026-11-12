@@ -11,6 +11,7 @@ import {
   listarAuditoria,
   listarUsuarios,
   obtenerPlantillas,
+  subirFondo,
   usarPlantilla,
 } from '../services/adminService'
 import type { FiltrosAuditoria } from '../services/adminService'
@@ -60,6 +61,14 @@ export function useCrearPlantilla() {
   const cliente = useQueryClient()
   return useMutation({
     mutationFn: (datos: DatosNuevaPlantilla) => crearPlantilla(datos),
+    onSuccess: () => cliente.invalidateQueries({ queryKey: ['admin', 'plantillas'] }),
+  })
+}
+
+export function useSubirFondo() {
+  const cliente = useQueryClient()
+  return useMutation({
+    mutationFn: ({ id, archivo }: { id: string; archivo: File }) => subirFondo(id, archivo),
     onSuccess: () => cliente.invalidateQueries({ queryKey: ['admin', 'plantillas'] }),
   })
 }

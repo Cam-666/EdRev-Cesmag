@@ -59,6 +59,13 @@ export interface Constancia {
 export interface AsignacionDetalle extends Asignacion {
   par: Pick<ParEvaluador, 'id' | 'nombre' | 'correo' | 'universidad'>
   constanciaEmitida: boolean
+  /** The constancia of a delivered evaluation (pending or issued), to issue it from the sheet. */
+  constanciaId: string | null
+}
+
+/** Answer of «Marcar entrega»: the constancia that can be issued right away (RF-23). */
+export interface EntregaRegistrada extends Asignacion {
+  constanciaId: string | null
 }
 
 export type EstadoDisponibilidad = 'disponible' | 'bloqueado' | 'conflicto'

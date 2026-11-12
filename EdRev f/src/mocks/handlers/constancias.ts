@@ -1,7 +1,8 @@
 /*
  * MSW handlers for the constancias of a journal: pending and issued lists, preview rendered from
  * the template, issue (generates the document and sends it attached to the thank-you mail), issue
- * all pending, and reissue. Simulates the PDF and the mail; no consecutive number is ever created.
+ * all pending, and reissue. Each journal uses its own thank-you and constancia templates in use
+ * (with its PDF background). Simulates the PDF and the mail; no consecutive number is created.
  * Covers: RF-30..RF-34, RNF-19. Issuing is Administradora-only (RNF-05).
  */
 import { http, HttpResponse } from 'msw'
@@ -61,17 +62,20 @@ export function filasDe(base: SeedRevista): FilaConstancia[] {
   })
 }
 
+/** The journal's constancia template in use, written over its PDF background (RF-30). */
 function vistaDe(revista: Revista, fila: FilaConstancia): VistaConstancia {
   const nombreRevista = NOMBRE_EN_CORREO[revista]
+  const plantilla = plantillaEnUso(revista, 'constancia')
   return {
     universidad: UNIVERSIDAD_MEMBRETE,
     revista: nombreRevista,
-    cuerpo: rellenar(plantillaEnUso('constancia').cuerpo, {
-      nombrePar: fila.par.nombre,
+    cuerpo: rellenar(plantilla.cuerpo, {
+      par: fila.par.nombre,
       articulo: fila.articulo.titulo,
       revista: nombreRevista,
     }),
     firma: FIRMA_CONSTANCIA,
+    fondo: plantilla.fondoPdf?.nombre ?? null,
   }
 }
 
@@ -90,7 +94,7 @@ function emitir(
   const ahora = ahoraIso()
   c.estado = 'emitida'
   c.fechaEmision = ahora
-  const plantilla = plantillaEnUso('agradecimiento')
+  const plantilla = plantillaEnUso(revista, 'agradecimiento')
   const asunto = rellenar(plantilla.asunto ?? '', {
     revista: NOMBRE_EN_CORREO[revista],
     par: fila.par.nombre,

@@ -62,10 +62,10 @@ export function plantillas(): Plantilla[] {
   return base.plantillas
 }
 
-/** The template the system sends for a use (there is always exactly one in use). */
-export function plantillaEnUso(uso: UsoPlantilla): Plantilla {
-  const p = base.plantillas.find((x) => x.uso === uso && x.enUso)
-  if (!p) throw new Error(`No template in use for ${uso}`)
+/** The template a journal sends for a use (there is always exactly one in use, RF-45). */
+export function plantillaEnUso(revista: Revista, uso: UsoPlantilla): Plantilla {
+  const p = base.plantillas.find((x) => x.revista === revista && x.uso === uso && x.enUso)
+  if (!p) throw new Error(`No template in use for ${revista} ${uso}`)
   return p
 }
 

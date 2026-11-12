@@ -8,6 +8,7 @@ import type {
   Asignacion,
   ConceptoPar,
   DatosAsignacion,
+  EntregaRegistrada,
   ResultadoAsignacion,
   RespuestaPar,
 } from '@/types/par'
@@ -56,8 +57,8 @@ export function marcarEntrega(
   revista: Revista,
   asignacionId: string,
   fecha: string,
-): Promise<Asignacion> {
-  return solicitar<Asignacion>(`/${revista}/asignaciones/${art(asignacionId)}/entrega`, {
+): Promise<EntregaRegistrada> {
+  return solicitar<EntregaRegistrada>(`/${revista}/asignaciones/${art(asignacionId)}/entrega`, {
     method: 'POST',
     ...json({ fecha }),
   })

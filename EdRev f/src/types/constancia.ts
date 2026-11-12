@@ -31,6 +31,8 @@ export interface VistaConstancia {
   revista: string
   cuerpo: string
   firma: string
+  /** File name of the journal's PDF background the text is written on (RF-30). */
+  fondo: string | null
 }
 
 export interface ResultadoEmision {

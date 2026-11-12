@@ -217,7 +217,7 @@ describe('actions on an assigned peer', () => {
     expect(par.bloqueo?.motivo).toBe('sin-respuesta')
   })
 
-  it('accepted → mark delivery (pending constancia) → register concept', async () => {
+  it('accepted → mark delivery → «Emitir constancia» offered right away → register concept', async () => {
     const { user } = montarRuta('/reep/articulos/2026-009/pares')
     await user.click(
       await screen.findByRole('button', { name: /Marcar entrega de Sandra Liliana Cuasapud/ }),
@@ -225,11 +225,21 @@ describe('actions on an assigned peer', () => {
     const dialogo = await screen.findByRole('dialog', { name: 'Marcar entrega' })
     expect(within(dialogo).getByLabelText('Fecha de entrega')).toHaveValue(hoy())
     await user.click(within(dialogo).getByRole('button', { name: 'Marcar entrega' }))
+
+    // RF-23: the constancia is offered right away, with the journal's template and PDF background
+    const constancia = await screen.findByRole('dialog', {
+      name: 'Emitir la constancia de Sandra Liliana Cuasapud',
+    })
+    expect(within(constancia).getByText(/Entrega registrada/)).toBeInTheDocument()
+    expect(await within(constancia).findByText(/HACE CONSTAR QUE/)).toBeInTheDocument()
     expect(
-      await screen.findByText(
-        'Entrega de Sandra Liliana Cuasapud registrada. Su constancia quedó pendiente.',
-      ),
+      within(constancia).getByText('Fondo: constancia-educacion-pedagogia.pdf'),
     ).toBeInTheDocument()
+    await user.click(within(constancia).getByRole('button', { name: 'Emitir y enviar' }))
+    expect(
+      await screen.findByText('Constancia enviada a Sandra Liliana Cuasapud.'),
+    ).toBeInTheDocument()
+    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull())
 
     await user.click(
       await screen.findByRole('button', { name: /Registrar concepto de Sandra Liliana Cuasapud/ }),
@@ -247,6 +257,27 @@ describe('actions on an assigned peer', () => {
     const fila = within(lista).getByText('Sandra Liliana Cuasapud').closest('li') as HTMLElement
     await waitFor(() => expect(within(fila).getByText('Publicable')).toBeInTheDocument())
     expect(within(fila).getByText('Entregó')).toBeInTheDocument()
+  })
+
+  it('«Más tarde» leaves the constancia pending and it can be issued later from the peer', async () => {
+    const { user } = montarRuta('/reep/articulos/2026-009/pares')
+    await user.click(
+      await screen.findByRole('button', { name: /Marcar entrega de Sandra Liliana Cuasapud/ }),
+    )
+    const dialogo = await screen.findByRole('dialog', { name: 'Marcar entrega' })
+    await user.click(within(dialogo).getByRole('button', { name: 'Marcar entrega' }))
+    const constancia = await screen.findByRole('dialog', {
+      name: 'Emitir la constancia de Sandra Liliana Cuasapud',
+    })
+    await user.click(within(constancia).getByRole('button', { name: 'Más tarde' }))
+    await user.click(
+      await screen.findByRole('button', { name: /Emitir constancia de Sandra Liliana Cuasapud/ }),
+    )
+    expect(
+      await screen.findByRole('dialog', {
+        name: 'Emitir la constancia de Sandra Liliana Cuasapud',
+      }),
+    ).toBeInTheDocument()
   })
 
   it('offers «Asignar par de desempate» only when the first two concepts contradict', async () => {

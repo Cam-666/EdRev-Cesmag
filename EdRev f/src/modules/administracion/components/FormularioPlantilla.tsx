@@ -1,12 +1,13 @@
 /*
  * FormularioPlantilla — edits one template (subject and text) with the markers it accepts, a
  * live preview filled with sample data, and validation before saving: it may only use its own
- * markers and must keep the required ones. For the constancia only the text between the fixed
- * letterhead and signature is editable (RF-30). A template not in use can be chosen as the one
- * the system sends for its use. Covers: RNF-19, RF-25, RF-30.
+ * markers and must keep the required ones. The constancia has no subject and carries its PDF
+ * background (letterhead, design and signature) on which the text is written (RF-30). A template
+ * not in use can be chosen as the one its journal sends for its use. Covers: RF-25, RF-30, RF-45.
  */
 import { useState } from 'react'
 import { DATOS_EJEMPLO, validarPlantilla } from '../config/plantillas'
+import { FondoConstancia } from './FondoConstancia'
 import { useGuardarPlantilla, useUsarPlantilla } from '../hooks/useAdmin'
 import { Alerta } from '@/components/common/Alerta'
 import { AreaTexto } from '@/components/common/AreaTexto'
@@ -15,6 +16,7 @@ import { CampoTexto } from '@/components/common/CampoTexto'
 import { mensajeDeApi } from '@/lib/api/errores'
 import { rellenar } from '@/lib/plantillas'
 import type { Plantilla } from '@/types/plantilla'
+import { REVISTAS } from '@/types/revista'
 
 export interface FormularioPlantillaProps {
   plantilla: Plantilla
@@ -28,6 +30,7 @@ export function FormularioPlantilla({ plantilla }: FormularioPlantillaProps) {
   const mutacion = useGuardarPlantilla()
   const usar = useUsarPlantilla()
   const tieneAsunto = plantilla.asunto !== null
+  const ejemplo = { ...DATOS_EJEMPLO, revista: REVISTAS[plantilla.revista].nombre }
 
   function guardar() {
     setGuardada(false)
@@ -72,6 +75,8 @@ export function FormularioPlantilla({ plantilla }: FormularioPlantillaProps) {
         ayuda={`Marcadores disponibles: ${plantilla.variables.map((v) => `{{${v}}}`).join(' ')}`}
       />
 
+      {plantilla.uso === 'constancia' && <FondoConstancia plantilla={plantilla} />}
+
       <section
         aria-labelledby="titulo-previa-plantilla"
         className="flex flex-col gap-2 rounded-lg border border-borde-fuerte bg-superficie-sutil p-4"
@@ -79,8 +84,8 @@ export function FormularioPlantilla({ plantilla }: FormularioPlantillaProps) {
         <h3 id="titulo-previa-plantilla" className="text-micro-11 uppercase text-texto-secundario">
           Vista previa con datos de ejemplo
         </h3>
-        {tieneAsunto && <p className="text-cuerpo-15-enfasis">{rellenar(asunto, DATOS_EJEMPLO)}</p>}
-        <p className="whitespace-pre-line text-cuerpo-15">{rellenar(cuerpo, DATOS_EJEMPLO)}</p>
+        {tieneAsunto && <p className="text-cuerpo-15-enfasis">{rellenar(asunto, ejemplo)}</p>}
+        <p className="whitespace-pre-line text-cuerpo-15">{rellenar(cuerpo, ejemplo)}</p>
       </section>
 
       <div className="flex flex-wrap items-center gap-3">
