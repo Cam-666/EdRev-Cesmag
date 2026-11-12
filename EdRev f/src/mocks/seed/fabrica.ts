@@ -38,6 +38,8 @@ export type AutorSeed = [string, string, string, string?]
 
 export interface ParSeed {
   nombre: string
+  /** Profession or title; a default one is given when omitted. */
+  prof?: string
   correo: string
   universidad: string
   area: string
@@ -143,6 +145,14 @@ function leerPublicacion(texto: string): { volumen: number; numero: number } {
   return { volumen, numero }
 }
 
+const PROFESIONES = [
+  'Magíster en Educación',
+  'Doctorado en Ciencias de la Educación',
+  'Magíster en Pedagogía',
+  'Doctorado en Ciencias Sociales',
+  'Magíster en Estudios Sociales',
+]
+
 const OBSERVACION_RONDA: Record<ResultadoRonda, string> = {
   aprobado: 'Cumple con la política editorial y el formato. Pasa a pares evaluadores.',
   ajustes: 'Ajustar el resumen, las normas de citación y la estructura del método.',
@@ -171,6 +181,7 @@ export function construirSeed(entrada: EntradaSeed): SeedRevista {
     id: `${p}-par-${i + 1}`,
     revista,
     nombre: s.nombre,
+    profesion: s.prof ?? PROFESIONES[i % PROFESIONES.length] ?? '',
     correo: s.correo,
     universidad: s.universidad,
     area: s.area,

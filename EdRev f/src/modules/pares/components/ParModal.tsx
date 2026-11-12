@@ -5,7 +5,8 @@
  * Covers: RF-12, RF-13, RF-27 (correct the email), RNF-06 (Ley 1581 de 2012).
  */
 import { zodResolver } from '@hookform/resolvers/zod'
-import { Controller, useForm } from 'react-hook-form'
+import { Controller, useForm, useWatch } from 'react-hook-form'
+import { AvisoOtraRevista } from './AvisoOtraRevista'
 import { esquemaPar } from '../config/esquemas'
 import type { ParForm } from '../config/esquemas'
 import { useAreas } from '../hooks/usePares'
@@ -22,7 +23,7 @@ export interface ParModalProps {
   abierto: boolean
   onCerrar: () => void
   /** The peer being edited; omit to register a new one. */
-  par?: Pick<ParEvaluador, 'id' | 'nombre' | 'correo' | 'universidad' | 'area'>
+  par?: Pick<ParEvaluador, 'id' | 'nombre' | 'profesion' | 'correo' | 'universidad' | 'area'>
   onGuardado?: (id: string) => void
 }
 
@@ -46,11 +47,13 @@ function ContenidoParModal({ abierto, onCerrar, par, onGuardado }: ParModalProps
     register,
     handleSubmit,
     control,
+    setValue,
     formState: { errors },
   } = useForm<ParForm>({
     resolver: zodResolver(esquemaPar),
     defaultValues: {
       nombre: par?.nombre ?? '',
+      profesion: par?.profesion ?? '',
       correo: par?.correo ?? '',
       universidad: par?.universidad ?? '',
       area: par?.area ?? '',
@@ -58,10 +61,18 @@ function ContenidoParModal({ abierto, onCerrar, par, onGuardado }: ParModalProps
     },
   })
 
+  const correo = useWatch({ control, name: 'correo' })
+
   function enviar(v: ParForm) {
     if (par) {
       editar.mutate(
-        { nombre: v.nombre, correo: v.correo, universidad: v.universidad, area: v.area },
+        {
+          nombre: v.nombre,
+          profesion: v.profesion,
+          correo: v.correo,
+          universidad: v.universidad,
+          area: v.area,
+        },
         {
           onSuccess: () => {
             onGuardado?.(par.id)
@@ -121,12 +132,29 @@ function ContenidoParModal({ abierto, onCerrar, par, onGuardado }: ParModalProps
           {...register('nombre')}
         />
         <CampoTexto
+          etiqueta="Profesión o título"
+          autoComplete="off"
+          error={errors.profesion?.message}
+          {...register('profesion')}
+        />
+        <CampoTexto
           etiqueta="Correo electrónico"
           type="email"
           autoComplete="off"
           error={errors.correo?.message}
           {...register('correo')}
         />
+        {!par && (
+          <AvisoOtraRevista
+            correo={correo}
+            onCopiar={(otro) => {
+              setValue('nombre', otro.nombre, { shouldValidate: true })
+              setValue('profesion', otro.profesion, { shouldValidate: true })
+              setValue('universidad', otro.universidad, { shouldValidate: true })
+              setValue('area', otro.area, { shouldValidate: true })
+            }}
+          />
+        )}
         <CampoTexto
           etiqueta="Universidad"
           autoComplete="off"

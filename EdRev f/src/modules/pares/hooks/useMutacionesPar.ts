@@ -21,7 +21,9 @@ export function useEditarPar(id: string) {
   const invalidar = useInvalidarPares()
   return useMutation({
     mutationFn: (
-      cambios: Partial<Pick<ParEvaluador, 'nombre' | 'correo' | 'universidad' | 'area'>>,
+      cambios: Partial<
+        Pick<ParEvaluador, 'nombre' | 'profesion' | 'correo' | 'universidad' | 'area'>
+      >,
     ) => editarPar(revista, id, cambios),
     onSuccess: invalidar,
   })

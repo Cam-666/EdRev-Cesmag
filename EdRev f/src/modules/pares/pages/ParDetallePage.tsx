@@ -120,6 +120,10 @@ export function ParDetallePage() {
               </h2>
               <dl className="grid grid-cols-2 gap-x-6 gap-y-3">
                 <div>
+                  <dt className="text-micro-11 uppercase text-texto-secundario">Profesión</dt>
+                  <dd className="text-cuerpo-15">{par.profesion || 'Sin registrar'}</dd>
+                </div>
+                <div>
                   <dt className="text-micro-11 uppercase text-texto-secundario">Correo</dt>
                   <dd className="text-cuerpo-15">{par.correo}</dd>
                 </div>

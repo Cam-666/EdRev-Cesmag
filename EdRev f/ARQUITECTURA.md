@@ -157,6 +157,15 @@ use «Reenviar invitación».
    constancia de la revista sobre su PDF de fondo); «Más tarde» la deja pendiente y se puede emitir desde
    el par o desde Constancias.
 
+7. **Cerrar proceso** (botón en la ficha): Aprobado, Rechazado o Archivado con motivo obligatorio, que queda en
+   observaciones e historial («Cierre del proceso»). Al aprobar se registran volumen y número juntos
+   (`lib/dominio/publicacion.ts`); el filtro de publicación va de la más reciente a la más antigua.
+
+Pares: al registrar uno nuevo (base o candidato), si el correo ya está en la otra revista se avisa, se dice si
+allí está bloqueado y se ofrece «Copiar sus datos»; el par queda igual en la base de esta revista. Cada par
+tiene «Profesión o título». La invitación admite `{{numero}}` (solicitud OJS), `{{profesion}}` y
+`{{universidad}}` además de `{{revista}}`, `{{par}}` y `{{articulo}}`.
+
 Autores: directorio común a las dos revistas (filtrable por revista); cada autor tiene su pantalla
 (`/autores/:id`) con todos sus artículos y su revista. Las pantallas de detalle tienen «Volver». El panel
 lateral queda fijo al desplazar el contenido.

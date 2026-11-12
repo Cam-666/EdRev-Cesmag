@@ -109,6 +109,7 @@ function registrarCandidato(
     id: `${revista}-par-n${base.pares.length + 1}`,
     revista,
     nombre: datos.nombre.trim(),
+    profesion: (datos.profesion ?? '').trim(),
     correo,
     universidad: datos.universidad.trim(),
     area: datos.area.trim(),
@@ -163,9 +164,13 @@ function auditar(
 }
 
 function textosInvitacion(revista: Revista, par: ParEvaluador, articulo: Articulo) {
+  // RF-25: journal, request number, peer with profession, university and article title.
   const variables = {
     revista: NOMBRE_EN_CORREO[revista],
+    numero: articulo.numeroOjs,
     par: par.nombre,
+    profesion: par.profesion,
+    universidad: par.universidad,
     articulo: articulo.titulo,
   }
   return {

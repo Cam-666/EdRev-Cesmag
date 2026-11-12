@@ -3,8 +3,15 @@
  * registration, edition, block / unblock). Each call carries the journal in the URL.
  * Covers: RF-12..RF-18, RNF-06.
  */
-import { solicitar } from '@/lib/api/cliente'
-import type { MotivoBloqueo, NuevoPar, ParDetalle, ParEvaluador, ParListado } from '@/types/par'
+import { ErrorApi, solicitar } from '@/lib/api/cliente'
+import type {
+  MotivoBloqueo,
+  NuevoPar,
+  ParDetalle,
+  ParEnOtraRevista,
+  ParEvaluador,
+  ParListado,
+} from '@/types/par'
 import type { Revista } from '@/types/revista'
 
 /** `asignables`: not blocked, no evaluation in progress and not yet in the article (RF-19). */
@@ -54,6 +61,21 @@ export function listarUniversidades(revista: Revista): Promise<string[]> {
   return solicitar<string[]>(`/${revista}/pares/universidades`)
 }
 
+/** The same email in the other journal's base, or null (RF-12). */
+export async function buscarEnOtraRevista(
+  revista: Revista,
+  correo: string,
+): Promise<ParEnOtraRevista | null> {
+  try {
+    return await solicitar<ParEnOtraRevista>(
+      `/${revista}/pares/en-otra-revista?correo=${encodeURIComponent(correo)}`,
+    )
+  } catch (e) {
+    if (e instanceof ErrorApi && e.estado === 404) return null
+    throw e
+  }
+}
+
 export function obtenerPar(revista: Revista, id: string): Promise<ParDetalle> {
   return solicitar<ParDetalle>(`/${revista}/pares/${encodeURIComponent(id)}`)
 }
@@ -65,7 +87,7 @@ export function registrarPar(revista: Revista, datos: NuevoPar): Promise<ParDeta
 export function editarPar(
   revista: Revista,
   id: string,
-  cambios: Partial<Pick<ParEvaluador, 'nombre' | 'correo' | 'universidad' | 'area'>>,
+  cambios: Partial<Pick<ParEvaluador, 'nombre' | 'profesion' | 'correo' | 'universidad' | 'area'>>,
 ): Promise<ParDetalle> {
   return solicitar<ParDetalle>(`/${revista}/pares/${encodeURIComponent(id)}`, {
     method: 'PATCH',

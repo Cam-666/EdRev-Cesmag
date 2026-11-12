@@ -1,6 +1,13 @@
 import { keepPreviousData, useQuery } from '@tanstack/react-query'
-import { listarAreas, listarPares, listarUniversidades, obtenerPar } from '../services/paresService'
+import {
+  buscarEnOtraRevista,
+  listarAreas,
+  listarPares,
+  listarUniversidades,
+  obtenerPar,
+} from '../services/paresService'
 import type { FiltrosPares } from '../services/paresService'
+import { useRetardo } from '@/lib/useRetardo'
 import { useRevista } from '@/lib/revista/useRevista'
 
 /** Peers of the active journal (RF-14). The journal is part of the cache key. */
@@ -33,5 +40,16 @@ export function usePar(id: string) {
     queryKey: ['pares', revista, 'detalle', id],
     queryFn: () => obtenerPar(revista, id),
     enabled: id !== '',
+  })
+}
+
+/** RF-12: whether the email typed for a new peer is already in the other journal's base. */
+export function useParEnOtraRevista(correo: string) {
+  const { revista } = useRevista()
+  const valor = useRetardo(correo.trim().toLowerCase(), 300)
+  return useQuery({
+    queryKey: ['pares', revista, 'en-otra-revista', valor],
+    queryFn: () => buscarEnOtraRevista(revista, valor),
+    enabled: /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(valor),
   })
 }

@@ -37,6 +37,9 @@ export function validarPlantilla(
 
 /** Sample data for the preview of a template; {{revista}} is the journal of the template. */
 export const DATOS_EJEMPLO: Record<string, string> = {
+  numero: '2026-034',
+  profesion: 'Magíster en Educación',
+  universidad: 'Universidad de Nariño',
   par: 'Luz Marina Burbano',
   articulo: 'Alfabetización mediática en la formación de maestros',
 }

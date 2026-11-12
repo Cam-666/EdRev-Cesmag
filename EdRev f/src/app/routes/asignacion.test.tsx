@@ -87,6 +87,8 @@ describe('assigning a peer from the article sheet', () => {
     expect(await within(panel).findByText('Escriba el nombre del par.')).toBeInTheDocument()
 
     await user.type(within(panel).getByLabelText('Nombre'), 'Marta Lucía Gómez')
+
+    await user.type(within(panel).getByLabelText('Profesión o título'), 'Magíster en Educación')
     await user.type(within(panel).getByLabelText('Correo electrónico'), 'ml.gomez@udenar.edu.co')
     await user.type(within(panel).getByLabelText('Universidad'), 'Universidad de Nariño')
     await user.type(within(panel).getByLabelText('Área temática'), 'Educación rural')
@@ -128,6 +130,7 @@ describe('bounced invitation (RF-27)', () => {
     const panel = await abrirPanel(user)
     await user.click(within(panel).getByRole('tab', { name: 'Registrar un candidato nuevo' }))
     await user.type(within(panel).getByLabelText('Nombre'), 'Par Rebote')
+    await user.type(within(panel).getByLabelText('Profesión o título'), 'Magíster en Educación')
     await user.type(within(panel).getByLabelText('Correo electrónico'), 'par@invalido.test')
     await user.type(within(panel).getByLabelText('Universidad'), 'Universidad del Valle')
     await user.type(within(panel).getByLabelText('Área temática'), 'Educación rural')

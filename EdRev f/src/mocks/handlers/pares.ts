@@ -4,16 +4,18 @@
  * Covers: RF-12..RF-18, RNF-06. Simulates the backend; permissions are enforced here.
  */
 import { http, HttpResponse } from 'msw'
-import { autorPorId } from '../db'
+import { autorPorId, baseDe } from '../db'
 import type { SeedRevista } from '../seed/fabrica'
 import { ahoraIso, contexto, error, sinTildes } from './util'
 import { detectarConflicto } from '@/lib/dominio/conflicto'
+import type { Revista } from '@/types/revista'
 import { enCurso } from '@/lib/dominio/pares'
 import type {
   EstadoDisponibilidad,
   MotivoBloqueo,
   NuevoPar,
   ParDetalle,
+  ParEnOtraRevista,
   ParEvaluador,
   ParListado,
 } from '@/types/par'
@@ -146,6 +148,26 @@ export const handlersPares = [
     return HttpResponse.json(lista)
   }),
 
+  // RF-12: the same email in the base of the other journal, to warn and offer to copy its data.
+  http.get('*/api/:revista/pares/en-otra-revista', ({ params, request }) => {
+    const c = contexto(params, request)
+    if (!c.ok) return c.respuesta
+    const correo = (new URL(request.url).searchParams.get('correo') ?? '').trim().toLowerCase()
+    const otra: Revista = c.revista === 'reep' ? 'ire' : 'reep'
+    const par = baseDe(otra).pares.find((p) => p.correo.toLowerCase() === correo)
+    if (!correo || !par) return error(404, 'No está en la otra revista')
+    const encontrado: ParEnOtraRevista = {
+      revista: otra,
+      nombre: par.nombre,
+      profesion: par.profesion,
+      correo: par.correo,
+      universidad: par.universidad,
+      area: par.area,
+      bloqueo: par.bloqueo,
+    }
+    return HttpResponse.json(encontrado)
+  }),
+
   http.get('*/api/:revista/pares/:id', ({ params, request }) => {
     const c = contexto(params, request)
     if (!c.ok) return c.respuesta
@@ -173,6 +195,7 @@ export const handlersPares = [
       id: `${c.revista}-par-n${c.base.pares.length + 1}`,
       revista: c.revista,
       nombre: datos.nombre.trim(),
+      profesion: (datos.profesion ?? '').trim(),
       correo: datos.correo.trim(),
       universidad: datos.universidad.trim(),
       area: datos.area.trim(),
@@ -198,7 +221,7 @@ export const handlersPares = [
     const par = c.base.pares.find((p) => p.id === params.id)
     if (!par) return error(404, 'Par evaluador no encontrado')
     const cambios = (await request.json()) as Partial<
-      Pick<ParEvaluador, 'nombre' | 'correo' | 'universidad' | 'area'>
+      Pick<ParEvaluador, 'nombre' | 'profesion' | 'correo' | 'universidad' | 'area'>
     >
     if (
       cambios.correo &&

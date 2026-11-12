@@ -5,6 +5,7 @@ import { z } from 'zod'
 
 export const esquemaPar = z.object({
   nombre: z.string().trim().min(1, 'Escriba el nombre del par.'),
+  profesion: z.string().trim().min(1, 'Escriba la profesión o el título del par.'),
   correo: z
     .string()
     .trim()

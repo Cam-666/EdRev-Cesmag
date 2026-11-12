@@ -60,6 +60,7 @@ async function candidato(articuloId: string, n: number): Promise<ResultadoAsigna
     cuerpo: {
       nuevo: {
         nombre: `Candidato ${n}`,
+        profesion: 'Magíster en Educación',
         correo: `candidato${n}.${articuloId}@udenar.edu.co`,
         universidad: 'Universidad de Nariño',
         area: 'Educación rural',
@@ -187,6 +188,23 @@ describe('peers API (mock)', () => {
   })
 })
 
+describe('the same email in the other journal (mock, RF-12)', () => {
+  it('finds the peer of the other journal by email, with its block', async () => {
+    const ire = await json<ListaPares>(await llamar('/ire/pares?estado=bloqueados&porPagina=50'))
+    const bloqueado = ire.items[0]
+    if (!bloqueado) throw new Error('seed missing')
+    const r = await llamar(
+      `/reep/pares/en-otra-revista?correo=${encodeURIComponent(bloqueado.correo.toUpperCase())}`,
+    )
+    expect(r.status).toBe(200)
+    expect(await json<{ revista: string; bloqueo: unknown }>(r)).toMatchObject({
+      revista: 'ire',
+      bloqueo: { motivo: bloqueado.bloqueo?.motivo },
+    })
+    expect((await llamar('/reep/pares/en-otra-revista?correo=nadie@x.co')).status).toBe(404)
+  })
+})
+
 describe('assignment and invitation (mock)', () => {
   it('only an article approved by the committee (most recent round) receives peers', async () => {
     const articulo = await articuloNuevo('reep', '2026-035', 'reep-au-3', false)
@@ -240,6 +258,24 @@ describe('assignment and invitation (mock)', () => {
     await responder(cuerpo.asignacion.id, 'acepto')
     const enEvaluacion = await json<ArticuloDetalle>(await llamar(`/reep/articulos/${articulo.id}`))
     expect(enEvaluacion.estado).toBe('en-evaluacion')
+  })
+
+  it('the invitation carries the request number, the profession and the university (RF-25)', async () => {
+    await llamar('/plantillas/reep-invitacion', {
+      metodo: 'PUT',
+      cuerpo: {
+        asunto: 'Solicitud {{numero}} · {{revista}}',
+        cuerpo: '{{par}}, {{profesion}} ({{universidad}}): evalúe «{{articulo}}».',
+      },
+    })
+    const articulo = await articuloNuevo('reep', '2026-052', 'reep-au-3')
+    await candidato(articulo.id, 9)
+    const h = await json<HistorialArticulo>(
+      await llamar(`/reep/articulos/${articulo.id}/historial`),
+    )
+    expect(h.correos[0]?.asunto).toBe(
+      'Solicitud 2026-052 · Revista Electrónica en Educación y Pedagogía',
+    )
   })
 
   it('a new candidate is saved in the journal base and invited right away', async () => {

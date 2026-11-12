@@ -1,6 +1,7 @@
 import { screen, waitFor, within } from '@testing-library/react'
 import { axe } from 'vitest-axe'
 import { AUXILIAR } from '@/mocks/seed/usuarios'
+import { json, llamar } from '@/test/llamarApi'
 import { elegirOpcion, montarRuta } from '@/test/montarRuta'
 
 describe('peer base (/:revista/pares)', () => {
@@ -80,6 +81,7 @@ describe('registering a peer', () => {
     await user.click(await screen.findByRole('button', { name: 'Registrar par' }))
     const dialogo = await screen.findByRole('dialog', { name: 'Registrar par evaluador' })
     await user.type(within(dialogo).getByLabelText('Nombre'), 'Marta Lucía Gómez')
+    await user.type(within(dialogo).getByLabelText('Profesión o título'), 'Magíster en Educación')
     await user.type(within(dialogo).getByLabelText('Correo electrónico'), 'ml.gomez@udenar.edu.co')
     await user.type(within(dialogo).getByLabelText('Universidad'), 'Universidad de Nariño')
     await user.type(within(dialogo).getByLabelText('Área temática'), 'Educación rural')
@@ -93,6 +95,7 @@ describe('registering a peer', () => {
     await user.click(screen.getByRole('button', { name: 'Registrar par' }))
     const otro = await screen.findByRole('dialog', { name: 'Registrar par evaluador' })
     await user.type(within(otro).getByLabelText('Nombre'), 'Otra Persona')
+    await user.type(within(otro).getByLabelText('Profesión o título'), 'Magíster en Educación')
     await user.type(within(otro).getByLabelText('Correo electrónico'), 'ml.gomez@udenar.edu.co')
     await user.type(within(otro).getByLabelText('Universidad'), 'Universidad de Nariño')
     await user.type(within(otro).getByLabelText('Área temática'), 'Educación rural')
@@ -105,6 +108,26 @@ describe('registering a peer', () => {
     montarRuta('/ire/pares')
     await screen.findByText('15 pares · base propia de esta revista')
     expect(screen.queryByText('Marta Lucía Gómez')).toBeNull()
+  })
+
+  it('warns when the email is already in the other journal, says if it is blocked there and copies its data', async () => {
+    const ire = await json<{
+      items: Array<{ correo: string; nombre: string; universidad: string }>
+    }>(await llamar('/ire/pares?estado=bloqueados&porPagina=50'))
+    const bloqueado = ire.items[0]
+    if (!bloqueado) throw new Error('seed missing')
+    const { user } = montarRuta('/reep/pares')
+    await user.click(await screen.findByRole('button', { name: 'Registrar par' }))
+    const dialogo = await screen.findByRole('dialog', { name: 'Registrar par evaluador' })
+    await user.type(within(dialogo).getByLabelText('Correo electrónico'), bloqueado.correo)
+    expect(
+      await within(dialogo).findByText('Este correo ya está en Investigium IRE'),
+    ).toBeInTheDocument()
+    expect(within(dialogo).getByText(/Allí está bloqueado/)).toBeInTheDocument()
+    await user.click(within(dialogo).getByRole('button', { name: 'Copiar sus datos' }))
+    expect(within(dialogo).getByLabelText('Nombre')).toHaveValue(bloqueado.nombre)
+    expect(within(dialogo).getByLabelText('Universidad')).toHaveValue(bloqueado.universidad)
+    expect(within(dialogo).getByLabelText('Profesión o título')).not.toHaveValue('')
   })
 
   it('the Auxiliar can register peers too', async () => {

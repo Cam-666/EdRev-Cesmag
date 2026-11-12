@@ -3,8 +3,9 @@
  * (RNF-19). In the mock API they are loaded into the database, where Administración → Plantillas
  * edits them; in the real system the dependency edits them the same way, without touching code.
  *
- *  - Invitation (RF-25): only the journal name, the peer name and the article title vary; no
- *    attachments (the documents are sent from the OJS once the peer accepts).
+ *  - Invitation (RF-25): only the journal, the request number, the peer with its profession, its
+ *    university and the article title vary; no attachments (the documents are sent from the OJS
+ *    once the peer accepts).
  *  - Thank-you mail (RF-31): carries the constancia as an attachment.
  *  - Constancia (RF-30): the text is written over the journal's PDF background (letterhead,
  *    design and signature); only the peer, the article and the journal change; no sequence number.
@@ -19,8 +20,8 @@ const BASE: Array<Omit<Plantilla, 'id' | 'revista' | 'fondoPdf'>> = [
     nombre: 'Invitación a evaluar',
     asunto: 'Invitación a evaluar un artículo · {{revista}}',
     cuerpo:
-      'Apreciado(a) {{par}}:\n\nLa {{revista}} lo(a) invita a participar como par evaluador del artículo «{{articulo}}». Si acepta, recibirá los documentos desde el OJS.\n\nDependencia de Editorial',
-    variables: ['revista', 'par', 'articulo'],
+      'Apreciado(a) {{par}}, {{profesion}} de la {{universidad}}:\n\nLa {{revista}} lo(a) invita a participar como par evaluador del artículo «{{articulo}}» (solicitud {{numero}}). Si acepta, recibirá los documentos desde el OJS.\n\nDependencia de Editorial',
+    variables: ['revista', 'numero', 'par', 'profesion', 'universidad', 'articulo'],
     enUso: true,
   },
   {

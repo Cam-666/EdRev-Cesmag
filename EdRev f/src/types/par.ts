@@ -8,6 +8,8 @@ export interface ParEvaluador {
   id: string
   revista: Revista
   nombre: string
+  /** Profession or academic title, e.g. "Magíster en Educación"; it goes in the invitation (RF-25). */
+  profesion: string
   correo: string
   universidad: string
   /** Free-text thematic area (RF-13). */
@@ -101,6 +103,7 @@ export interface ParDetalle extends ParEvaluador {
 
 export interface NuevoPar {
   nombre: string
+  profesion: string
   correo: string
   universidad: string
   area: string
@@ -132,6 +135,7 @@ export type RespuestaPar = 'acepto' | 'no-acepto' | 'no-desea' | 'sin-respuesta'
 /** A brand-new candidate typed while assigning peers (RF-12, RF-19). */
 export interface CandidatoPar {
   nombre: string
+  profesion: string
   correo: string
   universidad: string
   area: string
@@ -139,3 +143,14 @@ export interface CandidatoPar {
 
 /** Body of an assignment: a peer of the base, or a new candidate saved in the base first. */
 export type DatosAsignacion = { parId: string } | { nuevo: CandidatoPar }
+
+/** The same email in the base of the other journal (RF-12): its data can be copied. */
+export interface ParEnOtraRevista {
+  revista: Revista
+  nombre: string
+  profesion: string
+  correo: string
+  universidad: string
+  area: string
+  bloqueo: ParEvaluador['bloqueo']
+}
