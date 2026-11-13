@@ -1,13 +1,16 @@
 /*
- * UsuariosPage — Usuarios y permisos (/administracion/usuarios): the accounts of the dependency
- * with profile, last access and status, create / edit / disable, and the permissions matrix.
+ * UsuariosPage — Usuarios (/administracion/usuarios): the accounts of the dependency with profile,
+ * last access and status; create (the user receives a link to define the password), edit,
+ * disable, and send the link again to an account that has not entered.
  * Administradora only. Covers: RF-40, HU-29, RNF-05.
  */
 import { useState } from 'react'
 import { UsuarioModal } from '../components/UsuarioModal'
 import { PERFILES } from '../config/perfiles'
 import { useUsuarios } from '../hooks/useAdmin'
+import { Alerta } from '@/components/common/Alerta'
 import { Boton } from '@/components/common/Boton'
+import { EnlaceBoton } from '@/components/common/EnlaceBoton'
 import { DistintivoEstado } from '@/components/common/DistintivoEstado'
 import { EstadoConsulta } from '@/components/common/EstadoConsulta'
 import { Tabla } from '@/components/common/Tabla'
@@ -20,6 +23,8 @@ export function UsuariosPage() {
   const consulta = useUsuarios()
   const [creando, setCreando] = useState(false)
   const [editando, setEditando] = useState<Usuario | null>(null)
+  const [enviado, setEnviado] = useState<{ correo: string; enlaceDemo?: string } | null>(null)
+  const avisar = (correo: string, enlaceDemo?: string) => setEnviado({ correo, enlaceDemo })
   const total = consulta.data?.length ?? 0
 
   const columnas: Array<ColumnaTabla<Usuario>> = [
@@ -80,6 +85,22 @@ export function UsuariosPage() {
               : ' '}
           </p>
         </EncabezadoPagina>
+        <div role="status" aria-live="polite">
+          {enviado && (
+            <Alerta
+              tipo="exito"
+              accion={
+                enviado.enlaceDemo && (
+                  <EnlaceBoton variante="secundario" tamano="sm" to={enviado.enlaceDemo}>
+                    Demostración: abrir el enlace
+                  </EnlaceBoton>
+                )
+              }
+            >
+              Se envió a {enviado.correo} el enlace para definir la contraseña.
+            </Alerta>
+          )}
+        </div>
         <EstadoConsulta
           cargando={false}
           error={consulta.isError}
@@ -96,11 +117,12 @@ export function UsuariosPage() {
         </EstadoConsulta>
       </section>
 
-      <UsuarioModal abierto={creando} onCerrar={() => setCreando(false)} />
+      <UsuarioModal abierto={creando} onCerrar={() => setCreando(false)} onEnlaceEnviado={avisar} />
       <UsuarioModal
         abierto={editando !== null}
         usuario={editando ?? undefined}
         onCerrar={() => setEditando(null)}
+        onEnlaceEnviado={avisar}
       />
     </section>
   )

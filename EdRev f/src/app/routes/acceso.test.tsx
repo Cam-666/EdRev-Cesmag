@@ -216,3 +216,81 @@ describe('password recovery', () => {
     ).toBeDisabled()
   })
 })
+
+describe('defining a password from the mail link (RF-40, RF-46)', () => {
+  afterEach(() => vi.useRealTimers())
+
+  it('recovery: the link opens the form, validates it and the new password works', async () => {
+    const { user, router } = montar('/acceso/recuperar')
+    await user.type(screen.getByLabelText('Correo institucional'), AUXILIAR.correo)
+    await user.click(screen.getByRole('button', { name: 'Enviar enlace de recuperación' }))
+    await user.click(
+      await screen.findByRole('link', { name: 'Demostración: abrir el enlace del correo' }),
+    )
+    await waitFor(() => expect(router.state.location.pathname).toBe('/acceso/contrasena'))
+    expect(
+      await screen.findByRole('heading', { level: 1, name: 'Cree una contraseña nueva' }),
+    ).toBeInTheDocument()
+    expect(screen.getByText(/Andrea Villota/)).toBeInTheDocument()
+
+    await user.type(screen.getByLabelText('Nueva contraseña'), 'corta')
+    await user.type(screen.getByLabelText('Confirme la contraseña'), 'otra')
+    await user.click(screen.getByRole('button', { name: 'Guardar contraseña' }))
+    expect(await screen.findByText('Use al menos 8 caracteres.')).toBeInTheDocument()
+
+    await user.clear(screen.getByLabelText('Nueva contraseña'))
+    await user.type(screen.getByLabelText('Nueva contraseña'), 'Revistas2027')
+    await user.click(screen.getByRole('button', { name: 'Guardar contraseña' }))
+    expect(await screen.findByText('Las dos contraseñas no coinciden.')).toBeInTheDocument()
+
+    await user.clear(screen.getByLabelText('Confirme la contraseña'))
+    await user.type(screen.getByLabelText('Confirme la contraseña'), 'Revistas2027')
+    await user.click(screen.getByRole('button', { name: 'Guardar contraseña' }))
+    await waitFor(() => expect(router.state.location.pathname).toBe('/acceso'))
+    expect(await screen.findByText('Contraseña guardada. Ya puede ingresar.')).toBeInTheDocument()
+    expect(screen.getByLabelText('Correo institucional')).toHaveValue(AUXILIAR.correo)
+
+    await user.type(screen.getByLabelText('Contraseña'), 'Revistas2027')
+    await user.click(screen.getByRole('button', { name: 'Ingresar' }))
+    await waitFor(() => expect(router.state.location.pathname).toBe('/inicio'))
+  })
+
+  it('an expired, used or wrong link says so and offers a new one', async () => {
+    const r = await fetch('http://localhost/api/auth/recuperar', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ correo: AUXILIAR.correo }),
+    })
+    const { enlaceDemo } = (await r.json()) as { enlaceDemo: string }
+
+    vi.useFakeTimers({ toFake: ['Date'] })
+    vi.setSystemTime(new Date(Date.now() + 31 * 60_000))
+    const vencido = montar(enlaceDemo)
+    expect(
+      await screen.findByRole('heading', { level: 1, name: 'El enlace venció' }),
+    ).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'Solicitar un enlace nuevo' })).toHaveAttribute(
+      'href',
+      '/acceso/recuperar',
+    )
+    vencido.unmount()
+    vi.useRealTimers()
+
+    montar('/acceso/contrasena?token=no-existe')
+    expect(
+      await screen.findByRole('heading', { level: 1, name: 'El enlace no es válido' }),
+    ).toBeInTheDocument()
+  })
+
+  it('the form has no accessibility violations', async () => {
+    const r = await fetch('http://localhost/api/auth/recuperar', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ correo: ADMIN.correo }),
+    })
+    const { enlaceDemo } = (await r.json()) as { enlaceDemo: string }
+    const { container } = montar(enlaceDemo)
+    await screen.findByRole('heading', { level: 1, name: 'Cree una contraseña nueva' })
+    expect(await axe(container)).toHaveNoViolations()
+  })
+})

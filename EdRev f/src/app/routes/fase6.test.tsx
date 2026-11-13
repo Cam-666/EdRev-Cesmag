@@ -210,6 +210,38 @@ describe('administration', () => {
     expect(screen.getByText('En uso')).toBeInTheDocument()
   })
 
+  it('a new account receives the link to define its password (RF-40)', async () => {
+    const { user } = montarRuta('/administracion/usuarios')
+    await user.click(await screen.findByRole('button', { name: 'Crear usuario' }))
+    const dialogo = await screen.findByRole('dialog', { name: 'Crear usuario' })
+    expect(within(dialogo).queryByLabelText(/contraseña/i)).toBeNull()
+    await user.type(within(dialogo).getByLabelText('Nombre'), 'Laura Peña')
+    await user.type(
+      within(dialogo).getByLabelText('Correo institucional'),
+      'laura.pena@unicesmag.edu.co',
+    )
+    await user.click(within(dialogo).getByRole('button', { name: 'Crear usuario' }))
+    expect(
+      await screen.findByText(
+        'Se envió a laura.pena@unicesmag.edu.co el enlace para definir la contraseña.',
+      ),
+    ).toBeInTheDocument()
+    expect(
+      screen.getByRole('link', { name: 'Demostración: abrir el enlace' }).getAttribute('href'),
+    ).toMatch(/^\/acceso\/contrasena\?token=/)
+
+    // While the account has not entered, the link can be sent again
+    await user.click(await screen.findByRole('button', { name: 'Editar a Laura Peña' }))
+    const edicion = await screen.findByRole('dialog', { name: 'Editar usuario' })
+    await user.click(within(edicion).getByRole('button', { name: 'Reenviar enlace' }))
+    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull())
+    expect(
+      await screen.findByText(
+        'Se envió a laura.pena@unicesmag.edu.co el enlace para definir la contraseña.',
+      ),
+    ).toBeInTheDocument()
+  })
+
   it('the audit filter offers the action types of the data model (D13)', async () => {
     const { user } = montarRuta('/administracion/auditoria')
     await user.click(await screen.findByRole('combobox', { name: 'Tipo de acción' }))

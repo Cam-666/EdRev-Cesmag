@@ -6,6 +6,7 @@ import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tansta
 import {
   crearPlantilla,
   crearUsuario,
+  reenviarEnlaceUsuario,
   editarUsuario,
   guardarPlantilla,
   listarAuditoria,
@@ -28,6 +29,10 @@ export function useCrearUsuario() {
     mutationFn: (datos: DatosUsuario) => crearUsuario(datos),
     onSuccess: () => cliente.invalidateQueries({ queryKey: ['admin', 'usuarios'] }),
   })
+}
+
+export function useReenviarEnlace() {
+  return useMutation({ mutationFn: (id: string) => reenviarEnlaceUsuario(id) })
 }
 
 export function useEditarUsuario() {

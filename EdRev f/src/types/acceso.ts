@@ -21,3 +21,26 @@ export interface DetalleErrorIngreso {
 }
 
 export type MotivoCierre = 'manual' | 'inactividad'
+
+/** Why a password link was sent: a new account (RF-40) or a recovery (RF-46). */
+export type MotivoEnlace = 'activacion' | 'recuperacion'
+
+/** What a valid password link shows before the new password is typed. */
+export interface EnlaceContrasena {
+  motivo: MotivoEnlace
+  nombre: string
+  correo: string
+}
+
+/** Why a password link cannot be used: it expired (30 minutes), was used, or does not exist. */
+export interface DetalleErrorEnlace {
+  motivo: 'vencido' | 'usado' | 'invalido'
+}
+
+/**
+ * Answer of the calls that send a password link. The real API answers without a body; the mock
+ * returns `enlaceDemo` so the demo can follow the link that would arrive by mail.
+ */
+export interface RespuestaEnvioEnlace {
+  enlaceDemo?: string
+}

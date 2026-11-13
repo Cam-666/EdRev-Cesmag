@@ -1,7 +1,7 @@
 /*
  * ReenvioEnlace — "Reenviar el enlace (disponible en 00:45)": resend is locked for a countdown.
  * The countdown is not a live region (it would be announced every second); the result is.
- * Covers: RNF-11. No RF/HU yet (pending to incorporate).
+ * Covers: RF-46, RNF-11.
  */
 import { POLITICA_ACCESO } from '../config/politicaAcceso'
 import { useCuentaRegresiva } from '../hooks/useCuentaRegresiva'

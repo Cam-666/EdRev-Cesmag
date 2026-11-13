@@ -6,8 +6,10 @@
  */
 import { http, HttpResponse } from 'msw'
 import { baseDe, plantillas, usuarios } from '../db'
+import { bloquearContrasena, crearEnlace } from './acceso'
 import { contextoGlobal, error, sinTildes } from './util'
 import { marcadores } from '@/lib/plantillas'
+import type { RespuestaEnvioEnlace } from '@/types/acceso'
 import type { EntradaAuditoria } from '@/types/historial'
 import type { DatosNuevaPlantilla, Plantilla, UsoPlantilla } from '@/types/plantilla'
 import type { Revista } from '@/types/revista'
@@ -68,7 +70,20 @@ export const handlersAdmin = [
       ultimoIngreso: null,
     }
     usuarios().push(nuevo)
-    return HttpResponse.json(nuevo, { status: 201 })
+    // RF-40: the Administradora never sets passwords; the user defines one with this link.
+    bloquearContrasena(nuevo.id)
+    const enlaceDemo = crearEnlace(nuevo.id, 'activacion')
+    return HttpResponse.json({ ...nuevo, enlaceDemo }, { status: 201 })
+  }),
+
+  http.post('*/api/usuarios/:id/enlace', ({ params, request }) => {
+    const c = contextoGlobal(request, 'administrar')
+    if (!c.ok) return c.respuesta
+    const usuario = usuarios().find((u) => u.id === params.id)
+    if (!usuario) return error(404, 'Usuario no encontrado')
+    if (usuario.estado !== 'activo') return error(409, 'La cuenta está inhabilitada')
+    const cuerpo: RespuestaEnvioEnlace = { enlaceDemo: crearEnlace(usuario.id, 'activacion') }
+    return HttpResponse.json(cuerpo, { status: 202 })
   }),
 
   http.patch('*/api/usuarios/:id', async ({ params, request }) => {

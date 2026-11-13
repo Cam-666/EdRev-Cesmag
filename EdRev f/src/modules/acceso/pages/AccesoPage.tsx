@@ -12,12 +12,16 @@ import { Alerta } from '@/components/common/Alerta'
 
 interface EstadoNavegacion {
   desde?: string
+  /** Set by «Definir contraseña» right after saving the new password. */
+  correo?: string
+  contrasenaDefinida?: boolean
 }
 
 export function AccesoPage() {
   const { usuario, ultimoCierre } = useSesion()
   const ubicacion = useLocation()
-  const desde = (ubicacion.state as EstadoNavegacion | null)?.desde
+  const estado = ubicacion.state as EstadoNavegacion | null
+  const desde = estado?.desde
 
   if (usuario) return <Navigate to={desde ?? '/inicio'} replace />
 
@@ -37,7 +41,13 @@ export function AccesoPage() {
           guardado se conserva.
         </Alerta>
       )}
-      <FormularioIngreso reanudar={expirada} correoInicial={ultimoCierre?.correo} />
+      {estado?.contrasenaDefinida && (
+        <Alerta tipo="exito">Contraseña guardada. Ya puede ingresar.</Alerta>
+      )}
+      <FormularioIngreso
+        reanudar={expirada}
+        correoInicial={estado?.correo ?? ultimoCierre?.correo}
+      />
     </TarjetaAcceso>
   )
 }

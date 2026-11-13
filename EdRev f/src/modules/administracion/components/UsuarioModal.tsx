@@ -1,13 +1,15 @@
 /*
  * UsuarioModal — create or edit an account of the dependency (name, institutional email, profile)
  * and enable / disable it. A disabled account cannot log in but keeps its history of actions.
+ * The Administradora never sets passwords: a new account receives a link to define its own, which
+ * can be sent again while the account has not entered (RF-40).
  * No Figma design for the dialog. Covers: RF-40, HU-29, RNF-05.
  */
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Controller, useForm } from 'react-hook-form'
 import { z } from 'zod'
 import { PERFILES } from '../config/perfiles'
-import { useCrearUsuario, useEditarUsuario } from '../hooks/useAdmin'
+import { useCrearUsuario, useEditarUsuario, useReenviarEnlace } from '../hooks/useAdmin'
 import { Alerta } from '@/components/common/Alerta'
 import { Boton } from '@/components/common/Boton'
 import { CampoTexto } from '@/components/common/CampoTexto'
@@ -35,6 +37,8 @@ export interface UsuarioModalProps {
   onCerrar: () => void
   /** The account being edited; omit to create one. */
   usuario?: Usuario
+  /** Reports that a password link was sent (`enlaceDemo` only comes from the mock API). */
+  onEnlaceEnviado?: (correo: string, enlaceDemo?: string) => void
 }
 
 const FORMULARIO = 'formulario-usuario'
@@ -44,9 +48,10 @@ export function UsuarioModal(props: UsuarioModalProps) {
   return props.abierto ? <Contenido {...props} /> : null
 }
 
-function Contenido({ onCerrar, usuario }: UsuarioModalProps) {
+function Contenido({ onCerrar, usuario, onEnlaceEnviado }: UsuarioModalProps) {
   const crear = useCrearUsuario()
   const editar = useEditarUsuario()
+  const reenviar = useReenviarEnlace()
   const mutacion = usuario ? editar : crear
   const {
     register,
@@ -64,7 +69,13 @@ function Contenido({ onCerrar, usuario }: UsuarioModalProps) {
 
   function enviar(datos: Datos) {
     if (usuario) editar.mutate({ id: usuario.id, cambios: datos }, { onSuccess: onCerrar })
-    else crear.mutate(datos, { onSuccess: onCerrar })
+    else
+      crear.mutate(datos, {
+        onSuccess: (creado) => {
+          onEnlaceEnviado?.(creado.correo, creado.enlaceDemo)
+          onCerrar()
+        },
+      })
   }
 
   function cambiarEstado() {
@@ -86,10 +97,26 @@ function Contenido({ onCerrar, usuario }: UsuarioModalProps) {
       descripcion={
         usuario
           ? 'Cambie los datos o el perfil. Una cuenta inhabilitada conserva su historial.'
-          : 'La cuenta queda activa y el perfil define lo que puede hacer.'
+          : 'El usuario recibirá en su correo un enlace para definir su contraseña.'
       }
       acciones={
         <>
+          {usuario && usuario.estado === 'activo' && !usuario.ultimoIngreso && (
+            <Boton
+              variante="secundario"
+              cargando={reenviar.isPending}
+              onClick={() =>
+                reenviar.mutate(usuario.id, {
+                  onSuccess: (r) => {
+                    onEnlaceEnviado?.(usuario.correo, r.enlaceDemo)
+                    onCerrar()
+                  },
+                })
+              }
+            >
+              Reenviar enlace
+            </Boton>
+          )}
           {usuario && (
             <Boton
               variante={usuario.estado === 'activo' ? 'peligro' : 'secundario'}
@@ -114,6 +141,11 @@ function Contenido({ onCerrar, usuario }: UsuarioModalProps) {
         noValidate
         className="flex flex-col gap-3"
       >
+        {reenviar.isError && (
+          <Alerta tipo="error">
+            {mensajeDeApi(reenviar.error, 'No fue posible reenviar el enlace.')}
+          </Alerta>
+        )}
         {mutacion.isError && (
           <Alerta tipo="error">
             {mensajeDeApi(mutacion.error, 'No fue posible guardar la cuenta.')}

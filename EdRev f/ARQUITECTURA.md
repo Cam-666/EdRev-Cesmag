@@ -185,3 +185,14 @@ lateral queda fijo al desplazar el contenido.
   Desbloqueo, Cierre del proceso, Migración y Eliminación.
 - Informe con artículos rechazados (RF-38) y el concepto «Pendiente formato de evaluación» (D14).
 - La constancia emitida se descarga y se reenvía también desde la ficha del artículo (HU-23).
+
+## Fase 8: cuentas y contraseñas (RF-40, RF-46, HU-28, HU-29, RNF-04)
+
+- `/acceso/contrasena?token=…` (`DefinirContrasenaPage`): la página que abre el enlace del correo. Sirve para
+  definir la contraseña de una cuenta nueva y para crear una nueva tras «¿Olvidó su contraseña?». Pide la
+  contraseña dos veces (mínimo 8 caracteres, con letras y números) y vuelve a «Iniciar sesión» con el correo
+  escrito. Un enlace vencido (30 minutos), ya usado o inválido lo dice y ofrece pedir uno nuevo.
+- Crear usuario no pide contraseña: la cuenta recibe el enlace y no puede ingresar hasta definirla. Mientras
+  la cuenta no haya ingresado, «Reenviar enlace» en Editar usuario manda otro (el anterior deja de servir).
+- La API simulada devuelve `enlaceDemo` para que la demostración abra el enlace que llegaría por correo; la
+  API real no lo devuelve. Cada cuenta tiene su contraseña en el mock; las de la semilla usan la de demostración.

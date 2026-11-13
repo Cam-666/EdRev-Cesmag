@@ -1,6 +1,6 @@
 /*
  * FormularioRecuperar — request a password-recovery link. The answer never reveals whether the
- * account exists. Covers: RNF-11. No RF/HU yet for recovery (pending to incorporate).
+ * account exists. Covers: RF-46, HU-28 (criterion 2), RNF-11.
  */
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useForm } from 'react-hook-form'
@@ -14,7 +14,8 @@ import { Boton } from '@/components/common/Boton'
 import { CampoTexto } from '@/components/common/CampoTexto'
 
 export interface FormularioRecuperarProps {
-  onEnviado: (correo: string) => void
+  /** `enlaceDemo` only comes from the mock API (the real link arrives by mail). */
+  onEnviado: (correo: string, enlaceDemo?: string) => void
 }
 
 export function FormularioRecuperar({ onEnviado }: FormularioRecuperarProps) {
@@ -27,7 +28,7 @@ export function FormularioRecuperar({ onEnviado }: FormularioRecuperarProps) {
 
   function enviar({ correo }: DatosRecuperacion) {
     const limpio = correo.trim().toLowerCase()
-    mutacion.mutate(limpio, { onSuccess: () => onEnviado(limpio) })
+    mutacion.mutate(limpio, { onSuccess: (r) => onEnviado(limpio, r.enlaceDemo) })
   }
 
   return (

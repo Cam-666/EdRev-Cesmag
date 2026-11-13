@@ -3,6 +3,7 @@
  * and the cross-journal audit log. Covers: RF-40, RF-41, RNF-19, HU-29, HU-30.
  */
 import { solicitar } from '@/lib/api/cliente'
+import type { RespuestaEnvioEnlace } from '@/types/acceso'
 import type { EntradaAuditoria, TipoAuditoria } from '@/types/historial'
 import type { DatosNuevaPlantilla, DatosPlantillas, Plantilla } from '@/types/plantilla'
 import type { Revista } from '@/types/revista'
@@ -33,8 +34,16 @@ export function listarUsuarios(): Promise<Usuario[]> {
   return solicitar<Usuario[]>('/usuarios')
 }
 
-export function crearUsuario(datos: DatosUsuario): Promise<Usuario> {
-  return solicitar<Usuario>('/usuarios', { method: 'POST', ...json(datos) })
+/** RF-40: the account is created and its owner receives a link to define the password. */
+export function crearUsuario(datos: DatosUsuario): Promise<Usuario & RespuestaEnvioEnlace> {
+  return solicitar<Usuario & RespuestaEnvioEnlace>('/usuarios', { method: 'POST', ...json(datos) })
+}
+
+/** Sends again the link to define the password of an account that has not entered yet. */
+export function reenviarEnlaceUsuario(id: string): Promise<RespuestaEnvioEnlace> {
+  return solicitar<RespuestaEnvioEnlace>(`/usuarios/${encodeURIComponent(id)}/enlace`, {
+    method: 'POST',
+  })
 }
 
 export function editarUsuario(
