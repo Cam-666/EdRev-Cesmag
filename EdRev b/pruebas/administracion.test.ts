@@ -1,0 +1,41 @@
+/*
+ * Pruebas de administración — RF-12, RF-38, RF-41, RF-45.
+ */
+import { describe, expect, it } from 'vitest'
+import { como } from './api.js'
+
+describe('plantillas, auditoría, informes y pares por revista (RF-12, RF-38, RF-41, RF-45)', () => {
+  it('cada revista tiene sus tres plantillas en uso; se valida el texto', async () => {
+    const api = await como()
+    const { plantillas } = (await api.get('/plantillas')).body
+    expect(plantillas).toHaveLength(6)
+    const constancia = plantillas.find((p: { revista: string; uso: string }) => p.revista === 'ire' && p.uso === 'constancia')
+    expect((await api.put(`/plantillas/${constancia.id}`, { asunto: null, cuerpo: 'Sin marcadores' })).status).toBe(422)
+    expect((await api.put(`/plantillas/${constancia.id}`, { asunto: null, cuerpo: '{{par}} {{articulo}} {{otro}}' })).status).toBe(422)
+    const nueva = await api.post('/plantillas', { revista: 'ire', nombre: 'Constancia 2027', uso: 'constancia' })
+    expect(nueva.body).toMatchObject({ revista: 'ire', uso: 'constancia', enUso: false })
+    expect((await api.post(`/plantillas/${nueva.body.id}/usar`)).body.enUso).toBe(true)
+    const despues = (await api.get('/plantillas')).body.plantillas
+    expect(despues.filter((p: { revista: string; uso: string; enUso: boolean }) => p.revista === 'ire' && p.uso === 'constancia' && p.enUso)).toHaveLength(1)
+  })
+
+  it('la auditoría filtra por tipo y el informe suma ambas revistas', async () => {
+    const api = await como()
+    const aud = (await api.get('/auditoria?tipo=registro&porPagina=5')).body
+    expect(aud.items.every((a: { tipo: string }) => a.tipo === 'registro')).toBe(true)
+    const periodo = (await api.get('/informes/periodos')).body[0].valor
+    const inf = (await api.get(`/informes?revista=ambas&periodo=${periodo}`)).body
+    expect(inf.postulados.total).toBe(inf.postulados.reep + inf.postulados.ire)
+    expect((await api.get('/informes?revista=otra&periodo=x')).status).toBe(422)
+  })
+
+  it('el mismo correo en la otra revista se avisa; los pares no se comparten', async () => {
+    const api = await como()
+    const correo = `compartido${Date.now()}@x.co`
+    await api.post('/reep/pares', { nombre: 'Par Compartido', profesion: 'PhD', correo, universidad: 'U', area: 'A' })
+    const otra = await api.get(`/ire/pares/en-otra-revista?correo=${correo}`)
+    expect(otra.body).toMatchObject({ revista: 'reep', nombre: 'Par Compartido' })
+    expect((await api.get(`/reep/pares/en-otra-revista?correo=${correo}`)).status).toBe(404)
+    expect((await api.post('/reep/pares', { nombre: 'Otro', correo, universidad: 'U', area: 'A' })).status).toBe(409)
+  })
+})

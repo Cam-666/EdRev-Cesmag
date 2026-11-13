@@ -72,6 +72,14 @@ la demostración (botón «Demostración: abrir el enlace»). En producción pon
 Con `DIAS_ESPERA_RESPUESTA=0.0002` (unos 17 segundos) y `CORREO_MODO=simulado`, una invitación sin respuesta pasa a
 «2.º intento» en menos de un minuto y al minuto siguiente el par queda bloqueado «Sin respuesta». Vuelva a `8` después.
 
+## Pruebas automáticas
+
+```
+npm test
+```
+
+Corren contra una base aparte, `edrev_prueba`, que se borra y se vuelve a crear en cada corrida (necesita `DATABASE_ADMIN_URL` en `.env`). La base `edrev` no se toca. Cubren el acceso, los artículos y el comité, la asignación de pares, las constancias y los correos, las plantillas, la auditoría y los informes.
+
 ## Variables de entorno
 
 Ver `.env.example`. Ninguna credencial va en el código (RNF-07); los valores de la sección 3.2 (umbral, días de
