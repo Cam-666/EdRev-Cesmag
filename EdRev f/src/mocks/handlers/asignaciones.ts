@@ -175,7 +175,7 @@ function auditar(
 /** The last invitation mail of an evaluation (invitation, 2nd attempt or resend). */
 export function ultimoCorreo(base: SeedRevista, asignacionId: string): CorreoEnviado | undefined {
   return base.correos
-    .filter((x) => x.asignacionId === asignacionId && x.tipo !== 'agradecimiento')
+    .filter((x) => x.asignacionId === asignacionId && x.tipo !== 'agradecimiento' && x.tipo !== 'constancia')
     .sort((a, b) => b.fechaEnvio.localeCompare(a.fechaEnvio))[0]
 }
 

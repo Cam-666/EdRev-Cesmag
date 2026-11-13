@@ -20,6 +20,7 @@ import { descargarConstancia } from '../services/descarga'
 import { usePermiso } from '@/modules/acceso/hooks/usePermiso'
 import { Alerta } from '@/components/common/Alerta'
 import { Boton } from '@/components/common/Boton'
+import { Casilla } from '@/components/common/Casilla'
 import { EstadoConsulta } from '@/components/common/EstadoConsulta'
 import { Modal } from '@/components/common/Modal'
 import { mensajeDeApi } from '@/lib/api/errores'
@@ -54,6 +55,7 @@ export function ConstanciasPage() {
   const [elegida, setElegida] = useState<FilaConstancia | null>(null)
   const [confirmando, setConfirmando] = useState(false)
   const [aviso, setAviso] = useState<Aviso | null>(null)
+  const [conAgradecimiento, setConAgradecimiento] = useState(true)
 
   const pendientes = consulta.data?.pendientes ?? []
   const emitidas = consulta.data?.emitidas ?? []
@@ -63,18 +65,21 @@ export function ConstanciasPage() {
   function emitirElegida() {
     if (!vigente) return
     setAviso(null)
-    emitir.mutate(vigente.id, {
-      onSuccess: (r) => {
-        setAviso(avisoDeEmision(r, 'Se emitió'))
-        setElegida(null)
+    emitir.mutate(
+      { constanciaId: vigente.id, conAgradecimiento },
+      {
+        onSuccess: (r) => {
+          setAviso(avisoDeEmision(r, 'Se emitió'))
+          setElegida(null)
+        },
+        onError: (e) =>
+          setAviso({ tipo: 'error', texto: mensajeDeApi(e, 'No fue posible emitir la constancia.') }),
       },
-      onError: (e) =>
-        setAviso({ tipo: 'error', texto: mensajeDeApi(e, 'No fue posible emitir la constancia.') }),
-    })
+    )
   }
 
   function emitirTodas() {
-    masiva.mutate(undefined, {
+    masiva.mutate(conAgradecimiento, {
       onSuccess: (r) => {
         setConfirmando(false)
         setElegida(null)
@@ -185,6 +190,11 @@ export function ConstanciasPage() {
                 Vista previa
               </h2>
               <VistaPreviaConstancia vista={vista.data} />
+              <Casilla
+                etiqueta="Emitir con correo de agradecimiento"
+                marcada={conAgradecimiento}
+                onCambio={setConAgradecimiento}
+              />
               <Boton onClick={emitirElegida} cargando={emitir.isPending}>
                 Emitir y enviar
               </Boton>
@@ -209,6 +219,11 @@ export function ConstanciasPage() {
           </>
         }
       >
+        <Casilla
+          etiqueta="Emitir con correo de agradecimiento"
+          marcada={conAgradecimiento}
+          onCambio={setConAgradecimiento}
+        />
         {masiva.isError && (
           <Alerta tipo="error">{mensajeDeApi(masiva.error, 'No fue posible emitirlas.')}</Alerta>
         )}

@@ -145,7 +145,7 @@ export const handlersCorreos = [
     c.base.correos.unshift({
       ...correo,
       id: `${c.revista}-cor-n${c.base.correos.length + 1}`,
-      tipo: correo.tipo === 'agradecimiento' ? 'agradecimiento' : 'reenvio',
+      tipo: correo.tipo === 'agradecimiento' || correo.tipo === 'constancia' ? correo.tipo : 'reenvio',
       destinatario,
       fechaEnvio: ahoraIso(),
       estado,

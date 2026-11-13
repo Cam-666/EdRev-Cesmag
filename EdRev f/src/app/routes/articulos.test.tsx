@@ -264,7 +264,7 @@ describe('article sheet', () => {
     const tabla = await screen.findByRole('table', { name: 'Correos enviados por este artículo' })
     expect(within(tabla).getByText('Rebotado')).toBeInTheDocument()
     expect(within(tabla).getAllByText('Enviado').length).toBeGreaterThan(0)
-    expect(within(tabla).getAllByText('Agradecimiento con constancia').length).toBeGreaterThan(0)
+    expect(within(tabla).getAllByText('Agradecimiento').length).toBeGreaterThan(0)
     expect(screen.getByText('Quién cambió qué')).toBeInTheDocument()
     expect(screen.getByText('Asignó el par 3 como desempate')).toBeInTheDocument()
   })

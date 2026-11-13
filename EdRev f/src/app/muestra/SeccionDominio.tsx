@@ -71,7 +71,7 @@ export function SeccionDominio() {
             f === 'a' ? (
               <FilaCorreoEnviado
                 key={f}
-                tipo="Agradecimiento con constancia"
+                tipo="Agradecimiento"
                 destinatario="lm.burbano@udenar.edu.co"
                 fechaEnvio="2026-10-26T16:02:00"
                 resultado="enviado"

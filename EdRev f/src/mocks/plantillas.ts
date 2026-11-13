@@ -26,7 +26,7 @@ const BASE: Array<Omit<Plantilla, 'id' | 'revista' | 'fondoPdf'>> = [
   },
   {
     uso: 'agradecimiento',
-    nombre: 'Agradecimiento con constancia',
+    nombre: 'Agradecimiento',
     asunto: 'Gracias por su evaluación · {{revista}}',
     cuerpo:
       'Apreciado(a) {{par}}:\n\nAgradecemos su participación como par evaluador del artículo «{{articulo}}». Adjuntamos su constancia.\n\nDependencia de Editorial',

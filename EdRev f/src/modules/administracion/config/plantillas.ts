@@ -9,7 +9,7 @@ import type { Plantilla, UsoPlantilla } from '@/types/plantilla'
 
 export const USOS_PLANTILLA: Array<{ valor: UsoPlantilla; etiqueta: string }> = [
   { valor: 'invitacion', etiqueta: 'Invitación a evaluar' },
-  { valor: 'agradecimiento', etiqueta: 'Agradecimiento con constancia' },
+  { valor: 'agradecimiento', etiqueta: 'Agradecimiento' },
   { valor: 'constancia', etiqueta: 'Constancia de participación' },
 ]
 

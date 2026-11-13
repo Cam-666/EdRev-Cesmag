@@ -46,7 +46,8 @@ export function useEmitirConstancia() {
   const { revista } = useRevista()
   const invalidar = useInvalidarConstancias()
   return useMutation({
-    mutationFn: (constanciaId: string) => emitirConstancia(revista, constanciaId),
+    mutationFn: ({ constanciaId, conAgradecimiento }: { constanciaId: string; conAgradecimiento: boolean }) =>
+      emitirConstancia(revista, constanciaId, conAgradecimiento),
     onSuccess: invalidar,
   })
 }
@@ -54,7 +55,10 @@ export function useEmitirConstancia() {
 export function useEmitirPendientes() {
   const { revista } = useRevista()
   const invalidar = useInvalidarConstancias()
-  return useMutation({ mutationFn: () => emitirPendientes(revista), onSuccess: invalidar })
+  return useMutation({
+    mutationFn: (conAgradecimiento: boolean) => emitirPendientes(revista, conAgradecimiento),
+    onSuccess: invalidar,
+  })
 }
 
 export function useReenviarConstancia() {

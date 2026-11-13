@@ -2,13 +2,17 @@
  * EmitirConstanciaModal — issues the constancia of a peer from the article sheet, right after the
  * delivery is registered or later from the peer's actions. It shows the constancia as it will be
  * generated (the journal's constancia template over its PDF background) and «Emitir y enviar»
- * sends it attached to the journal's thank-you mail. «Más tarde» leaves it pending in Constancias.
+ * sends it to the peer. The option «Emitir con correo de agradecimiento» (marked by default) makes
+ * the mail carry the journal's thank-you text; unmarked, only the constancia is sent.
+ * «Más tarde» leaves it pending in Constancias.
  * Covers: RF-23, RF-30, RF-31, HU-17 (criterion 3), HU-22 (criterion 4).
  */
+import { useState } from 'react'
 import { VistaPreviaConstancia } from './VistaPreviaConstancia'
 import { useEmitirConstancia, useVistaConstancia } from '../hooks/useConstancias'
 import { Alerta } from '@/components/common/Alerta'
 import { Boton } from '@/components/common/Boton'
+import { Casilla } from '@/components/common/Casilla'
 import { EstadoConsulta } from '@/components/common/EstadoConsulta'
 import { Modal } from '@/components/common/Modal'
 import { mensajeDeApi } from '@/lib/api/errores'
@@ -31,19 +35,23 @@ export function EmitirConstanciaModal({
 }: EmitirConstanciaModalProps) {
   const vista = useVistaConstancia(constanciaId)
   const emitir = useEmitirConstancia()
+  const [conAgradecimiento, setConAgradecimiento] = useState(true)
 
   function confirmar() {
     if (!constanciaId) return
-    emitir.mutate(constanciaId, {
-      onSuccess: ({ correo }) => {
-        onEmitida(
-          correo.estado === 'rebotado'
-            ? `La constancia se emitió, pero la dirección ${correo.destinatario} rebotó.`
-            : `Constancia enviada a ${nombrePar}.`,
-        )
-        onCerrar()
+    emitir.mutate(
+      { constanciaId, conAgradecimiento },
+      {
+        onSuccess: ({ correo }) => {
+          onEmitida(
+            correo.estado === 'rebotado'
+              ? `La constancia se emitió, pero la dirección ${correo.destinatario} rebotó.`
+              : `Constancia enviada a ${nombrePar}.`,
+          )
+          onCerrar()
+        },
       },
-    })
+    )
   }
 
   return (
@@ -51,7 +59,7 @@ export function EmitirConstanciaModal({
       abierto={constanciaId !== null}
       onCerrar={onCerrar}
       titulo={`Emitir la constancia de ${nombrePar}`}
-      descripcion={aviso ?? 'Se envía adjunta al correo de agradecimiento de la revista.'}
+      descripcion={aviso ?? 'Se envía al par evaluador por correo.'}
       acciones={
         <>
           <Boton variante="neutro" onClick={onCerrar}>
@@ -76,6 +84,11 @@ export function EmitirConstanciaModal({
       >
         {vista.data && <VistaPreviaConstancia vista={vista.data} />}
       </EstadoConsulta>
+      <Casilla
+        etiqueta="Emitir con correo de agradecimiento"
+        marcada={conAgradecimiento}
+        onCambio={setConAgradecimiento}
+      />
     </Modal>
   )
 }

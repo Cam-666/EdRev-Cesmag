@@ -89,6 +89,20 @@ describe('constancias API (mock)', () => {
     expect(v.firma).toBe('Ma. Camila Mendoza · Dependencia de Editorial')
   })
 
+  it('issuing without the thank-you option sends only the constancia', async () => {
+    const { pendientes } = await json<RespuestaConstancias>(await llamar('/reep/constancias'))
+    const fila = pendientes.find((f) => f.articulo.id === '2026-031')
+    if (!fila) throw new Error('missing 2026-031')
+
+    const r = await llamar(`/reep/constancias/${fila.id}/emitir`, {
+      metodo: 'POST',
+      cuerpo: { conAgradecimiento: false },
+    })
+    expect(r.status).toBe(200)
+    const h = await json<HistorialArticulo>(await llamar('/reep/articulos/2026-031/historial'))
+    expect(h.correos[0]).toMatchObject({ tipo: 'constancia', destinatario: fila.par.correo })
+  })
+
   it('issuing sends the thank-you mail and leaves a trace', async () => {
     const { pendientes } = await json<RespuestaConstancias>(await llamar('/reep/constancias'))
     const fila = pendientes.find((f) => f.articulo.id === '2026-031')

@@ -86,6 +86,7 @@ function emitir(
   c: Constancia,
   usuario: string,
   reemision: boolean,
+  conAgradecimiento = true,
 ): ResultadoEmision | null {
   const fila = filaDe(base, c)
   const asignacion = base.asignaciones.find((a) => a.id === c.asignacionId)
@@ -95,11 +96,13 @@ function emitir(
   c.estado = 'emitida'
   c.fechaEmision = ahora
   const plantilla = plantillaEnUso(revista, 'agradecimiento')
-  const asunto = rellenar(plantilla.asunto ?? '', {
-    revista: NOMBRE_EN_CORREO[revista],
-    par: fila.par.nombre,
-    articulo: fila.articulo.titulo,
-  })
+  const asunto = conAgradecimiento
+    ? rellenar(plantilla.asunto ?? '', {
+        revista: NOMBRE_EN_CORREO[revista],
+        par: fila.par.nombre,
+        articulo: fila.articulo.titulo,
+      })
+    : 'Constancia de participación como par evaluador'
   const estado: EstadoCorreo = fila.par.correo.toLowerCase().endsWith(DOMINIO_QUE_REBOTA)
     ? 'rebotado'
     : 'enviado'
@@ -109,7 +112,7 @@ function emitir(
     articuloId: fila.articulo.id,
     asignacionId: asignacion.id,
     atendido: false,
-    tipo: 'agradecimiento',
+    tipo: conAgradecimiento ? 'agradecimiento' : 'constancia',
     destinatario: fila.par.correo,
     asunto,
     fechaEnvio: ahora,
@@ -131,6 +134,12 @@ function emitir(
 
   const emitida = filaDe(base, c)
   return emitida ? { constancia: emitida, correo: { estado, destinatario: fila.par.correo } } : null
+}
+
+/** Body of an emit request; the thank-you text is included unless it says otherwise. */
+async function opcionesDe(request: Request): Promise<{ conAgradecimiento: boolean }> {
+  const cuerpo = (await request.json().catch(() => ({}))) as { conAgradecimiento?: boolean }
+  return { conAgradecimiento: cuerpo.conAgradecimiento !== false }
 }
 
 export const handlersConstancias = [
@@ -159,14 +168,15 @@ export const handlersConstancias = [
   }),
 
   // Registered before the ":id" route so "emitir-pendientes" is not read as an id.
-  http.post('*/api/:revista/constancias/emitir-pendientes', ({ params, request }) => {
+  http.post('*/api/:revista/constancias/emitir-pendientes', async ({ params, request }) => {
     const c = contexto(params, request, 'emitir-constancia')
     if (!c.ok) return c.respuesta
+    const { conAgradecimiento } = await opcionesDe(request)
     asegurarConstancias(c.base)
     const resultados = c.base.constancias
       .filter((k) => k.estado === 'pendiente')
       .flatMap((k) => {
-        const r = emitir(c.base, c.revista, k, c.usuario.nombre, false)
+        const r = emitir(c.base, c.revista, k, c.usuario.nombre, false, conAgradecimiento)
         return r ? [r] : []
       })
     return HttpResponse.json({
@@ -176,14 +186,15 @@ export const handlersConstancias = [
     })
   }),
 
-  http.post('*/api/:revista/constancias/:id/emitir', ({ params, request }) => {
+  http.post('*/api/:revista/constancias/:id/emitir', async ({ params, request }) => {
     const c = contexto(params, request, 'emitir-constancia')
     if (!c.ok) return c.respuesta
+    const { conAgradecimiento } = await opcionesDe(request)
     asegurarConstancias(c.base)
     const constancia = c.base.constancias.find((k) => k.id === params.id)
     if (!constancia) return error(404, 'Constancia no encontrada')
     if (constancia.estado === 'emitida') return error(409, 'La constancia ya fue emitida')
-    const resultado = emitir(c.base, c.revista, constancia, c.usuario.nombre, false)
+    const resultado = emitir(c.base, c.revista, constancia, c.usuario.nombre, false, conAgradecimiento)
     if (!resultado) return error(404, 'Evaluación no encontrada')
     return HttpResponse.json(resultado)
   }),

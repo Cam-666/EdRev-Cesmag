@@ -24,18 +24,25 @@ export function obtenerVistaConstancia(
   return solicitar<VistaConstancia>(`/${revista}/constancias/${id(constanciaId)}/vista-previa`)
 }
 
+/** `conAgradecimiento`: the mail carries the journal's thank-you text; otherwise only the constancia. */
 export function emitirConstancia(
   revista: Revista,
   constanciaId: string,
+  conAgradecimiento: boolean,
 ): Promise<ResultadoEmision> {
   return solicitar<ResultadoEmision>(`/${revista}/constancias/${id(constanciaId)}/emitir`, {
     method: 'POST',
+    body: JSON.stringify({ conAgradecimiento }),
   })
 }
 
-export function emitirPendientes(revista: Revista): Promise<ResultadoEmisionMasiva> {
+export function emitirPendientes(
+  revista: Revista,
+  conAgradecimiento: boolean,
+): Promise<ResultadoEmisionMasiva> {
   return solicitar<ResultadoEmisionMasiva>(`/${revista}/constancias/emitir-pendientes`, {
     method: 'POST',
+    body: JSON.stringify({ conAgradecimiento }),
   })
 }
 

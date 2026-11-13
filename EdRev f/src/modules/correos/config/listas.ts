@@ -9,7 +9,8 @@ export const ETIQUETA_TIPO_CORREO: Record<TipoCorreo, string> = {
   invitacion: 'Invitación',
   'segundo-intento': '2.º intento',
   reenvio: 'Reenvío por corrección',
-  agradecimiento: 'Agradecimiento con constancia',
+  agradecimiento: 'Agradecimiento',
+  constancia: 'Constancia',
 }
 
 export const TIPOS_CORREO = Object.keys(ETIQUETA_TIPO_CORREO) as TipoCorreo[]

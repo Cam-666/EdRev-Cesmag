@@ -4,7 +4,7 @@ import type { Revista } from './revista'
  * Mail types (RF-26, HU-21): the invitation, its automatic second attempt (RF-29), the resend after
  * correcting a bounced or failed address (RF-28) and the thank-you mail with the constancia.
  */
-export type TipoCorreo = 'invitacion' | 'segundo-intento' | 'reenvio' | 'agradecimiento'
+export type TipoCorreo = 'invitacion' | 'segundo-intento' | 'reenvio' | 'agradecimiento' | 'constancia'
 
 /**
  * Result of a mail (RF-26, D12): queued, sent (the mail server accepted it), bounced (the address
