@@ -1,5 +1,5 @@
 /*
- * correos — the mail log of the model (D12) stores only «invitacion» or «agradecimiento» and the
+ * correos — the mail log of the model (D12) stores only «invitacion», «agradecimiento» or «constancia» and the
  * result. The page also shows «2.º intento» and «Reenvío por corrección», and whether a bounced or
  * failed mail was already handled; all of it is derived here from the order of the mails of each
  * evaluation. Queuing a mail = inserting it «en-cola» (the mail service picks it up).
@@ -8,10 +8,12 @@ import type { Cliente } from '../db.js'
 import { siglaDe } from '../lib/http.js'
 import { iso } from '../lib/mapeo.js'
 
+export type TipoGuardado = 'invitacion' | 'agradecimiento' | 'constancia'
+
 export interface FilaCorreo {
   id_correo: number
   id_evaluacion: number
-  tipo: 'invitacion' | 'agradecimiento'
+  tipo: TipoGuardado
   destinatario: string
   fecha_envio: Date
   resultado: 'en-cola' | 'enviado' | 'rebotado' | 'fallido'
@@ -21,6 +23,12 @@ export interface FilaCorreo {
 }
 
 const FALLO = ['rebotado', 'fallido']
+
+const ASUNTO: Record<TipoGuardado, string> = {
+  invitacion: 'Invitación a evaluar un artículo',
+  agradecimiento: 'Gracias por su evaluación · constancia adjunta',
+  constancia: 'Constancia de participación como par evaluador',
+}
 
 /** Mails with their page type and «atendido», in the order the page lists them (newest first). */
 export function correosApi(filas: FilaCorreo[]) {
@@ -34,8 +42,8 @@ export function correosApi(filas: FilaCorreo[]) {
     lista.forEach((f, i) => {
       const anterior = lista[i - 1]
       const tipo =
-        f.tipo === 'agradecimiento'
-          ? 'agradecimiento'
+        f.tipo === 'agradecimiento' || f.tipo === 'constancia'
+          ? f.tipo
           : i === 0
             ? 'invitacion'
             : anterior && FALLO.includes(anterior.resultado)
@@ -54,8 +62,7 @@ export function correosApi(filas: FilaCorreo[]) {
       asignacionId: String(f.id_evaluacion),
       tipo: derivados.get(f.id_correo)?.tipo ?? f.tipo,
       destinatario: f.destinatario,
-      asunto:
-        f.tipo === 'invitacion' ? 'Invitación a evaluar un artículo' : 'Gracias por su evaluación · constancia adjunta',
+      asunto: ASUNTO[f.tipo],
       fechaEnvio: iso(f.fecha_envio),
       estado: f.resultado,
       atendido: derivados.get(f.id_correo)?.atendido ?? false,
@@ -71,7 +78,7 @@ export const SELECCION_CORREOS = `
 export async function encolar(
   c: Cliente,
   idEvaluacion: number,
-  tipo: 'invitacion' | 'agradecimiento',
+  tipo: TipoGuardado,
   destinatario: string,
 ): Promise<'en-cola'> {
   await c.query(

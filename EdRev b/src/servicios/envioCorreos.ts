@@ -13,6 +13,10 @@
 import { pool } from '../db.js'
 import { generarConstancia } from './constanciaPdf.js'
 
+/** The mail that only delivers the constancia (no thank-you template): a fixed, short text. */
+const TEXTO_SOLO_CONSTANCIA =
+  'Apreciado(a) {{par}}:\n\nAdjuntamos su constancia como par evaluador del artículo «{{articulo}}».\n\nDependencia de Editorial'
+
 type Modo = 'brevo' | 'simulado' | 'apagado'
 const modo = (): Modo => {
   const m = process.env.CORREO_MODO
@@ -21,7 +25,7 @@ const modo = (): Modo => {
 
 interface Pendiente {
   id_correo: number
-  tipo: 'invitacion' | 'agradecimiento'
+  tipo: 'invitacion' | 'agradecimiento' | 'constancia'
   destinatario: string
   id_revista: number
   revista: string
@@ -76,7 +80,7 @@ async function procesar(): Promise<void> {
        JOIN articulo a ON a.id_articulo = e.id_articulo
        JOIN revista r ON r.id_revista = a.id_revista
        JOIN par_evaluador p ON p.id_par = e.id_par
-       LEFT JOIN plantilla pl ON pl.id_revista = a.id_revista AND pl.tipo = c.tipo AND pl.en_uso
+       LEFT JOIN plantilla pl ON pl.id_revista = a.id_revista AND pl.tipo = c.tipo AND c.tipo <> 'constancia' AND pl.en_uso
       WHERE c.resultado = 'en-cola' ORDER BY c.fecha_envio LIMIT 20`,
   )
   for (const p of rows) {
@@ -88,8 +92,9 @@ async function procesar(): Promise<void> {
       universidad: p.universidad ?? '',
       articulo: p.titulo,
     }
-    const asunto = rellenar(p.asunto ?? 'Editorial · {{revista}}', v)
-    const texto = rellenar(p.cuerpo ?? '', v)
+    const solo = p.tipo === 'constancia'
+    const asunto = rellenar(p.asunto ?? (solo ? 'Constancia de participación · {{revista}}' : 'Editorial · {{revista}}'), v)
+    const texto = rellenar(p.cuerpo ?? (solo ? TEXTO_SOLO_CONSTANCIA : ''), v)
     let resultado: 'enviado' | 'rebotado' | 'fallido'
     try {
       if (modo() === 'simulado') {
@@ -97,7 +102,7 @@ async function procesar(): Promise<void> {
         console.log(`[correo simulado] ${p.tipo} → ${p.destinatario}: ${asunto}`)
       } else {
         const adjunto =
-          p.tipo === 'agradecimiento'
+          p.tipo !== 'invitacion'
             ? await generarConstancia(pool, { par: p.par, articulo: p.titulo, idRevista: p.id_revista })
             : undefined
         resultado = await enviarBrevo(p, asunto, texto, adjunto)

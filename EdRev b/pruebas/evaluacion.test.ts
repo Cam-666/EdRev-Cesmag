@@ -72,6 +72,19 @@ describe('asignación, evaluación, constancias y correos (RF-19 a RF-34)', () =
     expect(correos.items.some((c: { tipo: string; asignacionId: string }) => c.tipo === 'agradecimiento' && c.asignacionId === p.asignacion.id)).toBe(true)
   })
 
+  it('emitir sin la opción de agradecimiento envía solo la constancia', async () => {
+    const { id } = await articuloAprobado()
+    const api = await como()
+    const p = await candidato(id, 1)
+    await api.post(`/reep/asignaciones/${p.asignacion.id}/respuesta`, { respuesta: 'acepto' })
+    await api.post(`/reep/asignaciones/${p.asignacion.id}/entrega`, { fecha: hoy() })
+    const emision = await api.post(`/reep/constancias/${p.asignacion.id}/emitir`, { conAgradecimiento: false })
+    expect(emision.status).toBe(200)
+    const correos = (await api.get('/reep/correos?porPagina=100')).body
+    const mio = correos.items.find((c: { asignacionId: string; tipo: string }) => c.asignacionId === p.asignacion.id && c.tipo !== 'invitacion')
+    expect(mio.tipo).toBe('constancia')
+  })
+
   it('el desempate se marca cuando los dos primeros conceptos se contradicen (RF-21)', async () => {
     const { id } = await articuloAprobado()
     const api = await como()

@@ -5,6 +5,7 @@
  * when the mail service is connected; download uses the same rendered text (RF-32).
  */
 import { Router } from 'express'
+import { z } from 'zod'
 import { enTransaccion, pool, type Cliente } from '../db.js'
 import { auditar } from '../lib/auditoria.js'
 import { usuarioDe } from '../lib/auth.js'
@@ -33,7 +34,7 @@ const SELECCION = `
   SELECT e.id_evaluacion, e.id_articulo, a.numero_ojs, a.titulo, p.id_par, p.nombre, p.correo,
          e.fecha_evaluacion, e.constancia_emitida,
          (SELECT min(c.fecha_envio) FROM correo c
-           WHERE c.id_evaluacion = e.id_evaluacion AND c.tipo = 'agradecimiento') AS emitida_el,
+           WHERE c.id_evaluacion = e.id_evaluacion AND c.tipo IN ('agradecimiento','constancia')) AS emitida_el,
          EXISTS (SELECT 1 FROM auditoria au WHERE au.tabla_afectada = 'evaluacion'
                    AND au.id_registro = e.id_evaluacion::text AND au.accion = 'migracion') AS migrado
     FROM evaluacion e
@@ -60,17 +61,27 @@ async function entrega(c: Cliente, revista: number, id: number): Promise<FilaEnt
   return rows[0]
 }
 
-/** Issues (or reissues) a constancia: marks it and queues the thank-you mail with it. */
-async function emitir(c: Cliente, revista: number, usuario: number, f: FilaEntrega, reemision: boolean) {
+/** Whether the mail that carries the constancia is the thank-you mail (default) or only the constancia. */
+const opciones = z.object({ conAgradecimiento: z.boolean().default(true) })
+
+/** Issues (or reissues) a constancia: marks it and queues the mail that delivers it to the peer. */
+async function emitir(
+  c: Cliente,
+  revista: number,
+  usuario: number,
+  f: FilaEntrega,
+  reemision: boolean,
+  conAgradecimiento: boolean,
+) {
   if (!f.correo) throw new ErrorHttp(422, `${f.nombre} no tiene correo: regístrelo antes de enviar la constancia`)
   await c.query('UPDATE evaluacion SET constancia_emitida = TRUE WHERE id_evaluacion = $1', [f.id_evaluacion])
-  const estado = await encolar(c, f.id_evaluacion, 'agradecimiento', f.correo)
+  const estado = await encolar(c, f.id_evaluacion, conAgradecimiento ? 'agradecimiento' : 'constancia', f.correo)
   await auditar(c, {
     usuario,
     tabla: 'evaluacion',
     idRegistro: f.id_evaluacion,
     accion: 'constancia',
-    texto: `${reemision ? 'Reenvió' : 'Emitió'} la constancia de ${f.nombre}`,
+    texto: `${reemision ? 'Reenvió' : 'Emitió'} la constancia de ${f.nombre}${conAgradecimiento ? ' con correo de agradecimiento' : ''}`,
     revista,
     articulo: f.id_articulo,
   })
@@ -127,12 +138,13 @@ rutasConstancias.get('/:revista/constancias/:id/pdf', async (req, res) => {
 rutasConstancias.post('/:revista/constancias/emitir-pendientes', async (req, res) => {
   const revista = idRevista(req.params.revista)
   const usuario = usuarioDe(req)
+  const { conAgradecimiento } = opciones.parse(req.body ?? {})
   const { rows } = await pool.query<FilaEntrega>(`${SELECCION} AND NOT e.constancia_emitida`, [revista])
   const resultados = []
   let fallidos = 0
   for (const f of rows) {
     try {
-      resultados.push(await enTransaccion((c) => emitir(c, revista, usuario.id, f, false)))
+      resultados.push(await enTransaccion((c) => emitir(c, revista, usuario.id, f, false, conAgradecimiento)))
     } catch {
       fallidos += 1
     }
@@ -144,10 +156,11 @@ rutasConstancias.post('/:revista/constancias/:id/emitir', async (req, res) => {
   const revista = idRevista(req.params.revista)
   const usuario = usuarioDe(req)
   const id = idNumerico(req.params.id, 'Constancia')
+  const { conAgradecimiento } = opciones.parse(req.body ?? {})
   const resultado = await enTransaccion(async (c) => {
     const f = await entrega(c, revista, id)
     if (f.constancia_emitida) throw new ErrorHttp(409, 'La constancia ya fue emitida')
-    return emitir(c, revista, usuario.id, f, false)
+    return emitir(c, revista, usuario.id, f, false, conAgradecimiento)
   })
   res.json(resultado)
 })
@@ -156,10 +169,11 @@ rutasConstancias.post('/:revista/constancias/:id/reenviar', async (req, res) => 
   const revista = idRevista(req.params.revista)
   const usuario = usuarioDe(req)
   const id = idNumerico(req.params.id, 'Constancia')
+  const { conAgradecimiento } = opciones.parse(req.body ?? {})
   const resultado = await enTransaccion(async (c) => {
     const f = await entrega(c, revista, id)
     if (!f.constancia_emitida) throw new ErrorHttp(409, 'Solo se reenvía una constancia ya emitida')
-    return emitir(c, revista, usuario.id, f, true)
+    return emitir(c, revista, usuario.id, f, true, conAgradecimiento)
   })
   res.json(resultado)
 })

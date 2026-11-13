@@ -31,7 +31,7 @@ CROSS JOIN (VALUES
   ('Invitación a evaluar', 'invitacion',
    'Invitación a evaluar un artículo · {{revista}}',
    E'Apreciado(a) {{par}}, {{profesion}} de la {{universidad}}:\n\nLa {{revista}} lo(a) invita a participar como par evaluador del artículo «{{articulo}}» (solicitud {{numero}}). Si acepta, recibirá los documentos desde el OJS.\n\nDependencia de Editorial'),
-  ('Agradecimiento con constancia', 'agradecimiento',
+  ('Agradecimiento', 'agradecimiento',
    'Gracias por su evaluación · {{revista}}',
    E'Apreciado(a) {{par}}:\n\nAgradecemos su participación como par evaluador del artículo «{{articulo}}». Adjuntamos su constancia.\n\nDependencia de Editorial'),
   ('Constancia de participación', 'constancia', NULL,

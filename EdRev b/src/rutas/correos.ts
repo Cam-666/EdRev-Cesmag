@@ -79,7 +79,7 @@ rutasCorreos.post('/:revista/correos/:id/corregir', async (req, res) => {
       [Number(correo.asignacionId)],
     )
     await c.query('UPDATE par_evaluador SET correo = $1 WHERE id_par = $2', [nuevo, rows[0]?.id_par])
-    await encolar(c, Number(correo.asignacionId), correo.tipo === 'agradecimiento' ? 'agradecimiento' : 'invitacion', nuevo)
+    await encolar(c, Number(correo.asignacionId), correo.tipo === 'agradecimiento' || correo.tipo === 'constancia' ? correo.tipo : 'invitacion', nuevo)
     await auditar(c, {
       usuario: usuario.id,
       tabla: 'correo',

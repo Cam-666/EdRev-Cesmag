@@ -58,7 +58,7 @@ rutasInformes.get('/informes', async (req, res) => {
        count(e.*)::int AS entregadas,
        (SELECT count(*)::int FROM evaluacion e2 JOIN articulo a2 ON a2.id_articulo = e2.id_articulo
          WHERE a2.id_revista = r.id_revista AND e2.constancia_emitida
-           AND (SELECT min(c.fecha_envio) FROM correo c WHERE c.id_evaluacion = e2.id_evaluacion AND c.tipo = 'agradecimiento')::date BETWEEN $1 AND $2) AS constancias,
+           AND (SELECT min(c.fecha_envio) FROM correo c WHERE c.id_evaluacion = e2.id_evaluacion AND c.tipo IN ('agradecimiento','constancia'))::date BETWEEN $1 AND $2) AS constancias,
        round(avg(e.fecha_evaluacion - e.fecha_asignacion::date))::int AS dias,
        count(*) FILTER (WHERE e.concepto = 'publicable')::int AS publicable,
        count(*) FILTER (WHERE e.concepto = 'con-modificaciones')::int AS modificaciones,
