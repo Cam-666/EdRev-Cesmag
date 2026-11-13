@@ -38,7 +38,9 @@ CREATE TABLE autor (
   nombre   VARCHAR(200) NOT NULL,
   orcid    VARCHAR(19)  UNIQUE
              CHECK (orcid ~ '^[0-9]{4}-[0-9]{4}-[0-9]{4}-[0-9]{3}[0-9X]$'),
-  correo   VARCHAR(150)
+  correo   VARCHAR(150),
+  filiacion VARCHAR(200),  -- extensión: última filiación conocida (la de cada artículo está en articulo_autor)
+  pais      VARCHAR(80)
 );
  
 CREATE TABLE plantilla (            -- cada revista tiene las suyas

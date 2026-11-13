@@ -156,14 +156,20 @@ rutasArticulos.post('/:revista/articulos', async (req, res) => {
             ORDER BY id_articulo DESC LIMIT 1`,
           [idAutor],
         )
-        filiacion = previa.rows[0]?.filiacion ?? null
-        pais = previa.rows[0]?.pais ?? null
+        // An author registered in the directory with no article yet keeps its own data.
+        const propia = await c.query<{ filiacion: string | null; pais: string | null }>(
+          'SELECT filiacion, pais FROM autor WHERE id_autor = $1',
+          [idAutor],
+        )
+        filiacion = previa.rows[0]?.filiacion ?? propia.rows[0]?.filiacion ?? null
+        pais = previa.rows[0]?.pais ?? propia.rows[0]?.pais ?? null
       } else {
         const n = a.nuevo
         const creado = await c.query<{ id_autor: number }>(
-          `INSERT INTO autor (nombre, orcid, correo) VALUES ($1, NULLIF($2, ''), NULLIF($3, ''))
+          `INSERT INTO autor (nombre, orcid, correo, filiacion, pais)
+           VALUES ($1, NULLIF($2, ''), NULLIF($3, ''), NULLIF($4, ''), NULLIF($5, ''))
            RETURNING id_autor`,
-          [n.nombre, n.orcid, n.correo],
+          [n.nombre, n.orcid, n.correo, n.filiacion, n.pais],
         )
         idAutor = creado.rows[0]?.id_autor ?? 0
         filiacion = n.filiacion || null

@@ -1,7 +1,8 @@
 /*
  * Autores — the common directory of both journals (RF-10): search by name or ORCID, filter by the
  * journals where the author has articles, the author record with all its articles (RF-11),
- * registration and edition. The affiliation shown is that of the most recent article.
+ * registration and edition. The affiliation and country shown are the last known ones: those
+ * typed in the author form or in the most recent article (each article keeps its own, RF-09).
  */
 import { Router } from 'express'
 import { z } from 'zod'
@@ -12,7 +13,8 @@ export const rutasAutores = Router()
 
 const SELECCION = `
   SELECT au.id_autor, au.nombre, au.orcid, au.correo,
-         ult.filiacion, ult.pais,
+         COALESCE(NULLIF(au.filiacion, ''), ult.filiacion) AS filiacion,
+         COALESCE(NULLIF(au.pais, ''), ult.pais) AS pais,
          (SELECT count(*)::int FROM articulo_autor x WHERE x.id_autor = au.id_autor) AS total,
          ARRAY(SELECT DISTINCT ar.id_revista FROM articulo_autor x
                  JOIN articulo ar ON ar.id_articulo = x.id_articulo
@@ -111,9 +113,10 @@ rutasAutores.post('/:revista/autores', async (req, res) => {
     : { rows: [] }
   if (repetido.rows.length > 0) throw new ErrorHttp(409, 'Ya existe un autor con ese ORCID en el directorio')
   const { rows } = await pool.query<{ id_autor: number }>(
-    `INSERT INTO autor (nombre, orcid, correo) VALUES ($1, NULLIF($2, ''), NULLIF($3, ''))
+    `INSERT INTO autor (nombre, orcid, correo, filiacion, pais)
+     VALUES ($1, NULLIF($2, ''), NULLIF($3, ''), NULLIF($4, ''), NULLIF($5, ''))
      RETURNING id_autor`,
-    [d.nombre, d.orcid, d.correo],
+    [d.nombre, d.orcid, d.correo, d.filiacion ?? '', d.pais ?? ''],
   )
   res.status(201).json({
     id: String(rows[0]?.id_autor),
@@ -132,8 +135,10 @@ rutasAutores.patch('/:revista/autores/:id', async (req, res) => {
   const d = datosAutor.partial().parse(req.body)
   await pool.query(
     `UPDATE autor SET nombre = COALESCE($1, nombre), orcid = COALESCE(NULLIF($2, ''), orcid),
-            correo = COALESCE(NULLIF($3, ''), correo) WHERE id_autor = $4`,
-    [d.nombre ?? null, d.orcid ?? null, d.correo ?? null, id],
+            correo = COALESCE(NULLIF($3, ''), correo),
+            filiacion = COALESCE(NULLIF($5, ''), filiacion), pais = COALESCE(NULLIF($6, ''), pais)
+      WHERE id_autor = $4`,
+    [d.nombre ?? null, d.orcid ?? null, d.correo ?? null, id, d.filiacion ?? null, d.pais ?? null],
   )
   const { rows } = await pool.query<FilaAutor>(`${SELECCION} WHERE au.id_autor = $1`, [id])
   if (!rows[0]) throw new ErrorHttp(404, 'Autor no encontrado')

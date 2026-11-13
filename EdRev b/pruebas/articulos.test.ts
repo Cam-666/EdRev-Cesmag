@@ -88,4 +88,37 @@ describe('artículos (RF-01 a RF-08, RF-35, RF-36)', () => {
     expect((await api.get(`/reep/autores/${dos.body.id}`)).body.orcid).toBe('')
     expect((await api.post('/reep/autores', autor('Mal Orcid', '12345'))).status).toBe(422)
   })
+
+  it('la filiación y el país del formulario del autor aparecen en su ficha y pasan al artículo', async () => {
+    const api = await como()
+    const datos = { nombre: 'Autor Con Filiación', correo: 'af@x.co', orcid: '', filiacion: 'Universidad Mariana', pais: 'Colombia' }
+    const creado = await api.post('/reep/autores', datos)
+    expect(creado.status).toBe(201)
+    const ficha = (await api.get(`/reep/autores/${creado.body.id}`)).body
+    expect(ficha).toMatchObject({ filiacion: 'Universidad Mariana', pais: 'Colombia' })
+
+    const editado = await api.patch(`/reep/autores/${creado.body.id}`, { filiacion: 'Universidad de Nariño', pais: 'Ecuador' })
+    expect(editado.body).toMatchObject({ filiacion: 'Universidad de Nariño', pais: 'Ecuador' })
+
+    // Added to an article, the article keeps that affiliation (RF-09).
+    const art = await api.post('/reep/articulos', {
+      numeroOjs: `F-${Date.now()}`,
+      titulo: 'Con autor del directorio',
+      tipo: 'reflexion',
+      fechaPostulacion: '2026-10-05',
+      autores: [{ autorId: creado.body.id }],
+    })
+    expect(art.body.autores[0]).toMatchObject({ filiacion: 'Universidad de Nariño', pais: 'Ecuador' })
+
+    // An author created inside the article form shows it in the directory too.
+    const nuevo = await api.post('/reep/articulos', {
+      numeroOjs: `G-${Date.now()}`,
+      titulo: 'Con autor nuevo',
+      tipo: 'reflexion',
+      fechaPostulacion: '2026-10-05',
+      autores: [{ nuevo: { nombre: 'Autora Nueva', correo: '', orcid: '', filiacion: 'Universidad CESMAG', pais: 'Colombia' } }],
+    })
+    const id = nuevo.body.autores[0].id
+    expect((await api.get(`/reep/autores/${id}`)).body).toMatchObject({ filiacion: 'Universidad CESMAG', pais: 'Colombia' })
+  })
 })
