@@ -10,6 +10,8 @@ import { config } from './config.js'
 import { requiereSesion } from './lib/auth.js'
 import { ErrorHttp } from './lib/http.js'
 import { rutasAcceso } from './rutas/acceso.js'
+import { rutasAdmin } from './rutas/admin.js'
+import { rutasInformes } from './rutas/informes.js'
 import { rutasArticulos } from './rutas/articulos.js'
 import { rutasAsignaciones } from './rutas/asignaciones.js'
 import { rutasAutores } from './rutas/autores.js'
@@ -30,6 +32,8 @@ export function crearApp() {
 
   const privadas = express.Router()
   privadas.use(requiereSesion)
+  privadas.use(rutasAdmin)
+  privadas.use(rutasInformes)
   privadas.use(rutasPanel)
   privadas.use(rutasArticulos)
   privadas.use(rutasAutores)

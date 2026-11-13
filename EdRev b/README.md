@@ -45,9 +45,23 @@ Cuentas iniciales (contraseña `Editorial2026*`, cámbiela antes de la puesta en
 | Tablero e Inicio | Listo |
 | Constancias: pendientes y emitidas, vista previa con la plantilla en uso, emitir una o todas, reenviar | Listo |
 | Correos enviados: registro con tipos derivados (2.º intento, reenvío por corrección), contadores, reintentar, corregir y reenviar | Listo |
-| Envío real de correos (Brevo) y PDF de la constancia, plantillas, usuarios, auditoría, informes, enlaces de contraseña, registros migrados | Pendiente |
+| Administración: usuarios (con enlace para definir la contraseña), plantillas por revista con PDF de fondo, auditoría | Listo |
+| Enlaces de contraseña (cuenta nueva y recuperación): 30 minutos, un solo uso | Listo |
+| Informe de gestión por revista y semestre | Listo |
+| Envío de correos en segundo plano (Brevo o simulado) con la constancia en PDF adjunta | Listo |
+| Registros migrados por corregir | Responde vacío hasta que se haga la migración del Excel |
 
-Las invitaciones quedan registradas **«En cola»**: saldrán cuando se conecte el servicio de correo.
+## Correos
+
+`CORREO_MODO` en `.env`:
+
+- `simulado` (para demostrar): los correos se marcan «Enviado» a los pocos segundos y se escriben en la consola.
+- `brevo`: envío real. Ponga la clave en `BREVO_API_KEY` y verifique en Brevo los remitentes de cada revista
+  (`revista.correo_remitente`). La constancia va adjunta en PDF, escrita sobre el PDF de fondo de la revista.
+- `apagado`: quedan «En cola».
+
+Mientras no haya correo real, `ENLACE_DEMO=true` hace que la API devuelva el enlace de contraseña para abrirlo en
+la demostración (botón «Demostración: abrir el enlace»). En producción ponga `ENLACE_DEMO=false`.
 
 ## Variables de entorno
 
