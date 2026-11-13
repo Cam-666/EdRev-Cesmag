@@ -18,6 +18,8 @@ export const config = {
   origenes: (process.env.CORS_ORIGIN ?? 'http://localhost:5173').split(',').map((o) => o.trim()),
   baseDatos: requerida('DATABASE_URL'),
   jwtSecreto: requerida('JWT_SECRET'),
+  /** Address of the app, for the links that go by mail (password links). */
+  urlFrontend: (process.env.FRONTEND_URL ?? 'http://localhost:5173').replace(/\/$/, ''),
   jwtHoras: numero('JWT_HORAS', 8),
   umbralCoincidencias: numero('UMBRAL_COINCIDENCIAS', 15),
   diasEspera: numero('DIAS_ESPERA_RESPUESTA', 8),

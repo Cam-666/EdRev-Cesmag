@@ -10,6 +10,7 @@ import { config } from '../config.js'
 import { pool } from '../db.js'
 import { firmarToken } from '../lib/auth.js'
 import { crearEnlace, enlaceDemo, leerEnlace } from '../lib/enlaces.js'
+import { enviarEnlaceContrasena } from '../servicios/correoCuentas.js'
 import { usuarioApi, type FilaUsuario } from '../lib/mapeo.js'
 
 const intentos = new Map<string, number>()
@@ -64,12 +65,18 @@ rutasAcceso.post('/auth/login', async (req, res) => {
 // RF-46: always 202, whether or not the account exists.
 rutasAcceso.post('/auth/recuperar', async (req, res) => {
   const { correo } = z.object({ correo: z.string() }).parse(req.body)
-  const { rows } = await pool.query<{ id_usuario: number }>(
-    'SELECT id_usuario FROM usuario WHERE correo = $1 AND activo',
+  const { rows } = await pool.query<{ id_usuario: number; nombre: string }>(
+    'SELECT id_usuario, nombre FROM usuario WHERE correo = $1 AND activo',
     [correo.trim().toLowerCase()],
   )
   const fila = rows[0]
-  res.status(202).json(fila ? enlaceDemo(await crearEnlace(pool, fila.id_usuario, 'recuperacion')) : {})
+  if (!fila) {
+    res.status(202).json({})
+    return
+  }
+  const ruta = await crearEnlace(pool, fila.id_usuario, 'recuperacion')
+  enviarEnlaceContrasena(correo.trim().toLowerCase(), fila.nombre, 'recuperacion', ruta)
+  res.status(202).json(enlaceDemo(ruta))
 })
 
 rutasAcceso.get('/auth/enlaces/:token', async (req, res) => {

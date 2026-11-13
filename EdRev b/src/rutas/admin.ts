@@ -10,6 +10,7 @@ import { enTransaccion, pool } from '../db.js'
 import { auditar } from '../lib/auditoria.js'
 import { soloAdministradora, usuarioDe } from '../lib/auth.js'
 import { crearEnlace, enlaceDemo } from '../lib/enlaces.js'
+import { enviarEnlaceContrasena } from '../servicios/correoCuentas.js'
 import { ErrorHttp, idNumerico, siglaDe } from '../lib/http.js'
 import { iso, usuarioApi, type FilaUsuario } from '../lib/mapeo.js'
 
@@ -37,7 +38,7 @@ rutasAdmin.post('/usuarios', async (req, res) => {
     })
     .parse(req.body)
   const usuario = usuarioDe(req)
-  const cuerpo = await enTransaccion(async (c) => {
+  const creada = await enTransaccion(async (c) => {
     const existe = await c.query('SELECT 1 FROM usuario WHERE correo = $1', [datos.correo])
     if (existe.rows.length > 0) throw new ErrorHttp(409, 'Ya existe una cuenta con ese correo')
     const { rows } = await c.query<FilaUsuario>(
@@ -53,9 +54,10 @@ rutasAdmin.post('/usuarios', async (req, res) => {
       accion: 'registro',
       texto: `Creó la cuenta de ${nuevo.nombre}`,
     })
-    return { ...usuarioApi(nuevo), ...enlaceDemo(ruta) }
+    return { cuerpo: { ...usuarioApi(nuevo), ...enlaceDemo(ruta) }, ruta, nuevo }
   })
-  res.status(201).json(cuerpo)
+  enviarEnlaceContrasena(creada.nuevo.correo, creada.nuevo.nombre, 'activacion', creada.ruta)
+  res.status(201).json(creada.cuerpo)
 })
 
 rutasAdmin.patch('/usuarios/:id', async (req, res) => {
@@ -104,7 +106,9 @@ rutasAdmin.post('/usuarios/:id/enlace', async (req, res) => {
   const { rows } = await pool.query<FilaUsuario>('SELECT * FROM usuario WHERE id_usuario = $1', [id])
   if (!rows[0]) throw new ErrorHttp(404, 'Usuario no encontrado')
   if (!rows[0].activo) throw new ErrorHttp(409, 'La cuenta está inhabilitada')
-  res.status(202).json(enlaceDemo(await crearEnlace(pool, id, 'activacion')))
+  const ruta = await crearEnlace(pool, id, 'activacion')
+  enviarEnlaceContrasena(rows[0].correo, rows[0].nombre, 'activacion', ruta)
+  res.status(202).json(enlaceDemo(ruta))
 })
 
 // ---------------------------------------------------------------- Plantillas
