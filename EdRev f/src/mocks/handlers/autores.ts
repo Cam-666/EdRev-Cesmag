@@ -97,7 +97,7 @@ export const handlersAutores = [
     const c = contexto(params, request, 'registrar-datos')
     if (!c.ok) return c.respuesta
     const datos = (await request.json()) as DatosAutor
-    if (autores().some((a) => a.orcid === datos.orcid.trim())) {
+    if (datos.orcid.trim() && autores().some((a) => a.orcid === datos.orcid.trim())) {
       return error(409, 'Ya existe un autor con ese ORCID en el directorio')
     }
     return HttpResponse.json(registrarAutor(c.revista, datos), { status: 201 })

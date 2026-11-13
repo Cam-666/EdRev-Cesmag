@@ -124,7 +124,7 @@ export function FormularioAutor({
                   >
                     <span className="text-cuerpo-15-enfasis text-texto-principal">{a.nombre}</span>
                     <span className="text-cuerpo-13 text-texto-secundario">
-                      {a.orcid} · {a.filiacion}
+                      {[a.orcid, a.filiacion].filter(Boolean).join(' · ')}
                     </span>
                   </button>
                 </li>
@@ -170,7 +170,7 @@ export function FormularioAutor({
           {...register('correo')}
         />
         <CampoTexto
-          etiqueta="ORCID"
+          etiqueta="ORCID (opcional)"
           placeholder="0000-0000-0000-0000"
           autoComplete="off"
           readOnly={soloLectura}

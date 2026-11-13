@@ -123,7 +123,7 @@ describe('article registration (one form, then the committee review)', () => {
     await user.type(screen.getByLabelText('Buscar ficha existente'), 'Sandra')
     await user.click(await screen.findByRole('button', { name: /Sandra Milena Córdoba/ }))
     expect(screen.getByLabelText('Nombre completo')).toHaveValue('Sandra Milena Córdoba')
-    expect(screen.getByLabelText('ORCID')).toHaveAttribute('readonly')
+    expect(screen.getByLabelText('ORCID (opcional)')).toHaveAttribute('readonly')
     await user.click(screen.getByRole('button', { name: 'Agregar' }))
     expect(await screen.findByText('1 de 7')).toBeInTheDocument()
     expect(screen.getByText('Principal')).toBeInTheDocument()
@@ -131,7 +131,7 @@ describe('article registration (one form, then the committee review)', () => {
     // A brand-new author
     await user.type(screen.getByLabelText('Nombre completo'), 'Laura Sofía Rivera')
     await user.type(screen.getByLabelText('Correo electrónico'), 'laura.rivera@umariana.edu.co')
-    await user.type(screen.getByLabelText('ORCID'), '0000-0001-2345-6789')
+    await user.type(screen.getByLabelText('ORCID (opcional)'), '0000-0001-2345-6789')
     await user.type(screen.getByLabelText('Filiación'), 'Universidad Mariana')
     await user.click(screen.getByRole('button', { name: 'Agregar' }))
     expect(await screen.findByText('2 de 7')).toBeInTheDocument()
@@ -153,7 +153,7 @@ describe('article registration (one form, then the committee review)', () => {
   it('validates the author form (ORCID format) before adding', async () => {
     const { user } = montarRuta('/reep/articulos/nuevo')
     await user.type(await screen.findByLabelText('Nombre completo'), 'Alguien')
-    await user.type(screen.getByLabelText('ORCID'), '123')
+    await user.type(screen.getByLabelText('ORCID (opcional)'), '123')
     await user.click(screen.getByRole('button', { name: 'Agregar' }))
     expect(await screen.findByText('Use el formato 0000-0000-0000-0000.')).toBeInTheDocument()
   })
@@ -218,7 +218,7 @@ describe('article sheet', () => {
       within(agregar).getByLabelText('Correo electrónico'),
       'pedro.rojas@udenar.edu.co',
     )
-    await user.type(within(agregar).getByLabelText('ORCID'), '0000-0002-1111-2222')
+    await user.type(within(agregar).getByLabelText('ORCID (opcional)'), '0000-0002-1111-2222')
     await user.type(within(agregar).getByLabelText('Filiación'), 'Universidad de Nariño')
     await user.click(within(agregar).getByRole('button', { name: 'Agregar' }))
     expect(await screen.findByText('4 de 7')).toBeInTheDocument()
@@ -445,7 +445,7 @@ describe('reopening an archived article (/reabrir)', () => {
     expect(within(dialogo).getByText(/Archivado el 30 de septiembre de 2026/)).toBeInTheDocument()
     expect(within(dialogo).getByText('Se conserva')).toBeInTheDocument()
     expect(within(dialogo).getByText('Ninguno asignado')).toBeInTheDocument()
-    expect(within(dialogo).getByText('3 con su ORCID')).toBeInTheDocument()
+    expect(within(dialogo).getByText('3')).toBeInTheDocument()
 
     await user.click(within(dialogo).getByRole('button', { name: 'Retomar' }))
     expect(

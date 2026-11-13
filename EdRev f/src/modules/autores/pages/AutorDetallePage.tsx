@@ -94,7 +94,7 @@ export function AutorDetallePage() {
               <dl className="grid grid-cols-1 gap-4 text-cuerpo-15 md:grid-cols-2 xl:grid-cols-4">
                 <div>
                   <dt className="text-cuerpo-13 text-texto-secundario">ORCID</dt>
-                  <dd>{autor.data.orcid}</dd>
+                  <dd>{autor.data.orcid || 'Sin ORCID'}</dd>
                 </div>
                 <div>
                   <dt className="text-cuerpo-13 text-texto-secundario">Correo</dt>

@@ -76,4 +76,16 @@ describe('artículos (RF-01 a RF-08, RF-35, RF-36)', () => {
     expect(r.body.items.length).toBeLessThanOrEqual(2)
     expect(r.body.items.every((a: { estado: string }) => a.estado === 'rechazado')).toBe(true)
   })
+
+  it('el ORCID es opcional: varios autores sin ORCID conviven y uno mal escrito se rechaza', async () => {
+    const api = await como()
+    const autor = (nombre: string, orcid: string) => ({ nombre, correo: `${nombre.toLowerCase().replace(' ', '.')}@x.co`, orcid, filiacion: 'U', pais: 'Colombia' })
+    const uno = await api.post('/reep/autores', autor('Sin Orcid Uno', ''))
+    const dos = await api.post('/reep/autores', autor('Sin Orcid Dos', ''))
+    expect(uno.status).toBe(201)
+    expect(dos.status).toBe(201)
+    expect(uno.body.orcid).toBe('')
+    expect((await api.get(`/reep/autores/${dos.body.id}`)).body.orcid).toBe('')
+    expect((await api.post('/reep/autores', autor('Mal Orcid', '12345'))).status).toBe(422)
+  })
 })

@@ -115,7 +115,10 @@ rutasArticulos.get('/:revista/articulos/:id', async (req, res) => {
 const autorNuevo = z.object({
   nombre: z.string().trim().min(1),
   correo: z.string().trim(),
-  orcid: z.string().trim(),
+  orcid: z
+    .string()
+    .trim()
+    .regex(/^(\d{4}-\d{4}-\d{4}-\d{3}[\dX])?$/, 'Use el formato 0000-0000-0000-0000'),
   filiacion: z.string().trim(),
   pais: z.string().trim(),
 })

@@ -40,7 +40,7 @@ export function AutoresPage() {
 
   const columnas: Array<ColumnaTabla<AutorConTotal>> = [
     { clave: 'autor', encabezado: 'Autor', render: (a) => a.nombre },
-    { clave: 'orcid', encabezado: 'ORCID', render: (a) => a.orcid, className: 'whitespace-nowrap' },
+    { clave: 'orcid', encabezado: 'ORCID', render: (a) => a.orcid || '—', className: 'whitespace-nowrap' },
     { clave: 'filiacion', encabezado: 'Filiación', render: (a) => a.filiacion },
     {
       clave: 'revistas',

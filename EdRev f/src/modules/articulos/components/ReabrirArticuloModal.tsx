@@ -44,7 +44,7 @@ export function ReabrirArticuloModal({
   })
 
   const conserva: Array<[string, string]> = [
-    ['Autores', `${articulo.autores.length} con su ORCID`],
+    ['Autores', String(articulo.autores.length)],
     [
       'Pares',
       articulo.asignaciones.length === 0

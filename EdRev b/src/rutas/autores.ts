@@ -95,7 +95,10 @@ rutasAutores.get('/:revista/autores/:id/articulos', async (req, res) => {
 const datosAutor = z.object({
   nombre: z.string().trim().min(1, 'Escriba el nombre'),
   correo: z.string().trim(),
-  orcid: z.string().trim(),
+  orcid: z
+    .string()
+    .trim()
+    .regex(/^(\d{4}-\d{4}-\d{4}-\d{3}[\dX])?$/, 'Use el formato 0000-0000-0000-0000'),
   filiacion: z.string().trim().optional(),
   pais: z.string().trim().optional(),
 })
@@ -103,7 +106,9 @@ const datosAutor = z.object({
 rutasAutores.post('/:revista/autores', async (req, res) => {
   const revista = idRevista(req.params.revista)
   const d = datosAutor.parse(req.body)
-  const repetido = await pool.query('SELECT 1 FROM autor WHERE orcid = $1', [d.orcid])
+  const repetido = d.orcid
+    ? await pool.query('SELECT 1 FROM autor WHERE orcid = $1', [d.orcid])
+    : { rows: [] }
   if (repetido.rows.length > 0) throw new ErrorHttp(409, 'Ya existe un autor con ese ORCID en el directorio')
   const { rows } = await pool.query<{ id_autor: number }>(
     `INSERT INTO autor (nombre, orcid, correo) VALUES ($1, NULLIF($2, ''), NULLIF($3, ''))

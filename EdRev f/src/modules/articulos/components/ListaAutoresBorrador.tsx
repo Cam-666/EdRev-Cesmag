@@ -52,7 +52,7 @@ export function ListaAutoresBorrador({ autores, onQuitar }: ListaAutoresBorrador
                   )}
                 </p>
                 <p className="text-cuerpo-13 text-texto-secundario">
-                  {a.datos.orcid} · {a.datos.filiacion}
+                  {[a.datos.orcid, a.datos.filiacion].filter(Boolean).join(' · ')}
                 </p>
               </div>
               <Boton variante="texto" tamano="sm" onClick={() => onQuitar(i)}>

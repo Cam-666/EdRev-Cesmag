@@ -69,14 +69,14 @@ describe('authors (/:revista/autores) — common directory', () => {
       within(dialogo).getByLabelText('Correo electrónico'),
       'laura.rivera@umariana.edu.co',
     )
-    await user.type(within(dialogo).getByLabelText('ORCID'), '0000-0002-4471-1188')
+    await user.type(within(dialogo).getByLabelText('ORCID (opcional)'), '0000-0002-4471-1188')
     await user.type(within(dialogo).getByLabelText('Filiación'), 'Universidad Mariana')
     await user.click(within(dialogo).getByRole('button', { name: 'Registrar autor' }))
     expect(
       await within(dialogo).findByText('Ya existe un autor con ese ORCID en el directorio'),
     ).toBeInTheDocument()
 
-    const orcid = within(dialogo).getByLabelText('ORCID')
+    const orcid = within(dialogo).getByLabelText('ORCID (opcional)')
     await user.clear(orcid)
     await user.type(orcid, '0000-0001-2345-6789')
     await user.click(within(dialogo).getByRole('button', { name: 'Registrar autor' }))
