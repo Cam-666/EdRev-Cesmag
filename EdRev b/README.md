@@ -68,8 +68,15 @@ la demostración (botón «Demostración: abrir el enlace»). En producción pon
 Ver `.env.example`. Ninguna credencial va en el código (RNF-07); los valores de la sección 3.2 (umbral, días de
 espera, intentos, máximo de pares) también son variables, para el traslado al servidor de la universidad (RNF-13).
 
-## Docker (siguiente paso)
+## Docker
 
-El proyecto ya está preparado: todo se configura por variables de entorno, `npm run build` deja `dist/` y
-`npm start` lo ejecuta. Falta agregar el `Dockerfile` y un `docker-compose.yml` con PostgreSQL que monte
-`db/` en `/docker-entrypoint-initdb.d/` para crear la base al primer arranque.
+En la raíz del repositorio está `docker-compose.yml` con la base, la API y el frontend:
+
+```bash
+docker compose up --build
+```
+
+Frontend en `http://localhost:8080`, API en `http://localhost:3000/api`, PostgreSQL en el puerto `5433` (para no
+chocar con el local). La primera vez la base se crea sola con `db/01_esquema.sql` y `db/02_datos_iniciales.sql`.
+Claves por variables: `DB_PASSWORD`, `JWT_SECRET`, `CORREO_MODO`, `BREVO_API_KEY`, `ENLACE_DEMO` (en un `.env` junto
+al compose). Requiere Docker Desktop instalado.
