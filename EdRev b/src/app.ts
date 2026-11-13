@@ -19,6 +19,7 @@ import { rutasAsignaciones } from './rutas/asignaciones.js'
 import { rutasAutores } from './rutas/autores.js'
 import { rutasConstancias } from './rutas/constancias.js'
 import { rutasCorreos } from './rutas/correos.js'
+import { rutasMigracion } from './rutas/migracion.js'
 import { rutasPanel } from './rutas/panel.js'
 import { rutasPares } from './rutas/pares.js'
 import { rutasWebhooks } from './rutas/webhooks.js'
@@ -49,6 +50,7 @@ export function crearApp() {
   privadas.use(rutasAsignaciones)
   privadas.use(rutasConstancias)
   privadas.use(rutasCorreos)
+  privadas.use(rutasMigracion)
   app.use('/api', privadas)
 
   app.use((_req, res) => {

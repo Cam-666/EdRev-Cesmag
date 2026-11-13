@@ -105,7 +105,3 @@ rutasInformes.get('/informes', async (req, res) => {
   })
 })
 
-rutasInformes.get('/:revista/por-corregir', (req, res) => {
-  idRevista(req.params.revista)
-  res.json([])
-})

@@ -52,6 +52,14 @@ async function contar(revista: number, estado: string): Promise<number> {
   return rows[0]?.n ?? 0
 }
 
+async function porCorregir(revista: number): Promise<number> {
+  const { rows } = await pool.query<{ n: number }>(
+    'SELECT count(*)::int AS n FROM por_corregir WHERE id_revista = $1',
+    [revista],
+  )
+  return rows[0]?.n ?? 0
+}
+
 rutasPanel.get('/:revista/tablero', async (req, res) => {
   const revista = idRevista(req.params.revista)
   res.json({
@@ -60,7 +68,7 @@ rutasPanel.get('/:revista/tablero', async (req, res) => {
     aprobados: await contar(revista, 'aprobado'),
     sinResponder: await sinResponder(revista),
     constanciasPendientes: await constanciasPendientes(revista),
-    porCorregir: 0,
+    porCorregir: await porCorregir(revista),
   })
 })
 
@@ -78,7 +86,7 @@ rutasPanel.get('/resumen', async (_req, res) => {
         pares: rows[0]?.pares ?? 0,
         sinResponder: (await sinResponder(id)).length,
         constanciasPendientes: (await constanciasPendientes(id)).length,
-        porCorregir: 0,
+        porCorregir: await porCorregir(id),
       }
     }),
   )

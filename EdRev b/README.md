@@ -80,6 +80,19 @@ npm test
 
 Corren contra una base aparte, `edrev_prueba`, que se borra y se vuelve a crear en cada corrida (necesita `DATABASE_ADMIN_URL` en `.env`). La base `edrev` no se toca. Cubren el acceso, los artículos y el comité, la asignación de pares, las constancias y los correos, las plantillas, la auditoría y los informes.
 
+## Migración del Excel (RF-42 a RF-44)
+
+```
+npm run migrar -- reep db/plantilla_migracion.csv --simular   (prueba: no guarda nada)
+npm run migrar -- reep ruta/al/archivo.xlsx                     (carga real)
+```
+
+Lee la primera hoja de un `.xlsx` o `.csv`; la primera fila son los encabezados. Una fila por artículo y par (un artículo con tres pares ocupa tres filas con el mismo N.º OJS). Encabezados: N.º OJS, Título, Tipo de artículo, Fecha de postulación, Estado, Autores (separados por `;`), Par, Correo par, Universidad par, Concepto, Fecha de entrega, Constancia (Sí/X marca la constancia ya emitida). Ver `db/plantilla_migracion.csv`.
+
+- Lo que no coincide con las listas del sistema (tipo, estado, concepto, correo) se carga vacío y aparece en **Por corregir**.
+- Los artículos cuyo N.º OJS ya existe en la revista se omiten, así que se puede repetir la carga.
+- Si los encabezados del Excel real son distintos, se agregan sus nombres en `ALIAS` de `src/servicios/migracion.ts`.
+
 ## Variables de entorno
 
 Ver `.env.example`. Ninguna credencial va en el código (RNF-07); los valores de la sección 3.2 (umbral, días de

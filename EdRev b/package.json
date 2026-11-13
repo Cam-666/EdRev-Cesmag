@@ -14,11 +14,13 @@
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "db:crear": "tsx --env-file=.env scripts/crearBase.ts",
     "db:init": "tsx --env-file=.env scripts/iniciarBase.ts",
-    "test": "vitest run"
+    "test": "vitest run",
+    "migrar": "tsx --env-file=.env scripts/migrarExcel.ts"
   },
   "dependencies": {
     "bcryptjs": "^3.0.2",
     "cors": "^2.8.5",
+    "exceljs": "^4.4.0",
     "express": "^5.1.0",
     "express-rate-limit": "^8.7.4",
     "helmet": "^8.3.0",
