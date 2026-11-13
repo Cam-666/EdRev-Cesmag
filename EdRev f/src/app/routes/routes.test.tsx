@@ -8,7 +8,7 @@ import type { Usuario } from '@/types/usuario'
 import { REVISTAS } from '@/types/revista'
 import type { Revista } from '@/types/revista'
 
-/** The 17 views each journal has, identical for reep and ire. */
+/** The 16 views each journal has, identical for reep and ire. */
 const VISTAS = [
   'tablero',
   'articulos',
@@ -16,7 +16,6 @@ const VISTAS = [
   'articulos/{id}',
   'articulos/{id}/autores',
   'articulos/{id}/pares',
-  'articulos/{id}/observaciones',
   'articulos/{id}/historial',
   'articulos/{id}/comite',
   'articulos/{archivado}/reabrir',
@@ -48,8 +47,8 @@ const ARTICULOS: Record<Revista, { id: string; archivado: string; autor: string 
 }
 
 describe('route table', () => {
-  it('defines 17 views per journal', () => {
-    expect(VISTAS).toHaveLength(17)
+  it('defines 16 views per journal', () => {
+    expect(VISTAS).toHaveLength(16)
   })
 
   describe.each(REVISTAS_IDS)('journal %s', (revista) => {

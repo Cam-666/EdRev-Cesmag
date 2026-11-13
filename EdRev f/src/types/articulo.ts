@@ -98,7 +98,6 @@ export interface FiltrosArticulos {
 export interface ArticuloDetalle extends Omit<Articulo, 'autoresIds'> {
   autores: AutorDeArticulo[]
   asignaciones: AsignacionDetalle[]
-  totalObservaciones: number
 }
 
 export interface NuevoArticulo {

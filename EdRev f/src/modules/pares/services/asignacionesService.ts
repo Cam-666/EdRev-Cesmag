@@ -31,14 +31,13 @@ export function asignarPar(
   })
 }
 
+/** RF-28: resends the invitation after a bounce or a failure (it is not a new attempt). */
 export function reenviarInvitacion(
   revista: Revista,
   asignacionId: string,
-  tipo: 'reenvio' | 'recordatorio',
 ): Promise<ResultadoAsignacion> {
   return solicitar<ResultadoAsignacion>(`/${revista}/asignaciones/${art(asignacionId)}/reenviar`, {
     method: 'POST',
-    ...json({ tipo }),
   })
 }
 

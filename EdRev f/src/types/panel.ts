@@ -57,10 +57,16 @@ export interface Informe {
   revista: FiltroRevistaInforme
   postulados: IndicadorRevista
   aprobados: IndicadorRevista
+  rechazados: IndicadorRevista
   evaluacionesEntregadas: IndicadorRevista
   constanciasEmitidas: IndicadorRevista
   diasPromedioEvaluacion: IndicadorRevista
-  conceptos: { publicable: number; conModificaciones: number; noPublicable: number }
+  conceptos: {
+    publicable: number
+    conModificaciones: number
+    noPublicable: number
+    pendienteFormato: number
+  }
 }
 
 export interface PeriodoInforme {

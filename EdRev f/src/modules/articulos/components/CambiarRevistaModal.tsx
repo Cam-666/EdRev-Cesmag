@@ -31,7 +31,7 @@ export function CambiarRevistaModal({ articulo, abierto, onCerrar }: CambiarRevi
       abierto={abierto}
       onCerrar={onCerrar}
       titulo={`Cambiar a ${REVISTAS[destino].nombreCorto}`}
-      descripcion={`El artículo ${articulo.numeroOjs} pasa a ${REVISTAS[destino].nombre} con sus autores, rondas y observaciones.`}
+      descripcion={`El artículo ${articulo.numeroOjs} pasa a ${REVISTAS[destino].nombre} con sus autores, rondas e historial.`}
       acciones={
         <>
           <Boton variante="neutro" onClick={onCerrar}>

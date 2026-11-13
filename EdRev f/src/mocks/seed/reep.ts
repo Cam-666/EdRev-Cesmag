@@ -573,70 +573,20 @@ export const SEED_REEP: SeedRevista = construirSeed({
       ],
     },
   ],
-  observaciones: [
-    {
-      n: '2026-034',
-      f: '2026-10-28T15:40:00',
-      u: 'Ma. Camila Mendoza',
-      t: 'Conceptos divergentes: se asigna un tercer par de desempate.',
-    },
-    {
-      n: '2026-034',
-      f: '2026-10-14T09:41:00',
-      u: 'Andrea Villota',
-      t: 'Se corrigió el correo del par 2 y se reenvió la invitación.',
-    },
-    {
-      n: '2026-034',
-      f: '2026-10-03T08:52:00',
-      u: 'Andrea Villota',
-      t: 'Antiplagio por encima del 15 % permitido.',
-    },
-    {
-      n: '2026-007',
-      f: '2026-09-30T10:00:00',
-      u: 'Ma. Camila Mendoza',
-      t: 'Se archiva el artículo por falta de respuesta del autor.',
-    },
-    {
-      n: '2026-007',
-      f: '2026-08-25T09:00:00',
-      u: 'Andrea Villota',
-      t: 'Segundo aviso al autor, sin respuesta.',
-    },
-    {
-      n: '2026-007',
-      f: '2026-07-20T10:15:00',
-      u: 'Andrea Villota',
-      t: 'Se solicitaron modificaciones al autor.',
-    },
-    {
-      n: '2026-015',
-      f: '2026-08-20T11:30:00',
-      u: 'Andrea Villota',
-      t: 'Pendiente la versión corregida del apartado metodológico.',
-    },
-    {
-      n: '2026-026',
-      f: '2026-10-19T08:45:00',
-      u: 'Andrea Villota',
-      t: 'Antiplagio por encima del 15 %: se consultará con el comité.',
-    },
-  ],
   correosExtra: [
     {
       n: '2026-034',
-      tipo: 'reenvio',
+      tipo: 'segundo-intento',
       dest: 'j.rosero@umariana.edu.co',
       f: '2026-10-14T09:41:00',
       e: 'rebotado',
     },
     {
       n: '2026-031',
-      tipo: 'recordatorio',
+      tipo: 'segundo-intento',
       dest: 'r.eraso@udenar.edu.co',
       f: '2026-10-27T09:30:00',
-      e: 'en-cola',
+      e: 'fallido',
     },
   ],
 })

@@ -1,6 +1,6 @@
 /*
- * FichaArticuloLayout — article sheet shell: header + six routed tabs (Resumen, Revisión del
- * comité, Autores, Pares y evaluación, Observaciones, Historial). «Cambiar de revista» is offered
+ * FichaArticuloLayout — article sheet shell: header + five routed tabs (Resumen, Revisión del
+ * comité, Autores, Pares y evaluación, Historial de correos y cambios) as RF-36 lists them. «Cambiar de revista» is offered
  * while the article is in the committee review (RF-07). Each datum appears in a single tab. It loads the
  * article once and hands it to the tabs through the outlet context.
  * Covers: RF-36, HU-26 (criterion 3), RF-01/RF-04 (edit).
@@ -27,7 +27,7 @@ import type { EstadoArticulo } from '@/types/articulo'
 /** States whose process is still open (RF-08). */
 const ABIERTOS: readonly EstadoArticulo[] = ['postulado', 'en-revision', 'en-evaluacion']
 
-const SEGMENTOS = ['comite', 'autores', 'pares', 'observaciones', 'historial'] as const
+const SEGMENTOS = ['comite', 'autores', 'pares', 'historial'] as const
 
 function pestanaActiva(pathname: string, base: string): string {
   const resto = pathname.slice(base.length).split('/').filter(Boolean)[0]
@@ -110,7 +110,6 @@ export function FichaArticuloLayout() {
               { valor: 'comite', etiqueta: 'Revisión del comité', contenido: panel },
               { valor: 'autores', etiqueta: 'Autores', contenido: panel },
               { valor: 'pares', etiqueta: 'Pares y evaluación', contenido: panel },
-              { valor: 'observaciones', etiqueta: 'Observaciones', contenido: panel },
               { valor: 'historial', etiqueta: 'Historial', contenido: panel },
             ]}
           />

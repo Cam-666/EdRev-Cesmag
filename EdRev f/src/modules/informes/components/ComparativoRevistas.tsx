@@ -20,6 +20,7 @@ export function ComparativoRevistas({ informe }: ComparativoRevistasProps) {
   const filas: FilaIndicador[] = [
     { nombre: 'Artículos postulados', valores: informe.postulados },
     { nombre: 'Artículos aprobados', valores: informe.aprobados },
+    { nombre: 'Artículos rechazados', valores: informe.rechazados },
     { nombre: 'Evaluaciones entregadas', valores: informe.evaluacionesEntregadas },
     { nombre: 'Constancias emitidas', valores: informe.constanciasEmitidas },
     { nombre: 'Días promedio de evaluación', valores: informe.diasPromedioEvaluacion },

@@ -1,13 +1,13 @@
 /*
  * MSW handlers for the sent-mail log of a journal: list with counters, retry (the queue and the
- * failed ones) and "corregir y reenviar" (fix the address of the peer and send again). A failed
- * mail whose resend went out becomes "reintentado"; nothing is lost (RNF-02).
+ * mails the service failed) and "corregir y reenviar" (fix the address of the peer and send again
+ * as a new mail). Results: en cola, enviado, rebotado, fallido (D12); nothing is lost (RNF-02).
  * Covers: RF-26, RF-27, RF-28, RNF-02. Retrying is allowed to Administradora and Auxiliar.
  */
 import { http, HttpResponse } from 'msw'
 import type { SeedRevista } from '../seed/fabrica'
 import { ahoraIso, contexto, error } from './util'
-import type { CorreoEnviado, EstadoCorreo } from '@/types/historial'
+import type { CorreoEnviado, EstadoCorreo, TipoAuditoria } from '@/types/historial'
 import type { Revista } from '@/types/revista'
 
 const DOMINIO_QUE_REBOTA = '@invalido.test'
@@ -25,7 +25,7 @@ function auditar(
   base: SeedRevista,
   revista: Revista,
   articuloId: string,
-  tipo: 'fallo' | 'edicion' | 'asignacion',
+  tipo: TipoAuditoria,
   accion: string,
   usuario: string,
 ): void {
@@ -41,8 +41,8 @@ function auditar(
 }
 
 /**
- * Sends `correo` again. Queued mails are delivered; a bounced one is delivered only if its address
- * now works, and then it is marked "reintentado" while a new delivered entry records the resend.
+ * RF-27: a queued or failed mail is sent again as it is (same record, new date). A bounced one
+ * needs its address corrected first: that resend is a new mail and the bounced one is «atendido».
  */
 function reintentar(
   base: SeedRevista,
@@ -50,31 +50,10 @@ function reintentar(
   correo: CorreoEnviado,
   usuario: string,
 ): EstadoCorreo {
-  if (rebota(correo.destinatario)) {
-    correo.estado = 'rebotado'
-    return 'rebotado'
-  }
-  if (correo.estado === 'en-cola') {
-    correo.estado = 'entregado'
-    correo.fechaEnvio = ahoraIso()
-    return 'entregado'
-  }
-  correo.estado = 'reintentado'
-  base.correos.unshift({
-    ...correo,
-    id: `${revista}-cor-n${base.correos.length + 1}`,
-    fechaEnvio: ahoraIso(),
-    estado: 'entregado',
-  })
-  auditar(
-    base,
-    revista,
-    correo.articuloId,
-    'asignacion',
-    'Reintentó el envío de un correo',
-    usuario,
-  )
-  return 'entregado'
+  correo.fechaEnvio = ahoraIso()
+  correo.estado = rebota(correo.destinatario) ? 'rebotado' : 'enviado'
+  auditar(base, revista, correo.articuloId, 'envio', 'Reintentó el envío de un correo', usuario)
+  return correo.estado
 }
 
 export const handlersCorreos = [
@@ -97,8 +76,9 @@ export const handlersCorreos = [
         .slice((pagina - 1) * porPagina, pagina * porPagina)
         .map((x) => conArticulo(c.base, x)),
       total: filtrados.length,
-      entregados: todos.filter((x) => x.estado === 'entregado').length,
-      rebotados: todos.filter((x) => x.estado === 'rebotado').length,
+      enviados: todos.filter((x) => x.estado === 'enviado').length,
+      rebotados: todos.filter((x) => x.estado === 'rebotado' && !x.atendido).length,
+      fallidos: todos.filter((x) => x.estado === 'fallido' && !x.atendido).length,
       enCola: todos.filter((x) => x.estado === 'en-cola').length,
     })
   }),
@@ -106,14 +86,15 @@ export const handlersCorreos = [
   http.post('*/api/:revista/correos/reintentar-fallidos', ({ params, request }) => {
     const c = contexto(params, request, 'asignar-pares')
     if (!c.ok) return c.respuesta
+    // Failed sends of the mail service and the queue; bounced ones need a corrected address.
     const pendientes = c.base.correos.filter(
-      (x) => x.estado === 'rebotado' || x.estado === 'en-cola',
+      (x) => (x.estado === 'fallido' && !x.atendido) || x.estado === 'en-cola',
     )
     const resultados = pendientes.map((x) => reintentar(c.base, c.revista, x, c.usuario.nombre))
     return HttpResponse.json({
       reintentados: resultados.length,
-      entregados: resultados.filter((r) => r === 'entregado').length,
-      siguenFallando: resultados.filter((r) => r === 'rebotado').length,
+      enviados: resultados.filter((r) => r === 'enviado').length,
+      siguenFallando: resultados.filter((r) => r !== 'enviado').length,
     })
   }),
 
@@ -122,7 +103,7 @@ export const handlersCorreos = [
     if (!c.ok) return c.respuesta
     const correo = c.base.correos.find((x) => x.id === params.id)
     if (!correo) return error(404, 'Correo no encontrado')
-    if (correo.estado !== 'rebotado' && correo.estado !== 'en-cola') {
+    if ((correo.estado !== 'fallido' && correo.estado !== 'en-cola') || correo.atendido) {
       return error(409, 'Este correo no necesita reintento')
     }
     const estado = reintentar(c.base, c.revista, correo, c.usuario.nombre)
@@ -137,6 +118,9 @@ export const handlersCorreos = [
     if (!c.ok) return c.respuesta
     const correo = c.base.correos.find((x) => x.id === params.id)
     if (!correo) return error(404, 'Correo no encontrado')
+    if ((correo.estado !== 'rebotado' && correo.estado !== 'fallido') || correo.atendido) {
+      return error(409, 'Solo se corrige un envío que rebotó o falló')
+    }
     const { correo: nueva } = (await request.json()) as { correo: string }
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(nueva.trim()))
       return error(422, 'Escriba un correo válido')
@@ -146,7 +130,6 @@ export const handlersCorreos = [
       (p) => p.correo.toLowerCase() === correo.destinatario.toLowerCase(),
     )
     if (par) par.correo = nueva.trim()
-    correo.destinatario = nueva.trim()
     auditar(
       c.base,
       c.revista,
@@ -155,7 +138,27 @@ export const handlersCorreos = [
       'Corrigió el correo del par',
       c.usuario.nombre,
     )
-    const estado = reintentar(c.base, c.revista, correo, c.usuario.nombre)
+    // RF-28: the resend is a new mail («Reenvío por corrección»); it is not a new attempt.
+    const destinatario = nueva.trim()
+    const estado: EstadoCorreo = rebota(destinatario) ? 'rebotado' : 'enviado'
+    correo.atendido = true
+    c.base.correos.unshift({
+      ...correo,
+      id: `${c.revista}-cor-n${c.base.correos.length + 1}`,
+      tipo: correo.tipo === 'agradecimiento' ? 'agradecimiento' : 'reenvio',
+      destinatario,
+      fechaEnvio: ahoraIso(),
+      estado,
+      atendido: false,
+    })
+    auditar(
+      c.base,
+      c.revista,
+      correo.articuloId,
+      'envio',
+      'Reenvió el correo corregido',
+      c.usuario.nombre,
+    )
     if (estado === 'rebotado') return error(409, 'La nueva dirección también rebota')
     return HttpResponse.json({ estado })
   }),

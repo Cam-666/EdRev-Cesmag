@@ -91,9 +91,10 @@ export function InformesPage() {
       >
         {datos && (
           <>
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-3 xl:grid-cols-5">
               <TarjetaMetrica valor={datos.postulados.total} etiqueta="Artículos postulados" />
               <TarjetaMetrica valor={datos.aprobados.total} etiqueta="Aprobados" />
+              <TarjetaMetrica valor={datos.rechazados.total} etiqueta="Rechazados" />
               <TarjetaMetrica
                 valor={datos.evaluacionesEntregadas.total}
                 etiqueta="Evaluaciones entregadas"

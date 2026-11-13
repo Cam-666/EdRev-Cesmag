@@ -14,6 +14,7 @@ export function csvInforme(informe: Informe): string {
     ['Indicador', 'Educación y Pedagogía', 'Investigium IRE', 'Total'],
     fila('Artículos postulados', informe.postulados),
     fila('Artículos aprobados', informe.aprobados),
+    fila('Artículos rechazados', informe.rechazados),
     fila('Evaluaciones entregadas', informe.evaluacionesEntregadas),
     fila('Constancias emitidas', informe.constanciasEmitidas),
     fila('Días promedio de evaluación', informe.diasPromedioEvaluacion),
@@ -22,6 +23,7 @@ export function csvInforme(informe: Informe): string {
     ['Publicable', informe.conceptos.publicable],
     ['Con modificaciones', informe.conceptos.conModificaciones],
     ['No publicable', informe.conceptos.noPublicable],
+    ['Pendiente formato de evaluación', informe.conceptos.pendienteFormato],
   ]
   return csv(filas)
 }

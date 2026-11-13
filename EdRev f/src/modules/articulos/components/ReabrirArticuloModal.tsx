@@ -57,7 +57,7 @@ export function ReabrirArticuloModal({
         ? `${articulo.coincidencias} % · ${articulo.atribuidoIa ?? 0} % de IA`
         : 'Ninguno',
     ],
-    ['Observaciones', `${articulo.totalObservaciones} fechadas`],
+    ['Revisión del comité', `${articulo.rondasComite.length} rondas`],
     [
       'Constancias',
       articulo.asignaciones.filter((a) => a.constanciaEmitida).length === 0

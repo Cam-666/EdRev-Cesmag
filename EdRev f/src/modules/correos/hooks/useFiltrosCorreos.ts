@@ -3,13 +3,14 @@
  * view can be linked and reloaded. Covers: RF-26.
  */
 import { useSearchParams } from 'react-router-dom'
+import { ESTADOS_CORREO, TIPOS_CORREO } from '../config/listas'
 import type { FiltrosCorreos } from '../services/correosService'
 import type { EstadoCorreo, TipoCorreo } from '@/types/historial'
 
 export const POR_PAGINA_CORREOS = 10
 
-const TIPOS: TipoCorreo[] = ['invitacion', 'reenvio', 'recordatorio', 'agradecimiento']
-const ESTADOS: EstadoCorreo[] = ['entregado', 'rebotado', 'en-cola', 'reintentado']
+const TIPOS: TipoCorreo[] = TIPOS_CORREO
+const ESTADOS: EstadoCorreo[] = ESTADOS_CORREO
 
 export function useFiltrosCorreos() {
   const [params, setParams] = useSearchParams()

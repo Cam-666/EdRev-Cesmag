@@ -1,14 +1,14 @@
 /*
  * CorreosPage — Correos enviados (/:revista/correos): the journal's sent-mail log with the
- * counters (delivered / bounced / queued), a warning for the failed ones, "Corregir y reenviar"
- * and "Reintentar fallidos". Nothing is lost: failed sends stay queued for retry (RNF-02).
+ * counters (sent / bounced / failed / queued), a warning for the bounced ones, "Corregir y
+ * reenviar" and "Reintentar fallidos" (the mails the service failed and the queue). Nothing is lost: failed sends stay queued for retry (RNF-02).
  * Covers: RF-26, RF-27, RF-28, RNF-02, HU-18, HU-19, HU-20.
  */
 import { useState } from 'react'
 import { CorregirCorreoModal } from '../components/CorregirCorreoModal'
 import { DetalleCorreoModal } from '../components/DetalleCorreoModal'
 import { TablaCorreosRevista } from '../components/TablaCorreosRevista'
-import { ETIQUETA_TIPO_CORREO } from '../config/listas'
+import { ESTADOS_CORREO, ETIQUETA_TIPO_CORREO, TIPOS_CORREO } from '../config/listas'
 import { useCorreos, useReintentarCorreo, useReintentarFallidos } from '../hooks/useCorreos'
 import { useFiltrosCorreos } from '../hooks/useFiltrosCorreos'
 import type { CorreoConArticulo } from '../services/correosService'
@@ -25,7 +25,6 @@ import { EncabezadoPagina } from '@/components/common/EncabezadoPagina'
 import type { EstadoCorreo, TipoCorreo } from '@/types/historial'
 
 const TODOS = 'todos'
-const ESTADOS: EstadoCorreo[] = ['entregado', 'rebotado', 'en-cola', 'reintentado']
 
 export function CorreosPage() {
   const { filtros, cambiar, hayFiltros } = useFiltrosCorreos()
@@ -38,13 +37,13 @@ export function CorreosPage() {
   const [corrigiendo, setCorrigiendo] = useState<CorreoConArticulo | null>(null)
   const datos = lista.data
 
-  const primerFallo = datos?.items.find((c) => c.estado === 'rebotado')
+  const primerFallo = datos?.items.find((c) => c.estado === 'rebotado' && !c.atendido)
 
   function reintentarUno(correo: CorreoConArticulo) {
     setAviso(null)
     reintentar.mutate(correo.id, {
       onSuccess: () =>
-        setAviso({ tipo: 'exito', texto: `Correo a ${correo.destinatario} entregado.` }),
+        setAviso({ tipo: 'exito', texto: `Correo a ${correo.destinatario} enviado.` }),
       onError: (e) =>
         setAviso({ tipo: 'error', texto: mensajeDeApi(e, 'No fue posible reintentar el envío.') }),
     })
@@ -58,11 +57,11 @@ export function CorreosPage() {
           r.siguenFallando > 0
             ? {
                 tipo: 'error',
-                texto: `Se reintentaron ${r.reintentados} envíos: ${r.entregados} entregados y ${r.siguenFallando} siguen fallando (corrija su dirección).`,
+                texto: `Se reintentaron ${r.reintentados} envíos: ${r.enviados} enviados y ${r.siguenFallando} siguen fallando.`,
               }
             : {
                 tipo: 'exito',
-                texto: `Se reintentaron ${r.reintentados} envíos y todos se entregaron.`,
+                texto: `Se reintentaron ${r.reintentados} envíos y todos se enviaron.`,
               },
         ),
     })
@@ -103,12 +102,17 @@ export function CorreosPage() {
         </Alerta>
       )}
 
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-        <TarjetaMetrica valor={datos?.entregados ?? '–'} etiqueta="Entregados" />
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
+        <TarjetaMetrica valor={datos?.enviados ?? '–'} etiqueta="Enviados" />
         <TarjetaMetrica
           valor={datos?.rebotados ?? '–'}
           etiqueta="Rebotados"
           alerta={(datos?.rebotados ?? 0) > 0}
+        />
+        <TarjetaMetrica
+          valor={datos?.fallidos ?? '–'}
+          etiqueta="Fallidos"
+          alerta={(datos?.fallidos ?? 0) > 0}
         />
         <TarjetaMetrica valor={datos?.enCola ?? '–'} etiqueta="En cola" />
       </div>
@@ -120,7 +124,7 @@ export function CorreosPage() {
           onCambio={(v) => cambiar({ tipo: v === TODOS ? undefined : (v as TipoCorreo) })}
           opciones={[
             { valor: TODOS, etiqueta: 'Todos' },
-            ...(Object.keys(ETIQUETA_TIPO_CORREO) as TipoCorreo[]).map((t) => ({
+            ...TIPOS_CORREO.map((t) => ({
               valor: t,
               etiqueta: ETIQUETA_TIPO_CORREO[t],
             })),
@@ -132,7 +136,7 @@ export function CorreosPage() {
           onCambio={(v) => cambiar({ estado: v === TODOS ? undefined : (v as EstadoCorreo) })}
           opciones={[
             { valor: TODOS, etiqueta: 'Todos' },
-            ...ESTADOS.map((e) => ({ valor: e, etiqueta: DEFINICIONES_ESTADO[e].texto })),
+            ...ESTADOS_CORREO.map((e) => ({ valor: e, etiqueta: DEFINICIONES_ESTADO[e].texto })),
           ]}
         />
       </div>

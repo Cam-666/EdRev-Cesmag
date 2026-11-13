@@ -246,43 +246,16 @@ describe('article sheet', () => {
     expect(screen.queryByText(/se contradicen/)).toBeNull()
   })
 
-  it('Observaciones: newest first and a new one is added without overwriting', async () => {
-    const { user } = montarRuta('/reep/articulos/2026-034/observaciones')
-    const lista = await screen.findByRole('list', { name: 'Observaciones registradas' })
-    const antes = within(lista).getAllByRole('listitem')
-    expect(antes).toHaveLength(3)
-    expect(within(antes[0] as HTMLElement).getByText(/Conceptos divergentes/)).toBeInTheDocument()
-    expect(
-      within(antes[0] as HTMLElement).getByText(/28 oct · 15:40 · Ma\. C\. Mendoza/),
-    ).toBeInTheDocument()
-
-    expect(screen.getByText(/Se registrará como Ma\. Camila Mendoza/)).toBeInTheDocument()
-    await user.type(
-      screen.getByLabelText('Escribir una observación'),
-      'El autor solicitó ocho días de prórroga.',
-    )
-    await user.click(screen.getByRole('button', { name: 'Guardar' }))
-
-    await waitFor(() =>
-      expect(
-        within(screen.getByRole('list', { name: 'Observaciones registradas' })).getAllByRole(
-          'listitem',
-        ),
-      ).toHaveLength(4),
-    )
-    const despues = within(
-      screen.getByRole('list', { name: 'Observaciones registradas' }),
-    ).getAllByRole('listitem')
-    expect(
-      within(despues[0] as HTMLElement).getByText('El autor solicitó ocho días de prórroga.'),
-    ).toBeInTheDocument()
-    expect(within(despues[1] as HTMLElement).getByText(/Conceptos divergentes/)).toBeInTheDocument()
-  })
-
-  it('Observaciones: refuses an empty note', async () => {
-    const { user } = montarRuta('/reep/articulos/2026-034/observaciones')
-    await user.click(await screen.findByRole('button', { name: 'Guardar' }))
-    expect(await screen.findByText('Escriba la observación.')).toBeInTheDocument()
+  it('has no «Observaciones» tab: the sheet has the five tabs of RF-36 (D16)', async () => {
+    montarRuta('/reep/articulos/2026-034')
+    const pestanas = await screen.findAllByRole('tab')
+    expect(pestanas.map((t) => t.textContent)).toEqual([
+      'Resumen',
+      'Revisión del comité',
+      'Autores',
+      'Pares y evaluación',
+      'Historial',
+    ])
   })
 
   it('Historial shows mails with symbol + text result and who changed what', async () => {
@@ -290,7 +263,7 @@ describe('article sheet', () => {
     await user.click(await screen.findByRole('tab', { name: 'Historial' }))
     const tabla = await screen.findByRole('table', { name: 'Correos enviados por este artículo' })
     expect(within(tabla).getByText('Rebotado')).toBeInTheDocument()
-    expect(within(tabla).getAllByText('Entregado').length).toBeGreaterThan(0)
+    expect(within(tabla).getAllByText('Enviado').length).toBeGreaterThan(0)
     expect(within(tabla).getAllByText('Agradecimiento con constancia').length).toBeGreaterThan(0)
     expect(screen.getByText('Quién cambió qué')).toBeInTheDocument()
     expect(screen.getByText('Asignó el par 3 como desempate')).toBeInTheDocument()
@@ -353,9 +326,9 @@ describe('closing the process (RF-08)', () => {
     expect((await screen.findAllByText(/Vol\. 11 n\.º 1/)).length).toBeGreaterThan(0)
     expect(screen.queryByRole('button', { name: 'Cerrar proceso' })).toBeNull()
 
-    await user.click(screen.getByRole('tab', { name: 'Observaciones' }))
+    await user.click(screen.getByRole('tab', { name: 'Historial' }))
     expect(
-      await screen.findByText(/Se cerró el proceso como Aprobado: Los pares lo consideran/),
+      await screen.findByText(/Cerró el proceso como Aprobado: Los pares lo consideran/),
     ).toBeInTheDocument()
   })
 
@@ -466,7 +439,7 @@ describe('committee review (/comite)', () => {
 })
 
 describe('reopening an archived article (/reabrir)', () => {
-  it('shows what is kept, requires a reason and records it as an observation', async () => {
+  it('shows what is kept, requires a reason and records it in the history', async () => {
     const { user, router } = montarRuta('/reep/articulos/2026-007/reabrir')
     const dialogo = await screen.findByRole('dialog', { name: 'Retomar el proceso' })
     expect(within(dialogo).getByText(/Archivado el 30 de septiembre de 2026/)).toBeInTheDocument()
@@ -489,12 +462,12 @@ describe('reopening an archived article (/reabrir)', () => {
     await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull(), { timeout: 10000 })
     expect((await screen.findAllByText('En revisión')).length).toBeGreaterThan(0)
 
-    await user.click(await screen.findByRole('tab', { name: 'Observaciones' }))
+    await user.click(await screen.findByRole('tab', { name: 'Historial' }))
     expect(
-      await screen.findByText(/Se retomó el proceso: El autor escribió el 2 de noviembre/),
+      await screen.findByText(/Retomó el proceso: El autor escribió el 2 de noviembre/),
     ).toBeInTheDocument()
-    // The earlier history is kept: the three older observations are still there
-    expect(screen.getByText('Se solicitaron modificaciones al autor.')).toBeInTheDocument()
+    // The earlier history is kept
+    expect(screen.getByText('Archivó el artículo')).toBeInTheDocument()
   })
 
   it('is open to the Auxiliar profile', async () => {

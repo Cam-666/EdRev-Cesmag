@@ -10,11 +10,16 @@ export interface ConceptosDelPeriodoProps {
 }
 
 export function ConceptosDelPeriodo({ conceptos }: ConceptosDelPeriodoProps) {
-  const total = conceptos.publicable + conceptos.conModificaciones + conceptos.noPublicable
+  const total =
+    conceptos.publicable +
+    conceptos.conModificaciones +
+    conceptos.noPublicable +
+    conceptos.pendienteFormato
   const filas = [
     { etiqueta: 'Publicable', valor: conceptos.publicable },
     { etiqueta: 'Con modificaciones', valor: conceptos.conModificaciones },
     { etiqueta: 'No publicable', valor: conceptos.noPublicable },
+    { etiqueta: 'Pendiente formato de evaluación', valor: conceptos.pendienteFormato },
   ]
   return (
     <section

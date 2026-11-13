@@ -19,10 +19,17 @@ function hoy(): string {
 }
 
 interface RespuestaCorreos {
-  items: Array<{ id: string; estado: string; destinatario: string; tipo: string }>
+  items: Array<{
+    id: string
+    estado: string
+    destinatario: string
+    tipo: string
+    atendido: boolean
+  }>
   total: number
-  entregados: number
+  enviados: number
   rebotados: number
+  fallidos: number
   enCola: number
 }
 
@@ -91,13 +98,13 @@ describe('constancias API (mock)', () => {
     expect(r.status).toBe(200)
     const res = await json<ResultadoEmision>(r)
     expect(res.constancia.estado).toBe('emitida')
-    expect(res.correo).toEqual({ estado: 'entregado', destinatario: fila.par.correo })
+    expect(res.correo).toEqual({ estado: 'enviado', destinatario: fila.par.correo })
 
     const h = await json<HistorialArticulo>(await llamar('/reep/articulos/2026-031/historial'))
     expect(h.correos[0]).toMatchObject({
       tipo: 'agradecimiento',
       destinatario: fila.par.correo,
-      estado: 'entregado',
+      estado: 'enviado',
     })
     expect(
       h.auditoria.some(
@@ -317,11 +324,19 @@ describe('templates API (mock, RF-45)', () => {
 })
 
 describe('sent-mail API (mock)', () => {
-  it('lists the journal log with counters and filters', async () => {
+  it('lists the journal log with the four results, counters and filters (RF-26, D12)', async () => {
     const r = await json<RespuestaCorreos>(await llamar('/reep/correos?porPagina=100'))
     expect(r.total).toBe(r.items.length)
     expect(r.rebotados).toBeGreaterThan(0)
-    expect(r.enCola).toBeGreaterThan(0)
+    expect(r.fallidos).toBeGreaterThan(0)
+    expect(
+      r.items.every((c) => ['en-cola', 'enviado', 'rebotado', 'fallido'].includes(c.estado)),
+    ).toBe(true)
+    expect(
+      r.items.every((c) =>
+        ['invitacion', 'segundo-intento', 'reenvio', 'agradecimiento'].includes(c.tipo),
+      ),
+    ).toBe(true)
     const rebotados = await json<RespuestaCorreos>(await llamar('/reep/correos?estado=rebotado'))
     expect(rebotados.items.every((c) => c.estado === 'rebotado')).toBe(true)
     const invitaciones = await json<RespuestaCorreos>(
@@ -330,66 +345,72 @@ describe('sent-mail API (mock)', () => {
     expect(invitaciones.items.every((c) => c.tipo === 'invitacion')).toBe(true)
   })
 
-  it('retrying a queued mail delivers it; a still-bouncing address is refused', async () => {
-    const cola = (await json<RespuestaCorreos>(await llamar('/reep/correos?estado=en-cola')))
-      .items[0]
-    if (!cola) throw new Error('no queued mail in the seed')
-    expect((await llamar(`/reep/correos/${cola.id}/reintentar`, { metodo: 'POST' })).status).toBe(
-      200,
-    )
-    const despues = await json<RespuestaCorreos>(await llamar('/reep/correos?porPagina=100'))
-    expect(despues.items.find((c) => c.id === cola.id)?.estado).toBe('entregado')
-
-    const fallido = (await json<RespuestaCorreos>(await llamar('/reep/correos?estado=rebotado')))
+  it('a failed send is retried as it is; a bounced one needs a corrected address', async () => {
+    const fallido = (await json<RespuestaCorreos>(await llamar('/reep/correos?estado=fallido')))
       .items[0]
     if (!fallido) throw new Error('no failed mail in the seed')
-    await llamar(`/reep/pares/reep-par-2`, {
-      metodo: 'PATCH',
-      cuerpo: { correo: 'x@invalido.test' },
-    })
-    await llamar(`/reep/correos/${fallido.id}/corregir`, {
-      metodo: 'POST',
-      cuerpo: { correo: 'sigue@invalido.test' },
-    })
     expect(
       (await llamar(`/reep/correos/${fallido.id}/reintentar`, { metodo: 'POST' })).status,
+    ).toBe(200)
+    const despues = await json<RespuestaCorreos>(await llamar('/reep/correos?porPagina=100'))
+    expect(despues.items.find((c) => c.id === fallido.id)?.estado).toBe('enviado')
+
+    const rebotado = (await json<RespuestaCorreos>(await llamar('/reep/correos?estado=rebotado')))
+      .items[0]
+    if (!rebotado) throw new Error('no bounced mail in the seed')
+    expect(
+      (await llamar(`/reep/correos/${rebotado.id}/reintentar`, { metodo: 'POST' })).status,
     ).toBe(409)
   })
 
-  it('"corregir y reenviar" fixes the peer address, marks the failed one as reintentado and logs the new delivery', async () => {
-    const fallido = (await json<RespuestaCorreos>(await llamar('/reep/correos?estado=rebotado')))
+  it('"corregir y reenviar" fixes the peer address and sends a new «Reenvío por corrección»', async () => {
+    const rebotado = (await json<RespuestaCorreos>(await llamar('/reep/correos?estado=rebotado')))
       .items[0]
-    if (!fallido) throw new Error('no failed mail in the seed')
-    const r = await llamar(`/reep/correos/${fallido.id}/corregir`, {
-      metodo: 'POST',
-      cuerpo: { correo: 'j.rosero@umariana.edu.co' },
-    })
-    expect(r.status).toBe(200)
-    const lista = await json<RespuestaCorreos>(await llamar('/reep/correos?porPagina=100'))
-    expect(lista.items.find((c) => c.id === fallido.id)?.estado).toBe('reintentado')
-    expect(
-      lista.items.some(
-        (c) => c.estado === 'entregado' && c.destinatario === 'j.rosero@umariana.edu.co',
-      ),
-    ).toBe(true)
+    if (!rebotado) throw new Error('no bounced mail in the seed')
     expect(
       (
-        await llamar(`/reep/correos/${fallido.id}/corregir`, {
+        await llamar(`/reep/correos/${rebotado.id}/corregir`, {
           metodo: 'POST',
           cuerpo: { correo: 'no-es-correo' },
         })
       ).status,
     ).toBe(422)
+    const r = await llamar(`/reep/correos/${rebotado.id}/corregir`, {
+      metodo: 'POST',
+      cuerpo: { correo: 'j.rosero@umariana.edu.co' },
+    })
+    expect(r.status).toBe(200)
+    const lista = await json<RespuestaCorreos>(await llamar('/reep/correos?porPagina=100'))
+    const original = lista.items.find((c) => c.id === rebotado.id)
+    expect(original).toMatchObject({ estado: 'rebotado', atendido: true })
+    expect(
+      lista.items.some(
+        (c) =>
+          c.tipo === 'reenvio' &&
+          c.estado === 'enviado' &&
+          c.destinatario === 'j.rosero@umariana.edu.co',
+      ),
+    ).toBe(true)
+    expect(lista.rebotados).toBe(0)
+    // Already handled: it cannot be corrected twice
+    expect(
+      (
+        await llamar(`/reep/correos/${rebotado.id}/corregir`, {
+          metodo: 'POST',
+          cuerpo: { correo: 'otra@umariana.edu.co' },
+        })
+      ).status,
+    ).toBe(409)
   })
 
-  it('retry all failed and queued mails at once', async () => {
-    const r = await json<{ reintentados: number; entregados: number; siguenFallando: number }>(
+  it('«Reintentar fallidos» sends again the mails the service failed', async () => {
+    const r = await json<{ reintentados: number; enviados: number; siguenFallando: number }>(
       await llamar('/reep/correos/reintentar-fallidos', { metodo: 'POST' }),
     )
     expect(r.reintentados).toBeGreaterThan(0)
-    expect(r.entregados + r.siguenFallando).toBe(r.reintentados)
+    expect(r.enviados + r.siguenFallando).toBe(r.reintentados)
     const lista = await json<RespuestaCorreos>(await llamar('/reep/correos?porPagina=100'))
-    expect(lista.rebotados).toBe(0)
+    expect(lista.fallidos).toBe(0)
     expect(lista.enCola).toBe(0)
   })
 })
@@ -434,6 +455,8 @@ describe('dashboards API (mock)', () => {
     const soloReep = await json<Informe>(await llamar('/informes?revista=reep&periodo=2026-2'))
     expect(soloReep.postulados.ire).toBe(0)
     expect(soloReep.postulados.total).toBe(todas.postulados.reep)
+    // RF-38: approved and rejected articles, each journal in its own column
+    expect(todas.rechazados.total).toBe(todas.rechazados.reep + todas.rechazados.ire)
     const c = todas.conceptos
     expect(c.publicable + c.conModificaciones + c.noPublicable).toBeLessThanOrEqual(
       todas.evaluacionesEntregadas.total,

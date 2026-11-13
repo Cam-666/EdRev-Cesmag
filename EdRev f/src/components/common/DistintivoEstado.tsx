@@ -32,9 +32,9 @@ export type EstadoDistintivo =
   | 'inhabilitado'
   // Constancia / mail result
   | 'emitida'
-  | 'entregado'
+  | 'enviado'
   | 'rebotado'
-  | 'reintentado'
+  | 'fallido'
   | 'en-cola'
 
 type Tono = 'exito' | 'alerta' | 'error' | 'info' | 'neutro'
@@ -66,9 +66,9 @@ export const DEFINICIONES_ESTADO: Record<EstadoDistintivo, Definicion> = {
   activo: { texto: 'Activo', simbolo: '✓', tono: 'exito' },
   inhabilitado: { texto: 'Inhabilitado', simbolo: '⊘', tono: 'neutro' },
   emitida: { texto: 'Emitida', simbolo: '✓', tono: 'exito' },
-  entregado: { texto: 'Entregado', simbolo: '✓', tono: 'exito' },
+  enviado: { texto: 'Enviado', simbolo: '✓', tono: 'exito' },
   rebotado: { texto: 'Rebotado', simbolo: '✕', tono: 'error' },
-  reintentado: { texto: 'Reintentado', simbolo: '↻', tono: 'info' },
+  fallido: { texto: 'Fallido', simbolo: '!', tono: 'alerta' },
   'en-cola': { texto: 'En cola', simbolo: '◷', tono: 'alerta' },
 }
 

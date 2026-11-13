@@ -135,26 +135,6 @@ describe('articles API (mock)', () => {
     expect(respuesta.status).toBe(422)
   })
 
-  it('observations are appended, never overwritten, with date and author', async () => {
-    const antes = (await (
-      await llamar('/reep/articulos/2026-034/observaciones')
-    ).json()) as unknown[]
-    const nueva = await llamar('/reep/articulos/2026-034/observaciones', {
-      metodo: 'POST',
-      usuario: AUXILIAR,
-      cuerpo: { texto: 'El autor solicitó ocho días de prórroga.' },
-    })
-    expect(nueva.status).toBe(201)
-    const despues = (await (
-      await llamar('/reep/articulos/2026-034/observaciones')
-    ).json()) as Array<{ usuario: string; texto: string }>
-    expect(despues).toHaveLength(antes.length + 1)
-    expect(despues[0]).toMatchObject({
-      usuario: 'Andrea Villota',
-      texto: 'El autor solicitó ocho días de prórroga.',
-    })
-  })
-
   it('registers committee rounds with the anti-plagiarism report, without a limit of rounds', async () => {
     const ronda = (cuerpo: Record<string, unknown>, usuario?: typeof AUXILIAR) =>
       llamar('/reep/articulos/2026-032/rondas', { metodo: 'POST', cuerpo, usuario })
@@ -271,7 +251,7 @@ describe('articles API (mock)', () => {
     ).toBe(true)
   })
 
-  it('reopening keeps the history, records the reason as an observation', async () => {
+  it('reopening keeps everything and records the reason in the history', async () => {
     const cuerpo = {
       motivo: 'El autor escribió anunciando las modificaciones.',
       estado: 'en-revision',
@@ -288,10 +268,12 @@ describe('articles API (mock)', () => {
     expect(despues.autores).toEqual(antes.autores)
     expect(despues.coincidencias).toEqual(antes.coincidencias)
     expect(despues.rondasComite).toEqual(antes.rondasComite)
-    expect(despues.totalObservaciones).toBe(antes.totalObservaciones + 1)
-    const obs = (await (await llamar('/reep/articulos/2026-007/observaciones')).json()) as Array<{
-      texto: string
-    }>
-    expect(obs[0]?.texto).toContain('El autor escribió anunciando las modificaciones.')
+    const historial = (await (await llamar('/reep/articulos/2026-007/historial')).json()) as {
+      auditoria: Array<{ tipo: string; accion: string }>
+    }
+    expect(historial.auditoria[0]).toMatchObject({
+      tipo: 'reapertura',
+      accion: 'Retomó el proceso: El autor escribió anunciando las modificaciones.',
+    })
   })
 })

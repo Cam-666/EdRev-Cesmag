@@ -16,7 +16,7 @@ import { puedeAsignarPares } from '@/lib/dominio/comite'
 import { detectarConflicto } from '@/lib/dominio/conflicto'
 import { enCurso, MAX_PARES_ACTIVOS, ocupaCupo } from '@/lib/dominio/pares'
 import type { Articulo } from '@/types/articulo'
-import type { EstadoCorreo, TipoCorreo } from '@/types/historial'
+import type { CorreoEnviado, EstadoCorreo, TipoAuditoria, TipoCorreo } from '@/types/historial'
 import type {
   Asignacion,
   ConceptoPar,
@@ -123,6 +123,7 @@ function correoDe(
   base: SeedRevista,
   revista: Revista,
   articulo: Articulo,
+  asignacionId: string,
   par: ParEvaluador,
   tipo: TipoCorreo,
   asunto: string,
@@ -134,6 +135,8 @@ function correoDe(
     id: `${revista}-cor-n${base.correos.length + 1}`,
     revista,
     articuloId: articulo.id,
+    asignacionId,
+    atendido: false,
     tipo,
     destinatario: par.correo,
     asunto,
@@ -147,7 +150,7 @@ function auditar(
   base: SeedRevista,
   revista: Revista,
   articuloId: string,
-  tipo: 'asignacion' | 'entrega' | 'fallo' | 'bloqueo' | 'edicion' | 'revision',
+  tipo: TipoAuditoria,
   accion: string,
   usuario: string,
 ): void {
@@ -160,6 +163,13 @@ function auditar(
     fecha: ahoraIso(),
     usuario,
   })
+}
+
+/** The last invitation mail of an evaluation (invitation, 2nd attempt or resend). */
+export function ultimoCorreo(base: SeedRevista, asignacionId: string): CorreoEnviado | undefined {
+  return base.correos
+    .filter((x) => x.asignacionId === asignacionId && x.tipo !== 'agradecimiento')
+    .sort((a, b) => b.fechaEnvio.localeCompare(a.fechaEnvio))[0]
 }
 
 function textosInvitacion(revista: Revista, par: ParEvaluador, articulo: Articulo) {
@@ -220,10 +230,11 @@ export const handlersAsignaciones = [
       c.base,
       c.revista,
       articulo,
+      asignacion.id,
       par,
       'invitacion',
       asunto,
-      'entregado',
+      'enviado',
     )
     auditar(
       c.base,
@@ -252,12 +263,14 @@ export const handlersAsignaciones = [
     return HttpResponse.json(cuerpo, { status: 201 })
   }),
 
-  http.post('*/api/:revista/asignaciones/:id/reenviar', async ({ params, request }) => {
+  // RF-28: the invitation is resent only when the previous send bounced or failed (usually after
+  // correcting the peer's address). It does not count as an attempt for the block. The second
+  // attempt itself is automatic (RF-29, D7): there is no reminder.
+  http.post('*/api/:revista/asignaciones/:id/reenviar', ({ params, request }) => {
     const c = contexto(params, request, 'asignar-pares')
     if (!c.ok) return c.respuesta
     const asignacion = c.base.asignaciones.find((a) => a.id === params.id)
     if (!asignacion) return error(404, 'Asignación no encontrada')
-    const { tipo } = (await request.json()) as { tipo: 'reenvio' | 'recordatorio' }
     if (asignacion.estado !== 'invitado' && asignacion.estado !== 'segundo-intento') {
       return error(409, 'El par ya respondió: no hay invitación que reenviar')
     }
@@ -265,33 +278,31 @@ export const handlersAsignaciones = [
     const articulo = c.base.articulos.find((a) => a.id === asignacion.articuloId)
     if (!par || !articulo) return error(404, 'Asignación incompleta')
     if (par.bloqueo) return error(409, 'El par está bloqueado y no recibe nuevas invitaciones')
-
-    const recordatorio = tipo === 'recordatorio'
-    const asunto = recordatorio
-      ? 'Recordatorio: invitación a evaluar un artículo'
-      : 'Reenvío de la invitación a evaluar'
-    // A reminder is queued (simulated, RF-29 is still "En revisión"); a resend goes out now.
+    const anterior = ultimoCorreo(c.base, asignacion.id)
+    if (
+      !anterior ||
+      anterior.atendido ||
+      (anterior.estado !== 'rebotado' && anterior.estado !== 'fallido')
+    ) {
+      return error(409, 'Solo se reenvía cuando el envío anterior rebotó o falló')
+    }
+    anterior.atendido = true
     const estado = correoDe(
       c.base,
       c.revista,
       articulo,
+      asignacion.id,
       par,
-      tipo,
-      asunto,
-      recordatorio ? 'en-cola' : 'entregado',
+      'reenvio',
+      'Reenvío de la invitación a evaluar',
+      'enviado',
     )
-    if (!recordatorio && asignacion.estado === 'invitado') {
-      asignacion.estado = 'segundo-intento'
-      asignacion.intento = 2
-    }
     auditar(
       c.base,
       c.revista,
       articulo.id,
-      'asignacion',
-      recordatorio
-        ? `Programó el recordatorio al par ${asignacion.orden}`
-        : `Reenvió la invitación al par ${asignacion.orden}`,
+      'envio',
+      `Reenvió la invitación al par ${asignacion.orden} tras corregir el envío`,
       c.usuario.nombre,
     )
     if (estado === 'rebotado') {
@@ -340,7 +351,7 @@ export const handlersAsignaciones = [
         c.base,
         c.revista,
         asignacion.articuloId,
-        'asignacion',
+        'respuesta',
         `Registró que el par ${asignacion.orden} aceptó`,
         c.usuario.nombre,
       )
@@ -352,7 +363,7 @@ export const handlersAsignaciones = [
         c.base,
         c.revista,
         asignacion.articuloId,
-        'asignacion',
+        'respuesta',
         `Registró que el par ${asignacion.orden} no aceptó esta invitación`,
         c.usuario.nombre,
       )

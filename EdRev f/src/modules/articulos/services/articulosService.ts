@@ -15,7 +15,7 @@ import type {
   EstadoArticulo,
 } from '@/types/articulo'
 import type { DatosAutor } from '@/types/autor'
-import type { HistorialArticulo, Observacion } from '@/types/historial'
+import type { HistorialArticulo } from '@/types/historial'
 import type { Revista } from '@/types/revista'
 
 function json(cuerpo: unknown): { body: string } {
@@ -92,21 +92,6 @@ export function registrarRonda(
 export function trasladarArticulo(revista: Revista, id: string): Promise<ArticuloDetalle> {
   return solicitar<ArticuloDetalle>(`/${revista}/articulos/${encodeURIComponent(id)}/trasladar`, {
     method: 'POST',
-  })
-}
-
-export function listarObservaciones(revista: Revista, id: string): Promise<Observacion[]> {
-  return solicitar<Observacion[]>(`/${revista}/articulos/${encodeURIComponent(id)}/observaciones`)
-}
-
-export function agregarObservacion(
-  revista: Revista,
-  id: string,
-  texto: string,
-): Promise<Observacion> {
-  return solicitar<Observacion>(`/${revista}/articulos/${encodeURIComponent(id)}/observaciones`, {
-    method: 'POST',
-    ...json({ texto }),
   })
 }
 

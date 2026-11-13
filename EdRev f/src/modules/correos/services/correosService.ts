@@ -20,14 +20,16 @@ export interface FiltrosCorreos {
 export interface RespuestaCorreos {
   items: CorreoConArticulo[]
   total: number
-  entregados: number
+  enviados: number
+  /** Bounced and failed mails still waiting for a correction or a retry. */
   rebotados: number
+  fallidos: number
   enCola: number
 }
 
 export interface ResultadoReintentos {
   reintentados: number
-  entregados: number
+  enviados: number
   siguenFallando: number
 }
 

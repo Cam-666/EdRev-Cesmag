@@ -11,7 +11,7 @@ import type {
   TipoArticulo,
 } from '@/types/articulo'
 import type { Autor } from '@/types/autor'
-import type { CorreoEnviado, EntradaAuditoria, Observacion } from '@/types/historial'
+import type { CorreoEnviado, EntradaAuditoria } from '@/types/historial'
 import type {
   Asignacion,
   ConceptoPar,
@@ -29,7 +29,6 @@ export interface SeedRevista {
   asignaciones: Asignacion[]
   constancias: Constancia[]
   correos: CorreoEnviado[]
-  observaciones: Observacion[]
   auditoria: EntradaAuditoria[]
 }
 
@@ -82,13 +81,6 @@ export interface ArtSeed {
   arch?: [string, string]
 }
 
-export interface ObsSeed {
-  n: string
-  f: string
-  u: string
-  t: string
-}
-
 export interface CorreoSeed {
   n: string
   tipo: CorreoEnviado['tipo']
@@ -102,7 +94,6 @@ export interface EntradaSeed {
   autores: AutorSeed[]
   pares: ParSeed[]
   articulos: ArtSeed[]
-  observaciones?: ObsSeed[]
   correosExtra?: CorreoSeed[]
 }
 
@@ -280,22 +271,26 @@ export function construirSeed(entrada: EntradaSeed): SeedRevista {
         id: `${p}-cor-${nid()}`,
         revista,
         articuloId: s.n,
+        asignacionId: asigId,
         tipo: 'invitacion',
         destinatario: par.correo,
         asunto: `Invitación a evaluar un artículo · ${revista === 'reep' ? 'Educación y Pedagogía' : 'Investigium IRE'}`,
         fechaEnvio: fechaHora(a.inv, '08:17'),
-        estado: 'entregado',
+        estado: 'enviado',
+        atendido: false,
       })
       if (intento >= 2) {
         correos.push({
           id: `${p}-cor-${nid()}`,
           revista,
           articuloId: s.n,
-          tipo: 'reenvio',
+          asignacionId: asigId,
+          tipo: 'segundo-intento',
           destinatario: par.correo,
-          asunto: 'Reenvío de la invitación a evaluar',
+          asunto: 'Segundo intento: invitación a evaluar un artículo',
           fechaEnvio: fechaHora(sumarDias(a.inv, 7), '08:02'),
-          estado: 'entregado',
+          estado: 'enviado',
+          atendido: false,
         })
       }
       if (a.ent) {
@@ -333,11 +328,13 @@ export function construirSeed(entrada: EntradaSeed): SeedRevista {
             id: `${p}-cor-${nid()}`,
             revista,
             articuloId: s.n,
+            asignacionId: asigId,
             tipo: 'agradecimiento',
             destinatario: par.correo,
             asunto: 'Gracias por su evaluación · constancia adjunta',
             fechaEnvio: f,
-            estado: 'entregado',
+            estado: 'enviado',
+            atendido: false,
           })
         }
       }
@@ -357,18 +354,20 @@ export function construirSeed(entrada: EntradaSeed): SeedRevista {
   }
 
   for (const c of entrada.correosExtra ?? []) {
+    const par = pares.find((x) => x.correo === c.dest)
+    const asignacion = asignaciones.find((a) => a.articuloId === c.n && a.parId === par?.id)
+    if (!asignacion) throw new Error(`Seed ${revista}: no assignment for the mail to ${c.dest}`)
     correos.push({
       id: `${p}-cor-${nid()}`,
       revista,
       articuloId: c.n,
+      asignacionId: asignacion.id,
       tipo: c.tipo,
       destinatario: c.dest,
-      asunto:
-        c.tipo === 'recordatorio'
-          ? 'Recordatorio: invitación a evaluar un artículo'
-          : 'Reenvío de la invitación a evaluar',
+      asunto: 'Segundo intento: invitación a evaluar un artículo',
       fechaEnvio: c.f,
       estado: c.e,
+      atendido: false,
     })
     if (c.e === 'rebotado') {
       auditoria.push({
@@ -383,14 +382,6 @@ export function construirSeed(entrada: EntradaSeed): SeedRevista {
     }
   }
 
-  const observaciones: Observacion[] = (entrada.observaciones ?? []).map((o) => ({
-    id: `${p}-obs-${nid()}`,
-    articuloId: o.n,
-    texto: o.t,
-    fecha: o.f,
-    usuario: o.u,
-  }))
-
   const porFecha = (a: { fecha: string }, b: { fecha: string }) => (a.fecha < b.fecha ? 1 : -1)
   return {
     autores,
@@ -399,7 +390,6 @@ export function construirSeed(entrada: EntradaSeed): SeedRevista {
     asignaciones,
     constancias,
     correos: correos.sort((a, b) => (a.fechaEnvio < b.fechaEnvio ? 1 : -1)),
-    observaciones: observaciones.sort(porFecha),
     auditoria: auditoria.sort(porFecha),
   }
 }

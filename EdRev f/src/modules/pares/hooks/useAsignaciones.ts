@@ -1,7 +1,7 @@
 /*
  * Hooks of the assignment flow: assign an available peer or a new candidate (the server sends
  * the invitation),
- * resend / reminder, peer's answer, delivery mark and concept. Covers: RF-17, RF-19..RF-29.
+ * resend after a bounce or failure, peer's answer, delivery mark and concept. Covers: RF-17, RF-19..RF-29.
  */
 import { useMutation } from '@tanstack/react-query'
 import {
@@ -28,13 +28,7 @@ export function useReenviarInvitacion() {
   const { revista } = useRevista()
   const invalidar = useInvalidarPares()
   return useMutation({
-    mutationFn: ({
-      asignacionId,
-      tipo,
-    }: {
-      asignacionId: string
-      tipo: 'reenvio' | 'recordatorio'
-    }) => reenviarInvitacion(revista, asignacionId, tipo),
+    mutationFn: (asignacionId: string) => reenviarInvitacion(revista, asignacionId),
     onSuccess: invalidar,
   })
 }

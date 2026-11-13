@@ -19,7 +19,6 @@ import { ArticuloAutoresPage } from '@/modules/articulos/pages/ArticuloAutoresPa
 import { ArticuloComitePage } from '@/modules/articulos/pages/ArticuloComitePage'
 import { ArticuloHistorialPage } from '@/modules/articulos/pages/ArticuloHistorialPage'
 import { ArticuloNuevoPage } from '@/modules/articulos/pages/ArticuloNuevoPage'
-import { ArticuloObservacionesPage } from '@/modules/articulos/pages/ArticuloObservacionesPage'
 import { ArticuloParesPage } from '@/modules/articulos/pages/ArticuloParesPage'
 import { ArticuloReabrirPage } from '@/modules/articulos/pages/ArticuloReabrirPage'
 import { ArticuloResumenPage } from '@/modules/articulos/pages/ArticuloResumenPage'
@@ -84,7 +83,6 @@ export const rutasPrivadas: RouteObject[] = [
                   { path: 'comite', element: <ArticuloComitePage /> },
                   { path: 'autores', element: <ArticuloAutoresPage /> },
                   { path: 'pares', element: <ArticuloParesPage /> },
-                  { path: 'observaciones', element: <ArticuloObservacionesPage /> },
                   { path: 'historial', element: <ArticuloHistorialPage /> },
                   {
                     element: <RutaPorPermiso accion="reabrir-articulo" encabezado="h2" />,

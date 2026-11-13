@@ -165,43 +165,25 @@ describe('bounced invitation (RF-27)', () => {
 })
 
 describe('actions on an assigned peer', () => {
-  it('both profiles can resend, send a reminder and register the answer', async () => {
-    const admin = montarRuta('/reep/articulos/2026-012/pares')
-    expect(
-      await screen.findByRole('button', { name: /Reenviar invitación a Rodrigo Eraso/ }),
-    ).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: /Recordatorio a Rodrigo Eraso/ })).toBeInTheDocument()
-    expect(
-      screen.getByRole('button', { name: /Registrar respuesta de Rodrigo Eraso/ }),
-    ).toBeInTheDocument()
-    admin.unmount()
-
+  it('no reminder and no manual resend: only the answer, while the invitation was delivered (D7)', async () => {
     montarRuta('/reep/articulos/2026-012/pares', AUXILIAR)
     expect(
-      await screen.findByRole('button', { name: /Reenviar invitación a Rodrigo Eraso/ }),
+      await screen.findByRole('button', { name: /Registrar respuesta de Rodrigo Eraso/ }),
     ).toBeInTheDocument()
-    expect(
-      screen.getByRole('button', { name: /Registrar respuesta de Rodrigo Eraso/ }),
-    ).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /Recordatorio/ })).toBeNull()
+    expect(screen.queryByRole('button', { name: /Reenviar invitación/ })).toBeNull()
+    expect(screen.getAllByText('2.º intento').length).toBeGreaterThan(0)
   })
 
-  it('a reminder is queued and says so', async () => {
-    const { user } = montarRuta('/reep/articulos/2026-012/pares')
-    await user.click(await screen.findByRole('button', { name: /Recordatorio a Rodrigo Eraso/ }))
-    expect(
-      await screen.findByText('Recordatorio a Rodrigo Eraso en cola de envío.'),
-    ).toBeInTheDocument()
-  })
-
-  it('resending moves a first invitation to "2.º intento"', async () => {
-    const { user } = montarRuta('/reep/articulos/2026-009/pares')
-    await user.click(
-      await screen.findByRole('button', { name: /Reenviar invitación a Luz Marina Burbano/ }),
-    )
-    expect(
-      await screen.findByText('Invitación reenviada a Luz Marina Burbano.'),
-    ).toBeInTheDocument()
-    expect(await screen.findAllByText('2.º intento')).not.toHaveLength(0)
+  it('an issued constancia can be downloaded and resent from the article (HU-23)', async () => {
+    const { user } = montarRuta('/reep/articulos/2026-034/pares')
+    const descargar = (
+      await screen.findAllByRole('button', { name: /^Descargar constancia de/ })
+    )[0]
+    expect(descargar).toBeInTheDocument()
+    const reenviar = (await screen.findAllByRole('button', { name: /^Reenviar constancia a/ }))[0]
+    await user.click(reenviar as HTMLElement)
+    expect(await screen.findByText(/^Constancia reenviada a/)).toBeInTheDocument()
   })
 
   it('no answer after the 2nd attempt blocks the peer, after warning about it', async () => {

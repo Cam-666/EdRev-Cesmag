@@ -56,7 +56,7 @@ describe('constancias screen', () => {
 })
 
 describe('sent mail screen', () => {
-  it('shows a bounced address, corrects it and marks the failed one as reintentado', async () => {
+  it('shows a bounced address, corrects it and sends a «Reenvío por corrección»', async () => {
     const { user } = montarRuta('/reep/correos')
     await screen.findByRole('button', { name: 'Corregir y reenviar' })
     await user.click(screen.getByRole('button', { name: 'Corregir y reenviar' }))
@@ -66,7 +66,9 @@ describe('sent mail screen', () => {
     await user.type(campo, 'corregido@universidad.edu.co')
     await user.click(within(dialogo).getByRole('button', { name: 'Corregir y reenviar' }))
     await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull())
-    expect((await screen.findAllByText('Reintentado')).length).toBeGreaterThan(0)
+    expect((await screen.findAllByText('Corregido y reenviado')).length).toBeGreaterThan(0)
+    expect(screen.getAllByText('Reenvío por corrección').length).toBeGreaterThan(0)
+    expect(screen.queryByRole('button', { name: 'Corregir y reenviar' })).toBeNull()
   })
 
   it('"Reintentar fallidos" clears the failures; the Auxiliar can also retry', async () => {
@@ -114,6 +116,12 @@ describe('dashboards', () => {
 })
 
 describe('reports', () => {
+  it('shows the rejected articles of the period (RF-38)', async () => {
+    montarRuta('/informes')
+    expect(await screen.findByText('Rechazados')).toBeInTheDocument()
+    expect(await screen.findByText('Artículos rechazados')).toBeInTheDocument()
+  })
+
   it('generates the comparative report', async () => {
     montarRuta('/informes')
     expect(
@@ -200,6 +208,22 @@ describe('administration', () => {
     await user.click(screen.getByRole('button', { name: 'Usar en los envíos' }))
     await waitFor(() => expect(lista).toHaveTextContent('Invitación en inglés (en uso)'))
     expect(screen.getByText('En uso')).toBeInTheDocument()
+  })
+
+  it('the audit filter offers the action types of the data model (D13)', async () => {
+    const { user } = montarRuta('/administracion/auditoria')
+    await user.click(await screen.findByRole('combobox', { name: 'Tipo de acción' }))
+    for (const tipo of [
+      'Respuesta del par',
+      'Envío de correo',
+      'Desbloqueo',
+      'Cambio de revista',
+      'Cierre del proceso',
+      'Migración',
+      'Eliminación',
+    ]) {
+      expect(await screen.findByRole('option', { name: tipo })).toBeInTheDocument()
+    }
   })
 
   it('the audit log shows the two journals and can be filtered by journal', async () => {

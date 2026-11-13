@@ -1,7 +1,7 @@
 /*
  * TablaCorreosRevista — the journal's sent-mail log: type, recipient, article, date and result
- * (symbol + text, never color alone). Each failed mail offers "Corregir", each queued one
- * "Reintentar", the rest "Ver". Covers: RF-26, RF-27, RF-28, HU-18, HU-20, RNF-12.
+ * (symbol + text, never color alone). A bounced mail offers "Corregir" (fix the address and
+ * resend), a failed or queued one "Reintentar", the rest "Ver". Covers: RF-26, RF-27, RF-28, HU-18, HU-20, RNF-12.
  */
 import { ETIQUETA_TIPO_CORREO } from '../config/listas'
 import type { CorreoConArticulo } from '../services/correosService'
@@ -52,12 +52,14 @@ export function TablaCorreosRevista({
           numeroOjs={c.numeroOjs}
           fechaEnvio={c.fechaEnvio}
           resultado={c.estado}
+          atendido={c.atendido}
           accion={
-            c.estado === 'rebotado' && puedeReintentar ? (
+            c.estado === 'rebotado' && !c.atendido && puedeReintentar ? (
               <Boton variante="secundario" tamano="sm" onClick={() => onCorregir(c)}>
                 Corregir <span className="sr-only">el correo a {c.destinatario}</span>
               </Boton>
-            ) : c.estado === 'en-cola' && puedeReintentar ? (
+            ) : (c.estado === 'en-cola' || (c.estado === 'fallido' && !c.atendido)) &&
+              puedeReintentar ? (
               <Boton variante="secundario" tamano="sm" onClick={() => onReintentar(c)}>
                 Reintentar <span className="sr-only">el correo a {c.destinatario}</span>
               </Boton>

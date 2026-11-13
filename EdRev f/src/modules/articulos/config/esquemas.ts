@@ -64,11 +64,6 @@ export const esquemaRonda = z.object({
 })
 export type RondaForm = z.infer<typeof esquemaRonda>
 
-export const esquemaObservacion = z.object({
-  texto: z.string().trim().min(1, 'Escriba la observación.'),
-})
-export type ObservacionForm = z.infer<typeof esquemaObservacion>
-
 export const esquemaReapertura = z.object({
   motivo: z.string().trim().min(1, 'Escriba el motivo de la reapertura.'),
   estado: z.enum(['en-revision', 'postulado']),

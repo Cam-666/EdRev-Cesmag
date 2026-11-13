@@ -1,4 +1,4 @@
-import type { EstadoCorreo } from './historial'
+import type { EstadoCorreo, TipoCorreo } from './historial'
 import type { Revista } from './revista'
 
 export type MotivoBloqueo = 'sin-respuesta' | 'no-desea'
@@ -61,6 +61,8 @@ export interface AsignacionDetalle extends Asignacion {
   constanciaEmitida: boolean
   /** The constancia of a delivered evaluation (pending or issued), to issue it from the sheet. */
   constanciaId: string | null
+  /** The last invitation mail of this peer: a bounced or failed one can be resent (RF-28). */
+  ultimoCorreo: { tipo: TipoCorreo; estado: EstadoCorreo; atendido: boolean } | null
 }
 
 /** Answer of «Marcar entrega»: the constancia that can be issued right away (RF-23). */

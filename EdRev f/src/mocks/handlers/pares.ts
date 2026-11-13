@@ -276,7 +276,7 @@ export const handlersPares = [
       id: `${c.revista}-aud-n${c.base.auditoria.length + 1}`,
       revista: c.revista,
       articuloId: null,
-      tipo: 'bloqueo',
+      tipo: 'desbloqueo',
       accion: `Desbloqueó al par ${par.nombre}: ${motivo.trim()}`,
       fecha: ahoraIso(),
       usuario: c.usuario.nombre,

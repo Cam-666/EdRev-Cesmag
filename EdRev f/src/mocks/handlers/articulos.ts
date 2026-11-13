@@ -1,12 +1,13 @@
 /*
  * MSW handlers for articles of a journal: list with filters and pagination, sheet, creation,
  * edition, rounds of the committee review with the anti-plagiarism report, change of journal
- * during that review, observations, history, closing (approved / rejected / archived) and reopening.
+ * during that review, history, closing (approved / rejected / archived) and reopening.
  * Covers: RF-01..RF-08, RF-26, RF-35, RF-36, RF-41. Simulates the backend; permissions are
  * enforced here the way the real API will (the frontend guards are only for experience).
  */
 import { http, HttpResponse } from 'msw'
 import { autorPorId, baseDe, registrarAutor } from '../db'
+import { ultimoCorreo } from './asignaciones'
 import type { SeedRevista } from '../seed/fabrica'
 import { ahoraIso, contexto, error, sinTildes } from './util'
 import { puedeRegistrarRonda, puedeTrasladar } from '@/lib/dominio/comite'
@@ -70,6 +71,10 @@ function detalle(base: SeedRevista, a: Articulo): ArticuloDetalle {
           par: { id: par.id, nombre: par.nombre, correo: par.correo, universidad: par.universidad },
           constanciaEmitida: constancia?.estado === 'emitida',
           constanciaId: constancia?.id ?? null,
+          ultimoCorreo: (() => {
+            const u = ultimoCorreo(base, x.id)
+            return u ? { tipo: u.tipo, estado: u.estado, atendido: u.atendido } : null
+          })(),
         },
       ]
     })
@@ -77,7 +82,6 @@ function detalle(base: SeedRevista, a: Articulo): ArticuloDetalle {
     ...resto,
     autores,
     asignaciones,
-    totalObservaciones: base.observaciones.filter((o) => o.articuloId === a.id).length,
   }
 }
 
@@ -321,8 +325,6 @@ export const handlersArticulos = [
     // The article moves with its own records; nothing of the old journal keeps pointing at it.
     const propio = (x: { articuloId: string | null }) => x.articuloId === articulo.id
     c.base.articulos = c.base.articulos.filter((a) => a.id !== articulo.id)
-    otra.observaciones.unshift(...c.base.observaciones.filter(propio))
-    c.base.observaciones = c.base.observaciones.filter((x) => !propio(x))
     otra.auditoria.unshift(
       ...c.base.auditoria.filter(propio).map((x) => ({ ...x, revista: destino })),
     )
@@ -370,39 +372,6 @@ export const handlersArticulos = [
     return HttpResponse.json(detalle(c.base, articulo), { status: 201 })
   }),
 
-  http.get('*/api/:revista/articulos/:id/observaciones', ({ params, request }) => {
-    const c = contexto(params, request)
-    if (!c.ok) return c.respuesta
-    return HttpResponse.json(c.base.observaciones.filter((o) => o.articuloId === params.id))
-  }),
-
-  http.post('*/api/:revista/articulos/:id/observaciones', async ({ params, request }) => {
-    const c = contexto(params, request, 'registrar-datos')
-    if (!c.ok) return c.respuesta
-    const articulo = c.base.articulos.find((a) => a.id === params.id)
-    if (!articulo) return error(404, 'Artículo no encontrado')
-    const { texto } = (await request.json()) as { texto: string }
-    if (!texto.trim()) return error(422, 'La observación no puede estar vacía')
-    const nueva = {
-      id: `${c.revista}-obs-n${c.base.observaciones.length + 1}`,
-      articuloId: articulo.id,
-      texto: texto.trim(),
-      fecha: ahoraIso(),
-      usuario: c.usuario.nombre,
-    }
-    // Never overwrites an earlier one (HU-04): each observation is its own record.
-    c.base.observaciones.unshift(nueva)
-    auditar(
-      c.base,
-      c.revista,
-      articulo.id,
-      'observacion',
-      'Agregó una observación',
-      c.usuario.nombre,
-    )
-    return HttpResponse.json(nueva, { status: 201 })
-  }),
-
   http.get('*/api/:revista/articulos/:id/historial', ({ params, request }) => {
     const c = contexto(params, request)
     if (!c.ok) return c.respuesta
@@ -434,20 +403,13 @@ export const handlersArticulos = [
       articulo.archivadoEn = ahoraIso()
       articulo.motivoArchivo = cierre.motivo.trim()
     }
-    const etiqueta = ETIQUETA_CIERRE[cierre.estado]
-    c.base.observaciones.unshift({
-      id: `${c.revista}-obs-n${c.base.observaciones.length + 1}`,
-      articuloId: articulo.id,
-      texto: `Se cerró el proceso como ${etiqueta}: ${cierre.motivo.trim()}`,
-      fecha: ahoraIso(),
-      usuario: c.usuario.nombre,
-    })
+    // The reason stays in the history (D16: no separate notes).
     auditar(
       c.base,
       c.revista,
       articulo.id,
       'cierre',
-      `Cerró el proceso como ${etiqueta}`,
+      `Cerró el proceso como ${ETIQUETA_CIERRE[cierre.estado]}: ${cierre.motivo.trim()}`,
       c.usuario.nombre,
     )
     return HttpResponse.json(detalle(c.base, articulo))
@@ -466,19 +428,12 @@ export const handlersArticulos = [
     articulo.estado = estado
     articulo.archivadoEn = null
     articulo.motivoArchivo = null
-    c.base.observaciones.unshift({
-      id: `${c.revista}-obs-n${c.base.observaciones.length + 1}`,
-      articuloId: articulo.id,
-      texto: `Se retomó el proceso: ${motivo.trim()}`,
-      fecha: ahoraIso(),
-      usuario: c.usuario.nombre,
-    })
     auditar(
       c.base,
       c.revista,
       articulo.id,
       'reapertura',
-      'Retomó el proceso del artículo',
+      `Retomó el proceso: ${motivo.trim()}`,
       c.usuario.nombre,
     )
     return HttpResponse.json(detalle(c.base, articulo))

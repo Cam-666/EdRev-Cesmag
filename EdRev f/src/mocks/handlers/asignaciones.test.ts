@@ -243,7 +243,7 @@ describe('assignment and invitation (mock)', () => {
     expect(r.status).toBe(201)
     const cuerpo = await json<ResultadoAsignacion>(r)
     expect(cuerpo.asignacion).toMatchObject({ orden: 1, estado: 'invitado', intento: 1 })
-    expect(cuerpo.correo).toEqual({ estado: 'entregado', destinatario: par.correo })
+    expect(cuerpo.correo).toEqual({ estado: 'enviado', destinatario: par.correo })
 
     const h = await json<HistorialArticulo>(
       await llamar(`/reep/articulos/${articulo.id}/historial`),
@@ -297,7 +297,7 @@ describe('assignment and invitation (mock)', () => {
       nombre: 'Marta Lucía Gómez',
       correo: 'ml.gomez@udenar.edu.co',
     })
-    expect(cuerpo.correo.estado).toBe('entregado')
+    expect(cuerpo.correo.estado).toBe('enviado')
     const base = await json<ListaPares>(await llamar('/reep/pares?estado=todos&q=gomez'))
     expect(base.items.map((p) => p.correo)).toContain('ml.gomez@udenar.edu.co')
     const enIre = await json<ListaPares>(await llamar('/ire/pares?estado=todos&q=gomez'))
@@ -388,41 +388,43 @@ describe('assignment and invitation (mock)', () => {
       cuerpo: { correo: 'par.corregido@univalle.edu.co' },
     })
     const reenvio = await json<ResultadoAsignacion>(
-      await llamar(`/reep/asignaciones/${r.asignacion.id}/reenviar`, {
-        metodo: 'POST',
-        cuerpo: { tipo: 'reenvio' },
-      }),
+      await llamar(`/reep/asignaciones/${r.asignacion.id}/reenviar`, { metodo: 'POST' }),
     )
-    expect(reenvio.correo.estado).toBe('entregado')
+    expect(reenvio.correo.estado).toBe('enviado')
+    // RF-28: the resend after a correction is not a new attempt, and it is allowed only once
+    expect(reenvio.asignacion.intento).toBe(r.asignacion.intento)
+    expect(
+      (await llamar(`/reep/asignaciones/${r.asignacion.id}/reenviar`, { metodo: 'POST' })).status,
+    ).toBe(409)
     const h = await json<HistorialArticulo>(
       await llamar(`/reep/articulos/${articulo.id}/historial`),
     )
-    expect(h.correos.map((x) => x.estado)).toEqual(
-      expect.arrayContaining(['rebotado', 'entregado']),
-    )
+    expect(h.correos.map((x) => x.estado)).toEqual(expect.arrayContaining(['rebotado', 'enviado']))
   })
 
-  it('resending moves to 2nd attempt; a missing answer after it leaves «Sin respuesta» and blocks', async () => {
+  it('the invitation cannot be resent by hand unless the send bounced or failed (RF-28, D7)', async () => {
     const articulo = await articuloNuevo('reep', '2026-045', 'reep-au-3')
     const [par] = await disponibles('reep', articulo.id)
     if (!par) throw new Error('no available peer')
     const r = await json<ResultadoAsignacion>(await asignar('reep', articulo.id, par.id))
-    const id = r.asignacion.id
+    const reenvio = await llamar(`/reep/asignaciones/${r.asignacion.id}/reenviar`, {
+      metodo: 'POST',
+    })
+    expect(reenvio.status).toBe(409)
+    // «Sin respuesta» only after the (automatic) second attempt
+    expect((await responder(r.asignacion.id, 'sin-respuesta')).status).toBe(409)
+  })
 
-    expect((await responder(id, 'sin-respuesta')).status).toBe(409) // only after the 2nd attempt
-    const reenvio = await json<ResultadoAsignacion>(
-      await llamar(`/reep/asignaciones/${id}/reenviar`, {
-        metodo: 'POST',
-        cuerpo: { tipo: 'reenvio' },
-      }),
-    )
-    expect(reenvio.asignacion).toMatchObject({ estado: 'segundo-intento', intento: 2 })
-    const sin = await responder(id, 'sin-respuesta')
+  it('a missing answer after the 2nd attempt leaves «Sin respuesta» and blocks the peer', async () => {
+    const ficha = await json<ArticuloDetalle>(await llamar('/reep/articulos/2026-012'))
+    const segundo = ficha.asignaciones.find((a) => a.estado === 'segundo-intento')
+    if (!segundo) throw new Error('seed missing a 2nd attempt')
+    const sin = await responder(segundo.id, 'sin-respuesta')
     expect((await json<{ estado: string }>(sin)).estado).toBe('sin-respuesta')
-    const ficha = await json<ParDetalle>(await llamar(`/reep/pares/${par.id}`))
-    expect(ficha.bloqueo?.motivo).toBe('sin-respuesta')
+    const par = await json<ParDetalle>(await llamar(`/reep/pares/${segundo.par.id}`))
+    expect(par.bloqueo?.motivo).toBe('sin-respuesta')
     const otro = await articuloNuevo('reep', '2026-046', 'reep-au-3')
-    expect((await asignar('reep', otro.id, par.id)).status).toBe(409)
+    expect((await asignar('reep', otro.id, segundo.par.id)).status).toBe(409)
   })
 
   it('«No desea participar más» blocks the peer as "no desea participar"', async () => {
@@ -481,20 +483,5 @@ describe('assignment and invitation (mock)', () => {
     }
     expect((await tresPares('2026-049', 'publicable')).asignacion.esDesempate).toBe(false)
     expect((await tresPares('2026-050', 'no-publicable')).asignacion.esDesempate).toBe(true)
-  })
-
-  it('a reminder is queued, not sent now (simulated)', async () => {
-    const articulo = await articuloNuevo('reep', '2026-051', 'reep-au-3')
-    const [par] = await disponibles('reep', articulo.id)
-    if (!par) throw new Error('no available peer')
-    const r = await json<ResultadoAsignacion>(await asignar('reep', articulo.id, par.id))
-    const rec = await json<ResultadoAsignacion>(
-      await llamar(`/reep/asignaciones/${r.asignacion.id}/reenviar`, {
-        metodo: 'POST',
-        cuerpo: { tipo: 'recordatorio' },
-      }),
-    )
-    expect(rec.correo.estado).toBe('en-cola')
-    expect(rec.asignacion.estado).toBe('invitado')
   })
 })

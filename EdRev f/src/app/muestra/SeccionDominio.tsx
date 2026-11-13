@@ -74,7 +74,7 @@ export function SeccionDominio() {
                 tipo="Agradecimiento con constancia"
                 destinatario="lm.burbano@udenar.edu.co"
                 fechaEnvio="2026-10-26T16:02:00"
-                resultado="entregado"
+                resultado="enviado"
               />
             ) : f === 'b' ? (
               <FilaCorreoEnviado

@@ -102,11 +102,13 @@ function emitir(
   })
   const estado: EstadoCorreo = fila.par.correo.toLowerCase().endsWith(DOMINIO_QUE_REBOTA)
     ? 'rebotado'
-    : 'entregado'
+    : 'enviado'
   base.correos.unshift({
     id: `${revista}-cor-n${base.correos.length + 1}`,
     revista,
     articuloId: fila.articulo.id,
+    asignacionId: asignacion.id,
+    atendido: false,
     tipo: 'agradecimiento',
     destinatario: fila.par.correo,
     asunto,

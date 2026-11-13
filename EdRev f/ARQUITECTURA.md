@@ -169,3 +169,19 @@ tiene «Profesión o título». La invitación admite `{{numero}}` (solicitud OJ
 Autores: directorio común a las dos revistas (filtrable por revista); cada autor tiene su pantalla
 (`/autores/:id`) con todos sus artículos y su revista. Las pantallas de detalle tienen «Volver». El panel
 lateral queda fijo al desplazar el contenido.
+
+## Fase 7: alineación con las decisiones del modelo de datos v3.8
+
+- Sin «Mantener la sesión iniciada» (D15, RNF-05): la sesión vive solo en la pestaña (sessionStorage).
+- Sin casilla de autorización de datos del par (D10).
+- Correos (RF-26 a RF-29, D7, D12): tipos Invitación · 2.º intento · Reenvío por corrección · Agradecimiento con
+  constancia; resultados En cola · Enviado · Rebotado · Fallido. No hay recordatorio: el 2.º intento es
+  automático. «Reenviar invitación» solo aparece cuando el último envío rebotó o falló (no cuenta como intento);
+  «Corregir y reenviar» crea un correo nuevo y deja el anterior como atendido; «Reintentar fallidos» reenvía
+  los fallidos y la cola. Cada correo pertenece a una evaluación (`asignacionId`).
+- Sin pestaña Observaciones (D16): la ficha tiene las cinco pestañas de RF-36 y los motivos de cierre, reapertura
+  y cambios quedan en el Historial.
+- Auditoría con los tipos de acción de la sección 5 (D13), incluidos Respuesta del par, Envío de correo,
+  Desbloqueo, Cierre del proceso, Migración y Eliminación.
+- Informe con artículos rechazados (RF-38) y el concepto «Pendiente formato de evaluación» (D14).
+- La constancia emitida se descarga y se reenvía también desde la ficha del artículo (HU-23).

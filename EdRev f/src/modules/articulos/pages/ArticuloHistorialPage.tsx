@@ -5,7 +5,7 @@
 import { ListaAuditoria } from '../components/ListaAuditoria'
 import { TablaCorreos } from '../components/TablaCorreos'
 import { useArticuloActual } from '../hooks/useArticuloActual'
-import { useHistorial } from '../hooks/useObservaciones'
+import { useHistorial } from '../hooks/useHistorial'
 import { EstadoConsulta } from '@/components/common/EstadoConsulta'
 
 export function ArticuloHistorialPage() {

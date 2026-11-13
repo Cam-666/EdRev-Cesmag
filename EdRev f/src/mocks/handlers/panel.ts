@@ -138,6 +138,15 @@ function informe(periodo: string, filtro: FiltroRevistaInforme): Informe {
       ),
       filtro,
     ),
+    rechazados: indicador(
+      por(
+        (b) =>
+          b.articulos.filter(
+            (a) => a.estado === 'rechazado' && enRango(a.fechaPostulacion, desde, hasta),
+          ).length,
+      ),
+      filtro,
+    ),
     evaluacionesEntregadas: indicador(
       { reep: entregas.reep.length, ire: entregas.ire.length },
       filtro,
@@ -164,6 +173,7 @@ function informe(periodo: string, filtro: FiltroRevistaInforme): Informe {
       conModificaciones: conceptos.filter((a) => a.concepto === 'publicable-con-modificaciones')
         .length,
       noPublicable: conceptos.filter((a) => a.concepto === 'no-publicable').length,
+      pendienteFormato: conceptos.filter((a) => a.concepto === 'pendiente-formato').length,
     },
   }
 }
