@@ -45,9 +45,8 @@ describe('login (/acceso)', () => {
       'placeholder',
       'nombre.apellido@unicesmag.edu.co',
     )
-    expect(
-      screen.getByRole('checkbox', { name: 'Mantener la sesión iniciada' }),
-    ).toBeInTheDocument()
+    // RNF-05 / D15: there is no "keep me signed in"
+    expect(screen.queryByRole('checkbox', { name: /Mantener la sesión/ })).toBeNull()
     expect(screen.getByRole('link', { name: '¿Olvidó su contraseña?' })).toHaveAttribute(
       'href',
       '/acceso/recuperar',
@@ -112,14 +111,6 @@ describe('login (/acceso)', () => {
     await waitFor(() => expect(router.state.location.pathname).toBe('/inicio'))
     expect(await screen.findByText('Ma. Camila Mendoza')).toBeInTheDocument()
     expect(window.sessionStorage.getItem('edrev.sesion')).toContain(ADMIN.correo)
-  })
-
-  it('"Mantener la sesión iniciada" keeps the profile in localStorage', async () => {
-    const { user } = montar('/acceso')
-    await user.click(screen.getByRole('checkbox', { name: 'Mantener la sesión iniciada' }))
-    await ingresar(user, ADMIN.correo, CONTRASENA_DEMO)
-    await waitFor(() => expect(window.localStorage.getItem('edrev.sesion')).toContain(ADMIN.correo))
-    expect(window.sessionStorage.getItem('edrev.sesion')).toBeNull()
   })
 
   it('returns to the page the user was trying to open', async () => {

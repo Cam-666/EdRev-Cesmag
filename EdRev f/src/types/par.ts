@@ -15,8 +15,6 @@ export interface ParEvaluador {
   /** Free-text thematic area (RF-13). */
   area: string
   bloqueo: { motivo: MotivoBloqueo; fecha: string } | null
-  /** ISO date of the data-treatment authorization (RNF-06). */
-  autorizoDatosEn: string | null
 }
 
 /** State of a peer in an article (RF-22). `segundo-intento` is «Invitado» after the resend. */
@@ -107,8 +105,6 @@ export interface NuevoPar {
   correo: string
   universidad: string
   area: string
-  /** RNF-06: authorization of personal-data treatment; its date is stored. */
-  autorizoDatos: boolean
 }
 
 export interface Conflicto {

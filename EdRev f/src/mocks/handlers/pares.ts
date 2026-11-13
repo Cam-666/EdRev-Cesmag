@@ -200,7 +200,6 @@ export const handlersPares = [
       universidad: datos.universidad.trim(),
       area: datos.area.trim(),
       bloqueo: null,
-      autorizoDatosEn: datos.autorizoDatos ? ahoraIso().slice(0, 10) : null,
     }
     c.base.pares.push(par)
     c.base.auditoria.unshift({

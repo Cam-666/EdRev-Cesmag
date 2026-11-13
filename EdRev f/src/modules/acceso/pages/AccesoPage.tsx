@@ -2,7 +2,6 @@
  * AccesoPage — Iniciar sesión (/acceso), with its two Figma variants: wrong credentials /
  * lockout (alert inside the form) and "Su sesión expiró" after 30 minutes of inactivity.
  * Covers: RF-39, HU-28, RNF-04, RNF-05, RNF-11.
- * Pending requirements (no RF/HU): attempt lockout, "mantener la sesión" vs inactivity logout.
  */
 import { Navigate, useLocation } from 'react-router-dom'
 import { POLITICA_ACCESO } from '../config/politicaAcceso'

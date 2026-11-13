@@ -31,9 +31,9 @@ export function SesionProvider({ usuarioInicial, children }: SesionProviderProps
   const [usuario, setUsuario] = useState<Usuario | null>(inicial)
   const [ultimoCierre, setUltimoCierre] = useState<CierreSesion | null>(null)
 
-  const iniciarSesion = useCallback((respuesta: RespuestaIngreso, mantener = false) => {
+  const iniciarSesion = useCallback((respuesta: RespuestaIngreso) => {
     establecerToken(respuesta.token)
-    guardarSesion(respuesta.usuario, mantener)
+    guardarSesion(respuesta.usuario)
     setUltimoCierre(null)
     setUsuario(respuesta.usuario)
   }, [])

@@ -17,7 +17,6 @@ const correoInstitucional = z
 export const esquemaIngreso = z.object({
   correo: correoInstitucional,
   contrasena: z.string().min(1, 'Escriba su contraseña.'),
-  mantener: z.boolean(),
 })
 
 export const esquemaRecuperacion = z.object({

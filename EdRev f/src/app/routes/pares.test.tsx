@@ -61,15 +61,11 @@ describe('peer base (/:revista/pares)', () => {
 })
 
 describe('registering a peer', () => {
-  it('validates the fields and offers the data-treatment authorization', async () => {
+  it('validates the fields; no data-treatment authorization is asked (D10)', async () => {
     const { user } = montarRuta('/reep/pares')
     await user.click(await screen.findByRole('button', { name: 'Registrar par' }))
     const dialogo = await screen.findByRole('dialog', { name: 'Registrar par evaluador' })
-    expect(
-      within(dialogo).getByRole('checkbox', {
-        name: /autoriza el tratamiento de sus datos personales/,
-      }),
-    ).toBeInTheDocument()
+    expect(within(dialogo).queryByRole('checkbox')).toBeNull()
     await user.click(within(dialogo).getByRole('button', { name: 'Registrar par' }))
     expect(await within(dialogo).findByText('Escriba el nombre del par.')).toBeInTheDocument()
     expect(within(dialogo).getByText('Escriba el correo electrónico.')).toBeInTheDocument()
@@ -85,7 +81,6 @@ describe('registering a peer', () => {
     await user.type(within(dialogo).getByLabelText('Correo electrónico'), 'ml.gomez@udenar.edu.co')
     await user.type(within(dialogo).getByLabelText('Universidad'), 'Universidad de Nariño')
     await user.type(within(dialogo).getByLabelText('Área temática'), 'Educación rural')
-    await user.click(within(dialogo).getByRole('checkbox'))
     await user.click(within(dialogo).getByRole('button', { name: 'Registrar par' }))
     await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull())
     await user.type(screen.getByRole('searchbox', { name: 'Buscar por nombre o correo' }), 'gomez')
@@ -181,9 +176,7 @@ describe('peer record (/pares/:id)', () => {
       await screen.findByRole('heading', { level: 1, name: 'Luz Marina Burbano' }),
     ).toBeInTheDocument()
     expect(screen.getByText('lm.burbano@udenar.edu.co')).toBeInTheDocument()
-    expect(
-      screen.getByText('Autorizó el tratamiento de sus datos el 14 de marzo de 2024.'),
-    ).toBeInTheDocument()
+    expect(screen.getByText('Magíster en Educación')).toBeInTheDocument()
     expect(screen.getByText('Evaluaciones entregadas')).toBeInTheDocument()
     const tabla = screen.getByRole('table', { name: 'Participaciones del par' })
     expect(within(tabla).getAllByRole('row').length).toBeGreaterThan(2)

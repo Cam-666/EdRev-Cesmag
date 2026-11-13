@@ -45,7 +45,6 @@ export interface ParSeed {
   area: string
   /** [reason, ISO date] when the peer is blocked. */
   bloqueo?: [MotivoBloqueo, string]
-  autorizo?: string
 }
 
 export interface AsigSeed {
@@ -186,7 +185,6 @@ export function construirSeed(entrada: EntradaSeed): SeedRevista {
     universidad: s.universidad,
     area: s.area,
     bloqueo: s.bloqueo ? { motivo: s.bloqueo[0], fecha: s.bloqueo[1] } : null,
-    autorizoDatosEn: s.autorizo ?? '2024-03-14',
   }))
 
   const articulos: Articulo[] = []

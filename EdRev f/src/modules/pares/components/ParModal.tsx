@@ -1,11 +1,10 @@
 /*
- * ParModal — register a peer, or edit one (e.g. to correct a bounced email). New peers carry the
- * data-treatment authorization checkbox; its date is stored. Area suggests the registered ones to
- * avoid duplicated names. No Figma design for the dialog.
- * Covers: RF-12, RF-13, RF-27 (correct the email), RNF-06 (Ley 1581 de 2012).
+ * ParModal — register a peer, or edit one (e.g. to correct a bounced email). Area suggests the
+ * registered ones to avoid duplicated names; an email already in the other journal is announced. No Figma design for the dialog.
+ * Covers: RF-12, RF-13, RF-27 (correct the email), D10 (no data authorization).
  */
 import { zodResolver } from '@hookform/resolvers/zod'
-import { Controller, useForm, useWatch } from 'react-hook-form'
+import { useForm, useWatch } from 'react-hook-form'
 import { AvisoOtraRevista } from './AvisoOtraRevista'
 import { esquemaPar } from '../config/esquemas'
 import type { ParForm } from '../config/esquemas'
@@ -14,7 +13,6 @@ import { useEditarPar, useRegistrarPar } from '../hooks/useMutacionesPar'
 import { Alerta } from '@/components/common/Alerta'
 import { Boton } from '@/components/common/Boton'
 import { CampoTexto } from '@/components/common/CampoTexto'
-import { Casilla } from '@/components/common/Casilla'
 import { Modal } from '@/components/common/Modal'
 import { mensajeDeApi } from '@/lib/api/errores'
 import type { ParEvaluador } from '@/types/par'
@@ -57,7 +55,6 @@ function ContenidoParModal({ abierto, onCerrar, par, onGuardado }: ParModalProps
       correo: par?.correo ?? '',
       universidad: par?.universidad ?? '',
       area: par?.area ?? '',
-      autorizoDatos: false,
     },
   })
 
@@ -174,19 +171,6 @@ function ContenidoParModal({ abierto, onCerrar, par, onGuardado }: ParModalProps
             <option key={a} value={a} />
           ))}
         </datalist>
-        {!par && (
-          <Controller
-            control={control}
-            name="autorizoDatos"
-            render={({ field }) => (
-              <Casilla
-                etiqueta="El par autoriza el tratamiento de sus datos personales (Ley 1581 de 2012)"
-                marcada={field.value}
-                onCambio={field.onChange}
-              />
-            )}
-          />
-        )}
       </form>
     </Modal>
   )

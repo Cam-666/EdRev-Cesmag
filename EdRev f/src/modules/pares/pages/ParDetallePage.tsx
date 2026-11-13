@@ -21,7 +21,7 @@ import { EnlaceBoton } from '@/components/common/EnlaceBoton'
 import { EstadoConsulta } from '@/components/common/EstadoConsulta'
 import { EncabezadoPagina } from '@/components/common/EncabezadoPagina'
 import { ErrorApi } from '@/lib/api/cliente'
-import { formatearFecha, formatearFechaLarga } from '@/lib/format'
+import { formatearFecha } from '@/lib/format'
 import { useRevista } from '@/lib/revista/useRevista'
 
 export function ParDetallePage() {
@@ -142,11 +142,6 @@ export function ParDetallePage() {
                   </dd>
                 </div>
               </dl>
-              <p className="text-cuerpo-13 text-texto-secundario">
-                {par.autorizoDatosEn
-                  ? `Autorizó el tratamiento de sus datos el ${formatearFechaLarga(par.autorizoDatosEn)}.`
-                  : 'Aún no registra la autorización de tratamiento de datos personales.'}
-              </p>
             </section>
 
             <section

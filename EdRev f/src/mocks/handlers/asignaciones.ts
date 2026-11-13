@@ -114,7 +114,6 @@ function registrarCandidato(
     universidad: datos.universidad.trim(),
     area: datos.area.trim(),
     bloqueo: null,
-    autorizoDatosEn: null,
   }
   base.pares.push(par)
   return par

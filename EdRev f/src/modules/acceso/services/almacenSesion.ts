@@ -1,7 +1,7 @@
 /*
  * almacenSesion — keeps the logged-in profile across reloads. Only the non-sensitive profile is
  * stored (never the password); the token lives in memory. Storage can be blocked, so every access
- * is guarded. `mantener` chooses localStorage (survives closing the browser) over sessionStorage.
+ * is guarded. Only sessionStorage: the system offers no "keep me signed in" (RNF-05, D15).
  */
 import type { Usuario } from '@/types/usuario'
 
@@ -18,12 +18,10 @@ function esUsuario(valor: unknown): valor is Usuario {
   )
 }
 
-export function guardarSesion(usuario: Usuario, mantener: boolean): void {
+export function guardarSesion(usuario: Usuario): void {
   try {
-    const destino = mantener ? window.localStorage : window.sessionStorage
-    const otro = mantener ? window.sessionStorage : window.localStorage
-    otro.removeItem(CLAVE)
-    destino.setItem(CLAVE, JSON.stringify(usuario))
+    window.localStorage.removeItem(CLAVE)
+    window.sessionStorage.setItem(CLAVE, JSON.stringify(usuario))
   } catch {
     /* storage unavailable: the session just will not survive a reload */
   }
@@ -31,7 +29,7 @@ export function guardarSesion(usuario: Usuario, mantener: boolean): void {
 
 export function leerSesion(): Usuario | null {
   try {
-    const crudo = window.sessionStorage.getItem(CLAVE) ?? window.localStorage.getItem(CLAVE)
+    const crudo = window.sessionStorage.getItem(CLAVE)
     if (!crudo) return null
     const valor: unknown = JSON.parse(crudo)
     return esUsuario(valor) ? valor : null

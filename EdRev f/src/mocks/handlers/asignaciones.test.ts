@@ -138,18 +138,18 @@ describe('peers API (mock)', () => {
     expect(sinContexto?.estado).toBe('disponible')
   })
 
-  it('registers a peer with the data-treatment authorization date, and refuses a repeated email', async () => {
+  it('registers a peer with its profession, and refuses a repeated email', async () => {
     const cuerpo = {
       nombre: 'Marta Lucía Gómez',
       correo: 'ml.gomez@udenar.edu.co',
       universidad: 'Universidad de Nariño',
       area: 'Educación rural',
-      autorizoDatos: true,
+      profesion: 'Magíster en Educación',
     }
     const r = await llamar('/reep/pares', { metodo: 'POST', cuerpo, usuario: AUXILIAR })
     expect(r.status).toBe(201)
     const par = await json<ParDetalle>(r)
-    expect(par.autorizoDatosEn).not.toBeNull()
+    expect(par.profesion).toBe('Magíster en Educación')
     expect((await llamar('/reep/pares', { metodo: 'POST', cuerpo })).status).toBe(409)
 
     // The new peer exists only in this journal

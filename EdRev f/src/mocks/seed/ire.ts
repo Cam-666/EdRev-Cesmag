@@ -49,7 +49,6 @@ export const SEED_IRE: SeedRevista = construirSeed({
       correo: 'a.portilla@udenar.edu.co',
       universidad: NARINO,
       area: 'Memoria y conflicto',
-      autorizo: '2023-05-08',
     },
     {
       nombre: 'Sonia Bastidas Melo',
