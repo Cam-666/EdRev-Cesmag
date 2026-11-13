@@ -2,7 +2,7 @@
  * Pruebas de administración — RF-12, RF-38, RF-41, RF-45.
  */
 import { describe, expect, it } from 'vitest'
-import { como } from './api.js'
+import { AUXILIAR, como } from './api.js'
 
 describe('plantillas, auditoría, informes y pares por revista (RF-12, RF-38, RF-41, RF-45)', () => {
   it('cada revista tiene sus tres plantillas en uso; se valida el texto', async () => {
@@ -37,5 +37,20 @@ describe('plantillas, auditoría, informes y pares por revista (RF-12, RF-38, RF
     expect(otra.body).toMatchObject({ revista: 'reep', nombre: 'Par Compartido' })
     expect((await api.get(`/reep/pares/en-otra-revista?correo=${correo}`)).status).toBe(404)
     expect((await api.post('/reep/pares', { nombre: 'Otro', correo, universidad: 'U', area: 'A' })).status).toBe(409)
+  })
+
+  it('los días de espera empiezan en 5, solo la Administradora los cambia y queda en la auditoría', async () => {
+    const api = await como()
+    expect((await api.get('/configuracion')).body).toEqual({ diasEspera: 5 })
+    const aux = await como(AUXILIAR)
+    expect((await aux.get('/configuracion')).status).toBe(403)
+    expect((await aux.put('/configuracion', { diasEspera: 3 })).status).toBe(403)
+    expect((await api.put('/configuracion', { diasEspera: 0 })).status).toBe(422)
+    expect((await api.put('/configuracion', { diasEspera: 90 })).status).toBe(422)
+    expect((await api.put('/configuracion', { diasEspera: 7 })).body).toEqual({ diasEspera: 7 })
+    expect((await api.get('/configuracion')).body).toEqual({ diasEspera: 7 })
+    const aud = (await api.get('/auditoria?tipo=edicion&porPagina=5')).body.items as Array<{ accion: string }>
+    expect(aud.some((a) => a.accion.includes('de 5 a 7'))).toBe(true)
+    await api.put('/configuracion', { diasEspera: 5 })
   })
 })

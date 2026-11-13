@@ -10,12 +10,13 @@ import { enTransaccion, pool } from '../db.js'
 import { auditar } from '../lib/auditoria.js'
 import { soloAdministradora, usuarioDe } from '../lib/auth.js'
 import { crearEnlace, enlaceDemo } from '../lib/enlaces.js'
+import { diasEspera, guardarDiasEspera } from '../servicios/configuracion.js'
 import { enviarEnlaceContrasena } from '../servicios/correoCuentas.js'
 import { ErrorHttp, idNumerico, siglaDe } from '../lib/http.js'
 import { iso, usuarioApi, type FilaUsuario } from '../lib/mapeo.js'
 
 export const rutasAdmin = Router()
-rutasAdmin.use(['/usuarios', '/plantillas', '/auditoria'], soloAdministradora)
+rutasAdmin.use(['/usuarios', '/plantillas', '/auditoria', '/configuracion'], soloAdministradora)
 
 const institucional = z
   .string()
@@ -250,4 +251,29 @@ rutasAdmin.get('/auditoria', async (req, res) => {
       usuario: a.usuario ?? 'Sistema',
     })),
   })
+})
+
+// ------------------------------------------------------------- Configuración
+/** Days a peer has to answer before the 2nd attempt and, later, the block (RF-29). */
+rutasAdmin.get('/configuracion', async (_req, res) => {
+  res.json({ diasEspera: await diasEspera(pool) })
+})
+
+rutasAdmin.put('/configuracion', async (req, res) => {
+  const { diasEspera: dias } = z
+    .object({ diasEspera: z.number().min(0.0001, 'Escriba los días de espera').max(60, 'Máximo 60 días') })
+    .parse(req.body)
+  const usuario = usuarioDe(req)
+  await enTransaccion(async (c) => {
+    const antes = await diasEspera(c)
+    await guardarDiasEspera(c, dias)
+    await auditar(c, {
+      usuario: usuario.id,
+      tabla: 'configuracion',
+      idRegistro: 'dias_espera_respuesta',
+      accion: 'edicion',
+      texto: `Cambió los días de espera de la respuesta del par de ${antes} a ${dias}`,
+    })
+  })
+  res.json({ diasEspera: dias })
 })

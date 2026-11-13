@@ -4,9 +4,11 @@
  * either, the evaluation goes to «Sin respuesta» and the peer is blocked with that reason.
  * Only invitations that were actually sent count as attempts (a resend after a correction does not
  * add an attempt, RF-28, because it replaces a failed one). Runs every minute.
- * DIAS_ESPERA_RESPUESTA accepts decimals (e.g. 0.002 ≈ 3 minutes) to show it in a demo.
+ * The waiting days come from Administración › Configuración (decimals are accepted, e.g. 0.002 ≈ 3 minutes,
+ * to show it in a demo through the API).
  */
 import { config } from '../config.js'
+import { diasEspera } from './configuracion.js'
 import { enTransaccion, pool } from '../db.js'
 import { auditar } from '../lib/auditoria.js'
 import { encolar } from './correos.js'
@@ -22,6 +24,7 @@ interface Vencida {
 }
 
 async function revisar(): Promise<void> {
+  const dias = await diasEspera(pool)
   const { rows } = await pool.query<Vencida>(
     `SELECT e.id_evaluacion, e.id_articulo, a.id_revista, p.id_par, p.nombre, p.correo,
             count(c.*) FILTER (WHERE c.resultado = 'enviado')::int AS enviados
@@ -33,7 +36,7 @@ async function revisar(): Promise<void> {
       GROUP BY e.id_evaluacion, a.id_revista, p.id_par
      HAVING count(*) FILTER (WHERE c.resultado IN ('en-cola','rebotado','fallido')) = 0
         AND max(c.fecha_envio) < now() - make_interval(secs => $1)`,
-    [config.diasEspera * 86_400],
+    [dias * 86_400],
   )
   for (const v of rows) {
     await enTransaccion(async (c) => {

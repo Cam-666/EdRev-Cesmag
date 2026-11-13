@@ -11,6 +11,7 @@ import { RevistaRoute } from '../RevistaRoute'
 import { RutaPorPermiso } from '@/modules/acceso/components/RutaPorPermiso'
 import { RutaPrivada } from '@/modules/acceso/components/RutaPrivada'
 import { AdministracionLayout } from '@/modules/administracion/components/AdministracionLayout'
+import { ConfiguracionPage } from '@/modules/administracion/pages/ConfiguracionPage'
 import { AuditoriaPage } from '@/modules/administracion/pages/AuditoriaPage'
 import { PlantillasPage } from '@/modules/administracion/pages/PlantillasPage'
 import { UsuariosPage } from '@/modules/administracion/pages/UsuariosPage'
@@ -55,6 +56,7 @@ export const rutasPrivadas: RouteObject[] = [
                   { path: '/administracion/usuarios', element: <UsuariosPage /> },
                   { path: '/administracion/plantillas', element: <PlantillasPage /> },
                   { path: '/administracion/auditoria', element: <AuditoriaPage /> },
+                  { path: '/administracion/configuracion', element: <ConfiguracionPage /> },
                 ],
               },
             ],

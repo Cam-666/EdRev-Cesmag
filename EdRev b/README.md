@@ -69,8 +69,7 @@ la demostración (botón «Demostración: abrir el enlace»). En producción pon
 
 ## Demostrar el segundo intento
 
-Con `DIAS_ESPERA_RESPUESTA=0.0002` (unos 17 segundos) y `CORREO_MODO=simulado`, una invitación sin respuesta pasa a
-«2.º intento» en menos de un minuto y al minuto siguiente el par queda bloqueado «Sin respuesta». Vuelva a `8` después.
+Los días de espera (5 al inicio) se cambian en **Administración › Configuración**. Para demostrarlo con `CORREO_MODO=simulado`, la Administradora puede enviar a la API `PUT /api/configuracion` con `{"diasEspera": 0.0002}` (unos 17 segundos; la pantalla solo admite días enteros): una invitación sin respuesta pasa a «2.º intento» en menos de un minuto y al minuto siguiente el par queda bloqueado «Sin respuesta». Vuelva a `5` después. `DIAS_ESPERA_RESPUESTA` solo se usa mientras no haya un valor guardado.
 
 ## Pruebas automáticas
 

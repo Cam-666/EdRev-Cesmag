@@ -5,7 +5,7 @@
  * Covers: RF-40, RF-41, RNF-07 (credentials are never returned), RNF-19, HU-29, HU-30.
  */
 import { http, HttpResponse } from 'msw'
-import { baseDe, plantillas, usuarios } from '../db'
+import { baseDe, configuracion, plantillas, usuarios } from '../db'
 import { bloquearContrasena, crearEnlace } from './acceso'
 import { contextoGlobal, error, sinTildes } from './util'
 import { marcadores } from '@/lib/plantillas'
@@ -44,6 +44,23 @@ function filaAuditoria(r: Revista, e: EntradaAuditoria) {
 }
 
 export const handlersAdmin = [
+  http.get('*/api/configuracion', ({ request }) => {
+    const c = contextoGlobal(request, 'administrar')
+    if (!c.ok) return c.respuesta
+    return HttpResponse.json(configuracion())
+  }),
+
+  http.put('*/api/configuracion', async ({ request }) => {
+    const c = contextoGlobal(request, 'administrar')
+    if (!c.ok) return c.respuesta
+    const { diasEspera } = (await request.json()) as { diasEspera: number }
+    if (!Number.isFinite(diasEspera) || diasEspera < 1 || diasEspera > 60) {
+      return error(422, 'Escriba entre 1 y 60 días')
+    }
+    configuracion().diasEspera = diasEspera
+    return HttpResponse.json(configuracion())
+  }),
+
   http.get('*/api/usuarios', ({ request }) => {
     const c = contextoGlobal(request, 'administrar')
     if (!c.ok) return c.respuesta

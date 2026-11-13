@@ -5,6 +5,8 @@
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   crearPlantilla,
+  guardarConfiguracion,
+  obtenerConfiguracion,
   crearUsuario,
   reenviarEnlaceUsuario,
   editarUsuario,
@@ -16,6 +18,7 @@ import {
   usarPlantilla,
 } from '../services/adminService'
 import type { FiltrosAuditoria } from '../services/adminService'
+import type { Configuracion } from '@/types/configuracion'
 import type { DatosNuevaPlantilla } from '@/types/plantilla'
 import type { DatosUsuario, Usuario } from '@/types/usuario'
 
@@ -91,5 +94,17 @@ export function useAuditoria(filtros: FiltrosAuditoria) {
     queryKey: ['admin', 'auditoria', filtros],
     queryFn: () => listarAuditoria(filtros),
     placeholderData: keepPreviousData,
+  })
+}
+
+export function useConfiguracion() {
+  return useQuery({ queryKey: ['admin', 'configuracion'], queryFn: obtenerConfiguracion })
+}
+
+export function useGuardarConfiguracion() {
+  const cliente = useQueryClient()
+  return useMutation({
+    mutationFn: (datos: Configuracion) => guardarConfiguracion(datos),
+    onSuccess: () => cliente.invalidateQueries({ queryKey: ['admin', 'configuracion'] }),
   })
 }

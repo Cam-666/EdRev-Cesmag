@@ -13,6 +13,9 @@ INSERT INTO revista (id_revista, nombre, correo_remitente) OVERRIDING SYSTEM VAL
   (1, 'Revista Electrónica en Educación y Pedagogía', 'revistaeducacionpedagogia@gmail.com'),
   (2, 'Revista Investigium IRE Ciencias Sociales y Humanas', 'revistainvestigiumire@gmail.com');
 
+-- Días de espera de la respuesta del par (RF-29): 5, ajustable en Administración › Configuración
+INSERT INTO configuracion (clave, valor) VALUES ('dias_espera_respuesta', '5');
+
 -- Cuentas de la dependencia (RF-40)
 INSERT INTO usuario (nombre, correo, contrasena_hash, rol) VALUES
   ('Ma. Camila Mendoza', 'maria.mendoza@unicesmag.edu.co',

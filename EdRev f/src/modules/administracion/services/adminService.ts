@@ -4,6 +4,7 @@
  */
 import { solicitar } from '@/lib/api/cliente'
 import type { RespuestaEnvioEnlace } from '@/types/acceso'
+import type { Configuracion } from '@/types/configuracion'
 import type { EntradaAuditoria, TipoAuditoria } from '@/types/historial'
 import type { DatosNuevaPlantilla, DatosPlantillas, Plantilla } from '@/types/plantilla'
 import type { Revista } from '@/types/revista'
@@ -95,4 +96,12 @@ export function listarAuditoria(f: FiltrosAuditoria): Promise<RespuestaAuditoria
   if (f.usuario) q.set('usuario', f.usuario)
   if (f.tipo) q.set('tipo', f.tipo)
   return solicitar<RespuestaAuditoria>(`/auditoria?${q.toString()}`)
+}
+
+export function obtenerConfiguracion(): Promise<Configuracion> {
+  return solicitar<Configuracion>('/configuracion')
+}
+
+export function guardarConfiguracion(datos: Configuracion): Promise<Configuracion> {
+  return solicitar<Configuracion>('/configuracion', { method: 'PUT', ...json(datos) })
 }

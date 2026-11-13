@@ -148,6 +148,25 @@ describe('reports', () => {
 })
 
 describe('administration', () => {
+  it('Configuración shows 5 waiting days and saves a new value', async () => {
+    const { user } = montarRuta('/administracion/configuracion')
+    await screen.findByRole('heading', { level: 2, name: 'Configuración' })
+    const campo = await screen.findByLabelText('Días de espera de la respuesta del par')
+    await waitFor(() => expect(campo).toHaveValue(5))
+    expect(screen.getByRole('button', { name: 'Guardar' })).toBeDisabled()
+
+    await user.clear(campo)
+    await user.type(campo, '0')
+    await user.click(screen.getByRole('button', { name: 'Guardar' }))
+    expect(await screen.findByText('Mínimo 1 día.')).toBeInTheDocument()
+
+    await user.clear(campo)
+    await user.type(campo, '7')
+    await user.click(screen.getByRole('button', { name: 'Guardar' }))
+    expect(await screen.findByText('Configuración guardada.')).toBeInTheDocument()
+    expect(campo).toHaveValue(7)
+  })
+
   it('rejects a constancia template without the required markers and shows the error', async () => {
     const { user } = montarRuta('/administracion/plantillas')
     await screen.findByRole('heading', { level: 2, name: 'Plantillas' })

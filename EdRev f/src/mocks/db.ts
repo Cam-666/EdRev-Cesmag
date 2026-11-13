@@ -11,6 +11,7 @@ import { USUARIOS_SEED } from './seed/usuarios'
 import type { Autor, DatosAutor } from '@/types/autor'
 import type { CuentaRemitente, Plantilla, UsoPlantilla } from '@/types/plantilla'
 import type { Revista } from '@/types/revista'
+import type { Configuracion } from '@/types/configuracion'
 import type { Usuario } from '@/types/usuario'
 
 function clonar<T>(valor: T): T {
@@ -22,6 +23,7 @@ interface Base {
   plantillas: Plantilla[]
   cuentas: CuentaRemitente[]
   usuarios: Usuario[]
+  configuracion: Configuracion
 }
 
 function crear(): Base {
@@ -30,6 +32,7 @@ function crear(): Base {
     plantillas: clonar(PLANTILLAS_INICIALES),
     cuentas: clonar(CUENTAS_INICIALES),
     usuarios: clonar(USUARIOS_SEED),
+    configuracion: { diasEspera: 5 },
   }
 }
 
@@ -71,6 +74,10 @@ export function plantillaEnUso(revista: Revista, uso: UsoPlantilla): Plantilla {
 
 export function cuentas(): CuentaRemitente[] {
   return base.cuentas
+}
+
+export function configuracion(): Configuracion {
+  return base.configuracion
 }
 
 export function usuarios(): Usuario[] {

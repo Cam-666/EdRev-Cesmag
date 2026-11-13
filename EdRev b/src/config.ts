@@ -22,7 +22,7 @@ export const config = {
   urlFrontend: (process.env.FRONTEND_URL ?? 'http://localhost:5173').replace(/\/$/, ''),
   jwtHoras: numero('JWT_HORAS', 8),
   umbralCoincidencias: numero('UMBRAL_COINCIDENCIAS', 15),
-  diasEspera: numero('DIAS_ESPERA_RESPUESTA', 8),
+  diasEspera: numero('DIAS_ESPERA_RESPUESTA', 5),
   intentosAntesBloqueo: numero('INTENTOS_ANTES_BLOQUEO', 2),
   maxPares: numero('MAX_PARES_POR_ARTICULO', 3),
   /** Login: failed attempts before a 15-minute lockout. */
