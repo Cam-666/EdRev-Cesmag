@@ -37,6 +37,17 @@ async function leerJson(respuesta: Response): Promise<unknown> {
   }
 }
 
+/** A file of the API (e.g. a constancia in PDF), with the same session header. */
+export async function solicitarArchivo(ruta: string): Promise<Blob> {
+  const headers = new Headers()
+  if (token) headers.set('Authorization', `Bearer ${token}`)
+  const respuesta = await fetch(`${baseApi()}${ruta}`, { headers })
+  if (!respuesta.ok) {
+    throw new ErrorApi(respuesta.status, respuesta.statusText, await leerJson(respuesta))
+  }
+  return respuesta.blob()
+}
+
 export async function solicitar<T>(ruta: string, init: RequestInit = {}): Promise<T> {
   const headers = new Headers(init.headers)
   headers.set('Accept', 'application/json')

@@ -156,7 +156,7 @@ rutasAsignaciones.post('/:revista/asignaciones/:id/respuesta', async (req, res) 
     } else {
       if (r === 'sin-respuesta') {
         const intentos = await c.query<{ n: number }>(
-          "SELECT count(*)::int AS n FROM correo WHERE id_evaluacion = $1 AND tipo = 'invitacion'",
+          "SELECT count(*)::int AS n FROM correo WHERE id_evaluacion = $1 AND tipo = 'invitacion' AND resultado = 'enviado'",
           [id],
         )
         if ((intentos.rows[0]?.n ?? 0) < config.intentosAntesBloqueo) {

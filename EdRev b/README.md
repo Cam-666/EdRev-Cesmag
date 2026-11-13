@@ -49,6 +49,10 @@ Cuentas iniciales (contraseña `Editorial2026*`, cámbiela antes de la puesta en
 | Enlaces de contraseña (cuenta nueva y recuperación): 30 minutos, un solo uso | Listo |
 | Informe de gestión por revista y semestre | Listo |
 | Envío de correos en segundo plano (Brevo o simulado) con la constancia en PDF adjunta | Listo |
+| Segundo intento automático y bloqueo «Sin respuesta» tras los días de espera (RF-29) | Listo |
+| Descarga de la constancia en PDF (`/:revista/constancias/:id/pdf`) | Listo |
+| Rebotes reales: webhook de Brevo `/api/webhooks/brevo?token=BREVO_WEBHOOK_TOKEN` | Listo |
+| Seguridad: cabeceras (helmet) y límite de peticiones en `/api/auth` | Listo |
 | Registros migrados por corregir | Responde vacío hasta que se haga la migración del Excel |
 
 ## Correos
@@ -62,6 +66,11 @@ Cuentas iniciales (contraseña `Editorial2026*`, cámbiela antes de la puesta en
 
 Mientras no haya correo real, `ENLACE_DEMO=true` hace que la API devuelva el enlace de contraseña para abrirlo en
 la demostración (botón «Demostración: abrir el enlace»). En producción ponga `ENLACE_DEMO=false`.
+
+## Demostrar el segundo intento
+
+Con `DIAS_ESPERA_RESPUESTA=0.0002` (unos 17 segundos) y `CORREO_MODO=simulado`, una invitación sin respuesta pasa a
+«2.º intento» en menos de un minuto y al minuto siguiente el par queda bloqueado «Sin respuesta». Vuelva a `8` después.
 
 ## Variables de entorno
 

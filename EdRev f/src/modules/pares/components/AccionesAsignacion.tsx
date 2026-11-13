@@ -16,7 +16,6 @@ import { RespuestaParModal } from './RespuestaParModal'
 import { useReenviarInvitacion } from '../hooks/useAsignaciones'
 import { EmitirConstanciaModal } from '@/modules/constancias/components/EmitirConstanciaModal'
 import { useReenviarConstancia } from '@/modules/constancias/hooks/useConstancias'
-import { obtenerVistaConstancia } from '@/modules/constancias/services/constanciasService'
 import { descargarConstancia } from '@/modules/constancias/services/descarga'
 import { EnlaceBoton } from '@/components/common/EnlaceBoton'
 import { useRevista } from '@/lib/revista/useRevista'
@@ -69,8 +68,7 @@ export function AccionesAsignacion({ asignacion }: AccionesAsignacionProps) {
 
   async function descargar() {
     if (!asignacion.constanciaId) return
-    const vista = await obtenerVistaConstancia(revista, asignacion.constanciaId)
-    descargarConstancia(vista, nombre)
+    await descargarConstancia(revista, asignacion.constanciaId, nombre)
   }
 
   function reenviarConstancia() {

@@ -17,7 +17,6 @@ import {
   useVistaConstancia,
 } from '../hooks/useConstancias'
 import { descargarConstancia } from '../services/descarga'
-import { obtenerVistaConstancia } from '../services/constanciasService'
 import { usePermiso } from '@/modules/acceso/hooks/usePermiso'
 import { Alerta } from '@/components/common/Alerta'
 import { Boton } from '@/components/common/Boton'
@@ -91,8 +90,7 @@ export function ConstanciasPage() {
   }
 
   async function descargar(fila: FilaConstancia) {
-    const v = await obtenerVistaConstancia(revista, fila.id)
-    descargarConstancia(v, fila.par.nombre)
+    await descargarConstancia(revista, fila.id, fila.par.nombre)
   }
 
   function reenviarFila(fila: FilaConstancia) {

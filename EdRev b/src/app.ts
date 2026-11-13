@@ -4,6 +4,8 @@
  * API, so the frontend shows the same messages.
  */
 import cors from 'cors'
+import { rateLimit } from 'express-rate-limit'
+import helmet from 'helmet'
 import express, { type NextFunction, type Request, type Response } from 'express'
 import { ZodError } from 'zod'
 import { config } from './config.js'
@@ -19,16 +21,22 @@ import { rutasConstancias } from './rutas/constancias.js'
 import { rutasCorreos } from './rutas/correos.js'
 import { rutasPanel } from './rutas/panel.js'
 import { rutasPares } from './rutas/pares.js'
+import { rutasWebhooks } from './rutas/webhooks.js'
 
 export function crearApp() {
   const app = express()
+  app.set('trust proxy', 1)
+  app.use(helmet())
   app.use(cors({ origin: config.origenes }))
+  // Brute force on the login and the password links (the screens also lock after 3 attempts).
+  app.use(['/api/auth'], rateLimit({ windowMs: 15 * 60_000, limit: 100, standardHeaders: true, legacyHeaders: false }))
   app.use(express.json({ limit: '1mb' }))
 
   app.get('/api/salud', (_req, res) => {
     res.json({ estado: 'ok' })
   })
   app.use('/api', rutasAcceso)
+  app.use('/api', rutasWebhooks)
 
   const privadas = express.Router()
   privadas.use(requiereSesion)

@@ -3,7 +3,11 @@
  * constancia, the report and audit exports). One implementation for every module.
  */
 export function descargarTexto(nombre: string, texto: string, tipo: string): void {
-  const blob = new Blob([texto], { type: `${tipo};charset=utf-8` })
+  descargarArchivo(nombre, new Blob([texto], { type: `${tipo};charset=utf-8` }))
+}
+
+/** Starts the browser download of a file (a Blob from the API or built here). */
+export function descargarArchivo(nombre: string, blob: Blob): void {
   const url = URL.createObjectURL(blob)
   const enlace = document.createElement('a')
   enlace.href = url

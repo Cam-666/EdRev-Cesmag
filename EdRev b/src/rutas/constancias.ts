@@ -10,6 +10,7 @@ import { auditar } from '../lib/auditoria.js'
 import { usuarioDe } from '../lib/auth.js'
 import { ErrorHttp, idNumerico, idRevista } from '../lib/http.js'
 import { iso } from '../lib/mapeo.js'
+import { generarConstancia } from '../servicios/constanciaPdf.js'
 import { encolar } from '../servicios/correos.js'
 
 export const rutasConstancias = Router()
@@ -111,6 +112,16 @@ rutasConstancias.get('/:revista/constancias/:id/vista-previa', async (req, res) 
     firma: `${firma.rows[0]?.nombre ?? 'Administradora'} · Dependencia de Editorial`,
     fondo: `PDF de fondo de «${p.plantilla}»`,
   })
+})
+
+// RF-32: the PDF is generated again from the registered data; it is not stored.
+rutasConstancias.get('/:revista/constancias/:id/pdf', async (req, res) => {
+  const revista = idRevista(req.params.revista)
+  const f = await entrega(pool, revista, idNumerico(req.params.id, 'Constancia'))
+  const pdf = await generarConstancia(pool, { par: f.nombre, articulo: f.titulo, idRevista: revista })
+  res.type('application/pdf')
+  res.setHeader('Content-Disposition', `attachment; filename="constancia-${f.id_evaluacion}.pdf"`)
+  res.send(Buffer.from(pdf))
 })
 
 rutasConstancias.post('/:revista/constancias/emitir-pendientes', async (req, res) => {
