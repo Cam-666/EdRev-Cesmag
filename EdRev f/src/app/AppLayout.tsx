@@ -1,12 +1,13 @@
 /*
  * AppLayout — shell for every screen except access: side panel, top bar, main landmark and
- * skip link. data-revista on the root rewrites the journal CSS variables; only the top bar and
+ * skip link. On small screens the side panel opens from «Menú» (RNF-10). data-revista on the root rewrites the journal CSS variables; only the top bar and
  * ISSN pill consume them. Covers: RF-02, RNF-11 (skip link, landmarks).
  */
 import { Outlet, useLocation } from 'react-router-dom'
 import { useRevistaOpcional } from '@/lib/revista/useRevista'
 import { EncabezadoComun } from '@/components/common/EncabezadoComun'
 import { EncabezadoRevista } from '@/components/common/EncabezadoRevista'
+import { MenuMovil } from '@/components/common/MenuMovil'
 import { PanelLateral } from '@/components/common/PanelLateral'
 import { SelectorUsuarioDemo } from '@/modules/acceso/components/SelectorUsuarioDemo'
 import { puede } from '@/modules/acceso/config/permisos'
@@ -22,6 +23,14 @@ export function AppLayout() {
   const usuario = useUsuarioActual()
   const { cerrarSesion } = useSesion()
 
+  const panel = {
+    revistaActiva: revista,
+    rutaActual: pathname,
+    usuario: { nombre: usuario.nombre, perfil: ETIQUETA_PERFIL[usuario.perfil] },
+    onCerrarSesion: () => cerrarSesion('manual'),
+    mostrarAdministracion: puede(usuario.perfil, 'administrar'),
+  }
+
   // RNF-05: the session closes after a period of inactivity.
   useCierrePorInactividad(POLITICA_ACCESO.inactividadMinutos, () => cerrarSesion('inactividad'))
 
@@ -33,16 +42,15 @@ export function AppLayout() {
       >
         Saltar al contenido
       </a>
-      <PanelLateral
-        revistaActiva={revista}
-        rutaActual={pathname}
-        usuario={{ nombre: usuario.nombre, perfil: ETIQUETA_PERFIL[usuario.perfil] }}
-        onCerrarSesion={() => cerrarSesion('manual')}
-        mostrarAdministracion={puede(usuario.perfil, 'administrar')}
-      />
+      <PanelLateral {...panel} className="hidden lg:flex" />
       <div className="flex min-w-0 flex-1 flex-col">
+        <div className="flex items-center border-b border-borde-base bg-superficie-tarjeta px-2 py-1 lg:hidden">
+          <MenuMovil ruta={pathname}>
+            <PanelLateral {...panel} className="h-full" />
+          </MenuMovil>
+        </div>
         {revista ? <EncabezadoRevista revista={revista} /> : <EncabezadoComun />}
-        <main id="contenido" tabIndex={-1} className="flex-1 p-6">
+        <main id="contenido" tabIndex={-1} className="flex-1 p-4 sm:p-6">
           <Outlet />
         </main>
       </div>

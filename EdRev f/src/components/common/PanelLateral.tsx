@@ -28,6 +28,8 @@ export interface PanelLateralProps {
   onCerrarSesion: () => void
   /** False hides the Administración module (the Auxiliar has no access to it). */
   mostrarAdministracion?: boolean
+  /** Extra classes: the layout hides it on small screens and the mobile menu shows it. */
+  className?: string
 }
 
 const MODULOS_COMUNES = [
@@ -88,6 +90,7 @@ export function PanelLateral({
   usuario,
   onCerrarSesion,
   mostrarAdministracion = true,
+  className,
 }: PanelLateralProps) {
   const [abiertos, setAbiertos] = useState<ReadonlySet<Revista>>(
     () => new Set(revistaActiva ? [revistaActiva] : []),
@@ -112,7 +115,12 @@ export function PanelLateral({
     ? MODULOS_COMUNES
     : MODULOS_COMUNES.filter((m) => !m.ruta.startsWith('/administracion'))
   return (
-    <aside className="sticky top-0 flex h-screen w-panel min-w-panel flex-col self-start bg-cesmag-azul-panel text-texto-inverso">
+    <aside
+      className={cn(
+        'sticky top-0 flex h-screen w-panel min-w-panel flex-col self-start bg-cesmag-azul-panel text-texto-inverso',
+        className,
+      )}
+    >
       <div className="flex items-center gap-3 px-4 py-5">
         <Escudo tamano="lg" alt="Escudo de la Universidad CESMAG" />
         <div>

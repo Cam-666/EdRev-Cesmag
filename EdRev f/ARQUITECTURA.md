@@ -209,3 +209,17 @@ lateral queda fijo al desplazar el contenido.
 - Un par sin correo no se puede invitar: en la asignación aparece «Registrar correo» en lugar de «Asignar».
 - En la API simulada, los artículos postulados antes de 2026 se consideran migrados y cada revista trae tres
   registros por corregir de ejemplo (`porCorregir` en la semilla).
+
+## Fase 10: revisión final
+
+- Pantallas pequeñas (RNF-10): por debajo de 1024 px el panel lateral se abre desde «Menú» como un cajón (Radix
+  Dialog: foco atrapado, Escape y el velo lo cierran) y se cierra solo al navegar. Las tablas se desplazan en
+  horizontal y el contenido reduce su margen.
+- Estados: toda pantalla que consulta datos usa `EstadoConsulta` (cargando, error con «Reintentar») y sus tablas
+  tienen texto de vacío; las pestañas de la ficha reciben el artículo ya cargado por `FichaArticuloLayout`.
+- Paginación (RNF-01): artículos, pares, correos y auditoría.
+- Pruebas (`fase10.test.tsx`): las 20 pantallas principales sin violaciones de accesibilidad con sus datos
+  cargados, el menú móvil y el recorrido completo del artículo (registro, comité, candidato nuevo, aceptación,
+  entrega y constancia).
+- Las pruebas usan siempre la API simulada aunque exista `.env.local` apuntando al backend (`test.env` en
+  `vite.config.ts`).

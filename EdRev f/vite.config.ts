@@ -29,5 +29,7 @@ export default defineConfig({
     setupFiles: ['./src/test/setup.ts'],
     css: false,
     testTimeout: 15000,
+    // Tests always run against the simulated API, whatever .env.local says for development.
+    env: { VITE_USE_MOCKS: 'true', VITE_API_URL: 'http://localhost/api' },
   },
 })
