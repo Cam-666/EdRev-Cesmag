@@ -10,8 +10,8 @@
 -- Revistas (D9: sigla, ISSN, logo y colores viven en el código de la página).
 -- id 1 = Educación y Pedagogía (reep) · id 2 = Investigium IRE (ire)
 INSERT INTO revista (id_revista, nombre, correo_remitente) OVERRIDING SYSTEM VALUE VALUES
-  (1, 'Revista Electrónica en Educación y Pedagogía', 'editorial.eyp@gmail.com'),
-  (2, 'Revista Investigium IRE Ciencias Sociales y Humanas', 'editorial.ire@gmail.com');
+  (1, 'Revista Electrónica en Educación y Pedagogía', 'revistaeducacionpedagogia@gmail.com'),
+  (2, 'Revista Investigium IRE Ciencias Sociales y Humanas', 'revistainvestigiumire@gmail.com');
 
 -- Cuentas de la dependencia (RF-40)
 INSERT INTO usuario (nombre, correo, contrasena_hash, rol) VALUES
