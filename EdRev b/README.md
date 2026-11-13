@@ -43,7 +43,9 @@ Cuentas iniciales (contraseña `Editorial2026*`, cámbiela antes de la puesta en
 | Pares: base por revista, filtros, ficha, registro, correo en la otra revista, bloqueo y desbloqueo | Listo |
 | Asignación: par disponible o candidato nuevo, máximo tres aceptados, desempate, respuesta, entrega, concepto | Listo |
 | Tablero e Inicio | Listo |
-| Envío real de correos (Brevo), constancias en PDF, correos enviados, plantillas, usuarios, auditoría, informes, enlaces de contraseña, registros migrados | Pendiente |
+| Constancias: pendientes y emitidas, vista previa con la plantilla en uso, emitir una o todas, reenviar | Listo |
+| Correos enviados: registro con tipos derivados (2.º intento, reenvío por corrección), contadores, reintentar, corregir y reenviar | Listo |
+| Envío real de correos (Brevo) y PDF de la constancia, plantillas, usuarios, auditoría, informes, enlaces de contraseña, registros migrados | Pendiente |
 
 Las invitaciones quedan registradas **«En cola»**: saldrán cuando se conecte el servicio de correo.
 

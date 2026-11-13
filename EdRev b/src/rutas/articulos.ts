@@ -12,6 +12,7 @@ import { usuarioDe } from '../lib/auth.js'
 import { ErrorHttp, idNumerico, idRevista, siglaDe, sinTildes } from '../lib/http.js'
 import { iso } from '../lib/mapeo.js'
 import { articuloDeRevista, detalleArticulo, ultimaRonda } from '../servicios/articulos.js'
+import { correosApi, SELECCION_CORREOS, type FilaCorreo } from '../servicios/correos.js'
 
 export const rutasArticulos = Router()
 
@@ -361,29 +362,14 @@ rutasArticulos.get('/:revista/articulos/:id/historial', async (req, res) => {
   const revista = idRevista(req.params.revista)
   const id = idNumerico(req.params.id, 'Artículo')
   await articuloDeRevista(pool, revista, id)
-  const correos = await pool.query(
-    `SELECT c.*, e.id_articulo FROM correo c JOIN evaluacion e ON e.id_evaluacion = c.id_evaluacion
-      WHERE e.id_articulo = $1 ORDER BY c.fecha_envio DESC`,
-    [id],
-  )
+  const correos = await pool.query<FilaCorreo>(`${SELECCION_CORREOS} WHERE e.id_articulo = $1`, [id])
   const auditoria = await pool.query(
     `SELECT a.*, u.nombre AS usuario FROM auditoria a LEFT JOIN usuario u ON u.id_usuario = a.id_usuario
       WHERE (a.detalle->>'articulo')::int = $1 ORDER BY a.fecha DESC`,
     [id],
   )
   res.json({
-    correos: correos.rows.map((c) => ({
-      id: String(c.id_correo),
-      revista: siglaDe(revista),
-      articuloId: String(id),
-      asignacionId: String(c.id_evaluacion),
-      tipo: c.tipo,
-      destinatario: c.destinatario,
-      asunto: c.tipo === 'invitacion' ? 'Invitación a evaluar un artículo' : 'Gracias por su evaluación',
-      fechaEnvio: iso(c.fecha_envio),
-      estado: c.resultado,
-      atendido: false,
-    })),
+    correos: correosApi(correos.rows),
     auditoria: auditoria.rows.map((a) => ({
       id: String(a.id_auditoria),
       revista: siglaDe(revista),

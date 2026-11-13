@@ -13,6 +13,8 @@ import { rutasAcceso } from './rutas/acceso.js'
 import { rutasArticulos } from './rutas/articulos.js'
 import { rutasAsignaciones } from './rutas/asignaciones.js'
 import { rutasAutores } from './rutas/autores.js'
+import { rutasConstancias } from './rutas/constancias.js'
+import { rutasCorreos } from './rutas/correos.js'
 import { rutasPanel } from './rutas/panel.js'
 import { rutasPares } from './rutas/pares.js'
 
@@ -33,6 +35,8 @@ export function crearApp() {
   privadas.use(rutasAutores)
   privadas.use(rutasPares)
   privadas.use(rutasAsignaciones)
+  privadas.use(rutasConstancias)
+  privadas.use(rutasCorreos)
   app.use('/api', privadas)
 
   app.use((_req, res) => {

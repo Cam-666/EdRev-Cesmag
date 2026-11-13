@@ -14,6 +14,7 @@ import { usuarioDe } from '../lib/auth.js'
 import { ErrorHttp, idNumerico, idRevista } from '../lib/http.js'
 import { conceptoDb, conflicto, iso } from '../lib/mapeo.js'
 import { articuloDeRevista, autoresDe, evaluacionesDe, ultimaRonda } from '../servicios/articulos.js'
+import { encolar } from '../servicios/correos.js'
 import { registrarPar } from './pares.js'
 
 export const rutasAsignaciones = Router()
@@ -105,10 +106,7 @@ rutasAsignaciones.post('/:revista/articulos/:id/asignaciones', async (req, res) 
     )
     const idEvaluacion = rows[0]?.id_evaluacion ?? 0
     // RF-24: the invitation is queued at once; the mail service sends it.
-    await c.query(
-      `INSERT INTO correo (id_evaluacion, tipo, destinatario, resultado) VALUES ($1, 'invitacion', $2, 'en-cola')`,
-      [idEvaluacion, par.correo],
-    )
+    await encolar(c, idEvaluacion, 'invitacion', par.correo)
     await auditar(c, {
       usuario: usuario.id,
       tabla: 'evaluacion',
@@ -261,10 +259,8 @@ rutasAsignaciones.post('/:revista/asignaciones/:id/reenviar', async (req, res) =
   )
   const p = par.rows[0]
   if (!p) throw new ErrorHttp(404, 'Par evaluador no encontrado')
-  await pool.query(
-    "UPDATE correo SET resultado = 'en-cola', destinatario = $2, fecha_envio = now() WHERE id_evaluacion = $1 AND resultado IN ('rebotado','fallido')",
-    [id, p.correo],
-  )
+  // A new mail (shown as «Reenvío por corrección»); the failed one stays in the log, handled.
+  await encolar(pool, id, 'invitacion', p.correo)
   res.json({
     asignacion: await asignacionApi(pool, e.id_articulo, id),
     par: { id: String(p.id_par), nombre: p.nombre, correo: p.correo },
