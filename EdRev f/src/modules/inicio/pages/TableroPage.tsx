@@ -3,8 +3,9 @@
  * situations the dependency identified as priority — peers that have not answered and delivered
  * evaluations with a pending constancia — with their count and a way to open each list, plus the
  * articles in evaluation and approved.
- * Covers: RF-37, HU-25, RF-02.
+ * Covers: RF-37, RF-44, HU-25, RF-02.
  */
+import { Alerta } from '@/components/common/Alerta'
 import { AlertasTablero } from '../components/AlertasTablero'
 import { useTablero } from '../hooks/usePanel'
 import { usePermiso } from '@/modules/acceso/hooks/usePermiso'
@@ -73,6 +74,21 @@ export function TableroPage() {
                 textoEnlace="Ver artículos"
               />
             </div>
+            {t.porCorregir > 0 && (
+              <Alerta
+                tipo="advertencia"
+                titulo="Registros migrados por corregir"
+                accion={
+                  <EnlaceBoton variante="secundario" tamano="sm" to={`/${revista}/por-corregir`}>
+                    Corregir
+                  </EnlaceBoton>
+                }
+              >
+                {t.porCorregir === 1
+                  ? '1 registro del Excel no encaja en las listas del sistema.'
+                  : `${t.porCorregir} registros del Excel no encajan en las listas del sistema.`}
+              </Alerta>
+            )}
             <AlertasTablero
               revista={revista}
               sinResponder={t.sinResponder}

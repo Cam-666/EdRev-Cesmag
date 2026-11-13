@@ -573,6 +573,11 @@ export const SEED_REEP: SeedRevista = construirSeed({
       ],
     },
   ],
+  porCorregir: [
+    { campo: 'tipo-articulo', ref: '2024-018', excel: 'Artículo corto' },
+    { campo: 'estado-articulo', ref: '2025-028', excel: 'En espera del autor' },
+    { campo: 'concepto', ref: '2025-041#2', excel: 'Publicable con ajustes menores' },
+  ],
   correosExtra: [
     {
       n: '2026-034',

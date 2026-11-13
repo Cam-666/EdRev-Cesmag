@@ -30,6 +30,7 @@ import { CorreosPage } from '@/modules/correos/pages/CorreosPage'
 import { InicioGeneralPage } from '@/modules/inicio/pages/InicioGeneralPage'
 import { TableroPage } from '@/modules/inicio/pages/TableroPage'
 import { InformesPage } from '@/modules/informes/pages/InformesPage'
+import { PorCorregirPage } from '@/modules/migracion/pages/PorCorregirPage'
 import { ParDetallePage } from '@/modules/pares/pages/ParDetallePage'
 import { ParesBloqueadosPage } from '@/modules/pares/pages/ParesBloqueadosPage'
 import { ParesPage } from '@/modules/pares/pages/ParesPage'
@@ -97,6 +98,7 @@ export const rutasPrivadas: RouteObject[] = [
               { path: 'pares/:id', element: <ParDetallePage /> },
               { path: 'constancias', element: <ConstanciasPage /> },
               { path: 'correos', element: <CorreosPage /> },
+              { path: 'por-corregir', element: <PorCorregirPage /> },
             ],
           },
         ],

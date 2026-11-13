@@ -188,6 +188,7 @@ export const handlersPanel = [
       aprobados: c.base.articulos.filter((a) => a.estado === 'aprobado').length,
       sinResponder: sinResponder(c.base),
       constanciasPendientes: pendientes(c.base),
+      porCorregir: c.base.porCorregir.length,
     }
     return HttpResponse.json(tablero)
   }),
@@ -205,6 +206,7 @@ export const handlersPanel = [
           pares: base.pares.length,
           sinResponder: sinResponder(base).length,
           constanciasPendientes: pendientes(base).length,
+          porCorregir: base.porCorregir.length,
         }
       }),
     }

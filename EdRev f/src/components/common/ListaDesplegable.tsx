@@ -22,6 +22,8 @@ export interface ListaDesplegableProps {
   error?: string
   disabled?: boolean
   className?: string
+  /** Keeps the label for assistive technology only (e.g. a field inside a table row). */
+  etiquetaOculta?: boolean
 }
 
 export function ListaDesplegable({
@@ -34,6 +36,7 @@ export function ListaDesplegable({
   error,
   disabled,
   className,
+  etiquetaOculta = false,
 }: ListaDesplegableProps) {
   const generado = useId()
   const idCampo = id ?? generado
@@ -41,7 +44,10 @@ export function ListaDesplegable({
 
   return (
     <div className={cn('flex flex-col gap-1', className)}>
-      <label htmlFor={idCampo} className="text-etiqueta-13 text-texto-principal">
+      <label
+        htmlFor={idCampo}
+        className={cn('text-etiqueta-13 text-texto-principal', etiquetaOculta && 'sr-only')}
+      >
         {etiqueta}
       </label>
       <Select.Root value={valor} onValueChange={onCambio} disabled={disabled}>

@@ -125,7 +125,7 @@ export function ParDetallePage() {
                 </div>
                 <div>
                   <dt className="text-micro-11 uppercase text-texto-secundario">Correo</dt>
-                  <dd className="text-cuerpo-15">{par.correo}</dd>
+                  <dd className="text-cuerpo-15">{par.correo || 'Sin correo'}</dd>
                 </div>
                 <div>
                   <dt className="text-micro-11 uppercase text-texto-secundario">Área</dt>

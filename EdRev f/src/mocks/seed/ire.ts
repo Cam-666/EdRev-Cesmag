@@ -555,6 +555,11 @@ export const SEED_IRE: SeedRevista = construirSeed({
       au: [16],
     },
   ],
+  porCorregir: [
+    { campo: 'tipo-articulo', ref: '2025-070', excel: 'Reporte de caso' },
+    { campo: 'concepto', ref: '2024-037#1', excel: 'Aceptado con cambios' },
+    { campo: 'correo-par', ref: '4', excel: '' },
+  ],
   correosExtra: [
     {
       n: '2026-077',

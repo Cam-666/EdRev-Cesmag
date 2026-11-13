@@ -98,6 +98,8 @@ export interface FiltrosArticulos {
 export interface ArticuloDetalle extends Omit<Articulo, 'autoresIds'> {
   autores: AutorDeArticulo[]
   asignaciones: AsignacionDetalle[]
+  /** Loaded from the Excel by the migration (RF-42). */
+  migrado: boolean
 }
 
 export interface NuevoArticulo {

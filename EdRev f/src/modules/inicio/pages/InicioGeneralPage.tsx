@@ -39,6 +39,13 @@ function casosPendientes(resumen: ResumenRevista[]): CasoPendiente[] {
       casos: r.constanciasPendientes,
       destino: `/${r.revista}/constancias`,
     },
+    {
+      clave: `${r.revista}-migrados`,
+      revista: r.revista,
+      situacion: 'Registros migrados por corregir',
+      casos: r.porCorregir,
+      destino: `/${r.revista}/por-corregir`,
+    },
   ])
 }
 

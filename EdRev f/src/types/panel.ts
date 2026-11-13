@@ -27,6 +27,8 @@ export interface Tablero {
   aprobados: number
   sinResponder: CasoSinResponder[]
   constanciasPendientes: CasoConstanciaPendiente[]
+  /** Migrated records still waiting for a correction (RF-44). */
+  porCorregir: number
 }
 
 export interface ResumenRevista {
@@ -35,6 +37,7 @@ export interface ResumenRevista {
   pares: number
   sinResponder: number
   constanciasPendientes: number
+  porCorregir: number
 }
 
 /** Home screen across both journals (the only place allowed to show both, RF-37). */

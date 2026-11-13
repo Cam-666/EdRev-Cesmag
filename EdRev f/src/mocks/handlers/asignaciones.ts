@@ -76,6 +76,13 @@ function validar(base: SeedRevista, articulo: Articulo, par: ParEvaluador): Vali
       mensaje: 'El par está bloqueado y no recibe nuevas invitaciones',
     }
   }
+  if (!par.correo) {
+    return {
+      ok: false,
+      estado: 422,
+      mensaje: 'El par no tiene correo: regístrelo antes de invitarlo',
+    }
+  }
   const actuales = asignadas(base, articulo.id)
   if (actuales.some((a) => a.parId === par.id)) {
     return { ok: false, estado: 409, mensaje: 'El par ya está asignado a este artículo' }

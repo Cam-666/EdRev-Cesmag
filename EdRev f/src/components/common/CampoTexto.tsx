@@ -14,6 +14,8 @@ export interface CampoTextoProps extends Omit<ComponentPropsWithRef<'input'>, 'i
   error?: string
   /** Control aligned to the right of the label (e.g. the "Mostrar" password toggle). */
   accionEtiqueta?: ReactNode
+  /** Keeps the label for assistive technology only (e.g. a field inside a table row). */
+  etiquetaOculta?: boolean
 }
 
 export function CampoTexto({
@@ -22,6 +24,7 @@ export function CampoTexto({
   ayuda,
   error,
   accionEtiqueta,
+  etiquetaOculta = false,
   className,
   required,
   ...resto
@@ -35,7 +38,10 @@ export function CampoTexto({
   return (
     <div className="flex flex-col gap-1">
       <div className="flex items-center justify-between gap-2">
-        <label htmlFor={idCampo} className="text-etiqueta-13 text-texto-principal">
+        <label
+          htmlFor={idCampo}
+          className={cn('text-etiqueta-13 text-texto-principal', etiquetaOculta && 'sr-only')}
+        >
           {etiqueta}
           {required && (
             <span aria-hidden="true" className="text-estado-error">

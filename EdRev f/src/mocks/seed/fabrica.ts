@@ -20,6 +20,7 @@ import type {
   MotivoBloqueo,
   ParEvaluador,
 } from '@/types/par'
+import type { CampoPorCorregir, RegistroPorCorregir } from '@/types/migracion'
 import type { Revista } from '@/types/revista'
 
 export interface SeedRevista {
@@ -30,6 +31,8 @@ export interface SeedRevista {
   constancias: Constancia[]
   correos: CorreoEnviado[]
   auditoria: EntradaAuditoria[]
+  /** Migrated records whose Excel text did not fit the closed lists (RF-44). */
+  porCorregir: RegistroPorCorregir[]
 }
 
 /** [name, orcid, affiliation, country?] */
@@ -89,12 +92,27 @@ export interface CorreoSeed {
   e: CorreoEnviado['estado']
 }
 
+/**
+ * A datum of the Excel that did not fit: `ref` is the article number, `article#order` for an
+ * evaluation, or the peer index for a peer without email.
+ */
+export interface PorCorregirSeed {
+  campo: CampoPorCorregir
+  ref: string
+  excel: string
+}
+
+/** Articles postulated before the system: they come from the Excel (RF-42). */
+const ANTES_DEL_SISTEMA = '2026-01-01'
+const EQUIPO = 'Equipo del proyecto'
+
 export interface EntradaSeed {
   revista: Revista
   autores: AutorSeed[]
   pares: ParSeed[]
   articulos: ArtSeed[]
   correosExtra?: CorreoSeed[]
+  porCorregir?: PorCorregirSeed[]
 }
 
 const DOMINIOS: Record<string, string> = {
@@ -217,14 +235,15 @@ export function construirSeed(entrada: EntradaSeed): SeedRevista {
       motivoArchivo: s.arch ? s.arch[1] : null,
     })
 
+    const migrado = s.f < ANTES_DEL_SISTEMA
     auditoria.push({
       id: `${p}-aud-${nid()}`,
       revista,
       articuloId: s.n,
-      tipo: 'registro',
-      accion: `Registró el artículo ${s.n}`,
+      tipo: migrado ? 'migracion' : 'registro',
+      accion: migrado ? 'Cargó el artículo desde el Excel' : `Registró el artículo ${s.n}`,
       fecha: fechaHora(s.f, '09:15'),
-      usuario: AUXILIAR,
+      usuario: migrado ? EQUIPO : AUXILIAR,
     })
     for (const r of rondasComite) {
       auditoria.push({
@@ -382,6 +401,46 @@ export function construirSeed(entrada: EntradaSeed): SeedRevista {
     }
   }
 
+  // RF-44: what did not fit is loaded with the datum empty and listed to be corrected.
+  const porCorregir: RegistroPorCorregir[] = (entrada.porCorregir ?? []).map((x, i) => {
+    const id = `${p}-pc-${i + 1}`
+    if (x.campo === 'correo-par') {
+      const par = pares[Number(x.ref)]
+      if (!par) throw new Error(`Seed ${revista}: unknown peer ${x.ref}`)
+      par.correo = ''
+      return {
+        id,
+        campo: x.campo,
+        valorExcel: x.excel,
+        descripcion: par.nombre,
+        enlace: `/${revista}/pares/${par.id}`,
+      }
+    }
+    const [n = '', orden] = x.ref.split('#')
+    const articulo = articulos.find((a) => a.id === n)
+    if (!articulo) throw new Error(`Seed ${revista}: unknown article ${n}`)
+    const descripcion = `${articulo.numeroOjs} · ${articulo.titulo}`
+    if (x.campo === 'concepto') {
+      const asignacion = asignaciones.find((a) => a.id === `${n}-p${orden}`)
+      if (!asignacion) throw new Error(`Seed ${revista}: unknown evaluation ${x.ref}`)
+      asignacion.concepto = null
+      return {
+        id,
+        campo: x.campo,
+        valorExcel: x.excel,
+        descripcion: `${descripcion} · par ${orden}`,
+        enlace: `/${revista}/articulos/${n}/pares`,
+      }
+    }
+    return {
+      id,
+      campo: x.campo,
+      valorExcel: x.excel,
+      descripcion,
+      enlace: `/${revista}/articulos/${n}`,
+    }
+  })
+
   const porFecha = (a: { fecha: string }, b: { fecha: string }) => (a.fecha < b.fecha ? 1 : -1)
   return {
     autores,
@@ -391,6 +450,7 @@ export function construirSeed(entrada: EntradaSeed): SeedRevista {
     constancias,
     correos: correos.sort((a, b) => (a.fechaEnvio < b.fechaEnvio ? 1 : -1)),
     auditoria: auditoria.sort(porFecha),
+    porCorregir,
   }
 }
 

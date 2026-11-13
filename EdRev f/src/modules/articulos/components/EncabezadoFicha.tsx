@@ -34,6 +34,11 @@ export function EncabezadoFicha({ articulo, acciones }: EncabezadoFichaProps) {
         <li>
           <DistintivoEstado estado={articulo.estado} />
         </li>
+        {articulo.migrado && (
+          <li className="rounded-full bg-superficie-sutil px-3 py-1 text-etiqueta-13 text-neutro-800">
+            Migrado del Excel
+          </li>
+        )}
         {coincidencias !== null && (
           <li
             className={

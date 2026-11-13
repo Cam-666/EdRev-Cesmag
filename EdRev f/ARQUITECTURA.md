@@ -196,3 +196,16 @@ lateral queda fijo al desplazar el contenido.
   la cuenta no haya ingresado, «Reenviar enlace» en Editar usuario manda otro (el anterior deja de servir).
 - La API simulada devuelve `enlaceDemo` para que la demostración abra el enlace que llegaría por correo; la
   API real no lo devuelve. Cada cuenta tiene su contraseña en el mock; las de la semilla usan la de demostración.
+
+## Fase 9: migración del Excel (RF-42 a RF-44, HU-32)
+
+- `modules/migracion`: «Registros migrados por corregir» (`/:revista/por-corregir`). Lista lo que el Excel trajo y
+  no encaja en las listas cerradas (tipo y estado del artículo, concepto del par) o lo que no trajo y el
+  sistema necesita (el correo de un par, que se pide antes de volver a invitarlo). Cada fila muestra lo que decía
+  el Excel y se corrige ahí mismo; al corregirla sale de la lista y el cambio queda en el historial.
+- El Tablero avisa cuántos registros faltan por corregir y lleva a la lista; Inicio los incluye en «Pendiente».
+- Los artículos cargados desde el Excel tienen la acción «Migración» en la auditoría y la ficha muestra
+  «Migrado del Excel». Las constancias pendientes indican su origen (migrado o sistema), como antes.
+- Un par sin correo no se puede invitar: en la asignación aparece «Registrar correo» en lugar de «Asignar».
+- En la API simulada, los artículos postulados antes de 2026 se consideran migrados y cada revista trae tres
+  registros por corregir de ejemplo (`porCorregir` en la semilla).

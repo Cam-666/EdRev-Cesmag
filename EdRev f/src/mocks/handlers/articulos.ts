@@ -82,6 +82,7 @@ function detalle(base: SeedRevista, a: Articulo): ArticuloDetalle {
     ...resto,
     autores,
     asignaciones,
+    migrado: base.auditoria.some((x) => x.articuloId === a.id && x.tipo === 'migracion'),
   }
 }
 
