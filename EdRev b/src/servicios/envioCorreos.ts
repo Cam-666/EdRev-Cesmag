@@ -14,6 +14,7 @@
 import { config } from '../config.js'
 import { pool, type Cliente } from '../db.js'
 import { auditar } from '../lib/auditoria.js'
+import { ACCIONES_CORREO, botonesHtml, enlaceRespuesta, MARCA_BOTONES } from '../lib/respuestas.js'
 import { generarConstancia } from './constanciaPdf.js'
 
 /** The mail that only delivers the constancia (no thank-you template): a fixed, short text. */
@@ -28,6 +29,7 @@ const modo = (): Modo => {
 
 interface Pendiente {
   id_correo: number
+  id_evaluacion: number
   tipo: 'invitacion' | 'agradecimiento' | 'constancia'
   destinatario: string
   id_revista: number
@@ -49,7 +51,7 @@ function rellenar(texto: string, v: Record<string, string>): string {
 
 const escapar = (t: string) => t.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
 
-async function enviarBrevo(p: Pendiente, asunto: string, texto: string, adjunto?: Uint8Array) {
+async function enviarBrevo(p: Pendiente, asunto: string, html: string, adjunto?: Uint8Array) {
   const respuesta = await fetch('https://api.brevo.com/v3/smtp/email', {
     method: 'POST',
     headers: {
@@ -61,7 +63,7 @@ async function enviarBrevo(p: Pendiente, asunto: string, texto: string, adjunto?
       sender: { email: p.remitente, name: p.revista },
       to: [{ email: p.destinatario, name: p.par }],
       subject: asunto,
-      htmlContent: `<div style="font-family:Arial,sans-serif;font-size:15px">${escapar(texto).replace(/\n/g, '<br>')}</div>`,
+      htmlContent: html,
       attachment: adjunto
         ? [{ name: 'constancia.pdf', content: Buffer.from(adjunto).toString('base64') }]
         : undefined,
@@ -76,7 +78,7 @@ async function enviarBrevo(p: Pendiente, asunto: string, texto: string, adjunto?
 
 async function procesar(): Promise<void> {
   const { rows } = await pool.query<Pendiente>(
-    `SELECT c.id_correo, c.tipo, c.destinatario, a.id_revista, a.id_articulo, r.nombre AS revista,
+    `SELECT c.id_correo, c.id_evaluacion, c.tipo, c.destinatario, a.id_revista, a.id_articulo, r.nombre AS revista,
             r.correo_remitente AS remitente, a.numero_ojs, a.titulo, p.nombre AS par, p.profesion,
             p.universidad, pl.asunto, pl.cuerpo
        FROM correo c
@@ -95,21 +97,28 @@ async function procesar(): Promise<void> {
       profesion: p.profesion ?? '',
       universidad: p.universidad ?? '',
       articulo: p.titulo,
+      botones: MARCA_BOTONES,
     }
     const solo = p.tipo === 'constancia'
     const asunto = rellenar(p.asunto ?? (solo ? 'Constancia de participación · {{revista}}' : 'Editorial · {{revista}}'), v)
     const texto = rellenar(p.cuerpo ?? (solo ? TEXTO_SOLO_CONSTANCIA : ''), v)
+    // The buttons of the invitation (acepto / no acepto / no desea) replace the {{botones}} marker.
+    const botones = p.tipo === 'invitacion' ? botonesHtml(p.id_evaluacion) : ''
+    const html = `<div style="font-family:Arial,sans-serif;font-size:15px">${escapar(texto).replace(/\n/g, '<br>').replace(MARCA_BOTONES, botones)}</div>`
     let resultado: 'enviado' | 'rebotado' | 'fallido'
     try {
       if (modo() === 'simulado') {
         resultado = 'enviado'
         console.log(`[correo simulado] ${p.tipo} → ${p.destinatario}: ${asunto}`)
+        if (botones) {
+          for (const a of ACCIONES_CORREO) console.log(`  botón «${a}»: ${enlaceRespuesta(p.id_evaluacion, a)}`)
+        }
       } else {
         const adjunto =
           p.tipo !== 'invitacion'
             ? await generarConstancia(pool, { par: p.par, articulo: p.titulo, idRevista: p.id_revista })
             : undefined
-        resultado = await enviarBrevo(p, asunto, texto, adjunto)
+        resultado = await enviarBrevo(p, asunto, html, adjunto)
       }
     } catch (e) {
       console.error('Envío fallido:', (e as Error).message)

@@ -33,7 +33,7 @@ FROM revista r
 CROSS JOIN (VALUES
   ('Invitación a evaluar', 'invitacion',
    'Invitación a evaluar un artículo · {{revista}}',
-   E'Apreciado(a) {{par}}, {{profesion}} de la {{universidad}}:\n\nLa {{revista}} lo(a) invita a participar como par evaluador del artículo «{{articulo}}» (solicitud {{numero}}). Si acepta, recibirá los documentos desde el OJS.\n\nDependencia de Editorial'),
+   E'Apreciado(a) {{par}}, {{profesion}} de la {{universidad}}:\n\nLa {{revista}} lo(a) invita a participar como par evaluador del artículo «{{articulo}}» (solicitud {{numero}}). Si acepta, recibirá los documentos desde el OJS.\n\nResponda con un clic:\n\n{{botones}}\n\nDependencia de Editorial'),
   ('Agradecimiento', 'agradecimiento',
    'Gracias por su evaluación · {{revista}}',
    E'Apreciado(a) {{par}}:\n\nAgradecemos su participación como par evaluador del artículo «{{articulo}}». Adjuntamos su constancia.\n\nDependencia de Editorial'),

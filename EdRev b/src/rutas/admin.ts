@@ -114,7 +114,7 @@ rutasAdmin.post('/usuarios/:id/enlace', async (req, res) => {
 
 // ---------------------------------------------------------------- Plantillas
 const VARIABLES: Record<string, string[]> = {
-  invitacion: ['revista', 'numero', 'par', 'profesion', 'universidad', 'articulo'],
+  invitacion: ['revista', 'numero', 'par', 'profesion', 'universidad', 'articulo', 'botones'],
   agradecimiento: ['revista', 'par', 'articulo'],
   constancia: ['revista', 'par', 'articulo'],
 }

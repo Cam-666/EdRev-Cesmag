@@ -14,6 +14,7 @@ import { ErrorHttp } from './lib/http.js'
 import { rutasAcceso } from './rutas/acceso.js'
 import { rutasAdmin } from './rutas/admin.js'
 import { rutasInformes } from './rutas/informes.js'
+import { rutasInvitaciones } from './rutas/invitaciones.js'
 import { rutasArticulos } from './rutas/articulos.js'
 import { rutasAsignaciones } from './rutas/asignaciones.js'
 import { rutasAutores } from './rutas/autores.js'
@@ -38,6 +39,9 @@ export function crearApp() {
   })
   app.use('/api', rutasAcceso)
   app.use('/api', rutasWebhooks)
+  // The peer answers from the mail without an account: public, with a limit of requests.
+  app.use('/api/invitaciones', rateLimit({ windowMs: 15 * 60_000, limit: 200, standardHeaders: true, legacyHeaders: false }))
+  app.use('/api', rutasInvitaciones)
 
   const privadas = express.Router()
   privadas.use(requiereSesion)

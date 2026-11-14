@@ -41,7 +41,6 @@ export function publicacionApi(volumen: number | null, numero: number | null) {
   return volumen !== null && numero !== null ? { volumen, numero } : null
 }
 
-const UNIVERSIDAD_CESMAG = 'Universidad CESMAG'
 const limpio = (t: string | null) =>
   (t ?? '')
     .normalize('NFD')
@@ -58,22 +57,4 @@ export function mismaInstitucion(
   if (delMismo.length === 0) return null
   const quien = delMismo.length === 1 ? 'del autor' : 'de los autores'
   return `El par pertenece a ${universidad}, la misma institución ${quien} ${delMismo.map((a) => a.nombre).join(', ')}: no se puede asignar a este artículo.`
-}
-
-/** RF-17: CESMAG itself is warned (the peer is not independent of the editorial team). */
-export function conflicto(
-  universidad: string | null,
-  autores: Array<{ nombre: string; filiacion: string | null }>,
-): { mensaje: string } | null {
-  const delMismo = autores.filter((a) => limpio(a.filiacion) === limpio(universidad) && universidad)
-  if (delMismo.length > 0) {
-    const verbo = delMismo.length === 1 ? 'el autor' : 'los autores'
-    return {
-      mensaje: `El par y ${verbo} ${delMismo.map((a) => a.nombre).join(', ')} pertenecen a ${universidad}. Puede asignarlo de todos modos.`,
-    }
-  }
-  if (limpio(universidad) === limpio(UNIVERSIDAD_CESMAG)) {
-    return { mensaje: `El par pertenece a ${UNIVERSIDAD_CESMAG}. Puede asignarlo de todos modos.` }
-  }
-  return null
 }

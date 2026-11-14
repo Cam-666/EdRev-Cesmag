@@ -7,15 +7,15 @@
  */
 import { Router } from 'express'
 import { z } from 'zod'
-import { config } from '../config.js'
 import { enTransaccion, pool, type Cliente } from '../db.js'
 import { auditar } from '../lib/auditoria.js'
 import { usuarioDe } from '../lib/auth.js'
 import { ErrorHttp, idNumerico, idRevista } from '../lib/http.js'
-import { conceptoDb, conflicto, iso, mismaInstitucion } from '../lib/mapeo.js'
+import { conceptoDb, iso, mismaInstitucion } from '../lib/mapeo.js'
 import { reglaPares } from '../lib/paresArticulo.js'
 import { articuloDeRevista, autoresDe, evaluacionesDe, ultimaRonda } from '../servicios/articulos.js'
 import { encolar } from '../servicios/correos.js'
+import { aplicarRespuesta } from '../servicios/respuestas.js'
 import { registrarPar } from './pares.js'
 
 export const rutasAsignaciones = Router()
@@ -112,7 +112,6 @@ rutasAsignaciones.post('/:revista/articulos/:id/asignaciones', async (req, res) 
     return {
       asignacion: await asignacionApi(c, idArticulo, idEvaluacion),
       par: { id: String(par.id_par), nombre: par.nombre, correo: par.correo },
-      conflicto: conflicto(par.universidad, autores),
       correo: { estado: 'en-cola', destinatario: par.correo },
     }
   })
@@ -128,51 +127,7 @@ rutasAsignaciones.post('/:revista/asignaciones/:id/respuesta', async (req, res) 
   const { respuesta: r } = respuesta.parse(req.body)
   const cuerpo = await enTransaccion(async (c) => {
     const e = await evaluacionDeRevista(c, revista, id)
-    if (e.estado_par !== 'invitado') throw new ErrorHttp(409, 'El par ya respondió esta invitación')
-    if (r === 'acepto') {
-      const ocupados = await c.query<{ n: number }>(
-        `SELECT count(*)::int AS n FROM evaluacion WHERE id_articulo = $1 AND estado_par IN ('acepto','entrego')`,
-        [e.id_articulo],
-      )
-      if ((ocupados.rows[0]?.n ?? 0) >= config.maxPares) {
-        throw new ErrorHttp(409, 'El artículo ya tiene tres pares que aceptaron')
-      }
-      await c.query("UPDATE evaluacion SET estado_par = 'acepto' WHERE id_evaluacion = $1", [id])
-      // RF-22: the article is «En evaluación» when the first peer accepts.
-      await c.query(
-        "UPDATE articulo SET estado = 'en-evaluacion' WHERE id_articulo = $1 AND estado = 'en-revision'",
-        [e.id_articulo],
-      )
-    } else if (r === 'no-acepto') {
-      await c.query("UPDATE evaluacion SET estado_par = 'no-acepto' WHERE id_evaluacion = $1", [id])
-    } else {
-      if (r === 'sin-respuesta') {
-        const intentos = await c.query<{ n: number }>(
-          "SELECT count(*)::int AS n FROM correo WHERE id_evaluacion = $1 AND tipo = 'invitacion' AND resultado = 'enviado'",
-          [id],
-        )
-        if ((intentos.rows[0]?.n ?? 0) < config.intentosAntesBloqueo) {
-          throw new ErrorHttp(409, 'El bloqueo por falta de respuesta se aplica tras el segundo intento')
-        }
-      }
-      await c.query('UPDATE evaluacion SET estado_par = $1 WHERE id_evaluacion = $2', [
-        r === 'sin-respuesta' ? 'sin-respuesta' : 'no-acepto',
-        id,
-      ])
-      await c.query(
-        'UPDATE par_evaluador SET motivo_bloqueo = $1, fecha_bloqueo = CURRENT_DATE WHERE id_par = $2',
-        [r === 'sin-respuesta' ? 'sin-respuesta' : 'no-participa', e.id_par],
-      )
-    }
-    await auditar(c, {
-      usuario: r === 'sin-respuesta' ? null : usuario.id,
-      tabla: 'evaluacion',
-      idRegistro: id,
-      accion: r === 'acepto' || r === 'no-acepto' ? 'respuesta' : 'bloqueo',
-      texto: `Registró la respuesta del par: ${r}`,
-      revista,
-      articulo: e.id_articulo,
-    })
+    await aplicarRespuesta(c, e, r, usuario.id)
     return asignacionApi(c, e.id_articulo, id)
   })
   res.json(cuerpo)
@@ -256,7 +211,6 @@ rutasAsignaciones.post('/:revista/asignaciones/:id/reenviar', async (req, res) =
   res.json({
     asignacion: await asignacionApi(pool, e.id_articulo, id),
     par: { id: String(p.id_par), nombre: p.nombre, correo: p.correo },
-    conflicto: null,
     correo: { estado: 'en-cola', destinatario: p.correo },
   })
 })

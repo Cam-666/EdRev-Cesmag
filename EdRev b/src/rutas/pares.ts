@@ -10,7 +10,7 @@ import { enTransaccion, pool } from '../db.js'
 import { auditar } from '../lib/auditoria.js'
 import { usuarioDe } from '../lib/auth.js'
 import { CORREO_VALIDO, ErrorHttp, idNumerico, idRevista, siglaDe, sinTildes } from '../lib/http.js'
-import { conceptoApi, conflicto, iso, mismaInstitucion, motivoApi, motivoDb } from '../lib/mapeo.js'
+import { conceptoApi, iso, mismaInstitucion, motivoApi, motivoDb } from '../lib/mapeo.js'
 import { autoresDe } from '../servicios/articulos.js'
 
 export const rutasPares = Router()
@@ -75,9 +75,7 @@ rutasPares.get('/:revista/pares', async (req, res) => {
         ? 'bloqueado'
         : mismaInstitucion(p.universidad, autores)
           ? 'misma-institucion'
-          : conflicto(p.universidad, autores)
-            ? 'conflicto'
-            : 'disponible',
+          : 'disponible',
     },
   }))
   const filtrados = todos
