@@ -10,7 +10,6 @@ describe('peer base (/:revista/pares)', () => {
     expect(await screen.findByText('30 pares · base común de las dos revistas')).toBeInTheDocument()
     expect(await screen.findByText('22 pares')).toBeInTheDocument()
     expect(screen.queryByText('Paula Andrea Narváez')).toBeNull()
-    expect(screen.getAllByText('Conflicto posible').length).toBeGreaterThan(0)
     expect(screen.getAllByText('Disponible').length).toBeGreaterThan(0)
   })
 

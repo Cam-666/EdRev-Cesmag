@@ -8,7 +8,7 @@ import { Escudo } from '@/components/common/Escudo'
 export interface TarjetaAccesoProps {
   titulo: string
   subtitulo: string
-  children: ReactNode
+  children?: ReactNode
 }
 
 export function TarjetaAcceso({ titulo, subtitulo, children }: TarjetaAccesoProps) {

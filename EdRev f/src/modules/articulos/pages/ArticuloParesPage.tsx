@@ -98,11 +98,6 @@ export function ArticuloParesPage() {
             conservó.
           </Alerta>
         )}
-        {envio?.conflicto && (
-          <Alerta tipo="advertencia" titulo="Conflicto posible">
-            {envio.conflicto.mensaje}
-          </Alerta>
-        )}
       </div>
 
       {abierto && (

@@ -21,7 +21,7 @@ export interface FiltrosPares {
   area?: string
   universidad?: string
   estado: FiltroEstadoPares
-  /** Article being worked on: the "Conflicto posible" flag is computed against its authors. */
+  /** Article being worked on: the "same institution" state is computed against its authors. */
   articulo?: string
   pagina: number
   porPagina: number

@@ -5,6 +5,7 @@ import { handlersAsignaciones } from './asignaciones'
 import { handlersAutores } from './autores'
 import { handlersConstancias } from './constancias'
 import { handlersCorreos } from './correos'
+import { handlersInvitaciones } from './invitaciones'
 import { handlersPanel } from './panel'
 import { handlersMigracion } from './migracion'
 import { handlersPares } from './pares'
@@ -17,6 +18,7 @@ export const handlers = [
   ...handlersAutores,
   ...handlersConstancias,
   ...handlersCorreos,
+  ...handlersInvitaciones,
   ...handlersPanel,
   ...handlersPares,
   ...handlersMigracion,

@@ -8,7 +8,6 @@ import { autorPorId, baseDe, todasLasAsignaciones } from '../db'
 import type { SeedRevista } from '../seed/fabrica'
 import { ahoraIso, contexto, error, sinTildes } from './util'
 import { mismaInstitucion } from '@/lib/dominio/conflicto'
-import { detectarConflicto } from '@/lib/dominio/conflicto'
 import { enCurso } from '@/lib/dominio/pares'
 import type {
   EstadoDisponibilidad,
@@ -40,7 +39,7 @@ function disponibilidad(
   if (par.bloqueo) return 'bloqueado'
   const autores = articuloId ? autoresDeArticulo(base, articuloId) : []
   if (mismaInstitucion(par, autores)) return 'misma-institucion'
-  return detectarConflicto(par) ? 'conflicto' : 'disponible'
+  return 'disponible'
 }
 
 function listado(base: SeedRevista, par: ParEvaluador, articuloId: string | null): ParListado {

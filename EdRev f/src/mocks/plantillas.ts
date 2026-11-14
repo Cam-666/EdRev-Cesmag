@@ -20,8 +20,8 @@ const BASE: Array<Omit<Plantilla, 'id' | 'revista' | 'fondoPdf'>> = [
     nombre: 'Invitación a evaluar',
     asunto: 'Invitación a evaluar un artículo · {{revista}}',
     cuerpo:
-      'Apreciado(a) {{par}}, {{profesion}} de la {{universidad}}:\n\nLa {{revista}} lo(a) invita a participar como par evaluador del artículo «{{articulo}}» (solicitud {{numero}}). Si acepta, recibirá los documentos desde el OJS.\n\nDependencia de Editorial',
-    variables: ['revista', 'numero', 'par', 'profesion', 'universidad', 'articulo'],
+      'Apreciado(a) {{par}}, {{profesion}} de la {{universidad}}:\n\nLa {{revista}} lo(a) invita a participar como par evaluador del artículo «{{articulo}}» (solicitud {{numero}}). Si acepta, recibirá los documentos desde el OJS.\n\nResponda con un clic:\n\n{{botones}}\n\nDependencia de Editorial',
+    variables: ['revista', 'numero', 'par', 'profesion', 'universidad', 'articulo', 'botones'],
     enUso: true,
   },
   {

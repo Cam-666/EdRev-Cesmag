@@ -24,8 +24,8 @@ export function sinTildes(texto: string): string {
     .toLowerCase()
 }
 
-export function error(estado: number, mensaje: string) {
-  return HttpResponse.json({ mensaje }, { status: estado })
+export function error(estado: number, mensaje: string, extra: Record<string, unknown> = {}) {
+  return HttpResponse.json({ mensaje, ...extra }, { status: estado })
 }
 
 type Contexto =

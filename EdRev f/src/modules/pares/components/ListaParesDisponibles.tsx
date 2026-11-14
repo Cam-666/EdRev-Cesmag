@@ -1,7 +1,7 @@
 /*
  * ListaParesDisponibles — peers of the journal that can be assigned to the article: not blocked
  * and with no evaluation in progress (invited or accepted). Searchable by name, area or university;
- * «Conflicto posible» is marked and never blocks. «Asignar» sends the invitation right away.
+ * Peers of the same institution as an author are not offered. «Asignar» sends the invitation right away.
  * Covers: RF-14, RF-17, RF-19, RF-24, HU-09 (criterion 4), HU-12, HU-13.
  */
 import { useState } from 'react'

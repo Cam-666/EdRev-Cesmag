@@ -1,4 +1,4 @@
-import { detectarConflicto, mismaInstitucion } from './conflicto'
+import { mismaInstitucion } from './conflicto'
 
 const AUTORES = [
   { nombre: 'Sandra Milena Córdoba', filiacion: 'Universidad de Nariño' },
@@ -20,17 +20,5 @@ describe('mismaInstitucion (RF-17): the assignment is refused', () => {
     expect(mismaInstitucion({ universidad: 'Universidad del Valle' }, AUTORES)).toBeNull()
     expect(mismaInstitucion({ universidad: '' }, AUTORES)).toBeNull()
     expect(mismaInstitucion({ universidad: 'Universidad CESMAG' }, [])).toBeNull()
-  })
-})
-
-describe('detectarConflicto (RF-17): only Universidad CESMAG is warned', () => {
-  it('warns for any peer from Universidad CESMAG', () => {
-    expect(detectarConflicto({ universidad: 'Universidad CESMAG' })?.mensaje).toBe(
-      'El par pertenece a Universidad CESMAG. Puede asignarlo de todos modos.',
-    )
-  })
-
-  it('does not warn for an unrelated university', () => {
-    expect(detectarConflicto({ universidad: 'Universidad del Valle' })).toBeNull()
   })
 })

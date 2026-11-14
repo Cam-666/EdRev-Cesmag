@@ -100,17 +100,6 @@ describe('assigning a peer from the article sheet', () => {
     expect(base.total).toBe(1)
   })
 
-  it('marks «Conflicto posible» for a peer from Universidad CESMAG and warns after assigning, without blocking', async () => {
-    const articulo = await articuloNuevo('2026-071', 'reep-au-3') // author not from CESMAG
-    const { user } = montarRuta(`/reep/articulos/${articulo.id}/pares`)
-    const panel = await abrirPanel(user)
-    const tabla = await within(panel).findByRole('table', { name: 'Pares disponibles' })
-    const fila = (await within(tabla).findAllByText('Conflicto posible'))[0]?.closest('tr')
-    await user.click(within(fila as HTMLElement).getByRole('button', { name: /^Asignar a / }))
-    expect(await screen.findByText('Par asignado e invitación enviada')).toBeInTheDocument()
-    expect(screen.getByText('Conflicto posible', { selector: 'p' })).toBeInTheDocument()
-  })
-
   it('does not offer peers of the same institution as an author, and refuses a new candidate from it', async () => {
     const articulo = await articuloNuevo('2026-072', 'reep-au-2') // author from Universidad CESMAG
     const { user } = montarRuta(`/reep/articulos/${articulo.id}/pares`)

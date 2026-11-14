@@ -123,10 +123,8 @@ describe('peers API (mock)', () => {
     expect(bloqueados.items.every((p) => p.bloqueo !== null && p.estado === 'bloqueado')).toBe(true)
   })
 
-  it('marks «Conflicto posible» for Universidad CESMAG and «Misma institución» with the article authors', async () => {
+  it('marks «Misma institución» with the article authors and does not offer those peers', async () => {
     const sinArticulo = await json<ListaPares>(await llamar('/reep/pares?porPagina=50'))
-    const cesmag = sinArticulo.items.find((p) => p.universidad === 'Universidad CESMAG')
-    expect(cesmag?.estado).toBe('conflicto')
 
     // 2026-034 has an author from Universidad Mariana: a Mariana peer cannot be assigned there.
     const conArticulo = await json<ListaPares>(

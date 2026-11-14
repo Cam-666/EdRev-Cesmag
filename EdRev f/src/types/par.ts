@@ -70,9 +70,9 @@ export interface EntregaRegistrada extends Asignacion {
   constanciaId: string | null
 }
 
-export type EstadoDisponibilidad = 'disponible' | 'bloqueado' | 'conflicto' | 'misma-institucion'
+export type EstadoDisponibilidad = 'disponible' | 'bloqueado' | 'misma-institucion'
 
-/** Row of the peers list; `conflicto` = "Conflicto posible" (peer from Universidad CESMAG or from the author's university). */
+/** Row of the peers list; `misma-institucion` = same institution as an author of the article (cannot be assigned). */
 export interface ParListado extends Pick<
   ParEvaluador,
   'id' | 'nombre' | 'correo' | 'universidad' | 'area' | 'bloqueo'
@@ -111,17 +111,10 @@ export interface NuevoPar {
   area: string
 }
 
-export interface Conflicto {
-  /** Human sentence, e.g. "El par y el autor X pertenecen a la Universidad CESMAG." */
-  mensaje: string
-}
-
 export interface ResultadoAsignacion {
   asignacion: Asignacion
   /** The peer assigned (the new candidate, when one was registered). */
   par: Pick<ParEvaluador, 'id' | 'nombre' | 'correo'>
-  /** «Conflicto posible» with an author of the article; it never blocks (RF-17). */
-  conflicto: Conflicto | null
   correo: { estado: EstadoCorreo; destinatario: string }
 }
 

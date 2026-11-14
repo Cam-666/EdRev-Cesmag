@@ -42,4 +42,5 @@ export const DATOS_EJEMPLO: Record<string, string> = {
   universidad: 'Universidad de Nariño',
   par: 'Luz Marina Burbano',
   articulo: 'Alfabetización mediática en la formación de maestros',
+  botones: '[Botones: Acepto la invitación · No acepto esta invitación · No deseo participar más]',
 }

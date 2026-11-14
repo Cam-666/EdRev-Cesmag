@@ -13,7 +13,7 @@ import { plantillaEnUso, todasLasAsignaciones } from '../db'
 import { NOMBRE_EN_CORREO } from '../plantillas'
 import { rellenar } from '@/lib/plantillas'
 import { puedeAsignarPares } from '@/lib/dominio/comite'
-import { detectarConflicto, mismaInstitucion } from '@/lib/dominio/conflicto'
+import { mismaInstitucion } from '@/lib/dominio/conflicto'
 import { enCurso, MAX_PARES_ACTIVOS, ocupaCupo, reglaPares } from '@/lib/dominio/pares'
 import type { Articulo } from '@/types/articulo'
 import type { CorreoEnviado, EstadoCorreo, TipoAuditoria, TipoCorreo } from '@/types/historial'
@@ -187,6 +187,61 @@ function textosInvitacion(revista: Revista, par: ParEvaluador, articulo: Articul
   }
 }
 
+/**
+ * The answer of a peer (RF-22, RF-15), shared by the screen and by the buttons of the invitation
+ * mail (`porCorreo`: the peer answered by itself, so the history says so). Returns the refusal, or
+ * null when it was registered.
+ */
+export function aplicarRespuestaMock(
+  base: SeedRevista,
+  revista: Revista,
+  asignacion: Asignacion,
+  par: ParEvaluador,
+  respuesta: RespuestaPar,
+  quien: string,
+  porCorreo: boolean,
+): { estado: number; mensaje: string } | null {
+  if (asignacion.estado !== 'invitado' && asignacion.estado !== 'segundo-intento') {
+    return { estado: 409, mensaje: 'El par ya respondió esta invitación' }
+  }
+  const ahora = ahoraIso()
+  const articulo = base.articulos.find((a) => a.id === asignacion.articuloId)
+  const origen = porCorreo ? 'Sistema' : quien
+  const texto = (registrado: string, porElPar: string) =>
+    porCorreo ? `El par ${asignacion.orden} respondió desde el correo: ${porElPar}` : registrado
+  if (respuesta === 'acepto') {
+    const ocupados = asignadas(base, asignacion.articuloId).filter(ocupaCupo).length
+    if (ocupados >= MAX_PARES_ACTIVOS) {
+      return { estado: 409, mensaje: 'El artículo ya tiene tres pares que aceptaron' }
+    }
+    asignacion.estado = 'acepto'
+    asignacion.fechaRespuesta = ahora
+    // RF-22: the article goes to «En evaluación» when the first peer accepts.
+    if (articulo?.estado === 'en-revision') articulo.estado = 'en-evaluacion'
+    auditar(base, revista, asignacion.articuloId, 'respuesta', texto(`Registró que el par ${asignacion.orden} aceptó`, 'aceptó la invitación'), origen)
+  } else if (respuesta === 'no-acepto') {
+    // Declining this invitation does not block the peer: it can be invited again later.
+    asignacion.estado = 'no-acepto'
+    asignacion.fechaRespuesta = ahora
+    auditar(base, revista, asignacion.articuloId, 'respuesta', texto(`Registró que el par ${asignacion.orden} no aceptó esta invitación`, 'no aceptó esta invitación'), origen)
+  } else if (respuesta === 'no-desea') {
+    // RF-15: a peer who does not want to take part any more goes to the blocked list.
+    asignacion.estado = 'no-acepto'
+    asignacion.fechaRespuesta = ahora
+    par.bloqueo = { motivo: 'no-desea', fecha: ahora.slice(0, 10) }
+    auditar(base, revista, asignacion.articuloId, 'bloqueo', texto(`Bloqueó al par ${asignacion.orden}: no desea participar`, 'no desea participar más'), origen)
+  } else {
+    // RF-15, RF-29: blocked after the second attempt without an answer.
+    if (asignacion.estado !== 'segundo-intento') {
+      return { estado: 409, mensaje: 'El bloqueo por falta de respuesta se aplica tras el segundo intento' }
+    }
+    asignacion.estado = 'sin-respuesta'
+    par.bloqueo = { motivo: 'sin-respuesta', fecha: ahora.slice(0, 10) }
+    auditar(base, revista, asignacion.articuloId, 'bloqueo', `Bloqueó al par ${asignacion.orden} tras el 2.º intento`, 'Sistema')
+  }
+  return null
+}
+
 export const handlersAsignaciones = [
   http.post('*/api/:revista/articulos/:id/asignaciones', async ({ params, request }) => {
     const c = contexto(params, request, 'asignar-pares')
@@ -259,7 +314,6 @@ export const handlersAsignaciones = [
     const cuerpo: ResultadoAsignacion = {
       asignacion,
       par: { id: par.id, nombre: par.nombre, correo: par.correo },
-      conflicto: detectarConflicto(par, autoresDeArticulo(c.base, articulo.id)),
       correo: { estado: estadoCorreo, destinatario: par.correo },
     }
     return HttpResponse.json(cuerpo, { status: 201 })
@@ -320,7 +374,6 @@ export const handlersAsignaciones = [
     const cuerpo: ResultadoAsignacion = {
       asignacion,
       par: { id: par.id, nombre: par.nombre, correo: par.correo },
-      conflicto: null,
       correo: { estado, destinatario: par.correo },
     }
     return HttpResponse.json(cuerpo)
@@ -338,66 +391,8 @@ export const handlersAsignaciones = [
       return error(409, 'El par ya respondió esta invitación')
     }
 
-    const ahora = ahoraIso()
-    const articulo = c.base.articulos.find((a) => a.id === asignacion.articuloId)
-    if (respuesta === 'acepto') {
-      const ocupados = asignadas(c.base, asignacion.articuloId).filter(ocupaCupo).length
-      if (ocupados >= MAX_PARES_ACTIVOS) {
-        return error(409, 'El artículo ya tiene tres pares que aceptaron')
-      }
-      asignacion.estado = 'acepto'
-      asignacion.fechaRespuesta = ahora
-      // RF-22: the article goes to «En evaluación» when the first peer accepts.
-      if (articulo?.estado === 'en-revision') articulo.estado = 'en-evaluacion'
-      auditar(
-        c.base,
-        c.revista,
-        asignacion.articuloId,
-        'respuesta',
-        `Registró que el par ${asignacion.orden} aceptó`,
-        c.usuario.nombre,
-      )
-    } else if (respuesta === 'no-acepto') {
-      // Declining this invitation does not block the peer: it can be invited again later.
-      asignacion.estado = 'no-acepto'
-      asignacion.fechaRespuesta = ahora
-      auditar(
-        c.base,
-        c.revista,
-        asignacion.articuloId,
-        'respuesta',
-        `Registró que el par ${asignacion.orden} no aceptó esta invitación`,
-        c.usuario.nombre,
-      )
-    } else if (respuesta === 'no-desea') {
-      // RF-15: a peer who does not want to take part any more goes to the blocked list.
-      asignacion.estado = 'no-acepto'
-      asignacion.fechaRespuesta = ahora
-      par.bloqueo = { motivo: 'no-desea', fecha: ahora.slice(0, 10) }
-      auditar(
-        c.base,
-        c.revista,
-        asignacion.articuloId,
-        'bloqueo',
-        `Bloqueó al par ${asignacion.orden}: no desea participar`,
-        c.usuario.nombre,
-      )
-    } else {
-      // RF-15, RF-29: blocked after the second attempt without an answer.
-      if (asignacion.estado !== 'segundo-intento') {
-        return error(409, 'El bloqueo por falta de respuesta se aplica tras el segundo intento')
-      }
-      asignacion.estado = 'sin-respuesta'
-      par.bloqueo = { motivo: 'sin-respuesta', fecha: ahora.slice(0, 10) }
-      auditar(
-        c.base,
-        c.revista,
-        asignacion.articuloId,
-        'bloqueo',
-        `Bloqueó al par ${asignacion.orden} tras el 2.º intento`,
-        'Sistema',
-      )
-    }
+    const fallo = aplicarRespuestaMock(c.base, c.revista, asignacion, par, respuesta, c.usuario.nombre, false)
+    if (fallo) return error(fallo.estado, fallo.mensaje)
     return HttpResponse.json(asignacion)
   }),
 
