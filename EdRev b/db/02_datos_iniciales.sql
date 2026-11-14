@@ -9,9 +9,11 @@
 
 -- Revistas (D9: sigla, ISSN, logo y colores viven en el código de la página).
 -- id 1 = Educación y Pedagogía (reep) · id 2 = Investigium IRE (ire)
-INSERT INTO revista (id_revista, nombre, correo_remitente) OVERRIDING SYSTEM VALUE VALUES
-  (1, 'Revista Electrónica en Educación y Pedagogía', 'revistaeducacionpedagogia@gmail.com'),
-  (2, 'Revista Investigium IRE Ciencias Sociales y Humanas', 'revistainvestigiumire@gmail.com');
+INSERT INTO revista (id_revista, nombre, correo_remitente, issn, indexaciones) OVERRIDING SYSTEM VALUE VALUES
+  (1, 'Revista Electrónica en Educación y Pedagogía', 'revistaeducacionpedagogia@gmail.com', '2590-7476',
+   'Publindex (categoría B), Redalyc, EBSCO, ERIH PLUS, Dialnet, DOAJ, REDIB, LATINDEX, Actualidad Iberoamericana, EZB, LatinREV, REDIPE, MIAR, LivRe y Ulrichsweb de ProQuest'),
+  (2, 'Revista Investigium IRE Ciencias Sociales y Humanas', 'revistainvestigiumire@gmail.com', '2357-5239',
+   'Publindex (categoría C), Redalyc, EBSCO, ERIH PLUS, Dialnet, DOAJ, REDIB, LATINDEX, Actualidad Iberoamericana, EZB, LatinREV, REDIPE, MIAR, LivRe y Ulrichsweb de ProQuest');
 
 -- Días de espera de la respuesta del par (RF-29): 5, ajustable en Administración › Configuración
 INSERT INTO configuracion (clave, valor) VALUES ('dias_espera_respuesta', '5');
@@ -23,12 +25,10 @@ INSERT INTO usuario (nombre, correo, contrasena_hash, rol) VALUES
   ('Andrea Villota', 'andrea.villota@unicesmag.edu.co',
    crypt('Editorial2026*', gen_salt('bf', 10)), 'auxiliar');
 
--- Plantillas en uso de cada revista (RF-45). El PDF de fondo de la constancia es un
--- marcador de posición: la Administradora sube el real desde Administración › Plantillas.
-INSERT INTO plantilla (id_revista, nombre, tipo, asunto, cuerpo, fondo_pdf, en_uso)
-SELECT r.id_revista, p.nombre, p.tipo, p.asunto, p.cuerpo,
-       CASE WHEN p.tipo = 'constancia' THEN convert_to('%PDF-1.4 fondo pendiente', 'UTF8') END,
-       TRUE
+-- Plantillas en uso de cada revista (RF-45). El encabezado, el pie y la firma de la constancia son
+-- imágenes que la Administradora sube desde Administración › Plantillas.
+INSERT INTO plantilla (id_revista, nombre, tipo, asunto, cuerpo, en_uso)
+SELECT r.id_revista, p.nombre, p.tipo, p.asunto, p.cuerpo, TRUE
 FROM revista r
 CROSS JOIN (VALUES
   ('Invitación a evaluar', 'invitacion',
@@ -38,5 +38,5 @@ CROSS JOIN (VALUES
    'Gracias por su evaluación · {{revista}}',
    E'Apreciado(a) {{par}}:\n\nAgradecemos su participación como par evaluador del artículo «{{articulo}}». Adjuntamos su constancia.\n\nDependencia de Editorial'),
   ('Constancia de participación', 'constancia', NULL,
-   E'HACE CONSTAR QUE\n\n{{par}}\n\nparticipó como par evaluador del artículo «{{articulo}}» de la {{revista}} y entregó su concepto.')
+   E'[centro]**LA EDITORA DE LA {{REVISTA}}**\n**ISSN {{issn}} (en línea)**\n\n[centro]**CERTIFICA QUE**\n\n[justificado]**{{PAR}}** participó como evaluador(a) académico(a) del artículo titulado **«{{articulo}}»**, postulado para publicación en una de las ediciones correspondientes al año {{anio}} de la {{revista}}.\n\n[justificado]Su participación se desarrolló en el marco del proceso editorial de evaluación por pares bajo la modalidad de doble ciego, y constituyó un valioso aporte al aseguramiento de la calidad, el rigor y la pertinencia científica de los contenidos publicados por la Revista.\n\n[justificado]Cabe destacar que la {{revista}} se encuentra indexada y referenciada en reconocidos sistemas de información, directorios y bases de datos académicas, entre ellos: {{indexaciones}}.\n\n[justificado]La presente certificación se expide a solicitud del interesado(a), para los fines académicos y profesionales que estime pertinentes.\n\nSan Juan de Pasto, {{fecha}}.\n\nCordialmente,\n\n[centro]{{firma}}\n\n[centro]Editor(a) de la {{revista}}')
 ) AS p(nombre, tipo, asunto, cuerpo);

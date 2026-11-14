@@ -11,7 +11,8 @@ import { auditar } from '../lib/auditoria.js'
 import { usuarioDe } from '../lib/auth.js'
 import { ErrorHttp, idNumerico, idRevista } from '../lib/http.js'
 import { iso } from '../lib/mapeo.js'
-import { generarConstancia } from '../servicios/constanciaPdf.js'
+import { textoPlano } from '../lib/formato.js'
+import { generarConstancia, valoresDe } from '../servicios/constanciaPdf.js'
 import { encolar } from '../servicios/correos.js'
 
 export const rutasConstancias = Router()
@@ -104,8 +105,8 @@ rutasConstancias.get('/:revista/constancias', async (req, res) => {
 rutasConstancias.get('/:revista/constancias/:id/vista-previa', async (req, res) => {
   const revista = idRevista(req.params.revista)
   const f = await entrega(pool, revista, idNumerico(req.params.id, 'Constancia'))
-  const { rows } = await pool.query<{ revista: string; cuerpo: string; plantilla: string }>(
-    `SELECT r.nombre AS revista, p.cuerpo, p.nombre AS plantilla
+  const { rows } = await pool.query<{ revista: string; cuerpo: string; plantilla: string; issn: string | null; indexaciones: string | null }>(
+    `SELECT r.nombre AS revista, r.issn, r.indexaciones, p.cuerpo, p.nombre AS plantilla
        FROM revista r JOIN plantilla p ON p.id_revista = r.id_revista AND p.tipo = 'constancia' AND p.en_uso
       WHERE r.id_revista = $1`,
     [revista],
@@ -115,13 +116,14 @@ rutasConstancias.get('/:revista/constancias/:id/vista-previa', async (req, res) 
   )
   const p = rows[0]
   if (!p) throw new ErrorHttp(409, 'La revista no tiene plantilla de constancia en uso')
-  const valores: Record<string, string> = { par: f.nombre, articulo: f.titulo, revista: p.revista }
+  const valores = valoresDe({ par: f.nombre, articulo: f.titulo, revista: p.revista, issn: p.issn ?? '', indexaciones: p.indexaciones ?? '' })
   res.json({
     universidad: 'UNIVERSIDAD CESMAG',
     revista: p.revista,
-    cuerpo: p.cuerpo.replace(/\{\{(\w+)\}\}/g, (_, clave: string) => valores[clave] ?? `{{${clave}}}`),
+    // The text without its formatting marks; the PDF carries the alignment, the bold and the images.
+    cuerpo: textoPlano(p.cuerpo.replace(/\{\{(\w+)\}\}/g, (m, clave: string) => (clave === 'firma' ? '' : (valores[clave] ?? m)))),
     firma: `${firma.rows[0]?.nombre ?? 'Administradora'} · Dependencia de Editorial`,
-    fondo: `PDF de fondo de «${p.plantilla}»`,
+    fondo: `Encabezado, pie y firma de «${p.plantilla}»`,
   })
 })
 

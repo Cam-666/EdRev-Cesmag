@@ -8,12 +8,12 @@ describe('plantillas, auditoría, informes y pares por revista (RF-12, RF-38, RF
   it('cada revista tiene sus tres plantillas en uso; se valida el texto', async () => {
     const api = await como()
     const { plantillas } = (await api.get('/plantillas')).body
-    expect(plantillas).toHaveLength(6)
+    expect(plantillas.filter((p: { enUso: boolean }) => p.enUso)).toHaveLength(6)
     const constancia = plantillas.find((p: { revista: string; uso: string }) => p.revista === 'ire' && p.uso === 'constancia')
     expect((await api.put(`/plantillas/${constancia.id}`, { asunto: null, cuerpo: 'Sin marcadores' })).status).toBe(422)
     expect((await api.put(`/plantillas/${constancia.id}`, { asunto: null, cuerpo: '{{par}} {{articulo}} {{otro}}' })).status).toBe(422)
-    const nueva = await api.post('/plantillas', { revista: 'ire', nombre: 'Constancia 2027', uso: 'constancia' })
-    expect(nueva.body).toMatchObject({ revista: 'ire', uso: 'constancia', enUso: false })
+    const nueva = await api.post('/plantillas', { revista: 'ire', nombre: 'Constancia 2027', clase: 'archivo' })
+    expect(nueva.body).toMatchObject({ revista: 'ire', uso: 'constancia', clase: 'archivo', enUso: false })
     expect((await api.post(`/plantillas/${nueva.body.id}/usar`)).body.enUso).toBe(true)
     const despues = (await api.get('/plantillas')).body.plantillas
     expect(despues.filter((p: { revista: string; uso: string; enUso: boolean }) => p.revista === 'ire' && p.uso === 'constancia' && p.enUso)).toHaveLength(1)
@@ -44,14 +44,14 @@ describe('plantillas, auditoría, informes y pares por revista (RF-12, RF-38, RF
 
   it('los días de espera empiezan en 5, solo la Administradora los cambia y queda en la auditoría', async () => {
     const api = await como()
-    expect((await api.get('/configuracion')).body).toEqual({ diasEspera: 5 })
+    expect((await api.get('/configuracion')).body).toMatchObject({ diasEspera: 5 })
     const aux = await como(AUXILIAR)
     expect((await aux.get('/configuracion')).status).toBe(403)
     expect((await aux.put('/configuracion', { diasEspera: 3 })).status).toBe(403)
     expect((await api.put('/configuracion', { diasEspera: 0 })).status).toBe(422)
     expect((await api.put('/configuracion', { diasEspera: 90 })).status).toBe(422)
-    expect((await api.put('/configuracion', { diasEspera: 7 })).body).toEqual({ diasEspera: 7 })
-    expect((await api.get('/configuracion')).body).toEqual({ diasEspera: 7 })
+    expect((await api.put('/configuracion', { diasEspera: 7 })).body).toMatchObject({ diasEspera: 7 })
+    expect((await api.get('/configuracion')).body).toMatchObject({ diasEspera: 7 })
     const aud = (await api.get('/auditoria?tipo=edicion&porPagina=5')).body.items as Array<{ accion: string }>
     expect(aud.some((a) => a.accion.includes('de 5 a 7'))).toBe(true)
     await api.put('/configuracion', { diasEspera: 5 })

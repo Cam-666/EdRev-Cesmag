@@ -118,7 +118,9 @@ describe('asignación, evaluación, constancias y correos (RF-19 a RF-34)', () =
     const pendientes = (await api.get('/reep/constancias')).body.pendientes
     expect(pendientes.some((f: { id: string }) => f.id === p.asignacion.id)).toBe(true)
     const vista = await api.get(`/reep/constancias/${p.asignacion.id}/vista-previa`)
-    expect(vista.body.cuerpo).toContain('HACE CONSTAR QUE')
+    expect(vista.body.cuerpo).toContain('CERTIFICA QUE')
+    expect(vista.body.cuerpo).toContain('Publindex') // las indexaciones de la revista
+    expect(vista.body.cuerpo).not.toContain('**') // sin las marcas del formato
     const emision = await api.post(`/reep/constancias/${p.asignacion.id}/emitir`)
     expect(emision.body.constancia.estado).toBe('emitida')
     expect((await api.post(`/reep/constancias/${p.asignacion.id}/emitir`)).status).toBe(409)

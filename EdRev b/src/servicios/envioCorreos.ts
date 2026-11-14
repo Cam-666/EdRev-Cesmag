@@ -14,6 +14,7 @@
 import { config } from '../config.js'
 import { pool, type Cliente } from '../db.js'
 import { auditar } from '../lib/auditoria.js'
+import { aHtml } from '../lib/formato.js'
 import { ACCIONES_CORREO, botonesHtml, enlaceRespuesta, MARCA_BOTONES } from '../lib/respuestas.js'
 import { generarConstancia } from './constanciaPdf.js'
 
@@ -49,7 +50,6 @@ function rellenar(texto: string, v: Record<string, string>): string {
   return texto.replace(/\{\{(\w+)\}\}/g, (_, k: string) => v[k] ?? '')
 }
 
-const escapar = (t: string) => t.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
 
 async function enviarBrevo(p: Pendiente, asunto: string, html: string, adjunto?: Uint8Array) {
   const respuesta = await fetch('https://api.brevo.com/v3/smtp/email', {
@@ -104,7 +104,7 @@ async function procesar(): Promise<void> {
     const texto = rellenar(p.cuerpo ?? (solo ? TEXTO_SOLO_CONSTANCIA : ''), v)
     // The buttons of the invitation (acepto / no acepto / no desea) replace the {{botones}} marker.
     const botones = p.tipo === 'invitacion' ? botonesHtml(p.id_evaluacion) : ''
-    const html = `<div style="font-family:Arial,sans-serif;font-size:15px">${escapar(texto).replace(/\n/g, '<br>').replace(MARCA_BOTONES, botones)}</div>`
+    const html = `<div style="font-family:Arial,sans-serif;font-size:15px">${aHtml(texto, { marca: MARCA_BOTONES, html: botones })}</div>`
     let resultado: 'enviado' | 'rebotado' | 'fallido'
     try {
       if (modo() === 'simulado') {

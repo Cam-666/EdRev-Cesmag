@@ -75,9 +75,9 @@ describe('respuesta del par desde el correo (RF-22)', () => {
   it('la plantilla de invitación de las dos revistas incluye {{botones}}', async () => {
     const api = await como()
     const { plantillas } = (await api.get('/plantillas')).body as {
-      plantillas: Array<{ uso: string; cuerpo: string; variables: string[] }>
+      plantillas: Array<{ uso: string; enUso: boolean; cuerpo: string; variables: string[] }>
     }
-    const invitaciones = plantillas.filter((p) => p.uso === 'invitacion')
+    const invitaciones = plantillas.filter((p) => p.uso === 'invitacion' && p.enUso)
     expect(invitaciones).toHaveLength(2)
     for (const p of invitaciones) {
       expect(p.cuerpo).toContain('{{botones}}')

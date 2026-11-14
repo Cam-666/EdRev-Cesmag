@@ -1,7 +1,7 @@
 /*
  * Administración — the Administradora's only (RNF-05): user accounts (RF-40; a new account
- * receives a link to define its password), each journal's templates with the constancia's PDF
- * background (RF-45) and the audit log of both journals (RF-41).
+ * receives a link to define its password), each journal's templates with the constancia's header,
+ * footer and signature images (RF-45) and the audit log of both journals (RF-41).
  */
 import { Router } from 'express'
 import multer from 'multer'
@@ -12,7 +12,8 @@ import { soloAdministradora, usuarioDe } from '../lib/auth.js'
 import { crearEnlace, enlaceDemo } from '../lib/enlaces.js'
 import { diasEspera, guardarDiasEspera } from '../servicios/configuracion.js'
 import { enviarEnlaceContrasena } from '../servicios/correoCuentas.js'
-import { ErrorHttp, idNumerico, siglaDe } from '../lib/http.js'
+import { ErrorHttp, idNumerico, idRevista, siglaDe } from '../lib/http.js'
+import { vistaPrevia } from '../servicios/constanciaPdf.js'
 import { iso, usuarioApi, type FilaUsuario } from '../lib/mapeo.js'
 
 export const rutasAdmin = Router()
@@ -113,11 +114,17 @@ rutasAdmin.post('/usuarios/:id/enlace', async (req, res) => {
 })
 
 // ---------------------------------------------------------------- Plantillas
+// A template is a mail (subject and text; invitation or thank-you) or a file (the constancia: a
+// text between a header and a footer image, with the signature image where {{firma}} is).
 const VARIABLES: Record<string, string[]> = {
   invitacion: ['revista', 'numero', 'par', 'profesion', 'universidad', 'articulo', 'botones'],
   agradecimiento: ['revista', 'par', 'articulo'],
-  constancia: ['revista', 'par', 'articulo'],
+  // REVISTA and PAR are the same texts in capitals.
+  constancia: ['revista', 'REVISTA', 'par', 'PAR', 'articulo', 'issn', 'indexaciones', 'fecha', 'anio', 'firma'],
 }
+
+const PARTES = ['encabezado', 'pie', 'firma'] as const
+type Parte = (typeof PARTES)[number]
 
 interface FilaPlantilla {
   id_plantilla: number
@@ -127,23 +134,35 @@ interface FilaPlantilla {
   asunto: string | null
   cuerpo: string
   en_uso: boolean
-  tamano: number | null
+  t_encabezado: number | null
+  t_pie: number | null
+  t_firma: number | null
 }
 
 const SELECCION_PLANTILLA = `SELECT id_plantilla, id_revista, nombre, tipo, asunto, cuerpo, en_uso,
-                                    octet_length(fondo_pdf) AS tamano FROM plantilla`
+                                    octet_length(encabezado) AS t_encabezado, octet_length(pie) AS t_pie,
+                                    octet_length(firma) AS t_firma FROM plantilla`
 
 function plantillaApi(p: FilaPlantilla) {
+  const imagen = (nombre: string, tamano: number | null) => (tamano ? { nombre, tamano } : null)
   return {
     id: String(p.id_plantilla),
     revista: siglaDe(p.id_revista),
     uso: p.tipo,
+    clase: p.tipo === 'constancia' ? 'archivo' : 'correo',
     nombre: p.nombre,
     asunto: p.asunto,
     cuerpo: p.cuerpo,
     variables: VARIABLES[p.tipo] ?? [],
     enUso: p.en_uso,
-    fondoPdf: p.tamano ? { nombre: `Fondo de «${p.nombre}».pdf`, tamano: p.tamano } : null,
+    imagenes:
+      p.tipo === 'constancia'
+        ? {
+            encabezado: imagen('Encabezado', p.t_encabezado),
+            pie: imagen('Pie de página', p.t_pie),
+            firma: imagen('Firma', p.t_firma),
+          }
+        : null,
   }
 }
 
@@ -160,7 +179,8 @@ function validar(tipo: string, asunto: string | null, cuerpo: string): void {
   const desconocido = usados.find((m) => !(VARIABLES[tipo] ?? []).includes(m))
   if (desconocido) throw new ErrorHttp(422, `El marcador {{${desconocido}}} no existe en esta plantilla`)
   for (const obligatorio of ['par', 'articulo']) {
-    if (!cuerpo.includes(`{{${obligatorio}}}`)) throw new ErrorHttp(422, `Falta el marcador obligatorio {{${obligatorio}}}`)
+    const hay = cuerpo.includes(`{{${obligatorio}}}`) || (tipo === 'constancia' && cuerpo.includes(`{{${obligatorio.toUpperCase()}}}`))
+    if (!hay) throw new ErrorHttp(422, `Falta el marcador obligatorio {{${obligatorio}}}`)
   }
 }
 
@@ -173,18 +193,26 @@ rutasAdmin.post('/plantillas', async (req, res) => {
   const d = z
     .object({
       revista: z.enum(['reep', 'ire']),
-      nombre: z.string().trim().min(1, 'Escriba el nombre de la plantilla'),
-      uso: z.enum(['invitacion', 'agradecimiento', 'constancia']),
+      nombre: z.string().trim().min(1, 'Escriba el nombre de la plantilla').max(80, 'Máximo 80 caracteres'),
+      clase: z.enum(['correo', 'archivo']),
+      uso: z.enum(['invitacion', 'agradecimiento']).optional(),
     })
     .parse(req.body)
+  const tipo = d.clase === 'archivo' ? 'constancia' : d.uso
+  if (!tipo) throw new ErrorHttp(422, 'Elija para qué correo es la plantilla')
   const revista = d.revista === 'reep' ? 1 : 2
-  // Starts from the text (and PDF background) of the journal's template in use.
-  const { rows } = await pool.query<{ id_plantilla: number }>(
-    `INSERT INTO plantilla (id_revista, nombre, tipo, asunto, cuerpo, fondo_pdf, en_uso)
-     SELECT id_revista, $3, tipo, asunto, cuerpo, fondo_pdf, FALSE FROM plantilla
-      WHERE id_revista = $1 AND tipo = $2 AND en_uso RETURNING id_plantilla`,
-    [revista, d.uso, d.nombre],
-  )
+  // Starts from the text (and images) of the journal's template in use for that use.
+  const { rows } = await pool
+    .query<{ id_plantilla: number }>(
+      `INSERT INTO plantilla (id_revista, nombre, tipo, asunto, cuerpo, encabezado, pie, firma, en_uso)
+       SELECT id_revista, $3, tipo, asunto, cuerpo, encabezado, pie, firma, FALSE FROM plantilla
+        WHERE id_revista = $1 AND tipo = $2 AND en_uso RETURNING id_plantilla`,
+      [revista, tipo, d.nombre],
+    )
+    .catch((e: { code?: string }) => {
+      if (e.code === '23505') throw new ErrorHttp(409, 'Ya existe una plantilla con ese nombre en esta revista')
+      throw e
+    })
   if (!rows[0]) throw new ErrorHttp(409, 'No hay una plantilla en uso para copiar')
   res.status(201).json(plantillaApi(await plantilla(rows[0].id_plantilla)))
 })
@@ -207,19 +235,44 @@ rutasAdmin.put('/plantillas/:id', async (req, res) => {
   res.json(plantillaApi(await plantilla(p.id_plantilla)))
 })
 
-const subida = multer({ storage: multer.memoryStorage(), limits: { fileSize: 5 * 1024 * 1024 } })
+const subida = multer({ storage: multer.memoryStorage(), limits: { fileSize: 2 * 1024 * 1024 } })
 
-rutasAdmin.post('/plantillas/:id/fondo', subida.single('archivo'), async (req, res) => {
+function parteDe(valor: unknown): Parte {
+  const parte = PARTES.find((x) => x === valor)
+  if (!parte) throw new ErrorHttp(404, 'Parte de la plantilla no válida')
+  return parte
+}
+
+/** The header, the footer or the signature of a constancia: a PNG or JPG image. */
+rutasAdmin.post('/plantillas/:id/imagen/:parte', subida.single('archivo'), async (req, res) => {
   const p = await plantilla(idNumerico(req.params.id, 'Plantilla'))
-  if (p.tipo !== 'constancia') throw new ErrorHttp(409, 'Solo la constancia lleva PDF de fondo')
+  const parte = parteDe(req.params.parte)
+  if (p.tipo !== 'constancia') throw new ErrorHttp(409, 'Solo la plantilla de archivo lleva encabezado, pie y firma')
   const archivo = req.file
-  if (!archivo) throw new ErrorHttp(422, 'Adjunte el PDF de fondo')
-  const esPdf = archivo.mimetype === 'application/pdf' || archivo.originalname.toLowerCase().endsWith('.pdf')
-  if (!esPdf || !archivo.buffer.subarray(0, 5).toString().startsWith('%PDF')) {
-    throw new ErrorHttp(422, 'El fondo debe ser un archivo PDF')
-  }
-  await pool.query('UPDATE plantilla SET fondo_pdf = $1 WHERE id_plantilla = $2', [archivo.buffer, p.id_plantilla])
+  if (!archivo) throw new ErrorHttp(422, 'Adjunte la imagen')
+  const b = archivo.buffer
+  const png = b.length > 8 && b[0] === 0x89 && b[1] === 0x50 && b[2] === 0x4e && b[3] === 0x47
+  const jpg = b.length > 3 && b[0] === 0xff && b[1] === 0xd8
+  if (!png && !jpg) throw new ErrorHttp(422, 'La imagen debe ser PNG o JPG')
+  await pool.query(`UPDATE plantilla SET ${parte} = $1 WHERE id_plantilla = $2`, [b, p.id_plantilla])
   res.json(plantillaApi(await plantilla(p.id_plantilla)))
+})
+
+rutasAdmin.delete('/plantillas/:id/imagen/:parte', async (req, res) => {
+  const p = await plantilla(idNumerico(req.params.id, 'Plantilla'))
+  const parte = parteDe(req.params.parte)
+  await pool.query(`UPDATE plantilla SET ${parte} = NULL WHERE id_plantilla = $1`, [p.id_plantilla])
+  res.json(plantillaApi(await plantilla(p.id_plantilla)))
+})
+
+/** The constancia as it is saved, with sample data. */
+rutasAdmin.get('/plantillas/:id/vista-previa', async (req, res) => {
+  const p = await plantilla(idNumerico(req.params.id, 'Plantilla'))
+  if (p.tipo !== 'constancia') throw new ErrorHttp(409, 'Solo la plantilla de archivo tiene vista previa en PDF')
+  const pdf = await vistaPrevia(pool, p.id_plantilla)
+  res.type('application/pdf')
+  res.setHeader('Content-Disposition', 'inline; filename="vista-previa.pdf"')
+  res.send(Buffer.from(pdf ?? []))
 })
 
 // ---------------------------------------------------------------- Auditoría
@@ -254,9 +307,19 @@ rutasAdmin.get('/auditoria', async (req, res) => {
 })
 
 // ------------------------------------------------------------- Configuración
+/** The ISSN and the indexations of each journal go in its constancia ({{issn}}, {{indexaciones}}). */
+async function datosRevistas() {
+  const { rows } = await pool.query<{ id_revista: number; issn: string | null; indexaciones: string | null }>(
+    'SELECT id_revista, issn, indexaciones FROM revista ORDER BY id_revista',
+  )
+  return Object.fromEntries(
+    rows.map((r) => [siglaDe(r.id_revista), { issn: r.issn ?? '', indexaciones: r.indexaciones ?? '' }]),
+  )
+}
+
 /** Days a peer has to answer before the 2nd attempt and, later, the block (RF-29). */
 rutasAdmin.get('/configuracion', async (_req, res) => {
-  res.json({ diasEspera: await diasEspera(pool) })
+  res.json({ diasEspera: await diasEspera(pool), revistas: await datosRevistas() })
 })
 
 rutasAdmin.put('/configuracion', async (req, res) => {
@@ -275,5 +338,34 @@ rutasAdmin.put('/configuracion', async (req, res) => {
       texto: `Cambió los días de espera de la respuesta del par de ${antes} a ${dias}`,
     })
   })
-  res.json({ diasEspera: dias })
+  res.json({ diasEspera: dias, revistas: await datosRevistas() })
+})
+
+rutasAdmin.put('/configuracion/revistas/:sigla', async (req, res) => {
+  const id = idRevista(req.params.sigla)
+  const d = z
+    .object({
+      issn: z
+        .string()
+        .trim()
+        .regex(/^(\d{4}-\d{3}[\dXx])?$/, 'El ISSN tiene la forma 1234-567X'),
+      indexaciones: z.string().trim().max(1500, 'Máximo 1500 caracteres'),
+    })
+    .parse(req.body)
+  const usuario = usuarioDe(req)
+  await enTransaccion(async (c) => {
+    await c.query('UPDATE revista SET issn = $2, indexaciones = $3 WHERE id_revista = $1', [
+      id,
+      d.issn ? d.issn.toUpperCase() : null,
+      d.indexaciones || null,
+    ])
+    await auditar(c, {
+      usuario: usuario.id,
+      tabla: 'configuracion',
+      idRegistro: `revista_${id}`,
+      accion: 'edicion',
+      texto: `Cambió el ISSN y las indexaciones de ${siglaDe(id).toUpperCase()}`,
+    })
+  })
+  res.json((await datosRevistas())[siglaDe(id)])
 })

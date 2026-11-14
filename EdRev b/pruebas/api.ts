@@ -29,6 +29,9 @@ export async function como(cuenta = ADMIN) {
     post: (ruta: string, cuerpo?: object) => auth(request(app).post(`/api${ruta}`)).send(cuerpo ?? {}),
     put: (ruta: string, cuerpo?: object) => auth(request(app).put(`/api${ruta}`)).send(cuerpo ?? {}),
     patch: (ruta: string, cuerpo?: object) => auth(request(app).patch(`/api${ruta}`)).send(cuerpo ?? {}),
+    delete: (ruta: string) => auth(request(app).delete(`/api${ruta}`)),
+    subir: (ruta: string, archivo: Buffer, nombre: string) =>
+      auth(request(app).post(`/api${ruta}`)).attach('archivo', archivo, nombre),
   }
 }
 
