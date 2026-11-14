@@ -94,10 +94,10 @@ rutasMigracion.post('/:revista/por-corregir/:id', async (req, res) => {
       const correo = valor.trim().toLowerCase()
       if (!CORREO_VALIDO.test(correo)) throw new ErrorHttp(422, 'Escriba un correo válido')
       const { rows: otro } = await c.query(
-        'SELECT 1 FROM par_evaluador WHERE id_revista = $1 AND correo = $2 AND id_par <> $3',
-        [revista, correo, f.id_par],
+        'SELECT 1 FROM par_evaluador WHERE correo = $1 AND id_par <> $2',
+        [correo, f.id_par],
       )
-      if (otro.length > 0) throw new ErrorHttp(409, 'Ya existe un par con ese correo en esta revista')
+      if (otro.length > 0) throw new ErrorHttp(409, 'Ya existe un par con ese correo en la base de pares')
       await c.query('UPDATE par_evaluador SET correo = $1 WHERE id_par = $2', [correo, f.id_par])
     }
 

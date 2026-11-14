@@ -1,7 +1,8 @@
 /*
- * Pares evaluadores — the own base of each journal (RF-12): list with filters (RF-14), areas
- * already written (RF-13), the record with its history (RF-18), registration (with the warning of
- * the same email in the other journal, RF-12), edition, block and unblock (RF-15, RF-16).
+ * Pares evaluadores — one base common to both journals (RF-12): list with filters (RF-14), areas
+ * already written (RF-13), the record with its history in both journals (RF-18), registration
+ * (an email already in the base is refused and the existing peer is pointed out), edition, block
+ * and unblock (RF-15, RF-16). A block applies to both journals.
  */
 import { Router } from 'express'
 import { z } from 'zod'
@@ -39,17 +40,14 @@ function parApi(p: FilaPar) {
   }
 }
 
-async function parDeRevista(revista: number, id: number): Promise<FilaPar> {
-  const { rows } = await pool.query<FilaPar>(
-    'SELECT * FROM par_evaluador WHERE id_par = $1 AND id_revista = $2',
-    [id, revista],
-  )
+async function parPorId(id: number): Promise<FilaPar> {
+  const { rows } = await pool.query<FilaPar>('SELECT * FROM par_evaluador WHERE id_par = $1', [id])
   if (!rows[0]) throw new ErrorHttp(404, 'Par evaluador no encontrado')
   return rows[0]
 }
 
 rutasPares.get('/:revista/pares', async (req, res) => {
-  const revista = idRevista(req.params.revista)
+  idRevista(req.params.revista)
   const q = sinTildes(String(req.query.q ?? '').trim())
   const area = sinTildes(String(req.query.area ?? '').trim())
   const universidad = String(req.query.universidad ?? '')
@@ -63,9 +61,9 @@ rutasPares.get('/:revista/pares', async (req, res) => {
             (SELECT count(*)::int FROM evaluacion e WHERE e.id_par = p.id_par AND e.estado_par = 'entrego') AS entregadas,
             (SELECT count(*)::int FROM evaluacion e WHERE e.id_par = p.id_par
                 AND e.estado_par IN ('invitado','acepto')) AS en_curso,
-            EXISTS (SELECT 1 FROM evaluacion e WHERE e.id_par = p.id_par AND e.id_articulo = $2) AS en_articulo
-       FROM par_evaluador p WHERE p.id_revista = $1 ORDER BY p.nombre`,
-    [revista, articulo],
+            EXISTS (SELECT 1 FROM evaluacion e WHERE e.id_par = p.id_par AND e.id_articulo = $1) AS en_articulo
+       FROM par_evaluador p ORDER BY p.nombre`,
+    [articulo],
   )
   const autores = articulo ? await autoresDe(pool, articulo) : []
   const todos = rows.map((p) => ({
@@ -86,7 +84,7 @@ rutasPares.get('/:revista/pares', async (req, res) => {
         : estado === 'disponibles'
           ? api.estado !== 'bloqueado'
           : estado === 'asignables'
-            ? api.estado !== 'bloqueado' && fila.en_curso === 0 && !fila.en_articulo
+            ? api.estado === 'disponible' && fila.en_curso === 0 && !fila.en_articulo
             : true,
     )
   res.json({
@@ -98,40 +96,26 @@ rutasPares.get('/:revista/pares', async (req, res) => {
 })
 
 rutasPares.get('/:revista/pares/areas', async (req, res) => {
+  idRevista(req.params.revista)
   const { rows } = await pool.query<{ area: string }>(
-    `SELECT DISTINCT area FROM par_evaluador WHERE id_revista = $1 AND area IS NOT NULL ORDER BY area`,
-    [idRevista(req.params.revista)],
+    `SELECT DISTINCT area FROM par_evaluador WHERE area IS NOT NULL ORDER BY area`,
   )
   res.json(rows.map((r) => r.area))
 })
 
 rutasPares.get('/:revista/pares/universidades', async (req, res) => {
+  idRevista(req.params.revista)
   const { rows } = await pool.query<{ universidad: string }>(
-    `SELECT DISTINCT universidad FROM par_evaluador
-      WHERE id_revista = $1 AND universidad IS NOT NULL ORDER BY universidad`,
-    [idRevista(req.params.revista)],
+    `SELECT DISTINCT universidad FROM par_evaluador WHERE universidad IS NOT NULL ORDER BY universidad`,
   )
   res.json(rows.map((r) => r.universidad))
 })
 
-// RF-12: the same email in the other journal's base, to warn and copy its data.
-rutasPares.get('/:revista/pares/en-otra-revista', async (req, res) => {
-  const revista = idRevista(req.params.revista)
-  const correo = String(req.query.correo ?? '').trim().toLowerCase()
-  const { rows } = await pool.query<FilaPar>(
-    'SELECT * FROM par_evaluador WHERE id_revista <> $1 AND correo = $2 LIMIT 1',
-    [revista, correo],
-  )
-  if (!correo || !rows[0]) throw new ErrorHttp(404, 'No está en la otra revista')
-  const { id: _id, ...resto } = parApi(rows[0])
-  res.json(resto)
-})
-
 rutasPares.get('/:revista/pares/:id', async (req, res) => {
-  const revista = idRevista(req.params.revista)
-  const par = await parDeRevista(revista, idNumerico(req.params.id, 'Par evaluador'))
+  idRevista(req.params.revista)
+  const par = await parPorId(idNumerico(req.params.id, 'Par evaluador'))
   const { rows } = await pool.query(
-    `SELECT e.*, a.numero_ojs, a.titulo FROM evaluacion e JOIN articulo a ON a.id_articulo = e.id_articulo
+    `SELECT e.*, a.numero_ojs, a.titulo, a.id_revista FROM evaluacion e JOIN articulo a ON a.id_articulo = e.id_articulo
       WHERE e.id_par = $1 ORDER BY e.fecha_asignacion DESC`,
     [par.id_par],
   )
@@ -144,6 +128,7 @@ rutasPares.get('/:revista/pares/:id', async (req, res) => {
     participaciones: rows.map((e) => ({
       asignacionId: String(e.id_evaluacion),
       articuloId: String(e.id_articulo),
+      revista: siglaDe(e.id_revista),
       numeroOjs: e.numero_ojs,
       titulo: e.titulo,
       estado: e.estado_par,
@@ -163,7 +148,7 @@ const datosPar = z.object({
   area: z.string().trim().min(1, 'Escriba el área temática'),
 })
 
-/** Registers a peer in the journal's base; used by the base and by «candidato nuevo». */
+/** Registers a peer in the common base (`revista` is where it was registered); used by the base and by «candidato nuevo». */
 export async function registrarPar(
   cliente: Parameters<typeof auditar>[0],
   revista: number,
@@ -171,11 +156,15 @@ export async function registrarPar(
   cuerpo: unknown,
 ): Promise<FilaPar> {
   const d = datosPar.parse(cuerpo)
-  const repetido = await cliente.query(
-    'SELECT 1 FROM par_evaluador WHERE id_revista = $1 AND correo = $2',
-    [revista, d.correo],
+  const repetido = await cliente.query<{ id_par: number; nombre: string }>(
+    'SELECT id_par, nombre FROM par_evaluador WHERE correo = $1',
+    [d.correo],
   )
-  if (repetido.rows.length > 0) throw new ErrorHttp(409, 'Ya existe un par con ese correo en esta revista')
+  if (repetido.rows[0]) {
+    throw new ErrorHttp(409, `Ya existe un par con ese correo en la base de pares (${repetido.rows[0].nombre})`, {
+      parId: String(repetido.rows[0].id_par),
+    })
+  }
   const { rows } = await cliente.query<FilaPar>(
     `INSERT INTO par_evaluador (id_revista, nombre, profesion, correo, universidad, area)
      VALUES ($1, $2, NULLIF($3, ''), $4, $5, $6) RETURNING *`,
@@ -202,7 +191,7 @@ rutasPares.post('/:revista/pares', async (req, res) => {
 rutasPares.patch('/:revista/pares/:id', async (req, res) => {
   const revista = idRevista(req.params.revista)
   const id = idNumerico(req.params.id, 'Par evaluador')
-  await parDeRevista(revista, id)
+  await parPorId(id)
   const d = datosPar.partial().parse(req.body)
   await pool.query(
     `UPDATE par_evaluador SET nombre = COALESCE($1, nombre), profesion = COALESCE($2, profesion),
@@ -218,14 +207,14 @@ rutasPares.patch('/:revista/pares/:id', async (req, res) => {
     texto: 'Editó la ficha del par',
     revista,
   })
-  res.json(parApi(await parDeRevista(revista, id)))
+  res.json(parApi(await parPorId(id)))
 })
 
 rutasPares.post('/:revista/pares/:id/bloquear', async (req, res) => {
   const revista = idRevista(req.params.revista)
   const id = idNumerico(req.params.id, 'Par evaluador')
   const { motivo } = z.object({ motivo: z.enum(['no-desea', 'sin-respuesta']) }).parse(req.body)
-  await parDeRevista(revista, id)
+  await parPorId(id)
   await pool.query(
     'UPDATE par_evaluador SET motivo_bloqueo = $1, fecha_bloqueo = CURRENT_DATE WHERE id_par = $2',
     [motivoDb(motivo), id],
@@ -238,14 +227,14 @@ rutasPares.post('/:revista/pares/:id/bloquear', async (req, res) => {
     texto: 'Bloqueó al par',
     revista,
   })
-  res.json(parApi(await parDeRevista(revista, id)))
+  res.json(parApi(await parPorId(id)))
 })
 
 rutasPares.post('/:revista/pares/:id/desbloquear', async (req, res) => {
   const revista = idRevista(req.params.revista)
   const id = idNumerico(req.params.id, 'Par evaluador')
   const { motivo } = z.object({ motivo: z.string().trim().min(1, 'Escriba el motivo') }).parse(req.body)
-  await parDeRevista(revista, id)
+  await parPorId(id)
   await pool.query('UPDATE par_evaluador SET motivo_bloqueo = NULL, fecha_bloqueo = NULL WHERE id_par = $1', [id])
   await auditar(pool, {
     usuario: usuarioDe(req).id,
@@ -255,5 +244,5 @@ rutasPares.post('/:revista/pares/:id/desbloquear', async (req, res) => {
     texto: `Desbloqueó al par: ${motivo}`,
     revista,
   })
-  res.json(parApi(await parDeRevista(revista, id)))
+  res.json(parApi(await parPorId(id)))
 })

@@ -205,8 +205,8 @@ export async function migrarFilas(
       let par = parPorClave.get(clave)
       if (!par) {
         const previo = correo
-          ? await c.query<{ id: number }>('SELECT id_par AS id FROM par_evaluador WHERE id_revista = $1 AND correo = $2', [revista, correo])
-          : await c.query<{ id: number }>('SELECT id_par AS id FROM par_evaluador WHERE id_revista = $1 AND correo IS NULL AND lower(nombre) = lower($2)', [revista, f.par])
+          ? await c.query<{ id: number }>('SELECT id_par AS id FROM par_evaluador WHERE correo = $1', [correo])
+          : await c.query<{ id: number }>('SELECT id_par AS id FROM par_evaluador WHERE correo IS NULL AND lower(nombre) = lower($1)', [f.par])
         if (previo.rows[0]) par = previo.rows[0].id
         else {
           const nuevo = await c.query<{ id: number }>(

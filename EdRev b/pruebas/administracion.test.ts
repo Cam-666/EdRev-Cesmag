@@ -29,14 +29,17 @@ describe('plantillas, auditoría, informes y pares por revista (RF-12, RF-38, RF
     expect((await api.get('/informes?revista=otra&periodo=x')).status).toBe(422)
   })
 
-  it('el mismo correo en la otra revista se avisa; los pares no se comparten', async () => {
+  it('la base de pares es común: un par registrado en una revista se ve en la otra y el correo no se repite', async () => {
     const api = await como()
     const correo = `compartido${Date.now()}@x.co`
-    await api.post('/reep/pares', { nombre: 'Par Compartido', profesion: 'PhD', correo, universidad: 'U', area: 'A' })
-    const otra = await api.get(`/ire/pares/en-otra-revista?correo=${correo}`)
-    expect(otra.body).toMatchObject({ revista: 'reep', nombre: 'Par Compartido' })
-    expect((await api.get(`/reep/pares/en-otra-revista?correo=${correo}`)).status).toBe(404)
-    expect((await api.post('/reep/pares', { nombre: 'Otro', correo, universidad: 'U', area: 'A' })).status).toBe(409)
+    const creado = await api.post('/reep/pares', { nombre: 'Par Compartido', profesion: 'PhD', correo, universidad: 'U', area: 'A' })
+    expect(creado.status).toBe(201)
+    const enIre = (await api.get('/ire/pares?estado=todos&porPagina=100')).body.items as Array<{ id: string }>
+    expect(enIre.some((p) => p.id === creado.body.id)).toBe(true)
+    expect((await api.get(`/ire/pares/${creado.body.id}`)).status).toBe(200)
+    const repetido = await api.post('/ire/pares', { nombre: 'Otro', correo, universidad: 'U', area: 'A' })
+    expect(repetido.status).toBe(409)
+    expect(repetido.body.parId).toBe(creado.body.id)
   })
 
   it('los días de espera empiezan en 5, solo la Administradora los cambia y queda en la auditoría', async () => {

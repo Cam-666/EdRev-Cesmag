@@ -22,19 +22,73 @@ describe('asignación, evaluación, constancias y correos (RF-19 a RF-34)', () =
     expect(r.status).toBe(409)
   })
 
-  it('máximo tres pares que aceptaron; los que no aceptan no ocupan cupo y no se bloquean', async () => {
+  it('con 2 pares el artículo ya no busca más; el que declina libera su lugar', async () => {
     const { id } = await articuloAprobado()
     const api = await como()
-    const a = [1, 2, 3, 4, 5].map((n) => candidato(id, n))
-    const asig = []
-    for (const p of a) asig.push(await p)
-    const responder = (i: number, respuesta: string) =>
-      api.post(`/reep/asignaciones/${asig[i]?.asignacion.id}/respuesta`, { respuesta })
-    expect((await responder(0, 'no-acepto')).status).toBe(200)
-    expect((await api.get(`/reep/pares/${asig[0]?.par.id}`)).body.bloqueo).toBeNull()
-    for (const i of [1, 2, 3]) expect((await responder(i, 'acepto')).status).toBe(200)
-    expect((await responder(4, 'acepto')).status).toBe(409)
+    const uno = await candidato(id, 1)
+    const dos = await candidato(id, 2)
+    const bloqueado = await api.post(`/reep/articulos/${id}/asignaciones`, {
+      nuevo: { nombre: 'Tercero', profesion: '', correo: `t.${id}@udenar.edu.co`, universidad: 'Universidad X', area: 'A' },
+    })
+    expect(bloqueado.status).toBe(409)
+    expect(bloqueado.body.mensaje).toContain('2 pares evaluadores')
+
+    // El primero no acepta esta invitación: queda un lugar y no se bloquea al par.
+    expect((await api.post(`/reep/asignaciones/${uno.asignacion.id}/respuesta`, { respuesta: 'no-acepto' })).status).toBe(200)
+    expect((await api.get(`/reep/pares/${uno.par.id}`)).body.bloqueo).toBeNull()
+    await candidato(id, 3)
+    expect((await api.post(`/reep/asignaciones/${dos.asignacion.id}/respuesta`, { respuesta: 'acepto' })).status).toBe(200)
     expect((await api.get(`/reep/articulos/${id}`)).body.estado).toBe('en-evaluacion')
+  })
+
+  it('el tercer par solo se permite cuando los conceptos de los dos no coinciden', async () => {
+    const api = await como()
+    const entregar = async (id: string, n: number, concepto: string) => {
+      const p = await candidato(id, n)
+      await api.post(`/reep/asignaciones/${p.asignacion.id}/respuesta`, { respuesta: 'acepto' })
+      await api.post(`/reep/asignaciones/${p.asignacion.id}/entrega`, { fecha: hoy() })
+      await api.post(`/reep/asignaciones/${p.asignacion.id}/concepto`, { concepto })
+    }
+    const nuevoPar = (id: string) =>
+      api.post(`/reep/articulos/${id}/asignaciones`, {
+        nuevo: { nombre: 'Tercero', profesion: '', correo: `tercero.${id}@udenar.edu.co`, universidad: 'Universidad Z', area: 'A' },
+      })
+
+    const coinciden = await articuloAprobado()
+    await entregar(coinciden.id, 1, 'publicable')
+    await entregar(coinciden.id, 2, 'publicable')
+    expect((await nuevoPar(coinciden.id)).status).toBe(409)
+
+    const difieren = await articuloAprobado()
+    await entregar(difieren.id, 1, 'publicable')
+    await entregar(difieren.id, 2, 'no-publicable')
+    const tercero = await nuevoPar(difieren.id)
+    expect(tercero.status).toBe(201)
+    expect(tercero.body.asignacion.esDesempate).toBe(true)
+  })
+
+  it('no se asigna un par de la misma institución de un autor', async () => {
+    const api = await como()
+    const art = await api.post('/reep/articulos', {
+      numeroOjs: `INST-${Date.now()}`,
+      titulo: 'Con autor de la Universidad de Nariño',
+      tipo: 'investigacion',
+      fechaPostulacion: '2026-10-01',
+      autores: [{ nuevo: { nombre: 'Autor N', correo: '', orcid: '', filiacion: 'Universidad de Nariño', pais: 'Colombia' } }],
+    })
+    await api.post(`/reep/articulos/${art.body.id}/rondas`, { coincidencias: 5, atribuidoIa: 1, resultado: 'aprobado', observacion: '' })
+    const mismo = await api.post(`/reep/articulos/${art.body.id}/asignaciones`, {
+      nuevo: { nombre: 'Par N', profesion: '', correo: `parn.${Date.now()}@udenar.edu.co`, universidad: 'universidad de nariño', area: 'A' },
+    })
+    expect(mismo.status).toBe(409)
+    expect(mismo.body.mensaje).toContain('misma institución')
+    // El rechazo no deja al candidato a medias: no quedó registrado en la base de pares.
+    const lista = (await api.get('/reep/pares?estado=todos&porPagina=100')).body.items as Array<{ nombre: string }>
+    expect(lista.some((p) => p.nombre === 'Par N')).toBe(false)
+    const otro = await api.post(`/reep/articulos/${art.body.id}/asignaciones`, {
+      nuevo: { nombre: 'Par M', profesion: '', correo: `parm.${Date.now()}@umariana.edu.co`, universidad: 'Universidad Mariana', area: 'A' },
+    })
+    expect(otro.status).toBe(201)
   })
 
   it('«no desea participar más» bloquea al par; un par ocupado no se asigna a otro artículo', async () => {

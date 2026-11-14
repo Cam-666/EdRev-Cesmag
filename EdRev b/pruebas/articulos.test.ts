@@ -2,7 +2,7 @@
  * Pruebas de artículos — RF-01 a RF-08, RF-35, RF-36.
  */
 import { describe, expect, it } from 'vitest'
-import { AUXILIAR, articuloAprobado, como } from './api.js'
+import { AUXILIAR, articuloAprobado, candidato, como } from './api.js'
 
 async function registrar(revista: 'reep' | 'ire' = 'reep', numero = `A-${Date.now()}`) {
   const api = await como()
@@ -45,14 +45,50 @@ describe('artículos (RF-01 a RF-08, RF-35, RF-36)', () => {
     expect((await ronda('aprobado')).status).toBe(409)
   })
 
-  it('cambia de revista en la revisión del comité y no después de aprobado (RF-07)', async () => {
+  it('cambia de revista en cualquier etapa, con sus pares, y quita la publicación (RF-07)', async () => {
     const { body } = await registrar()
     const api = await como()
-    const ida = await api.post(`/reep/articulos/${body.id}/trasladar`)
-    expect(ida.body.revista).toBe('ire')
+    expect((await api.post(`/reep/articulos/${body.id}/trasladar`)).body.revista).toBe('ire')
     expect((await api.post(`/ire/articulos/${body.id}/trasladar`)).body.revista).toBe('reep')
+
+    // Aprobado por el comité, con un par asignado y ya publicado: también se puede trasladar.
     const aprobado = await articuloAprobado()
-    expect((await api.post(`/reep/articulos/${aprobado.id}/trasladar`)).status).toBe(409)
+    const par = await candidato(aprobado.id, 1)
+    await api.post(`/reep/asignaciones/${par.asignacion.id}/respuesta`, { respuesta: 'acepto' })
+    await api.post(`/reep/articulos/${aprobado.id}/cerrar`, { estado: 'aprobado', motivo: 'ok', publicacion: { volumen: 3, numero: 1 } })
+    const movido = await api.post(`/reep/articulos/${aprobado.id}/trasladar`)
+    expect(movido.status).toBe(200)
+    expect(movido.body.revista).toBe('ire')
+    expect(movido.body.publicacion).toBeNull()
+    expect(movido.body.asignaciones).toHaveLength(1)
+    const historial = (await api.get(`/ire/articulos/${aprobado.id}/historial`)).body
+    expect(historial.auditoria[0].accion).toContain('se quitó su publicación Vol. 3 n.º 1')
+  })
+
+  it('un artículo pendiente de un año anterior pasa solo a la lista del año actual (sin cambiar su fecha)', async () => {
+    const api = await como()
+    const anioActual = new Date().getFullYear()
+    const crear = (n: string, fecha: string) =>
+      api.post('/reep/articulos', {
+        numeroOjs: n,
+        titulo: `Pendiente ${n}`,
+        tipo: 'reflexion',
+        fechaPostulacion: fecha,
+        autores: [{ nuevo: { nombre: 'Autor A', correo: '', orcid: '', filiacion: 'U', pais: 'Colombia' } }],
+      })
+    const pendiente = await crear(`ANIO-1-${Date.now()}`, '2024-09-10')
+    const rechazado = await crear(`ANIO-2-${Date.now()}`, '2024-09-12')
+    await api.post(`/reep/articulos/${rechazado.body.id}/cerrar`, { estado: 'rechazado', motivo: 'No cumple', publicacion: null })
+
+    const delActual = (await api.get(`/reep/articulos?anio=${anioActual}&porPagina=100`)).body.items as Array<{ id: string; fechaPostulacion: string; anioGestion: number }>
+    const p = delActual.find((a) => a.id === pendiente.body.id)
+    expect(p).toMatchObject({ fechaPostulacion: '2024-09-10', anioGestion: anioActual })
+    expect(delActual.some((a) => a.id === rechazado.body.id)).toBe(false)
+
+    const de2024 = (await api.get('/reep/articulos?anio=2024&porPagina=100')).body.items as Array<{ id: string }>
+    expect(de2024.some((a) => a.id === rechazado.body.id)).toBe(true)
+    expect(de2024.some((a) => a.id === pendiente.body.id)).toBe(false)
+    expect((await api.get('/reep/articulos/anios')).body).toEqual(expect.arrayContaining([anioActual, 2024]))
   })
 
   it('cierra el proceso con motivo; aprobar pide volumen y número', async () => {

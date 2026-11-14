@@ -12,7 +12,8 @@ import { enTransaccion, pool, type Cliente } from '../db.js'
 import { auditar } from '../lib/auditoria.js'
 import { usuarioDe } from '../lib/auth.js'
 import { ErrorHttp, idNumerico, idRevista } from '../lib/http.js'
-import { conceptoDb, conflicto, iso } from '../lib/mapeo.js'
+import { conceptoDb, conflicto, iso, mismaInstitucion } from '../lib/mapeo.js'
+import { reglaPares } from '../lib/paresArticulo.js'
 import { articuloDeRevista, autoresDe, evaluacionesDe, ultimaRonda } from '../servicios/articulos.js'
 import { encolar } from '../servicios/correos.js'
 import { registrarPar } from './pares.js'
@@ -60,26 +61,29 @@ rutasAsignaciones.post('/:revista/articulos/:id/asignaciones', async (req, res) 
     if ((await ultimaRonda(c, idArticulo)) !== 'aprobado' || !['en-revision', 'en-evaluacion'].includes(articulo.estado)) {
       throw new ErrorHttp(409, 'El comité aún no aprueba el artículo: no se pueden asignar pares')
     }
-    const ocupados = await c.query<{ n: number }>(
-      `SELECT count(*)::int AS n FROM evaluacion WHERE id_articulo = $1 AND estado_par IN ('acepto','entrego')`,
+    // Two peers per article; a third only when their concepts do not coincide (RF-19, RF-21).
+    const activos = await c.query<{ estado_par: string; concepto: string | null; es_desempate: boolean }>(
+      `SELECT estado_par, concepto, es_desempate FROM evaluacion
+        WHERE id_articulo = $1 AND estado_par IN ('invitado','acepto','entrego') ORDER BY fecha_asignacion`,
       [idArticulo],
     )
-    if ((ocupados.rows[0]?.n ?? 0) >= config.maxPares) {
-      throw new ErrorHttp(409, 'El artículo ya tiene tres pares que aceptaron')
-    }
+    const regla = reglaPares(activos.rows)
+    if (!regla.puede) throw new ErrorHttp(409, regla.motivo ?? 'El artículo ya tiene sus pares evaluadores')
 
     const par =
       'nuevo' in datos
         ? await registrarPar(c, revista, usuario.id, datos.nuevo)
         : (
-            await c.query(
-              'SELECT * FROM par_evaluador WHERE id_par = $1 AND id_revista = $2',
-              [idNumerico(datos.parId, 'Par evaluador'), revista],
-            )
+            await c.query('SELECT * FROM par_evaluador WHERE id_par = $1', [
+              idNumerico(datos.parId, 'Par evaluador'),
+            ])
           ).rows[0]
     if (!par) throw new ErrorHttp(404, 'Par evaluador no encontrado')
     if (par.motivo_bloqueo) throw new ErrorHttp(409, 'El par está bloqueado y no recibe nuevas invitaciones')
     if (!par.correo) throw new ErrorHttp(422, 'El par no tiene correo: regístrelo antes de invitarlo')
+    const autores = await autoresDe(c, idArticulo)
+    const igual = mismaInstitucion(par.universidad, autores)
+    if (igual) throw new ErrorHttp(409, igual)
     const ocupado = await c.query(
       `SELECT id_articulo FROM evaluacion WHERE id_par = $1 AND (id_articulo = $2 OR estado_par IN ('invitado','acepto'))`,
       [par.id_par, idArticulo],
@@ -89,20 +93,9 @@ rutasAsignaciones.post('/:revista/articulos/:id/asignaciones', async (req, res) 
     }
     if (ocupado.rows.length > 0) throw new ErrorHttp(409, 'El par tiene otra evaluación en curso')
 
-    // RF-21: tiebreaker when the concepts of the first two peers contradict.
-    const primeros = await c.query<{ concepto: string | null }>(
-      `SELECT concepto FROM evaluacion WHERE id_articulo = $1 AND estado_par IN ('acepto','entrego')
-        ORDER BY fecha_asignacion LIMIT 2`,
-      [idArticulo],
-    )
-    const conceptos = primeros.rows.map((r) => r.concepto)
-    const contradicen =
-      conceptos.includes('publicable') && conceptos.includes('no-publicable') && conceptos.length === 2
-    const yaHay = await c.query('SELECT 1 FROM evaluacion WHERE id_articulo = $1 AND es_desempate', [idArticulo])
-
     const { rows } = await c.query<{ id_evaluacion: number }>(
       `INSERT INTO evaluacion (id_articulo, id_par, es_desempate) VALUES ($1, $2, $3) RETURNING id_evaluacion`,
-      [idArticulo, par.id_par, contradicen && yaHay.rows.length === 0],
+      [idArticulo, par.id_par, regla.desempate],
     )
     const idEvaluacion = rows[0]?.id_evaluacion ?? 0
     // RF-24: the invitation is queued at once; the mail service sends it.
@@ -116,7 +109,6 @@ rutasAsignaciones.post('/:revista/articulos/:id/asignaciones', async (req, res) 
       revista,
       articulo: idArticulo,
     })
-    const autores = await autoresDe(c, idArticulo)
     return {
       asignacion: await asignacionApi(c, idArticulo, idEvaluacion),
       par: { id: String(par.id_par), nombre: par.nombre, correo: par.correo },

@@ -77,7 +77,7 @@ rutasPanel.get('/resumen', async (_req, res) => {
     [1, 2].map(async (id) => {
       const { rows } = await pool.query<{ articulos: number; pares: number }>(
         `SELECT (SELECT count(*)::int FROM articulo WHERE id_revista = $1) AS articulos,
-                (SELECT count(*)::int FROM par_evaluador WHERE id_revista = $1) AS pares`,
+                (SELECT count(*)::int FROM par_evaluador) AS pares`,
         [id],
       )
       return {

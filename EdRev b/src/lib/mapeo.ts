@@ -49,7 +49,18 @@ const limpio = (t: string | null) =>
     .trim()
     .toLowerCase()
 
-/** RF-17: same institution as an author, or CESMAG itself. It warns, never blocks. */
+/** Authors whose institution is the peer's own (the assignment is refused, RF-17). */
+export function mismaInstitucion(
+  universidad: string | null,
+  autores: Array<{ nombre: string; filiacion: string | null }>,
+): string | null {
+  const delMismo = autores.filter((a) => universidad && limpio(a.filiacion) === limpio(universidad))
+  if (delMismo.length === 0) return null
+  const verbo = delMismo.length === 1 ? 'el autor' : 'los autores'
+  return `El par pertenece a ${universidad}, la misma institución de ${verbo} ${delMismo.map((a) => a.nombre).join(', ')}: no se puede asignar a este artículo.`
+}
+
+/** RF-17: CESMAG itself is warned (the peer is not independent of the editorial team). */
 export function conflicto(
   universidad: string | null,
   autores: Array<{ nombre: string; filiacion: string | null }>,

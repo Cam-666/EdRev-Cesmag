@@ -11,13 +11,34 @@ import { auditar } from '../lib/auditoria.js'
 import { usuarioDe } from '../lib/auth.js'
 import { ErrorHttp, idNumerico, idRevista, siglaDe, sinTildes } from '../lib/http.js'
 import { iso } from '../lib/mapeo.js'
-import { articuloDeRevista, detalleArticulo, ultimaRonda } from '../servicios/articulos.js'
+import { articuloDeRevista, detalleArticulo } from '../servicios/articulos.js'
 import { correosApi, SELECCION_CORREOS, type FilaCorreo } from '../servicios/correos.js'
 
 export const rutasArticulos = Router()
 
 const TIPOS = ['investigacion', 'reflexion', 'revision'] as const
 const ESTADOS = ['postulado', 'en-revision', 'en-evaluacion', 'aprobado', 'rechazado', 'archivado'] as const
+
+/**
+ * Year of management: the year of the postulation, except for an article whose process is still
+ * open (Postulado, En revisión, En evaluación) from a previous year, which passes by itself to the
+ * current year's list; its postulation date does not change.
+ */
+const ANIO_GESTION = `(CASE WHEN a.estado IN ('postulado','en-revision','en-evaluacion')
+                              AND EXTRACT(YEAR FROM a.fecha_postulacion) < EXTRACT(YEAR FROM CURRENT_DATE)
+                         THEN EXTRACT(YEAR FROM CURRENT_DATE)
+                         ELSE EXTRACT(YEAR FROM a.fecha_postulacion) END)::int`
+
+rutasArticulos.get('/:revista/articulos/anios', async (req, res) => {
+  const revista = idRevista(req.params.revista)
+  const { rows } = await pool.query<{ anio: number }>(
+    `SELECT DISTINCT ${ANIO_GESTION} AS anio FROM articulo a WHERE a.id_revista = $1 AND a.fecha_postulacion IS NOT NULL`,
+    [revista],
+  )
+  const anios = new Set(rows.map((r) => r.anio))
+  anios.add(new Date().getFullYear())
+  res.json([...anios].sort((x, y) => y - x))
+})
 
 rutasArticulos.get('/:revista/articulos', async (req, res) => {
   const revista = idRevista(req.params.revista)
@@ -37,6 +58,7 @@ rutasArticulos.get('/:revista/articulos', async (req, res) => {
     )
   }
   if (typeof q.estado === 'string' && q.estado) agregar('a.estado = ?', q.estado)
+  if (typeof q.anio === 'string' && /^\d{4}$/.test(q.anio)) agregar(`${ANIO_GESTION} = ?`, Number(q.anio))
   if (typeof q.publicacion === 'string' && q.publicacion.includes('-')) {
     const [v, n] = q.publicacion.split('-').map(Number)
     agregar('a.volumen = ?', v)
@@ -58,7 +80,7 @@ rutasArticulos.get('/:revista/articulos', async (req, res) => {
     valores,
   )
   const { rows } = await pool.query(
-    `SELECT a.*,
+    `SELECT a.*, ${ANIO_GESTION} AS anio_gestion,
             (SELECT count(*)::int FROM evaluacion e WHERE e.id_articulo = a.id_articulo) AS asignados,
             (SELECT count(*)::int FROM evaluacion e WHERE e.id_articulo = a.id_articulo
                 AND e.estado_par <> 'invitado') AS respondieron
@@ -76,6 +98,7 @@ rutasArticulos.get('/:revista/articulos', async (req, res) => {
       tipo: a.tipo,
       estado: a.estado,
       fechaPostulacion: a.fecha_postulacion ?? '',
+      anioGestion: a.anio_gestion,
       publicacion: a.volumen !== null ? { volumen: a.volumen, numero: a.numero } : null,
       paresRespondieron: a.respondieron,
       paresAsignados: a.asignados,
@@ -283,19 +306,17 @@ rutasArticulos.post('/:revista/articulos/:id/trasladar', async (req, res) => {
   const usuario = usuarioDe(req)
   const destino = revista === 1 ? 2 : 1
   await enTransaccion(async (c) => {
+    // RF-07: at any stage. The peers are a common base, so the evaluations go along. The volume and
+    // number belong to the journal, so they are cleared (the history says which one it was).
     const a = await articuloDeRevista(c, revista, id)
-    const aprobada = (await ultimaRonda(c, id)) === 'aprobado'
-    const pares = await c.query('SELECT 1 FROM evaluacion WHERE id_articulo = $1 LIMIT 1', [id])
-    if (!['postulado', 'en-revision'].includes(a.estado) || aprobada || pares.rows.length > 0) {
-      throw new ErrorHttp(409, 'El artículo ya no está en revisión del comité: no puede cambiar de revista')
-    }
-    await c.query('UPDATE articulo SET id_revista = $1 WHERE id_articulo = $2', [destino, id])
+    await c.query('UPDATE articulo SET id_revista = $1, volumen = NULL, numero = NULL WHERE id_articulo = $2', [destino, id])
+    const publicacion = a.volumen !== null ? `; se quitó su publicación Vol. ${a.volumen} n.º ${a.numero}, que era de la otra revista` : ''
     await auditar(c, {
       usuario: usuario.id,
       tabla: 'articulo',
       idRegistro: id,
       accion: 'traslado',
-      texto: `Cambió el artículo de revista (${siglaDe(revista)} → ${siglaDe(destino)})`,
+      texto: `Cambió el artículo de revista (${siglaDe(revista)} → ${siglaDe(destino)})${publicacion}`,
       revista: destino,
       articulo: id,
     })
