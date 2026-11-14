@@ -6,7 +6,10 @@ import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tansta
 import {
   crearPlantilla,
   guardarConfiguracion,
+  guardarDatosRevista,
   obtenerConfiguracion,
+  quitarImagen,
+  vistaPreviaPlantilla,
   crearUsuario,
   reenviarEnlaceUsuario,
   editarUsuario,
@@ -14,12 +17,13 @@ import {
   listarAuditoria,
   listarUsuarios,
   obtenerPlantillas,
-  subirFondo,
+  subirImagen,
   usarPlantilla,
 } from '../services/adminService'
 import type { FiltrosAuditoria } from '../services/adminService'
-import type { Configuracion } from '@/types/configuracion'
-import type { DatosNuevaPlantilla } from '@/types/plantilla'
+import type { Configuracion, DatosRevista } from '@/types/configuracion'
+import type { DatosNuevaPlantilla, ParteImagen } from '@/types/plantilla'
+import type { Revista } from '@/types/revista'
 import type { DatosUsuario, Usuario } from '@/types/usuario'
 
 export function useUsuarios() {
@@ -73,11 +77,30 @@ export function useCrearPlantilla() {
   })
 }
 
-export function useSubirFondo() {
+export function useSubirImagen() {
   const cliente = useQueryClient()
   return useMutation({
-    mutationFn: ({ id, archivo }: { id: string; archivo: File }) => subirFondo(id, archivo),
+    mutationFn: ({ id, parte, archivo }: { id: string; parte: ParteImagen; archivo: File }) =>
+      subirImagen(id, parte, archivo),
     onSuccess: () => cliente.invalidateQueries({ queryKey: ['admin', 'plantillas'] }),
+  })
+}
+
+export function useQuitarImagen() {
+  const cliente = useQueryClient()
+  return useMutation({
+    mutationFn: ({ id, parte }: { id: string; parte: ParteImagen }) => quitarImagen(id, parte),
+    onSuccess: () => cliente.invalidateQueries({ queryKey: ['admin', 'plantillas'] }),
+  })
+}
+
+/** Builds the constancia PDF of the template with sample data and opens it in a new tab. */
+export function useVistaPreviaPlantilla() {
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const blob = await vistaPreviaPlantilla(id)
+      window.open(URL.createObjectURL(blob), '_blank', 'noopener')
+    },
   })
 }
 
@@ -104,7 +127,16 @@ export function useConfiguracion() {
 export function useGuardarConfiguracion() {
   const cliente = useQueryClient()
   return useMutation({
-    mutationFn: (datos: Configuracion) => guardarConfiguracion(datos),
+    mutationFn: (datos: Pick<Configuracion, 'diasEspera'>) => guardarConfiguracion(datos),
+    onSuccess: () => cliente.invalidateQueries({ queryKey: ['admin', 'configuracion'] }),
+  })
+}
+
+export function useGuardarDatosRevista() {
+  const cliente = useQueryClient()
+  return useMutation({
+    mutationFn: ({ revista, datos }: { revista: Revista; datos: DatosRevista }) =>
+      guardarDatosRevista(revista, datos),
     onSuccess: () => cliente.invalidateQueries({ queryKey: ['admin', 'configuracion'] }),
   })
 }

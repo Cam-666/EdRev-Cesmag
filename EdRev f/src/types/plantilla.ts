@@ -3,18 +3,26 @@ import type { Revista } from './revista'
 /** What a template is used for. Each journal has exactly one template in use per use (RF-45). */
 export type UsoPlantilla = 'invitacion' | 'agradecimiento' | 'constancia'
 
-/** The PDF background of a constancia template: letterhead, design and signature (RF-30, RF-45). */
-export interface FondoPdf {
+/** A template is a mail (subject and text) or a file (the constancia: text, header, footer, signature). */
+export type ClasePlantilla = 'correo' | 'archivo'
+
+/** The images of a file template. */
+export type ParteImagen = 'encabezado' | 'pie' | 'firma'
+
+export interface ImagenPlantilla {
   nombre: string
   /** Size in bytes. */
   tamano: number
 }
+
+export type ImagenesPlantilla = Record<ParteImagen, ImagenPlantilla | null>
 
 export interface Plantilla {
   id: string
   /** Each journal has its own templates (RF-45). */
   revista: Revista
   uso: UsoPlantilla
+  clase: ClasePlantilla
   nombre: string
   /** Mail subject; the constancia has none. */
   asunto: string | null
@@ -23,15 +31,17 @@ export interface Plantilla {
   variables: string[]
   /** True for the template the system uses for this use in its journal. */
   enUso: boolean
-  /** Only the constancia has one, and it needs it. */
-  fondoPdf: FondoPdf | null
+  /** Header, footer and signature images; only the file template (constancia) has them. */
+  imagenes: ImagenesPlantilla | null
 }
 
-/** A new template: its name and use; it starts from the text of the one in use (RNF-19). */
+/** A new template: a free name and its class; a mail also says which mail it is for (RNF-19). */
 export interface DatosNuevaPlantilla {
   revista: Revista
   nombre: string
-  uso: UsoPlantilla
+  clase: ClasePlantilla
+  /** Only for a mail template. */
+  uso?: Exclude<UsoPlantilla, 'constancia'>
 }
 
 /** Address the mails of a journal leave from: configured in the mail service, not on screen. */

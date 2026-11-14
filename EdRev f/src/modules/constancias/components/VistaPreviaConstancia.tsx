@@ -30,7 +30,7 @@ export function VistaPreviaConstancia({ vista }: VistaPreviaConstanciaProps) {
         {vista.firma}
       </footer>
       <p className="text-cuerpo-13 text-texto-secundario">
-        {vista.fondo ? `Fondo: ${vista.fondo}` : 'Sin PDF de fondo'}
+        {vista.fondo ?? 'Sin encabezado, pie ni firma'}
       </p>
     </article>
   )

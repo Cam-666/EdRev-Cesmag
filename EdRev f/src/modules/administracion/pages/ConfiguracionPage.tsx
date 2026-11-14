@@ -1,12 +1,14 @@
 /*
  * ConfiguracionPage — Configuración (/administracion/configuracion): the days a peer has to answer
- * an invitation. After that time the system sends the 2nd attempt by itself and, if it is not
- * answered either, blocks the peer. Administradora only. Covers: RF-29, RF-15, RNF-05, RNF-18.
+ * an invitation (after that time the system sends the 2nd attempt by itself and, if it is not
+ * answered either, blocks the peer) and the ISSN and indexations of each journal, which go in its
+ * constancia. Administradora only. Covers: RF-29, RF-15, RF-30, RNF-05, RNF-18.
  */
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { z } from 'zod'
+import { DatosRevistaForm } from '../components/DatosRevistaForm'
 import { useConfiguracion, useGuardarConfiguracion } from '../hooks/useAdmin'
 import { Alerta } from '@/components/common/Alerta'
 import { Boton } from '@/components/common/Boton'
@@ -14,6 +16,8 @@ import { CampoTexto } from '@/components/common/CampoTexto'
 import { EncabezadoPagina } from '@/components/common/EncabezadoPagina'
 import { EstadoConsulta } from '@/components/common/EstadoConsulta'
 import { mensajeDeApi } from '@/lib/api/errores'
+import { REVISTAS } from '@/types/revista'
+import type { Revista } from '@/types/revista'
 
 const esquema = z.object({
   diasEspera: z
@@ -76,6 +80,16 @@ export function ConfiguracionPage() {
             </Boton>
           </div>
         </form>
+
+        <h3 className="mt-4 text-titulo-16">Datos de las constancias</h3>
+        <p className="max-w-2xl text-cuerpo-13 text-texto-secundario">
+          El ISSN y las indexaciones de cada revista. Cambian con el tiempo: al editarlos, las
+          constancias que se envíen o descarguen desde ahora salen con el texto nuevo.
+        </p>
+        {consulta.data &&
+          (Object.keys(REVISTAS) as Revista[]).map((r) => (
+            <DatosRevistaForm key={r} revista={r} datos={consulta.data.revistas[r]} />
+          ))}
       </EstadoConsulta>
     </section>
   )

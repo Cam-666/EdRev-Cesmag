@@ -29,7 +29,7 @@ export function htmlConstancia(vista: VistaConstancia): string {
 <h2>${escapar(vista.revista)}</h2>
 ${parrafos}
 <p><strong>${escapar(vista.firma)}</strong></p>
-${vista.fondo ? `<p><small>Fondo: ${escapar(vista.fondo)}</small></p>` : ''}
+${vista.fondo ? `<p><small>${escapar(vista.fondo)}</small></p>` : ''}
 </body>
 </html>
 `

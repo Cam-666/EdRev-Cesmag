@@ -222,9 +222,9 @@ describe('actions on an assigned peer', () => {
       name: 'Emitir la constancia de Sandra Liliana Cuasapud',
     })
     expect(within(constancia).getByText(/Entrega registrada/)).toBeInTheDocument()
-    expect(await within(constancia).findByText(/HACE CONSTAR QUE/)).toBeInTheDocument()
+    expect(await within(constancia).findByText(/CERTIFICA QUE/)).toBeInTheDocument()
     expect(
-      within(constancia).getByText('Fondo: constancia-educacion-pedagogia.pdf'),
+      within(constancia).getByText(/Encabezado, pie y firma de «Constancia de participación»/),
     ).toBeInTheDocument()
     await user.click(within(constancia).getByRole('button', { name: 'Emitir y enviar' }))
     expect(

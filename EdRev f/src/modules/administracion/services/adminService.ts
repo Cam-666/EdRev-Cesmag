@@ -2,11 +2,11 @@
  * adminService — HTTP calls of Administración: user accounts, templates with the sender accounts,
  * and the cross-journal audit log. Covers: RF-40, RF-41, RNF-19, HU-29, HU-30.
  */
-import { solicitar } from '@/lib/api/cliente'
+import { solicitar, solicitarArchivo } from '@/lib/api/cliente'
 import type { RespuestaEnvioEnlace } from '@/types/acceso'
-import type { Configuracion } from '@/types/configuracion'
+import type { Configuracion, DatosRevista } from '@/types/configuracion'
 import type { EntradaAuditoria, TipoAuditoria } from '@/types/historial'
-import type { DatosNuevaPlantilla, DatosPlantillas, Plantilla } from '@/types/plantilla'
+import type { DatosNuevaPlantilla, DatosPlantillas, ParteImagen, Plantilla } from '@/types/plantilla'
 import type { Revista } from '@/types/revista'
 import type { DatosUsuario, Usuario } from '@/types/usuario'
 
@@ -65,14 +65,25 @@ export function crearPlantilla(datos: DatosNuevaPlantilla): Promise<Plantilla> {
   return solicitar<Plantilla>('/plantillas', { method: 'POST', ...json(datos) })
 }
 
-/** Uploads the PDF background of a constancia template (RF-45). */
-export function subirFondo(id: string, archivo: File): Promise<Plantilla> {
+/** Uploads the header, the footer or the signature image of a file template (RF-45). */
+export function subirImagen(id: string, parte: ParteImagen, archivo: File): Promise<Plantilla> {
   const datos = new FormData()
   datos.append('archivo', archivo)
-  return solicitar<Plantilla>(`/plantillas/${encodeURIComponent(id)}/fondo`, {
+  return solicitar<Plantilla>(`/plantillas/${encodeURIComponent(id)}/imagen/${parte}`, {
     method: 'POST',
     body: datos,
   })
+}
+
+export function quitarImagen(id: string, parte: ParteImagen): Promise<Plantilla> {
+  return solicitar<Plantilla>(`/plantillas/${encodeURIComponent(id)}/imagen/${parte}`, {
+    method: 'DELETE',
+  })
+}
+
+/** The constancia template as a PDF with sample data. */
+export function vistaPreviaPlantilla(id: string): Promise<Blob> {
+  return solicitarArchivo(`/plantillas/${encodeURIComponent(id)}/vista-previa`)
 }
 
 /** Makes this template the one its journal sends for its use. */
@@ -102,6 +113,10 @@ export function obtenerConfiguracion(): Promise<Configuracion> {
   return solicitar<Configuracion>('/configuracion')
 }
 
-export function guardarConfiguracion(datos: Configuracion): Promise<Configuracion> {
+export function guardarConfiguracion(datos: Pick<Configuracion, 'diasEspera'>): Promise<Configuracion> {
   return solicitar<Configuracion>('/configuracion', { method: 'PUT', ...json(datos) })
+}
+
+export function guardarDatosRevista(revista: Revista, datos: DatosRevista): Promise<DatosRevista> {
+  return solicitar<DatosRevista>(`/configuracion/revistas/${revista}`, { method: 'PUT', ...json(datos) })
 }

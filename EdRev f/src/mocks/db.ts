@@ -3,7 +3,7 @@
  * the templates, sender accounts and user accounts are shared by the dependency.
  * `reiniciarDb` restores the seed (used between tests).
  */
-import { CUENTAS_INICIALES, PLANTILLAS_INICIALES } from './plantillas'
+import { CUENTAS_INICIALES, DATOS_REVISTA_INICIALES, PLANTILLAS_INICIALES } from './plantillas'
 import { SEED_IRE } from './seed/ire'
 import { SEED_REEP } from './seed/reep'
 import type { SeedRevista } from './seed/fabrica'
@@ -39,7 +39,7 @@ function crear(): Base {
     plantillas: clonar(PLANTILLAS_INICIALES),
     cuentas: clonar(CUENTAS_INICIALES),
     usuarios: clonar(USUARIOS_SEED),
-    configuracion: { diasEspera: 5 },
+    configuracion: { diasEspera: 5, revistas: clonar(DATOS_REVISTA_INICIALES) },
   }
 }
 

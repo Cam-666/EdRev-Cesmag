@@ -98,7 +98,7 @@ describe('the whole flow of an article (HU-01, HU-03, HU-13, HU-14, HU-17, HU-22
     const constancia = await screen.findByRole('dialog', {
       name: 'Emitir la constancia de Marta Lucía Gómez',
     })
-    await within(constancia).findByText(/HACE CONSTAR QUE/)
+    await within(constancia).findByText(/CERTIFICA QUE/)
     await user.click(within(constancia).getByRole('button', { name: 'Emitir y enviar' }))
     expect(await screen.findByText('Constancia enviada a Marta Lucía Gómez.')).toBeInTheDocument()
   })

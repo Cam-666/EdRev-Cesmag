@@ -17,7 +17,7 @@ describe('constancias screen', () => {
     const nombre = /de (.+)$/.exec(botones[0]?.textContent ?? '')?.[1] ?? ''
     await user.click(botones[0] as HTMLElement)
 
-    expect(await screen.findByText(/HACE CONSTAR QUE/)).toBeInTheDocument()
+    expect(await screen.findByText(/CERTIFICA QUE/)).toBeInTheDocument()
     expect(screen.getAllByText(nombre).length).toBeGreaterThan(0)
     await user.click(screen.getByRole('button', { name: 'Emitir y enviar' }))
     expect(await screen.findByText(/Quedó registrada en Correos enviados/)).toBeInTheDocument()
@@ -180,25 +180,26 @@ describe('administration', () => {
     expect(screen.queryByText(/Plantilla guardada/)).toBeNull()
   })
 
-  it('each journal has its own templates; the constancia shows its PDF background', async () => {
+  it('each journal has its own templates; the constancia shows its header, footer and signature', async () => {
     const { user } = montarRuta('/administracion/plantillas')
     await user.click(await screen.findByRole('combobox', { name: 'Plantilla' }))
     await user.click(await screen.findByRole('option', { name: /^Constancia de participación/ }))
-    expect(await screen.findByText(/^constancia-educacion-pedagogia\.pdf/)).toBeInTheDocument()
-    expect(screen.getByLabelText('Nuevo PDF de fondo')).toHaveAttribute(
+    expect(await screen.findByRole('heading', { name: 'Encabezado, pie de página y firma' })).toBeInTheDocument()
+    expect(screen.getByLabelText('Imagen de encabezado')).toHaveAttribute(
       'accept',
-      'application/pdf,.pdf',
+      'image/png,image/jpeg,.png,.jpg,.jpeg',
     )
+    expect(screen.getByRole('button', { name: 'Ver constancia en PDF' })).toBeInTheDocument()
 
     await user.click(screen.getByRole('combobox', { name: 'Revista' }))
     await user.click(await screen.findByRole('option', { name: 'Investigium IRE' }))
     await user.click(screen.getByRole('combobox', { name: 'Plantilla' }))
     await user.click(await screen.findByRole('option', { name: /^Constancia de participación/ }))
-    expect(await screen.findByText(/^constancia-investigium-ire\.pdf/)).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { name: 'Encabezado, pie de página y firma' })).toBeInTheDocument()
     // The preview uses the journal of the template
     expect(
-      screen.getByText(/Revista Investigium IRE Ciencias Sociales y Humanas/),
-    ).toBeInTheDocument()
+      screen.getAllByText(/Revista Investigium IRE Ciencias Sociales y Humanas/).length,
+    ).toBeGreaterThan(0)
   })
 
   it('shows only the templates: no sender account box and no credentials', async () => {

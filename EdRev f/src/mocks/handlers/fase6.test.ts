@@ -82,8 +82,8 @@ describe('constancias API (mock)', () => {
     const v = await json<VistaConstancia>(await llamar(`/reep/constancias/${fila.id}/vista-previa`))
     expect(v.universidad).toBe('UNIVERSIDAD CESMAG')
     expect(v.revista).toBe('Revista Electrónica en Educación y Pedagogía')
-    expect(v.cuerpo).toContain('HACE CONSTAR QUE')
-    expect(v.cuerpo).toContain(fila.par.nombre)
+    expect(v.cuerpo).toContain('CERTIFICA QUE')
+    expect(v.cuerpo).toContain(fila.par.nombre.toUpperCase())
     expect(v.cuerpo).toContain(`«${fila.articulo.titulo}»`)
     expect(v.cuerpo).not.toMatch(/\{\{|consecutivo|N\.º|No\. \d/i)
     expect(v.firma).toBe('Ma. Camila Mendoza · Dependencia de Editorial')
@@ -227,8 +227,8 @@ describe('templates API (mock, RF-45)', () => {
       'ire-constancia',
     ])
     expect(d.plantillas.every((p) => p.enUso)).toBe(true)
-    // Only the constancia carries a PDF background
-    expect(d.plantillas.filter((p) => p.fondoPdf).map((p) => p.id)).toEqual([
+    // Only the constancia (a file template) carries header, footer and signature images
+    expect(d.plantillas.filter((p) => p.imagenes).map((p) => p.id)).toEqual([
       'reep-constancia',
       'ire-constancia',
     ])
@@ -236,7 +236,7 @@ describe('templates API (mock, RF-45)', () => {
   })
 
   it("an edited constancia template changes only its journal's next constancia", async () => {
-    const nuevo = 'HACE CONSTAR QUE\n\n{{par}}\n\nevaluó con dedicación el artículo «{{articulo}}».'
+    const nuevo = '[centro]**HACE CONSTAR QUE**\n\n{{par}}\n\nevaluó con dedicación el artículo «{{articulo}}».'
     expect(
       (
         await llamar('/plantillas/reep-constancia', {
@@ -255,10 +255,10 @@ describe('templates API (mock, RF-45)', () => {
     }
     const reep = await vista('reep')
     expect(reep.cuerpo).toContain('evaluó con dedicación')
-    expect(reep.fondo).toBe('constancia-educacion-pedagogia.pdf')
+    expect(reep.fondo).toContain('Encabezado, pie y firma')
     const ire = await vista('ire')
     expect(ire.cuerpo).not.toContain('evaluó con dedicación')
-    expect(ire.fondo).toBe('constancia-investigium-ire.pdf')
+    expect(ire.fondo).toContain('Encabezado, pie y firma')
   })
 
   it('refuses unknown or missing markers (the constancia must replace peer and title)', async () => {
@@ -287,7 +287,7 @@ describe('templates API (mock, RF-45)', () => {
   })
 
   it('a new template starts from the one in use of its journal and is sent only once in use', async () => {
-    const datos = { revista: 'reep', nombre: 'Invitación breve', uso: 'invitacion' }
+    const datos = { revista: 'reep', nombre: 'Invitación breve', clase: 'correo', uso: 'invitacion' }
     expect(
       (await llamar('/plantillas', { metodo: 'POST', usuario: AUXILIAR, cuerpo: datos })).status,
     ).toBe(403)
@@ -328,12 +328,19 @@ describe('templates API (mock, RF-45)', () => {
     expect(enUso).toEqual(['ire-invitacion', nueva.id])
   })
 
-  it('a new constancia template keeps the PDF background of the one in use', async () => {
+  it('a new file template keeps the images of the one in use; a mail one asks which mail it is', async () => {
     const r = await llamar('/plantillas', {
       metodo: 'POST',
-      cuerpo: { revista: 'ire', nombre: 'Constancia 2027', uso: 'constancia' },
+      cuerpo: { revista: 'ire', nombre: 'Constancia 2027', clase: 'archivo' },
     })
-    expect((await json<Plantilla>(r)).fondoPdf?.nombre).toBe('constancia-investigium-ire.pdf')
+    const nueva = await json<Plantilla>(r)
+    expect(nueva).toMatchObject({ clase: 'archivo', uso: 'constancia' })
+    expect(nueva.imagenes?.encabezado).not.toBeNull()
+    const sinUso = await llamar('/plantillas', {
+      metodo: 'POST',
+      cuerpo: { revista: 'ire', nombre: 'Otro correo', clase: 'correo' },
+    })
+    expect(sinUso.status).toBe(422)
   })
 })
 

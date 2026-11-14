@@ -6,8 +6,9 @@
  * Covers: RF-30..RF-34, RNF-19. Issuing is Administradora-only (RNF-05).
  */
 import { http, HttpResponse } from 'msw'
-import { plantillaEnUso } from '../db'
+import { configuracion, plantillaEnUso } from '../db'
 import { FIRMA_CONSTANCIA, NOMBRE_EN_CORREO, UNIVERSIDAD_MEMBRETE } from '../plantillas'
+import { textoPlano } from '@/lib/formato'
 import { rellenar } from '@/lib/plantillas'
 import type { SeedRevista } from '../seed/fabrica'
 import { ahoraIso, contexto, error } from './util'
@@ -66,16 +67,27 @@ export function filasDe(base: SeedRevista): FilaConstancia[] {
 function vistaDe(revista: Revista, fila: FilaConstancia): VistaConstancia {
   const nombreRevista = NOMBRE_EN_CORREO[revista]
   const plantilla = plantillaEnUso(revista, 'constancia')
+  const datos = configuracion().revistas[revista]
   return {
     universidad: UNIVERSIDAD_MEMBRETE,
     revista: nombreRevista,
-    cuerpo: rellenar(plantilla.cuerpo, {
-      par: fila.par.nombre,
-      articulo: fila.articulo.titulo,
-      revista: nombreRevista,
-    }),
+    // The text without its formatting marks; the PDF carries the alignment, the bold and the images.
+    cuerpo: textoPlano(
+      rellenar(plantilla.cuerpo, {
+        par: fila.par.nombre,
+        PAR: fila.par.nombre.toUpperCase(),
+        articulo: fila.articulo.titulo,
+        revista: nombreRevista,
+        REVISTA: nombreRevista.toUpperCase(),
+        issn: datos.issn,
+        indexaciones: datos.indexaciones,
+        fecha: '14 de noviembre de 2026',
+        anio: '2026',
+        firma: '',
+      }),
+    ),
     firma: FIRMA_CONSTANCIA,
-    fondo: plantilla.fondoPdf?.nombre ?? null,
+    fondo: plantilla.imagenes ? `Encabezado, pie y firma de «${plantilla.nombre}»` : null,
   }
 }
 

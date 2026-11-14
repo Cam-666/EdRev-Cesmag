@@ -1,16 +1,17 @@
 /*
  * FormularioPlantilla — edits one template (subject and text) with the markers it accepts, a
  * live preview filled with sample data, and validation before saving: it may only use its own
- * markers and must keep the required ones. The constancia has no subject and carries its PDF
- * background (letterhead, design and signature) on which the text is written (RF-30). A template
+ * markers and must keep the required ones. The text can have alignment and bold. The constancia
+ * (a file template) has no subject; it carries a header, a footer and a signature image (RF-30). A template
  * not in use can be chosen as the one its journal sends for its use. Covers: RF-25, RF-30, RF-45.
  */
 import { useState } from 'react'
 import { DATOS_EJEMPLO, validarPlantilla } from '../config/plantillas'
-import { FondoConstancia } from './FondoConstancia'
+import { EditorTexto } from './EditorTexto'
+import { ImagenesConstancia } from './ImagenesConstancia'
+import { TextoConFormato } from './TextoConFormato'
 import { useGuardarPlantilla, useUsarPlantilla } from '../hooks/useAdmin'
 import { Alerta } from '@/components/common/Alerta'
-import { AreaTexto } from '@/components/common/AreaTexto'
 import { Boton } from '@/components/common/Boton'
 import { CampoTexto } from '@/components/common/CampoTexto'
 import { mensajeDeApi } from '@/lib/api/errores'
@@ -66,16 +67,14 @@ export function FormularioPlantilla({ plantilla }: FormularioPlantillaProps) {
       {tieneAsunto && (
         <CampoTexto etiqueta="Asunto" value={asunto} onChange={(e) => setAsunto(e.target.value)} />
       )}
-      <AreaTexto
-        etiqueta="Texto"
-        rows={10}
-        value={cuerpo}
-        onChange={(e) => setCuerpo(e.target.value)}
+      <EditorTexto
+        valor={cuerpo}
+        onCambio={setCuerpo}
         error={error ?? undefined}
         ayuda={`Marcadores disponibles: ${plantilla.variables.map((v) => `{{${v}}}`).join(' ')}`}
       />
 
-      {plantilla.uso === 'constancia' && <FondoConstancia plantilla={plantilla} />}
+      {plantilla.clase === 'archivo' && <ImagenesConstancia plantilla={plantilla} />}
 
       <section
         aria-labelledby="titulo-previa-plantilla"
@@ -85,7 +84,7 @@ export function FormularioPlantilla({ plantilla }: FormularioPlantillaProps) {
           Vista previa con datos de ejemplo
         </h3>
         {tieneAsunto && <p className="text-cuerpo-15-enfasis">{rellenar(asunto, ejemplo)}</p>}
-        <p className="whitespace-pre-line text-cuerpo-15">{rellenar(cuerpo, ejemplo)}</p>
+        <TextoConFormato texto={rellenar(cuerpo, ejemplo)} />
       </section>
 
       <div className="flex flex-wrap items-center gap-3">

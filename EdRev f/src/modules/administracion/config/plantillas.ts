@@ -5,12 +5,17 @@
  * else (RF-30). Covers: RNF-19, RF-25, RF-30.
  */
 import { marcadores } from '@/lib/plantillas'
-import type { Plantilla, UsoPlantilla } from '@/types/plantilla'
+import type { ClasePlantilla, Plantilla, UsoPlantilla } from '@/types/plantilla'
 
-export const USOS_PLANTILLA: Array<{ valor: UsoPlantilla; etiqueta: string }> = [
+export const CLASES_PLANTILLA: Array<{ valor: ClasePlantilla; etiqueta: string }> = [
+  { valor: 'correo', etiqueta: 'Correo (asunto y texto)' },
+  { valor: 'archivo', etiqueta: 'Archivo (constancia con encabezado, pie y firma)' },
+]
+
+/** The mails a correo template can be for; the file template is the constancia. */
+export const USOS_CORREO: Array<{ valor: Exclude<UsoPlantilla, 'constancia'>; etiqueta: string }> = [
   { valor: 'invitacion', etiqueta: 'Invitación a evaluar' },
   { valor: 'agradecimiento', etiqueta: 'Agradecimiento' },
-  { valor: 'constancia', etiqueta: 'Constancia de participación' },
 ]
 
 export const OBLIGATORIOS: Record<UsoPlantilla, string[]> = {
@@ -30,7 +35,11 @@ export function validarPlantilla(
   const usados = [...enCuerpo, ...marcadores(asunto ?? '')]
   const desconocido = usados.find((m) => !plantilla.variables.includes(m))
   if (desconocido) return `El marcador {{${desconocido}}} no existe en esta plantilla.`
-  const falta = OBLIGATORIOS[plantilla.uso].find((m) => !enCuerpo.includes(m))
+  // In the constancia the capitals version of the marker (PAR) also counts.
+  const falta = OBLIGATORIOS[plantilla.uso].find(
+    (m) =>
+      !enCuerpo.includes(m) && !(plantilla.uso === 'constancia' && enCuerpo.includes(m.toUpperCase())),
+  )
   if (falta) return `Falta el marcador obligatorio {{${falta}}}.`
   return null
 }
@@ -43,4 +52,9 @@ export const DATOS_EJEMPLO: Record<string, string> = {
   par: 'Luz Marina Burbano',
   articulo: 'Alfabetización mediática en la formación de maestros',
   botones: '[Botones: Acepto la invitación · No acepto esta invitación · No deseo participar más]',
+  PAR: 'LUZ MARINA BURBANO',
+  issn: '2590-7476',
+  fecha: '14 de noviembre de 2026',
+  anio: '2026',
+  firma: '[Firma]',
 }

@@ -1,14 +1,14 @@
 /*
- * NuevaPlantillaModal — creates a new template of a journal for one use (invitation, thank-you
- * mail or constancia). It starts from the text (and PDF background) of that journal's template in
- * use and is then edited like any other; it is not sent until it is chosen with «Usar en los
+ * NuevaPlantillaModal — creates a new template of a journal: a free name and its class, mail
+ * (invitation or thank-you) or file (the constancia). It starts from the text (and images) of that
+ * journal's template in use for that purpose and is then edited like any other; it is not sent until it is chosen with «Usar en los
  * envíos». No Figma design for the dialog.
  * Covers: RNF-19, RF-25, RF-30.
  */
 import { zodResolver } from '@hookform/resolvers/zod'
-import { Controller, useForm } from 'react-hook-form'
+import { Controller, useForm, useWatch } from 'react-hook-form'
 import { z } from 'zod'
-import { USOS_PLANTILLA } from '../config/plantillas'
+import { CLASES_PLANTILLA, USOS_CORREO } from '../config/plantillas'
 import { useCrearPlantilla } from '../hooks/useAdmin'
 import { Alerta } from '@/components/common/Alerta'
 import { Boton } from '@/components/common/Boton'
@@ -18,11 +18,12 @@ import { Modal } from '@/components/common/Modal'
 import { mensajeDeApi } from '@/lib/api/errores'
 import { REVISTAS } from '@/types/revista'
 import type { Revista } from '@/types/revista'
-import type { Plantilla, UsoPlantilla } from '@/types/plantilla'
+import type { ClasePlantilla, Plantilla } from '@/types/plantilla'
 
 const esquema = z.object({
   nombre: z.string().trim().min(1, 'Escriba el nombre de la plantilla.'),
-  uso: z.enum(['invitacion', 'agradecimiento', 'constancia']),
+  clase: z.enum(['correo', 'archivo']),
+  uso: z.enum(['invitacion', 'agradecimiento']),
 })
 type Datos = z.infer<typeof esquema>
 
@@ -50,11 +51,20 @@ function Contenido({ revista, onCerrar, onCreada }: NuevaPlantillaModalProps) {
     formState: { errors },
   } = useForm<Datos>({
     resolver: zodResolver(esquema),
-    defaultValues: { nombre: '', uso: 'invitacion' },
+    defaultValues: { nombre: '', clase: 'correo', uso: 'invitacion' },
   })
+  const clase = useWatch({ control, name: 'clase' })
 
   function enviar(datos: Datos) {
-    crear.mutate({ ...datos, revista }, { onSuccess: onCreada })
+    crear.mutate(
+      {
+        revista,
+        nombre: datos.nombre,
+        clase: datos.clase,
+        ...(datos.clase === 'correo' ? { uso: datos.uso } : {}),
+      },
+      { onSuccess: onCreada },
+    )
   }
 
   return (
@@ -93,16 +103,30 @@ function Contenido({ revista, onCerrar, onCreada }: NuevaPlantillaModalProps) {
         />
         <Controller
           control={control}
-          name="uso"
+          name="clase"
           render={({ field }) => (
             <ListaDesplegable
-              etiqueta="Uso"
-              opciones={USOS_PLANTILLA}
+              etiqueta="Tipo de plantilla"
+              opciones={CLASES_PLANTILLA}
               valor={field.value}
-              onCambio={(v) => field.onChange(v as UsoPlantilla)}
+              onCambio={(v) => field.onChange(v as ClasePlantilla)}
             />
           )}
         />
+        {clase === 'correo' && (
+          <Controller
+            control={control}
+            name="uso"
+            render={({ field }) => (
+              <ListaDesplegable
+                etiqueta="Es el correo de"
+                opciones={USOS_CORREO}
+                valor={field.value}
+                onCambio={(v) => field.onChange(v as Datos['uso'])}
+              />
+            )}
+          />
+        )}
       </form>
     </Modal>
   )

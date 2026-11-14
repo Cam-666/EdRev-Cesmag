@@ -1,7 +1,8 @@
 /*
  * MSW handlers for Administración: user accounts, the mail / constancia templates of each journal
- * (edit, create a new one for a use, choose the one in use, upload the constancia's PDF
- * background), and the cross-journal audit log. Administradora only (RNF-05).
+ * (edit, create a new one of a class, choose the one in use, upload the header, footer and
+ * signature images of the constancia), the ISSN and indexations of each journal, and the
+ * cross-journal audit log. Administradora only (RNF-05).
  * Covers: RF-40, RF-41, RNF-07 (credentials are never returned), RNF-19, HU-29, HU-30.
  */
 import { http, HttpResponse } from 'msw'
@@ -11,7 +12,7 @@ import { contextoGlobal, error, sinTildes } from './util'
 import { marcadores } from '@/lib/plantillas'
 import type { RespuestaEnvioEnlace } from '@/types/acceso'
 import type { EntradaAuditoria } from '@/types/historial'
-import type { DatosNuevaPlantilla, Plantilla, UsoPlantilla } from '@/types/plantilla'
+import type { DatosNuevaPlantilla, ParteImagen, Plantilla, UsoPlantilla } from '@/types/plantilla'
 import type { Revista } from '@/types/revista'
 import type { DatosUsuario, Usuario } from '@/types/usuario'
 
@@ -22,8 +23,8 @@ const OBLIGATORIOS: Record<UsoPlantilla, string[]> = {
   constancia: ['par', 'articulo'],
 }
 
-const USOS: readonly UsoPlantilla[] = ['invitacion', 'agradecimiento', 'constancia']
-const MAX_FONDO = 5 * 1024 * 1024
+const PARTES: readonly ParteImagen[] = ['encabezado', 'pie', 'firma']
+const MAX_IMAGEN = 2 * 1024 * 1024
 
 function validarPlantilla(
   p: Pick<Plantilla, 'uso' | 'variables'>,
@@ -33,7 +34,11 @@ function validarPlantilla(
   const usados = [...marcadores(cuerpo), ...marcadores(asunto ?? '')]
   const desconocido = usados.find((m) => !p.variables.includes(m))
   if (desconocido) return `El marcador {{${desconocido}}} no existe en esta plantilla`
-  const falta = OBLIGATORIOS[p.uso].find((m) => !marcadores(cuerpo).includes(m))
+  const falta = OBLIGATORIOS[p.uso].find(
+    (m) =>
+      !marcadores(cuerpo).includes(m) &&
+      !(p.uso === 'constancia' && marcadores(cuerpo).includes(m.toUpperCase())),
+  )
   if (falta) return `Falta el marcador obligatorio {{${falta}}}`
   if (!cuerpo.trim()) return 'El texto no puede estar vacío'
   return null
@@ -59,6 +64,18 @@ export const handlersAdmin = [
     }
     configuracion().diasEspera = diasEspera
     return HttpResponse.json(configuracion())
+  }),
+
+  http.put('*/api/configuracion/revistas/:revista', async ({ params, request }) => {
+    const c = contextoGlobal(request, 'administrar')
+    if (!c.ok) return c.respuesta
+    const revista = params.revista as Revista
+    if (revista !== 'reep' && revista !== 'ire') return error(404, 'Revista no encontrada')
+    const { issn, indexaciones } = (await request.json()) as { issn: string; indexaciones: string }
+    if (!/^(\d{4}-\d{3}[\dXx])?$/.test(issn.trim())) return error(422, 'El ISSN tiene la forma 1234-567X')
+    if (indexaciones.length > 1500) return error(422, 'Máximo 1500 caracteres')
+    configuracion().revistas[revista] = { issn: issn.trim().toUpperCase(), indexaciones: indexaciones.trim() }
+    return HttpResponse.json(configuracion().revistas[revista])
   }),
 
   http.get('*/api/usuarios', ({ request }) => {
@@ -133,21 +150,23 @@ export const handlersAdmin = [
   http.post('*/api/plantillas', async ({ request }) => {
     const c = contextoGlobal(request, 'administrar')
     if (!c.ok) return c.respuesta
-    const { revista, nombre, uso } = (await request.json()) as DatosNuevaPlantilla
+    const { revista, nombre, clase, uso: usoCorreo } = (await request.json()) as DatosNuevaPlantilla
     if (revista !== 'reep' && revista !== 'ire') return error(422, 'Revista no válida')
-    if (!USOS.includes(uso)) return error(422, 'Uso no válido')
+    if (clase !== 'correo' && clase !== 'archivo') return error(422, 'Clase no válida')
+    const uso: UsoPlantilla | undefined = clase === 'archivo' ? 'constancia' : usoCorreo
+    if (!uso) return error(422, 'Elija para qué correo es la plantilla')
     if (!nombre.trim()) return error(422, 'Escriba el nombre de la plantilla')
     const repetido = plantillas().some(
       (p) => p.revista === revista && p.nombre.trim().toLowerCase() === nombre.trim().toLowerCase(),
     )
     if (repetido) return error(409, 'Ya existe una plantilla con ese nombre en esta revista')
-    // Starts from the text (and PDF background) of the journal's template in use.
+    // Starts from the text (and images) of the journal's template in use.
     const modelo = plantillas().find((p) => p.revista === revista && p.uso === uso && p.enUso)
     if (!modelo) return error(409, 'No hay una plantilla en uso para copiar')
     const nueva: Plantilla = {
       ...modelo,
       variables: [...modelo.variables],
-      fondoPdf: modelo.fondoPdf ? { ...modelo.fondoPdf } : null,
+      imagenes: modelo.imagenes ? { ...modelo.imagenes } : null,
       id: `${revista}-pl-n${plantillas().length + 1}`,
       nombre: nombre.trim(),
       enUso: false,
@@ -168,21 +187,45 @@ export const handlersAdmin = [
     return HttpResponse.json(plantilla)
   }),
 
-  // RF-45: the constancia template carries its PDF background, uploaded as a file.
-  http.post('*/api/plantillas/:id/fondo', async ({ params, request }) => {
+  // RF-45: the constancia template carries a header, a footer and a signature image.
+  http.post('*/api/plantillas/:id/imagen/:parte', async ({ params, request }) => {
     const c = contextoGlobal(request, 'administrar')
     if (!c.ok) return c.respuesta
     const plantilla = plantillas().find((p) => p.id === params.id)
     if (!plantilla) return error(404, 'Plantilla no encontrada')
-    if (plantilla.uso !== 'constancia') return error(409, 'Solo la constancia lleva PDF de fondo')
+    const parte = PARTES.find((x) => x === params.parte)
+    if (!parte) return error(404, 'Parte de la plantilla no válida')
+    if (!plantilla.imagenes)
+      return error(409, 'Solo la plantilla de archivo lleva encabezado, pie y firma')
     const archivo = (await request.formData()).get('archivo')
-    if (archivo === null || typeof archivo === 'string')
-      return error(422, 'Adjunte el PDF de fondo')
-    const esPdf = archivo.type === 'application/pdf' || archivo.name.toLowerCase().endsWith('.pdf')
-    if (!esPdf) return error(422, 'El fondo debe ser un archivo PDF')
-    if (archivo.size > MAX_FONDO) return error(422, 'El PDF de fondo no puede pasar de 5 MB')
-    plantilla.fondoPdf = { nombre: archivo.name, tamano: archivo.size }
+    if (archivo === null || typeof archivo === 'string') return error(422, 'Adjunte la imagen')
+    const esImagen = /\.(png|jpe?g)$/i.test(archivo.name) || /^image\/(png|jpeg)$/.test(archivo.type)
+    if (!esImagen) return error(422, 'La imagen debe ser PNG o JPG')
+    if (archivo.size > MAX_IMAGEN) return error(422, 'La imagen no puede pasar de 2 MB')
+    plantilla.imagenes[parte] = { nombre: archivo.name, tamano: archivo.size }
     return HttpResponse.json(plantilla)
+  }),
+
+  http.delete('*/api/plantillas/:id/imagen/:parte', ({ params, request }) => {
+    const c = contextoGlobal(request, 'administrar')
+    if (!c.ok) return c.respuesta
+    const plantilla = plantillas().find((p) => p.id === params.id)
+    if (!plantilla) return error(404, 'Plantilla no encontrada')
+    const parte = PARTES.find((x) => x === params.parte)
+    if (!parte || !plantilla.imagenes) return error(404, 'Parte de la plantilla no válida')
+    plantilla.imagenes[parte] = null
+    return HttpResponse.json(plantilla)
+  }),
+
+  http.get('*/api/plantillas/:id/vista-previa', ({ params, request }) => {
+    const c = contextoGlobal(request, 'administrar')
+    if (!c.ok) return c.respuesta
+    const plantilla = plantillas().find((p) => p.id === params.id)
+    if (!plantilla) return error(404, 'Plantilla no encontrada')
+    if (!plantilla.imagenes) return error(409, 'Solo la plantilla de archivo tiene vista previa en PDF')
+    return new HttpResponse('%PDF-1.4 vista previa de ejemplo', {
+      headers: { 'Content-Type': 'application/pdf' },
+    })
   }),
 
   http.put('*/api/plantillas/:id', async ({ params, request }) => {
