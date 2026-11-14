@@ -25,6 +25,9 @@ export const config = {
   diasEspera: numero('DIAS_ESPERA_RESPUESTA', 5),
   intentosAntesBloqueo: numero('INTENTOS_ANTES_BLOQUEO', 2),
   maxPares: numero('MAX_PARES_POR_ARTICULO', 3),
+  /** Automatic retries of a mail the service failed (RF-27) and the minutes between them. */
+  reintentosCorreo: numero('REINTENTOS_CORREO', 3),
+  minutosReintento: numero('MINUTOS_REINTENTO_CORREO', 10),
   /** Login: failed attempts before a 15-minute lockout. */
   intentosIngreso: 3,
   bloqueoMinutos: 15,

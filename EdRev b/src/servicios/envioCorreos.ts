@@ -3,14 +3,17 @@
  * Every few seconds it takes the mails «en cola», builds them with the journal's template in use
  * (RF-25, RF-31; the thank-you mail carries the constancia in PDF) and sends them through Brevo
  * from the journal's sender address. The result is recorded: «enviado», «rebotado» (the address does
- * not exist) or «fallido» (the service failed; it can be retried).
+ * not exist) or «fallido» (the service failed). A failed mail is queued again by itself after a
+ * few minutes, up to REINTENTOS_CORREO times (RF-27); after that it waits for the manual retry.
  *
  * Modes (env CORREO_MODO):
  *  - brevo     → real sending; needs BREVO_API_KEY and senders verified in Brevo.
  *  - simulado  → nothing leaves; the mails are marked «enviado» (demo without a mail account).
  *  - apagado   → the mails stay «en cola» (default if nothing is configured).
  */
-import { pool } from '../db.js'
+import { config } from '../config.js'
+import { pool, type Cliente } from '../db.js'
+import { auditar } from '../lib/auditoria.js'
 import { generarConstancia } from './constanciaPdf.js'
 
 /** The mail that only delivers the constancia (no thank-you template): a fixed, short text. */
@@ -28,6 +31,7 @@ interface Pendiente {
   tipo: 'invitacion' | 'agradecimiento' | 'constancia'
   destinatario: string
   id_revista: number
+  id_articulo: number
   revista: string
   remitente: string
   numero_ojs: string
@@ -72,7 +76,7 @@ async function enviarBrevo(p: Pendiente, asunto: string, texto: string, adjunto?
 
 async function procesar(): Promise<void> {
   const { rows } = await pool.query<Pendiente>(
-    `SELECT c.id_correo, c.tipo, c.destinatario, a.id_revista, r.nombre AS revista,
+    `SELECT c.id_correo, c.tipo, c.destinatario, a.id_revista, a.id_articulo, r.nombre AS revista,
             r.correo_remitente AS remitente, a.numero_ojs, a.titulo, p.nombre AS par, p.profesion,
             p.universidad, pl.asunto, pl.cuerpo
        FROM correo c
@@ -115,7 +119,45 @@ async function procesar(): Promise<void> {
       resultado,
       p.id_correo,
     ])
+    if (resultado === 'fallido') await registrarFallo(pool, p.id_correo, p.id_revista, p.id_articulo)
   }
+  await reencolarFallidos(pool)
+}
+
+/** Each failure leaves a «fallo» trace of the mail; the traces are the attempts already made. */
+export async function registrarFallo(c: Cliente, idCorreo: number, revista: number, articulo: number): Promise<void> {
+  await auditar(c, {
+    usuario: null,
+    tabla: 'correo',
+    idRegistro: idCorreo,
+    accion: 'fallo',
+    texto: 'Falló el servicio de correo al enviar',
+    revista,
+    articulo,
+  })
+}
+
+/**
+ * RF-27: the mails the service failed go back to the queue after `minutos` minutes, unless they
+ * already failed `maximo` times (then they wait for the manual retry) or a newer mail of the same
+ * kind replaced them (corrected address, RF-28). Returns how many.
+ */
+export async function reencolarFallidos(
+  c: Cliente,
+  minutos = config.minutosReintento,
+  maximo = config.reintentosCorreo,
+): Promise<number> {
+  const { rowCount } = await c.query(
+    `UPDATE correo SET resultado = 'en-cola'
+      WHERE resultado = 'fallido'
+        AND fecha_envio < now() - make_interval(mins => $1)
+        AND NOT EXISTS (SELECT 1 FROM correo c2 WHERE c2.id_evaluacion = correo.id_evaluacion
+                AND c2.tipo = correo.tipo AND c2.id_correo > correo.id_correo)
+        AND (SELECT count(*) FROM auditoria au WHERE au.tabla_afectada = 'correo'
+                AND au.id_registro = correo.id_correo::text AND au.accion = 'fallo') < $2`,
+    [minutos, maximo],
+  )
+  return rowCount ?? 0
 }
 
 /** Starts the background sender (no-op when CORREO_MODO is «apagado»). */
