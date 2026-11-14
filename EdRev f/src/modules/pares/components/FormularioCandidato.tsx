@@ -1,11 +1,10 @@
 /*
  * FormularioCandidato — registers a brand-new candidate while assigning peers: name, profession,
  * email, university and thematic area (suggesting the ones already registered). Saving stores the peer in
- * the journal's base and sends the invitation right away. Covers: RF-12, RF-13, RF-19, RF-24.
+ * the common base of peers and sends the invitation right away. Covers: RF-12, RF-13, RF-19, RF-24.
  */
 import { zodResolver } from '@hookform/resolvers/zod'
-import { useForm, useWatch } from 'react-hook-form'
-import { AvisoOtraRevista } from './AvisoOtraRevista'
+import { useForm } from 'react-hook-form'
 import { esquemaCandidato } from '../config/esquemas'
 import type { CandidatoForm } from '../config/esquemas'
 import { useAreas } from '../hooks/usePares'
@@ -23,14 +22,11 @@ export function FormularioCandidato({ enviando, onEnviar }: FormularioCandidatoP
     register,
     handleSubmit,
     reset,
-    control,
-    setValue,
     formState: { errors },
   } = useForm<CandidatoForm>({
     resolver: zodResolver(esquemaCandidato),
     defaultValues: { nombre: '', profesion: '', correo: '', universidad: '', area: '' },
   })
-  const correo = useWatch({ control, name: 'correo' })
 
   return (
     <form
@@ -57,17 +53,6 @@ export function FormularioCandidato({ enviando, onEnviar }: FormularioCandidatoP
         error={errors.correo?.message}
         {...register('correo')}
       />
-      <div className="md:col-span-2">
-        <AvisoOtraRevista
-          correo={correo}
-          onCopiar={(otro) => {
-            setValue('nombre', otro.nombre, { shouldValidate: true })
-            setValue('profesion', otro.profesion, { shouldValidate: true })
-            setValue('universidad', otro.universidad, { shouldValidate: true })
-            setValue('area', otro.area, { shouldValidate: true })
-          }}
-        />
-      </div>
       <CampoTexto
         etiqueta="Universidad"
         autoComplete="off"

@@ -20,7 +20,6 @@ import { EnlaceBoton } from '@/components/common/EnlaceBoton'
 import { EstadoConsulta } from '@/components/common/EstadoConsulta'
 import { Pestanas } from '@/components/common/Pestanas'
 import { ErrorApi } from '@/lib/api/cliente'
-import { puedeTrasladar } from '@/lib/dominio/comite'
 import { useRevista } from '@/lib/revista/useRevista'
 import type { EstadoArticulo } from '@/types/articulo'
 
@@ -83,7 +82,7 @@ export function FichaArticuloLayout() {
             articulo={articulo}
             acciones={
               <>
-                {puedeCambiar && puedeTrasladar(articulo, articulo.asignaciones.length > 0) && (
+                {puedeCambiar && (
                   <Boton variante="secundario" tamano="sm" onClick={() => setCambiando(true)}>
                     Cambiar de revista
                   </Boton>

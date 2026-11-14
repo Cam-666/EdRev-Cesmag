@@ -88,18 +88,18 @@ async function asignar(
 }
 
 describe('peers API (mock)', () => {
-  it('each journal has its own peer base and thematic areas', async () => {
+  it('the base of peers is common to both journals, with the same thematic areas', async () => {
     const reep = await json<ListaPares>(await llamar('/reep/pares?estado=todos&porPagina=50'))
     const ire = await json<ListaPares>(await llamar('/ire/pares?estado=todos&porPagina=50'))
-    expect(reep.totalBase).toBe(15)
-    expect(ire.totalBase).toBe(15)
-    expect(reep.items.some((p) => ire.items.some((q) => q.id === p.id))).toBe(false)
+    expect(reep.totalBase).toBe(30)
+    expect(ire.totalBase).toBe(30)
+    expect(reep.items.map((p) => p.id).sort()).toEqual(ire.items.map((p) => p.id).sort())
 
     const areasReep = await json<string[]>(await llamar('/reep/pares/areas'))
     const areasIre = await json<string[]>(await llamar('/ire/pares/areas'))
+    expect(areasReep).toEqual(areasIre)
     expect(areasReep).toContain('Educación inclusiva')
-    expect(areasIre).toContain('Memoria y conflicto')
-    expect(areasReep.some((a) => areasIre.includes(a))).toBe(false)
+    expect(areasReep).toContain('Memoria y conflicto')
   })
 
   it('filters by area and university, and by availability', async () => {
@@ -119,23 +119,28 @@ describe('peers API (mock)', () => {
     const disponibles = await json<ListaPares>(await llamar('/reep/pares?porPagina=50'))
     expect(disponibles.items.every((p) => p.estado !== 'bloqueado')).toBe(true)
     const bloqueados = await json<ListaPares>(await llamar('/reep/pares?estado=bloqueados'))
-    expect(bloqueados.total).toBe(4)
+    expect(bloqueados.total).toBe(8)
     expect(bloqueados.items.every((p) => p.bloqueo !== null && p.estado === 'bloqueado')).toBe(true)
   })
 
-  it('marks "Conflicto posible" for Universidad CESMAG and, with an article, for its authors university', async () => {
+  it('marks «Conflicto posible» for Universidad CESMAG and «Misma institución» with the article authors', async () => {
     const sinArticulo = await json<ListaPares>(await llamar('/reep/pares?porPagina=50'))
     const cesmag = sinArticulo.items.find((p) => p.universidad === 'Universidad CESMAG')
     expect(cesmag?.estado).toBe('conflicto')
 
-    // 2026-034 has an author from Universidad Mariana: a Mariana peer conflicts there only.
+    // 2026-034 has an author from Universidad Mariana: a Mariana peer cannot be assigned there.
     const conArticulo = await json<ListaPares>(
       await llamar('/reep/pares?porPagina=50&articulo=2026-034'),
     )
     const mariana = conArticulo.items.find((p) => p.universidad === 'Universidad Mariana')
-    expect(mariana?.estado).toBe('conflicto')
+    expect(mariana?.estado).toBe('misma-institucion')
     const sinContexto = sinArticulo.items.find((p) => p.universidad === 'Universidad Mariana')
     expect(sinContexto?.estado).toBe('disponible')
+    // ... and it is not offered among the peers that can be assigned.
+    const asignables = await json<ListaPares>(
+      await llamar('/reep/pares?estado=asignables&porPagina=50&articulo=2026-034'),
+    )
+    expect(asignables.items.some((p) => p.universidad === 'Universidad Mariana')).toBe(false)
   })
 
   it('registers a peer with its profession, and refuses a repeated email', async () => {
@@ -152,9 +157,9 @@ describe('peers API (mock)', () => {
     expect(par.profesion).toBe('Magíster en Educación')
     expect((await llamar('/reep/pares', { metodo: 'POST', cuerpo })).status).toBe(409)
 
-    // The new peer exists only in this journal
+    // The base is common: the new peer is also in the other journal
     const enIre = await json<ListaPares>(await llamar('/ire/pares?estado=todos&q=gomez'))
-    expect(enIre.items.some((p) => p.correo === cuerpo.correo)).toBe(false)
+    expect(enIre.items.some((p) => p.correo === cuerpo.correo)).toBe(true)
   })
 
   it('shows the peer record: delivered evaluations, unanswered invitations and participations', async () => {
@@ -163,7 +168,9 @@ describe('peers API (mock)', () => {
     expect(par.evaluacionesEntregadas).toBeGreaterThan(0)
     expect(par.participaciones.length).toBeGreaterThan(0)
     expect(par.participaciones.every((x) => x.numeroOjs && x.titulo)).toBe(true)
-    expect((await llamar('/ire/pares/reep-par-1')).status).toBe(404)
+    // the same record opens from the other journal, with the journal of each participation
+    expect((await llamar('/ire/pares/reep-par-1')).status).toBe(200)
+    expect(par.participaciones.every((x) => x.revista === 'reep' || x.revista === 'ire')).toBe(true)
   })
 
   it('unblocking needs a reason; the Auxiliar can block and unblock', async () => {
@@ -188,19 +195,21 @@ describe('peers API (mock)', () => {
   })
 })
 
-describe('the same email in the other journal (mock, RF-12)', () => {
-  it('finds the peer of the other journal by email, with its block', async () => {
+describe('the base of peers is common (mock, RF-12)', () => {
+  it('a repeated email is refused in either journal; there is no «other journal» lookup any more', async () => {
     const ire = await json<ListaPares>(await llamar('/ire/pares?estado=bloqueados&porPagina=50'))
-    const bloqueado = ire.items[0]
-    if (!bloqueado) throw new Error('seed missing')
-    const r = await llamar(
-      `/reep/pares/en-otra-revista?correo=${encodeURIComponent(bloqueado.correo.toUpperCase())}`,
-    )
-    expect(r.status).toBe(200)
-    expect(await json<{ revista: string; bloqueo: unknown }>(r)).toMatchObject({
-      revista: 'ire',
-      bloqueo: { motivo: bloqueado.bloqueo?.motivo },
+    const existente = ire.items[0]
+    if (!existente) throw new Error('seed missing')
+    const r = await llamar('/reep/pares', {
+      metodo: 'POST',
+      cuerpo: {
+        nombre: 'Otro nombre',
+        correo: existente.correo.toUpperCase(),
+        universidad: 'U',
+        area: 'A',
+      },
     })
+    expect(r.status).toBe(409)
     expect((await llamar('/reep/pares/en-otra-revista?correo=nadie@x.co')).status).toBe(404)
   })
 })
@@ -278,7 +287,7 @@ describe('assignment and invitation (mock)', () => {
     )
   })
 
-  it('a new candidate is saved in the journal base and invited right away', async () => {
+  it('a new candidate is saved in the common base and invited right away', async () => {
     const articulo = await articuloNuevo('reep', '2026-038', 'reep-au-3')
     const nuevo = {
       nombre: 'Marta Lucía Gómez',
@@ -301,7 +310,7 @@ describe('assignment and invitation (mock)', () => {
     const base = await json<ListaPares>(await llamar('/reep/pares?estado=todos&q=gomez'))
     expect(base.items.map((p) => p.correo)).toContain('ml.gomez@udenar.edu.co')
     const enIre = await json<ListaPares>(await llamar('/ire/pares?estado=todos&q=gomez'))
-    expect(enIre.total).toBe(0)
+    expect(enIre.total).toBe(1)
 
     const repetido = await llamar(`/reep/articulos/${articulo.id}/asignaciones`, {
       metodo: 'POST',
@@ -315,13 +324,19 @@ describe('assignment and invitation (mock)', () => {
     expect(invalido.status).toBe(422)
   })
 
-  it('warns about a conflict of interest without blocking the assignment', async () => {
+  it('refuses a peer of the same institution as an author and leaves a new candidate unregistered', async () => {
     const articulo = await articuloNuevo('reep', '2026-039', 'reep-au-2') // author from Universidad CESMAG
-    const conflicto = (await disponibles('reep', articulo.id)).find((p) => p.estado === 'conflicto')
-    if (!conflicto) throw new Error('no peer in conflict')
-    const r = await asignar('reep', articulo.id, conflicto.id)
-    expect(r.status).toBe(201)
-    expect((await json<ResultadoAsignacion>(r)).conflicto?.mensaje).toBeTruthy()
+    const nuevo = {
+      nombre: 'Par Cesmag',
+      correo: 'par.cesmag@unicesmag.edu.co',
+      universidad: 'universidad cesmag',
+      area: 'Educación',
+    }
+    const r = await llamar(`/reep/articulos/${articulo.id}/asignaciones`, { metodo: 'POST', cuerpo: { nuevo } })
+    expect(r.status).toBe(409)
+    expect((await json<{ mensaje: string }>(r)).mensaje).toContain('misma institución')
+    const base = await json<ListaPares>(await llamar('/reep/pares?estado=todos&q=par%20cesmag'))
+    expect(base.total).toBe(0)
   })
 
   it('refuses blocked peers, repeated peers and peers busy with another evaluation', async () => {
@@ -335,34 +350,31 @@ describe('assignment and invitation (mock)', () => {
     expect((await asignar('reep', otro.id, par.id)).status).toBe(409) // evaluation in progress
   })
 
-  it('at most three peers who accepted or delivered; declines and missing answers take no place', async () => {
+  it('with two peers no more are searched; a declined invitation frees its place', async () => {
     const articulo = await articuloNuevo('reep', '2026-042', 'reep-au-3')
-    // Five invitations in parallel: an invitation does not take a place
-    const asignados: ResultadoAsignacion[] = []
-    for (const n of [1, 2, 3, 4, 5]) asignados.push(await candidato(articulo.id, n))
-    const [a, b, c, d, e] = asignados.map((x) => x.asignacion.id) as [
-      string,
-      string,
-      string,
-      string,
-      string,
-    ]
-    // One does not accept this invitation: not blocked, no place taken
-    await responder(a, 'no-acepto')
-    const primero = await json<ParDetalle>(
-      await llamar(`/reep/pares/${asignados[0]?.par.id ?? ''}`),
-    )
+    const a = await candidato(articulo.id, 1)
+    const b = await candidato(articulo.id, 2)
+    // Two peers (invited): the article does not take a third
+    const tercero = await llamar(`/reep/articulos/${articulo.id}/asignaciones`, {
+      metodo: 'POST',
+      cuerpo: { nuevo: { nombre: 'Tercero', correo: 'tercero.42@x.co', universidad: 'Universidad X', area: 'A' } },
+    })
+    expect(tercero.status).toBe(409)
+    expect((await json<{ mensaje: string }>(tercero)).mensaje).toContain('2 pares evaluadores')
+
+    // One does not accept this invitation: not blocked, and its place is free again
+    await responder(a.asignacion.id, 'no-acepto')
+    const primero = await json<ParDetalle>(await llamar(`/reep/pares/${a.par.id}`))
     expect(primero.bloqueo).toBeNull()
-    // Three accept: the article is full
-    for (const id of [b, c, d]) expect((await responder(id, 'acepto')).status).toBe(200)
-    expect((await responder(e, 'acepto')).status).toBe(409)
-    const [libre] = await disponibles('reep', articulo.id)
-    expect((await asignar('reep', articulo.id, libre?.id ?? '')).status).toBe(409)
+    expect((await candidato(articulo.id, 3)).asignacion.estado).toBe('invitado')
+    expect((await responder(b.asignacion.id, 'acepto')).status).toBe(200)
   })
 
-  it('a peer of the other journal cannot be assigned', async () => {
+  it('a peer can be assigned to an article of either journal (common base)', async () => {
     const articulo = await articuloNuevo('reep', '2026-043', 'reep-au-3')
-    expect((await asignar('reep', articulo.id, 'ire-par-1')).status).toBe(404)
+    const r = await asignar('reep', articulo.id, 'ire-par-1')
+    expect([201, 409]).toContain(r.status) // 409 only if that peer is busy or blocked, never 404
+    expect(r.status).not.toBe(404)
   })
 
   it('a bounced address keeps the assignment so it can be fixed and resent (RF-27)', async () => {
@@ -464,7 +476,7 @@ describe('assignment and invitation (mock)', () => {
     })
   })
 
-  it('the third peer is the tiebreaker only when the first two concepts contradict', async () => {
+  it('the third peer is allowed, as tiebreaker, only when the two concepts do not coincide', async () => {
     async function entregar(id: string, concepto: 'publicable' | 'no-publicable') {
       await responder(id, 'acepto')
       await llamar(`/reep/asignaciones/${id}/entrega`, {
@@ -473,15 +485,24 @@ describe('assignment and invitation (mock)', () => {
       })
       await llamar(`/reep/asignaciones/${id}/concepto`, { metodo: 'POST', cuerpo: { concepto } })
     }
-    async function tresPares(numero: string, segundo: 'publicable' | 'no-publicable') {
+    async function dosPares(numero: string, segundo: 'publicable' | 'no-publicable') {
       const articulo = await articuloNuevo('reep', numero, 'reep-au-3')
       const a1 = await candidato(articulo.id, 1)
       const a2 = await candidato(articulo.id, 2)
       await entregar(a1.asignacion.id, 'publicable')
       await entregar(a2.asignacion.id, segundo)
-      return candidato(articulo.id, 3)
+      return articulo
     }
-    expect((await tresPares('2026-049', 'publicable')).asignacion.esDesempate).toBe(false)
-    expect((await tresPares('2026-050', 'no-publicable')).asignacion.esDesempate).toBe(true)
+    const nuevoPar = (id: string) =>
+      llamar(`/reep/articulos/${id}/asignaciones`, {
+        metodo: 'POST',
+        cuerpo: { nuevo: { nombre: 'Tercero', correo: `tercero.${id}@x.co`, universidad: 'Universidad X', area: 'A' } },
+      })
+    const coinciden = await dosPares('2026-049', 'publicable')
+    expect((await nuevoPar(coinciden.id)).status).toBe(409)
+    const difieren = await dosPares('2026-050', 'no-publicable')
+    const tercero = await nuevoPar(difieren.id)
+    expect(tercero.status).toBe(201)
+    expect((await json<ResultadoAsignacion>(tercero)).asignacion.esDesempate).toBe(true)
   })
 })

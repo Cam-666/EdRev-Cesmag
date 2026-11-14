@@ -10,7 +10,8 @@ import { autorPorId, baseDe, registrarAutor } from '../db'
 import { ultimoCorreo } from './asignaciones'
 import type { SeedRevista } from '../seed/fabrica'
 import { ahoraIso, contexto, error, sinTildes } from './util'
-import { puedeRegistrarRonda, puedeTrasladar } from '@/lib/dominio/comite'
+import { anioDeGestion } from '@/lib/dominio/anios'
+import { puedeRegistrarRonda } from '@/lib/dominio/comite'
 import {
   clavePublicacion,
   compararPublicaciones,
@@ -124,6 +125,15 @@ function auditar(
 }
 
 export const handlersArticulos = [
+  // The years that have articles (the current one always), newest first.
+  http.get('*/api/:revista/articulos/anios', ({ params, request }) => {
+    const c = contexto(params, request)
+    if (!c.ok) return c.respuesta
+    const anios = new Set(c.base.articulos.flatMap((a) => anioDeGestion(a) ?? []))
+    anios.add(new Date().getFullYear())
+    return HttpResponse.json([...anios].sort((x, y) => y - x))
+  }),
+
   http.get('*/api/:revista/articulos', ({ params, request }) => {
     const c = contexto(params, request)
     if (!c.ok) return c.respuesta
@@ -134,12 +144,14 @@ export const handlersArticulos = [
     const desde = url.searchParams.get('desde')
     const hasta = url.searchParams.get('hasta')
     const sinResponder = url.searchParams.get('sinResponder') === '1'
+    const anio = Number(url.searchParams.get('anio') ?? 0)
     const pagina = Math.max(1, Number(url.searchParams.get('pagina') ?? 1))
     const porPagina = Math.max(1, Number(url.searchParams.get('porPagina') ?? 6))
 
     const filtrados = c.base.articulos
       .filter((a) => !q || sinTildes(a.titulo).includes(q) || sinTildes(a.numeroOjs).includes(q))
       .filter((a) => !estado || a.estado === estado)
+      .filter((a) => !anio || anioDeGestion(a) === anio)
       .filter(
         (a) => !publicacion || (a.publicacion && clavePublicacion(a.publicacion) === publicacion),
       )
@@ -311,13 +323,6 @@ export const handlersArticulos = [
     if (!c.ok) return c.respuesta
     const articulo = c.base.articulos.find((a) => a.id === params.id)
     if (!articulo) return error(404, 'Artículo no encontrado')
-    const tienePares = c.base.asignaciones.some((x) => x.articuloId === articulo.id)
-    if (!puedeTrasladar(articulo, tienePares)) {
-      return error(
-        409,
-        'El artículo ya no está en revisión del comité: no puede cambiar de revista',
-      )
-    }
     const destino: Revista = c.revista === 'reep' ? 'ire' : 'reep'
     const otra = baseDe(destino)
     if (otra.articulos.some((a) => a.id === articulo.id)) {
@@ -330,6 +335,20 @@ export const handlersArticulos = [
       ...c.base.auditoria.filter(propio).map((x) => ({ ...x, revista: destino })),
     )
     c.base.auditoria = c.base.auditoria.filter((x) => !propio(x))
+    // RF-07: at any stage. The evaluations, mails and constancias go along (the peers are a common
+    // base); the volume and number belong to the journal, so they are cleared.
+    const asignaciones = c.base.asignaciones.filter(propio)
+    const ids = new Set(asignaciones.map((x) => x.id))
+    c.base.asignaciones = c.base.asignaciones.filter((x) => !propio(x))
+    otra.asignaciones.push(...asignaciones)
+    otra.correos.unshift(...c.base.correos.filter(propio).map((x) => ({ ...x, revista: destino })))
+    c.base.correos = c.base.correos.filter((x) => !propio(x))
+    otra.constancias.push(...c.base.constancias.filter((x) => ids.has(x.asignacionId)))
+    c.base.constancias = c.base.constancias.filter((x) => !ids.has(x.asignacionId))
+    const quitada = articulo.publicacion
+      ? `; se quitó su publicación Vol. ${articulo.publicacion.volumen} n.º ${articulo.publicacion.numero}, que era de la otra revista`
+      : ''
+    articulo.publicacion = null
     articulo.revista = destino
     otra.articulos.unshift(articulo)
     auditar(
@@ -337,7 +356,7 @@ export const handlersArticulos = [
       destino,
       articulo.id,
       'traslado',
-      `Cambió el artículo de ${REVISTAS[c.revista].nombreCorto} a ${REVISTAS[destino].nombreCorto}`,
+      `Cambió el artículo de ${REVISTAS[c.revista].nombreCorto} a ${REVISTAS[destino].nombreCorto}${quitada}`,
       c.usuario.nombre,
     )
     return HttpResponse.json(detalle(otra, articulo))

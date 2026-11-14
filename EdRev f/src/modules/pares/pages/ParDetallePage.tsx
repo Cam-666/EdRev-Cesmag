@@ -50,7 +50,7 @@ export function ParDetallePage() {
             </EnlaceBoton>
           }
         >
-          No existe ese par en la base de esta revista.
+          No existe ese par en la base de pares.
         </Alerta>
       </section>
     )
@@ -100,7 +100,7 @@ export function ParDetallePage() {
               </>
             }
           >
-            <p className="text-cuerpo-13 text-texto-secundario">Par evaluador de esta revista</p>
+            <p className="text-cuerpo-13 text-texto-secundario">Par evaluador de la base común</p>
           </EncabezadoPagina>
 
           {par.bloqueo && (

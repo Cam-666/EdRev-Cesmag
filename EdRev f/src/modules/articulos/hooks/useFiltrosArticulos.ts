@@ -20,6 +20,7 @@ export function useFiltrosArticulos() {
     q: params.get('q') ?? undefined,
     estado: esEstado(estado) ? estado : undefined,
     publicacion: params.get('publicacion') ?? undefined,
+    anio: Number(params.get('anio')) > 0 ? Number(params.get('anio')) : undefined,
     desde: params.get('desde') ?? undefined,
     hasta: params.get('hasta') ?? undefined,
     sinResponder: params.get('sinResponder') === '1' ? true : undefined,
@@ -41,6 +42,7 @@ export function useFiltrosArticulos() {
     filtros.q ||
     filtros.estado ||
     filtros.publicacion ||
+    filtros.anio ||
     filtros.desde ||
     filtros.hasta ||
     filtros.sinResponder,

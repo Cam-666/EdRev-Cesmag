@@ -9,12 +9,12 @@ import { http, HttpResponse } from 'msw'
 import { autoresDeArticulo } from './pares'
 import type { SeedRevista } from '../seed/fabrica'
 import { ahoraIso, contexto, error } from './util'
-import { plantillaEnUso } from '../db'
+import { plantillaEnUso, todasLasAsignaciones } from '../db'
 import { NOMBRE_EN_CORREO } from '../plantillas'
 import { rellenar } from '@/lib/plantillas'
 import { puedeAsignarPares } from '@/lib/dominio/comite'
-import { detectarConflicto } from '@/lib/dominio/conflicto'
-import { enCurso, MAX_PARES_ACTIVOS, ocupaCupo } from '@/lib/dominio/pares'
+import { detectarConflicto, mismaInstitucion } from '@/lib/dominio/conflicto'
+import { enCurso, MAX_PARES_ACTIVOS, ocupaCupo, reglaPares } from '@/lib/dominio/pares'
 import type { Articulo } from '@/types/articulo'
 import type { CorreoEnviado, EstadoCorreo, TipoAuditoria, TipoCorreo } from '@/types/historial'
 import type {
@@ -29,14 +29,6 @@ import type { Revista } from '@/types/revista'
 
 /** Addresses ending like this bounce, so the failed-send flow can be demonstrated (RF-27). */
 const DOMINIO_QUE_REBOTA = '@invalido.test'
-
-function contradictorios(a: Asignacion | undefined, b: Asignacion | undefined): boolean {
-  if (!a?.concepto || !b?.concepto) return false
-  return (
-    (a.concepto === 'publicable' && b.concepto === 'no-publicable') ||
-    (a.concepto === 'no-publicable' && b.concepto === 'publicable')
-  )
-}
 
 function asignadas(base: SeedRevista, articuloId: string): Asignacion[] {
   return base.asignaciones
@@ -60,8 +52,10 @@ function validarArticulo(base: SeedRevista, articulo: Articulo): Validacion | nu
       mensaje: 'El comité aún no aprueba el artículo: no se pueden asignar pares',
     }
   }
-  if (asignadas(base, articulo.id).filter(ocupaCupo).length >= MAX_PARES_ACTIVOS) {
-    return { ok: false, estado: 409, mensaje: 'El artículo ya tiene tres pares que aceptaron' }
+  // Two peers per article; a third only when their concepts do not coincide (RF-19, RF-21).
+  const regla = reglaPares(asignadas(base, articulo.id))
+  if (!regla.puede) {
+    return { ok: false, estado: 409, mensaje: regla.motivo ?? 'El artículo ya tiene sus pares' }
   }
   return null
 }
@@ -87,16 +81,14 @@ function validar(base: SeedRevista, articulo: Articulo, par: ParEvaluador): Vali
   if (actuales.some((a) => a.parId === par.id)) {
     return { ok: false, estado: 409, mensaje: 'El par ya está asignado a este artículo' }
   }
-  if (base.asignaciones.some((a) => a.parId === par.id && enCurso(a))) {
+  // The base of peers is common: an evaluation in progress in either journal counts.
+  if (todasLasAsignaciones().some((a) => a.parId === par.id && enCurso(a))) {
     return { ok: false, estado: 409, mensaje: 'El par tiene otra evaluación en curso' }
   }
-  const [primero, segundo] = actuales.filter(ocupaCupo)
-  return {
-    ok: true,
-    orden: actuales.length + 1,
-    // RF-21: called when the concepts of the first two peers contradict.
-    esDesempate: contradictorios(primero, segundo) && !actuales.some((a) => a.esDesempate),
-  }
+  // RF-17: a peer of the same institution as an author is not assigned.
+  const igual = mismaInstitucion(par, autoresDeArticulo(base, articulo.id))
+  if (igual) return { ok: false, estado: 409, mensaje: igual }
+  return { ok: true, orden: actuales.length + 1, esDesempate: reglaPares(actuales).desempate }
 }
 
 /** RF-12: a new candidate is saved in the journal's base before being invited. */
@@ -110,7 +102,7 @@ function registrarCandidato(
     return { estado: 422, mensaje: 'Escriba el nombre y un correo válido del candidato' }
   }
   if (base.pares.some((p) => p.correo.toLowerCase() === correo)) {
-    return { estado: 409, mensaje: 'Ya existe un par con ese correo en esta revista' }
+    return { estado: 409, mensaje: 'Ya existe un par con ese correo en la base de pares' }
   }
   const par: ParEvaluador = {
     id: `${revista}-par-n${base.pares.length + 1}`,
@@ -214,7 +206,10 @@ export const handlersAsignaciones = [
     }
     if (!par) return error(404, 'Par evaluador no encontrado')
     const v = validar(c.base, articulo, par)
-    if (!v.ok) return error(v.estado, v.mensaje)
+    if (!v.ok) {
+      if ('nuevo' in datos) c.base.pares = c.base.pares.filter((p) => p.id !== par?.id)
+      return error(v.estado, v.mensaje)
+    }
 
     const asignacion: Asignacion = {
       id: `${articulo.id}-p${v.orden}`,

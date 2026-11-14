@@ -1,6 +1,7 @@
 /*
  * conflicto — conflict-of-interest rule when assigning a peer. Pure, shared by the mock API and
- * the interface. Covers: RF-17, HU-12. A conflict only warns; it never blocks the assignment.
+ * the interface. Covers: RF-17, HU-12. A peer of the same institution as an author is refused;
+ * a peer from CESMAG only warns.
  */
 import type { Autor } from '@/types/autor'
 import type { Conflicto, ParEvaluador } from '@/types/par'
@@ -13,27 +14,26 @@ function igual(a: string, b: string): boolean {
 }
 
 /**
- * A peer conflicts when it belongs to Universidad CESMAG or to the same university as any author
- * of the article. Without authors only the CESMAG rule can apply.
+ * Authors whose institution is the peer's own: the assignment is refused (RF-17, HU-12). Returns
+ * the sentence to show, or null when there is none.
  */
-export function detectarConflicto(
+export function mismaInstitucion(
   par: Pick<ParEvaluador, 'universidad'>,
   autores: Array<Pick<Autor, 'nombre' | 'filiacion'>>,
-): Conflicto | null {
-  const delMismo = autores.filter((a) => igual(a.filiacion, par.universidad))
-  const esCesmag = igual(par.universidad, UNIVERSIDAD_CESMAG)
+): string | null {
+  const delMismo = autores.filter((a) => par.universidad && igual(a.filiacion, par.universidad))
+  if (delMismo.length === 0) return null
+  const quien = delMismo.length === 1 ? 'del autor' : 'de los autores'
+  return `El par pertenece a ${par.universidad}, la misma institución ${quien} ${delMismo.map((a) => a.nombre).join(', ')}: no se puede asignar a este artículo.`
+}
 
-  if (delMismo.length > 0) {
-    const nombres = delMismo.map((a) => a.nombre).join(', ')
-    const verbo = delMismo.length === 1 ? 'el autor' : 'los autores'
-    return {
-      mensaje: `El par y ${verbo} ${nombres} pertenecen a ${par.universidad}. Puede asignarlo de todos modos.`,
-    }
-  }
-  if (esCesmag) {
-    return {
-      mensaje: `El par pertenece a ${UNIVERSIDAD_CESMAG}. Puede asignarlo de todos modos.`,
-    }
+/** A peer from Universidad CESMAG is only warned: it can be assigned anyway. */
+export function detectarConflicto(
+  par: Pick<ParEvaluador, 'universidad'>,
+  _autores?: Array<Pick<Autor, 'nombre' | 'filiacion'>>,
+): Conflicto | null {
+  if (igual(par.universidad, UNIVERSIDAD_CESMAG)) {
+    return { mensaje: `El par pertenece a ${UNIVERSIDAD_CESMAG}. Puede asignarlo de todos modos.` }
   }
   return null
 }

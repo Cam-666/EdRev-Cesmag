@@ -9,6 +9,7 @@ import { SEED_REEP } from './seed/reep'
 import type { SeedRevista } from './seed/fabrica'
 import { USUARIOS_SEED } from './seed/usuarios'
 import type { Autor, DatosAutor } from '@/types/autor'
+import type { Asignacion } from '@/types/par'
 import type { CuentaRemitente, Plantilla, UsoPlantilla } from '@/types/plantilla'
 import type { Revista } from '@/types/revista'
 import type { Configuracion } from '@/types/configuracion'
@@ -27,8 +28,14 @@ interface Base {
 }
 
 function crear(): Base {
+  const reep = clonar(SEED_REEP)
+  const ire = clonar(SEED_IRE)
+  // The base of peers is common to both journals: both point at the same list.
+  const compartidos = [...reep.pares, ...ire.pares]
+  reep.pares = compartidos
+  ire.pares = compartidos
   return {
-    revistas: { reep: clonar(SEED_REEP), ire: clonar(SEED_IRE) },
+    revistas: { reep, ire },
     plantillas: clonar(PLANTILLAS_INICIALES),
     cuentas: clonar(CUENTAS_INICIALES),
     usuarios: clonar(USUARIOS_SEED),
@@ -74,6 +81,11 @@ export function plantillaEnUso(revista: Revista, uso: UsoPlantilla): Plantilla {
 
 export function cuentas(): CuentaRemitente[] {
   return base.cuentas
+}
+
+/** Evaluations of both journals (a peer can work in either). */
+export function todasLasAsignaciones(): Asignacion[] {
+  return [...base.revistas.reep.asignaciones, ...base.revistas.ire.asignaciones]
 }
 
 export function configuracion(): Configuracion {

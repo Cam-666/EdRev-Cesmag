@@ -90,7 +90,7 @@ describe('assigning a peer from the article sheet', () => {
 
     await user.type(within(panel).getByLabelText('Profesión o título'), 'Magíster en Educación')
     await user.type(within(panel).getByLabelText('Correo electrónico'), 'ml.gomez@udenar.edu.co')
-    await user.type(within(panel).getByLabelText('Universidad'), 'Universidad de Nariño')
+    await user.type(within(panel).getByLabelText('Universidad'), 'Universidad Externa de Prueba')
     await user.type(within(panel).getByLabelText('Área temática'), 'Educación rural')
     await user.click(within(panel).getByRole('button', { name: 'Registrar y enviar invitación' }))
     expect(
@@ -100,8 +100,8 @@ describe('assigning a peer from the article sheet', () => {
     expect(base.total).toBe(1)
   })
 
-  it('marks «Conflicto posible» and warns after assigning, without blocking', async () => {
-    const articulo = await articuloNuevo('2026-071', 'reep-au-2') // author from Universidad CESMAG
+  it('marks «Conflicto posible» for a peer from Universidad CESMAG and warns after assigning, without blocking', async () => {
+    const articulo = await articuloNuevo('2026-071', 'reep-au-3') // author not from CESMAG
     const { user } = montarRuta(`/reep/articulos/${articulo.id}/pares`)
     const panel = await abrirPanel(user)
     const tabla = await within(panel).findByRole('table', { name: 'Pares disponibles' })
@@ -109,6 +109,23 @@ describe('assigning a peer from the article sheet', () => {
     await user.click(within(fila as HTMLElement).getByRole('button', { name: /^Asignar a / }))
     expect(await screen.findByText('Par asignado e invitación enviada')).toBeInTheDocument()
     expect(screen.getByText('Conflicto posible', { selector: 'p' })).toBeInTheDocument()
+  })
+
+  it('does not offer peers of the same institution as an author, and refuses a new candidate from it', async () => {
+    const articulo = await articuloNuevo('2026-072', 'reep-au-2') // author from Universidad CESMAG
+    const { user } = montarRuta(`/reep/articulos/${articulo.id}/pares`)
+    const panel = await abrirPanel(user)
+    const tabla = await within(panel).findByRole('table', { name: 'Pares disponibles' })
+    expect(within(tabla).queryByText('Universidad CESMAG')).toBeNull()
+
+    await user.click(within(panel).getByRole('tab', { name: 'Registrar un candidato nuevo' }))
+    await user.type(within(panel).getByLabelText('Nombre'), 'Par de la misma institución')
+    await user.type(within(panel).getByLabelText('Profesión o título'), 'Magíster')
+    await user.type(within(panel).getByLabelText('Correo electrónico'), 'par.misma@unicesmag.edu.co')
+    await user.type(within(panel).getByLabelText('Universidad'), 'Universidad CESMAG')
+    await user.type(within(panel).getByLabelText('Área temática'), 'Educación rural')
+    await user.click(within(panel).getByRole('button', { name: 'Registrar y enviar invitación' }))
+    expect(await screen.findByText(/la misma institución del autor/)).toBeInTheDocument()
   })
 
   it('the committee review hands over with the panel open, and the Auxiliar can assign', async () => {
@@ -265,7 +282,7 @@ describe('actions on an assigned peer', () => {
     ).toBeInTheDocument()
   })
 
-  it('offers «Asignar par de desempate» only when the first two concepts contradict', async () => {
+  it('offers «Asignar par de desempate» only when the concepts of the two peers do not coincide', async () => {
     const articulo = await articuloNuevo('2026-070')
     const a1 = await candidatoApi(articulo.id, 1)
     const a2 = await candidatoApi(articulo.id, 2)
@@ -283,7 +300,9 @@ describe('actions on an assigned peer', () => {
 
     const { user } = montarRuta(`/reep/articulos/${articulo.id}/pares`)
     expect(
-      await screen.findByText('Los conceptos de los dos primeros pares se contradicen.'),
+      await screen.findByText(
+        'Los conceptos de los dos primeros pares no coinciden: puede asignar un tercer par de desempate.',
+      ),
     ).toBeInTheDocument()
     await user.click(screen.getByRole('button', { name: 'Asignar par de desempate' }))
     const panel = await screen.findByRole('region', { name: 'Asignar par de desempate' })

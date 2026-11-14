@@ -4,8 +4,7 @@
  * Covers: RF-12, RF-13, RF-27 (correct the email), D10 (no data authorization).
  */
 import { zodResolver } from '@hookform/resolvers/zod'
-import { useForm, useWatch } from 'react-hook-form'
-import { AvisoOtraRevista } from './AvisoOtraRevista'
+import { useForm } from 'react-hook-form'
 import { esquemaPar } from '../config/esquemas'
 import type { ParForm } from '../config/esquemas'
 import { useAreas } from '../hooks/usePares'
@@ -44,8 +43,6 @@ function ContenidoParModal({ abierto, onCerrar, par, onGuardado }: ParModalProps
   const {
     register,
     handleSubmit,
-    control,
-    setValue,
     formState: { errors },
   } = useForm<ParForm>({
     resolver: zodResolver(esquemaPar),
@@ -58,7 +55,6 @@ function ContenidoParModal({ abierto, onCerrar, par, onGuardado }: ParModalProps
     },
   })
 
-  const correo = useWatch({ control, name: 'correo' })
 
   function enviar(v: ParForm) {
     if (par) {
@@ -95,7 +91,7 @@ function ContenidoParModal({ abierto, onCerrar, par, onGuardado }: ParModalProps
       descripcion={
         par
           ? 'Corrija los datos del par. Si cambia el correo, podrá reenviar la invitación.'
-          : 'El par se registra en la base de esta revista; no aparece en la otra.'
+          : 'El par queda en la base común y puede evaluar para las dos revistas.'
       }
       acciones={
         <>
@@ -141,17 +137,6 @@ function ContenidoParModal({ abierto, onCerrar, par, onGuardado }: ParModalProps
           error={errors.correo?.message}
           {...register('correo')}
         />
-        {!par && (
-          <AvisoOtraRevista
-            correo={correo}
-            onCopiar={(otro) => {
-              setValue('nombre', otro.nombre, { shouldValidate: true })
-              setValue('profesion', otro.profesion, { shouldValidate: true })
-              setValue('universidad', otro.universidad, { shouldValidate: true })
-              setValue('area', otro.area, { shouldValidate: true })
-            }}
-          />
-        )}
         <CampoTexto
           etiqueta="Universidad"
           autoComplete="off"

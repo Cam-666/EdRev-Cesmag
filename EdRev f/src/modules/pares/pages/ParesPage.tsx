@@ -45,7 +45,7 @@ export function ParesPage() {
         }
       >
         <p className="text-cuerpo-13 text-texto-secundario">
-          {lista.data ? `${base} pares · base propia de esta revista` : ' '}
+          {lista.data ? `${base} pares · base común de las dos revistas` : ' '}
         </p>
       </EncabezadoPagina>
       <FiltrosPares filtros={filtros} onCambio={cambiar} />

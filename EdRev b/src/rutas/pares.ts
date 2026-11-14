@@ -10,7 +10,7 @@ import { enTransaccion, pool } from '../db.js'
 import { auditar } from '../lib/auditoria.js'
 import { usuarioDe } from '../lib/auth.js'
 import { CORREO_VALIDO, ErrorHttp, idNumerico, idRevista, siglaDe, sinTildes } from '../lib/http.js'
-import { conceptoApi, conflicto, iso, motivoApi, motivoDb } from '../lib/mapeo.js'
+import { conceptoApi, conflicto, iso, mismaInstitucion, motivoApi, motivoDb } from '../lib/mapeo.js'
 import { autoresDe } from '../servicios/articulos.js'
 
 export const rutasPares = Router()
@@ -71,7 +71,13 @@ rutasPares.get('/:revista/pares', async (req, res) => {
     api: {
       ...parApi(p),
       evaluaciones: p.entregadas,
-      estado: p.motivo_bloqueo ? 'bloqueado' : conflicto(p.universidad, autores) ? 'conflicto' : 'disponible',
+      estado: p.motivo_bloqueo
+        ? 'bloqueado'
+        : mismaInstitucion(p.universidad, autores)
+          ? 'misma-institucion'
+          : conflicto(p.universidad, autores)
+            ? 'conflicto'
+            : 'disponible',
     },
   }))
   const filtrados = todos
@@ -84,7 +90,7 @@ rutasPares.get('/:revista/pares', async (req, res) => {
         : estado === 'disponibles'
           ? api.estado !== 'bloqueado'
           : estado === 'asignables'
-            ? api.estado === 'disponible' && fila.en_curso === 0 && !fila.en_articulo
+            ? api.estado !== 'bloqueado' && api.estado !== 'misma-institucion' && fila.en_curso === 0 && !fila.en_articulo
             : true,
     )
   res.json({

@@ -85,6 +85,8 @@ export interface FiltrosArticulos {
   q?: string
   estado?: EstadoArticulo
   publicacion?: string
+  /** Year of management: an open article from a previous year counts in the current one. */
+  anio?: number
   /** ISO dates, inclusive range over the postulation date (HU-26). */
   desde?: string
   hasta?: string

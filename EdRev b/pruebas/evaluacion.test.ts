@@ -85,6 +85,9 @@ describe('asignación, evaluación, constancias y correos (RF-19 a RF-34)', () =
     // El rechazo no deja al candidato a medias: no quedó registrado en la base de pares.
     const lista = (await api.get('/reep/pares?estado=todos&porPagina=100')).body.items as Array<{ nombre: string }>
     expect(lista.some((p) => p.nombre === 'Par N')).toBe(false)
+    // En la lista de pares asignables ya no aparece nadie de esa institución.
+    const asignables = (await api.get(`/reep/pares?estado=asignables&articulo=${art.body.id}&porPagina=100`)).body.items as Array<{ universidad: string }>
+    expect(asignables.some((p) => p.universidad.toLowerCase() === 'universidad de nariño')).toBe(false)
     const otro = await api.post(`/reep/articulos/${art.body.id}/asignaciones`, {
       nuevo: { nombre: 'Par M', profesion: '', correo: `parm.${Date.now()}@umariana.edu.co`, universidad: 'Universidad Mariana', area: 'A' },
     })

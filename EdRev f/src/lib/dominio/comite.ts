@@ -4,8 +4,7 @@
  * - Rounds are registered while the article is being screened (Postulado / En revisión) and has
  *   no peers; there is no limit of rounds (RF-06).
  * - Only «Aprobado» in the most recent round enables the assignment of peers (RF-19).
- * - The article can change journal while it is in the committee review: no approved round and no
- *   peers; as many times as needed. Once approved, the option is blocked (RF-02, RF-07).
+ * - The article can change journal at any stage, as many times as needed (RF-02, RF-07).
  * Covers: RF-02, RF-06, RF-07, RF-19, HU-03, HU-04, HU-13.
  */
 import type { EstadoArticulo, RondaComite } from '@/types/articulo'
@@ -23,14 +22,6 @@ export function ultimaRonda(articulo: ArticuloEnComite): RondaComite | null {
 
 export function puedeRegistrarRonda(articulo: ArticuloEnComite, tienePares: boolean): boolean {
   return EN_COMITE.includes(articulo.estado) && !tienePares
-}
-
-export function puedeTrasladar(articulo: ArticuloEnComite, tienePares: boolean): boolean {
-  return (
-    EN_COMITE.includes(articulo.estado) &&
-    !tienePares &&
-    !articulo.rondasComite.some((r) => r.resultado === 'aprobado')
-  )
 }
 
 export function aprobadoPorComite(articulo: ArticuloEnComite): boolean {

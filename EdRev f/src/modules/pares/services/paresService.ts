@@ -3,12 +3,11 @@
  * registration, edition, block / unblock). Each call carries the journal in the URL.
  * Covers: RF-12..RF-18, RNF-06.
  */
-import { ErrorApi, solicitar } from '@/lib/api/cliente'
+import { solicitar } from '@/lib/api/cliente'
 import type {
   MotivoBloqueo,
   NuevoPar,
   ParDetalle,
-  ParEnOtraRevista,
   ParEvaluador,
   ParListado,
 } from '@/types/par'
@@ -59,21 +58,6 @@ export function listarAreas(revista: Revista): Promise<string[]> {
 
 export function listarUniversidades(revista: Revista): Promise<string[]> {
   return solicitar<string[]>(`/${revista}/pares/universidades`)
-}
-
-/** The same email in the other journal's base, or null (RF-12). */
-export async function buscarEnOtraRevista(
-  revista: Revista,
-  correo: string,
-): Promise<ParEnOtraRevista | null> {
-  try {
-    return await solicitar<ParEnOtraRevista>(
-      `/${revista}/pares/en-otra-revista?correo=${encodeURIComponent(correo)}`,
-    )
-  } catch (e) {
-    if (e instanceof ErrorApi && e.estado === 404) return null
-    throw e
-  }
 }
 
 export function obtenerPar(revista: Revista, id: string): Promise<ParDetalle> {

@@ -1,11 +1,11 @@
 /*
- * FiltrosArticulos — search, status, publication number and postulation date range.
+ * FiltrosArticulos — search, status, year of management, publication number and postulation date
+ * range. An article still open from a previous year counts in the current year (anio filter).
  * Covers: RF-35, HU-26 (filters by status, publication number and date range).
- * The Figma "Año" filter is replaced by the date range, as HU-26 requires.
  */
 import { useEffect, useState } from 'react'
 import { ESTADOS_FILTRO } from '../config/listas'
-import { usePublicaciones } from '../hooks/useArticulos'
+import { useAnios, usePublicaciones } from '../hooks/useArticulos'
 import { Buscador } from '@/components/common/Buscador'
 import { CampoTexto } from '@/components/common/CampoTexto'
 import { DEFINICIONES_ESTADO } from '@/components/common/DistintivoEstado'
@@ -22,6 +22,7 @@ export interface FiltrosArticulosProps {
 
 export function FiltrosArticulos({ filtros, onCambio }: FiltrosArticulosProps) {
   const publicaciones = usePublicaciones()
+  const anios = useAnios()
   const [texto, setTexto] = useState(filtros.q ?? '')
   const textoRetardado = useRetardo(texto, 300)
 
@@ -32,7 +33,7 @@ export function FiltrosArticulos({ filtros, onCambio }: FiltrosArticulosProps) {
   }, [textoRetardado])
 
   return (
-    <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-5">
+    <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-6">
       <Buscador
         className="xl:col-span-2 xl:self-end"
         etiqueta="Buscar por título o número de OJS"
@@ -47,6 +48,15 @@ export function FiltrosArticulos({ filtros, onCambio }: FiltrosArticulosProps) {
         opciones={[
           { valor: TODOS, etiqueta: 'Todos' },
           ...ESTADOS_FILTRO.map((e) => ({ valor: e, etiqueta: DEFINICIONES_ESTADO[e].texto })),
+        ]}
+      />
+      <ListaDesplegable
+        etiqueta="Año"
+        valor={filtros.anio ? String(filtros.anio) : TODOS}
+        onCambio={(v) => onCambio({ anio: v === TODOS ? undefined : Number(v) })}
+        opciones={[
+          { valor: TODOS, etiqueta: 'Todos' },
+          ...(anios.data ?? []).map((a) => ({ valor: String(a), etiqueta: String(a) })),
         ]}
       />
       <ListaDesplegable

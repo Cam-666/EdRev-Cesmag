@@ -36,7 +36,7 @@ interface RespuestaCorreos {
 const CANDIDATO = {
   nombre: 'Candidato de prueba',
   correo: 'candidato.prueba@udenar.edu.co',
-  universidad: 'Universidad de Nariño',
+  universidad: 'Universidad Externa de Prueba',
   area: 'Educación rural',
 }
 
@@ -447,7 +447,7 @@ describe('dashboards API (mock)', () => {
   it('the home summary shows both journals side by side', async () => {
     const r = await json<ResumenGeneral>(await llamar('/resumen'))
     expect(r.revistas.map((x) => x.revista)).toEqual(['reep', 'ire'])
-    expect(r.revistas.every((x) => x.articulos === 20 && x.pares === 15)).toBe(true)
+    expect(r.revistas.every((x) => x.articulos === 20 && x.pares === 30)).toBe(true)
     const reep = await json<Tablero>(await llamar('/reep/tablero'))
     expect(r.revistas[0]?.sinResponder).toBe(reep.sinResponder.length)
   })

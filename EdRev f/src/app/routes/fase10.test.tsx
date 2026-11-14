@@ -76,7 +76,7 @@ describe('the whole flow of an article (HU-01, HU-03, HU-13, HU-14, HU-17, HU-22
     await user.type(within(panel).getByLabelText('Nombre'), 'Marta Lucía Gómez')
     await user.type(within(panel).getByLabelText('Profesión o título'), 'Magíster en Educación')
     await user.type(within(panel).getByLabelText('Correo electrónico'), 'ml.gomez@udenar.edu.co')
-    await user.type(within(panel).getByLabelText('Universidad'), 'Universidad de Nariño')
+    await user.type(within(panel).getByLabelText('Universidad'), 'Universidad Externa de Prueba')
     await user.type(within(panel).getByLabelText('Área temática'), 'Educación rural')
     await user.click(within(panel).getByRole('button', { name: 'Registrar y enviar invitación' }))
     expect(await screen.findByText('Par asignado e invitación enviada')).toBeInTheDocument()

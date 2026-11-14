@@ -235,7 +235,7 @@ describe('article sheet', () => {
     expect(within(items[1] as HTMLElement).getByText('No publicable')).toBeInTheDocument()
     expect(within(items[2] as HTMLElement).getByText('Desempate')).toBeInTheDocument()
     expect(
-      screen.getByText('Los conceptos de los dos primeros pares se contradicen.'),
+      screen.getByText('Los conceptos de los dos primeros pares no coinciden.'),
     ).toBeInTheDocument()
   })
 
@@ -243,7 +243,7 @@ describe('article sheet', () => {
     const { user } = montarRuta('/reep/articulos/2026-024')
     await user.click(await screen.findByRole('tab', { name: 'Pares y evaluación' }))
     await screen.findByRole('list', { name: 'Pares asignados' })
-    expect(screen.queryByText(/se contradicen/)).toBeNull()
+    expect(screen.queryByText(/no coinciden/)).toBeNull()
   })
 
   it('has no «Observaciones» tab: the sheet has the five tabs of RF-36 (D16)', async () => {
@@ -400,7 +400,7 @@ describe('committee review (/comite)', () => {
     expect(screen.getAllByText('Rechazado').length).toBeGreaterThan(0)
   })
 
-  it('shows every round, most recent first; no new rounds once the article has peers', async () => {
+  it('shows every round, most recent first; no new rounds once the article has peers, but it can still change journal', async () => {
     montarRuta('/reep/articulos/2026-034/comite')
     const lista = await screen.findByRole('list', { name: 'Rondas de la revisión del comité' })
     const rondas = within(lista).getAllByRole('listitem')
@@ -409,7 +409,7 @@ describe('committee review (/comite)', () => {
     expect(within(rondas[0] as HTMLElement).getByText('Aprobado')).toBeInTheDocument()
     expect(within(rondas[1] as HTMLElement).getByText('Requiere ajustes')).toBeInTheDocument()
     expect(screen.queryByRole('button', { name: 'Registrar ronda' })).toBeNull()
-    expect(screen.queryByRole('button', { name: 'Cambiar de revista' })).toBeNull()
+    expect(screen.getByRole('button', { name: 'Cambiar de revista' })).toBeInTheDocument()
   })
 
   it('changes an article in committee review to the other journal', async () => {

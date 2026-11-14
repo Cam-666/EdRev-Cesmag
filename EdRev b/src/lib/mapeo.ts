@@ -56,8 +56,8 @@ export function mismaInstitucion(
 ): string | null {
   const delMismo = autores.filter((a) => universidad && limpio(a.filiacion) === limpio(universidad))
   if (delMismo.length === 0) return null
-  const verbo = delMismo.length === 1 ? 'el autor' : 'los autores'
-  return `El par pertenece a ${universidad}, la misma institución de ${verbo} ${delMismo.map((a) => a.nombre).join(', ')}: no se puede asignar a este artículo.`
+  const quien = delMismo.length === 1 ? 'del autor' : 'de los autores'
+  return `El par pertenece a ${universidad}, la misma institución ${quien} ${delMismo.map((a) => a.nombre).join(', ')}: no se puede asignar a este artículo.`
 }
 
 /** RF-17: CESMAG itself is warned (the peer is not independent of the editorial team). */

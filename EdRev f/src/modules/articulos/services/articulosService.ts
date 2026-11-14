@@ -27,6 +27,7 @@ export function listarArticulos(revista: Revista, f: FiltrosArticulos): Promise<
   if (f.q) q.set('q', f.q)
   if (f.estado) q.set('estado', f.estado)
   if (f.publicacion) q.set('publicacion', f.publicacion)
+  if (f.anio) q.set('anio', String(f.anio))
   if (f.desde) q.set('desde', f.desde)
   if (f.hasta) q.set('hasta', f.hasta)
   if (f.sinResponder) q.set('sinResponder', '1')
@@ -38,6 +39,11 @@ export function listarPublicaciones(
   revista: Revista,
 ): Promise<Array<{ valor: string; etiqueta: string }>> {
   return solicitar<Array<{ valor: string; etiqueta: string }>>(`/${revista}/publicaciones`)
+}
+
+/** Years of management that have articles, newest first (the current one always). */
+export function listarAnios(revista: Revista): Promise<number[]> {
+  return solicitar<number[]>(`/${revista}/articulos/anios`)
 }
 
 export function obtenerArticulo(revista: Revista, id: string): Promise<ArticuloDetalle> {

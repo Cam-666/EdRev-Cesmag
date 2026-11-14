@@ -5,21 +5,22 @@ import { json, llamar } from '@/test/llamarApi'
 import { elegirOpcion, montarRuta } from '@/test/montarRuta'
 
 describe('peer base (/:revista/pares)', () => {
-  it('shows the journal own base and hides blocked peers by default', async () => {
+  it('shows the common base of both journals and hides blocked peers by default', async () => {
     montarRuta('/reep/pares')
-    expect(await screen.findByText('15 pares · base propia de esta revista')).toBeInTheDocument()
-    expect(await screen.findByText('11 pares')).toBeInTheDocument()
+    expect(await screen.findByText('30 pares · base común de las dos revistas')).toBeInTheDocument()
+    expect(await screen.findByText('22 pares')).toBeInTheDocument()
     expect(screen.queryByText('Paula Andrea Narváez')).toBeNull()
     expect(screen.getAllByText('Conflicto posible').length).toBeGreaterThan(0)
     expect(screen.getAllByText('Disponible').length).toBeGreaterThan(0)
   })
 
-  it('never shows peers of the other journal', async () => {
-    montarRuta('/ire/pares')
-    expect(await screen.findByText('15 pares · base propia de esta revista')).toBeInTheDocument()
+  it('shows the same base from the other journal: peers of both journals appear', async () => {
+    const { user } = montarRuta('/ire/pares')
+    expect(await screen.findByText('30 pares · base común de las dos revistas')).toBeInTheDocument()
     expect(await screen.findByText('Alberto Portilla Rosas')).toBeInTheDocument()
-    expect(screen.queryByText('Luz Marina Burbano')).toBeNull()
-    expect(screen.queryByRole('button', { name: 'Educación inclusiva' })).toBeNull()
+    await user.type(screen.getByRole('searchbox', { name: 'Buscar por nombre o correo' }), 'burbano')
+    expect(await screen.findByText('Luz Marina Burbano')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Educación inclusiva' })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Memoria y conflicto' })).toBeInTheDocument()
   })
 
@@ -37,17 +38,19 @@ describe('peer base (/:revista/pares)', () => {
 
   it('filters by university and by blocked status, showing the blocked badge with text', async () => {
     const { user } = montarRuta('/reep/pares')
-    await screen.findByText('11 pares')
+    await screen.findByText('22 pares')
     await elegirOpcion(user, 'Estado', 'Bloqueados')
-    expect(
-      await screen.findByText('4 pares con estos filtros'.replace(' con estos filtros', '')),
-    ).toBeInTheDocument()
-    expect(screen.getAllByText('Bloqueado').length).toBeGreaterThanOrEqual(4)
+    expect(await screen.findByText('8 pares')).toBeInTheDocument()
+    expect(screen.getAllByText('Bloqueado').length).toBeGreaterThanOrEqual(8)
     expect(screen.getByText('Paula Andrea Narváez')).toBeInTheDocument()
   })
 
   it('a row opens the peer record; without an article there is no "Asignar" column', async () => {
-    montarRuta('/reep/pares')
+    const { user } = montarRuta('/reep/pares')
+    await user.type(
+      await screen.findByRole('searchbox', { name: 'Buscar por nombre o correo' }),
+      'burbano',
+    )
     const enlace = await screen.findByRole('link', { name: 'Abrir la ficha de Luz Marina Burbano' })
     expect(enlace).toHaveAttribute('href', '/reep/pares/reep-par-1')
     expect(screen.queryByRole('columnheader', { name: 'Asignar' })).toBeNull()
@@ -55,7 +58,7 @@ describe('peer base (/:revista/pares)', () => {
 
   it('has no accessibility violations', async () => {
     const { container } = montarRuta('/reep/pares')
-    await screen.findByText('11 pares')
+    await screen.findByText('22 pares')
     expect(await axe(container)).toHaveNoViolations()
   })
 })
@@ -72,7 +75,7 @@ describe('registering a peer', () => {
     expect(within(dialogo).getByText('Escriba el área temática.')).toBeInTheDocument()
   })
 
-  it('registers a peer in this journal only and refuses a repeated email', async () => {
+  it('registers a peer in the common base and refuses a repeated email', async () => {
     const { user, unmount } = montarRuta('/reep/pares')
     await user.click(await screen.findByRole('button', { name: 'Registrar par' }))
     const dialogo = await screen.findByRole('dialog', { name: 'Registrar par evaluador' })
@@ -96,33 +99,38 @@ describe('registering a peer', () => {
     await user.type(within(otro).getByLabelText('Área temática'), 'Educación rural')
     await user.click(within(otro).getByRole('button', { name: 'Registrar par' }))
     expect(
-      await within(otro).findByText('Ya existe un par con ese correo en esta revista'),
+      await within(otro).findByText('Ya existe un par con ese correo en la base de pares'),
     ).toBeInTheDocument()
     unmount()
 
-    montarRuta('/ire/pares')
-    await screen.findByText('15 pares · base propia de esta revista')
-    expect(screen.queryByText('Marta Lucía Gómez')).toBeNull()
+    // The base is common: the new peer is also in the other journal
+    const { user: otraSesion } = montarRuta('/ire/pares')
+    await screen.findByText('31 pares · base común de las dos revistas')
+    await otraSesion.type(
+      screen.getByRole('searchbox', { name: 'Buscar por nombre o correo' }),
+      'gomez',
+    )
+    expect(await screen.findByText('Marta Lucía Gómez')).toBeInTheDocument()
   })
 
-  it('warns when the email is already in the other journal, says if it is blocked there and copies its data', async () => {
-    const ire = await json<{
-      items: Array<{ correo: string; nombre: string; universidad: string }>
-    }>(await llamar('/ire/pares?estado=bloqueados&porPagina=50'))
-    const bloqueado = ire.items[0]
-    if (!bloqueado) throw new Error('seed missing')
+  it('refuses an email that is already in the base, even if it was registered from the other journal', async () => {
+    const ire = await json<{ items: Array<{ correo: string }> }>(
+      await llamar('/ire/pares?estado=bloqueados&porPagina=50'),
+    )
+    const existente = ire.items[0]
+    if (!existente) throw new Error('seed missing')
     const { user } = montarRuta('/reep/pares')
     await user.click(await screen.findByRole('button', { name: 'Registrar par' }))
     const dialogo = await screen.findByRole('dialog', { name: 'Registrar par evaluador' })
-    await user.type(within(dialogo).getByLabelText('Correo electrónico'), bloqueado.correo)
+    await user.type(within(dialogo).getByLabelText('Nombre'), 'Otra Persona')
+    await user.type(within(dialogo).getByLabelText('Profesión o título'), 'Magíster')
+    await user.type(within(dialogo).getByLabelText('Correo electrónico'), existente.correo)
+    await user.type(within(dialogo).getByLabelText('Universidad'), 'Universidad de Nariño')
+    await user.type(within(dialogo).getByLabelText('Área temática'), 'Educación rural')
+    await user.click(within(dialogo).getByRole('button', { name: 'Registrar par' }))
     expect(
-      await within(dialogo).findByText('Este correo ya está en Investigium IRE'),
+      await within(dialogo).findByText('Ya existe un par con ese correo en la base de pares'),
     ).toBeInTheDocument()
-    expect(within(dialogo).getByText(/Allí está bloqueado/)).toBeInTheDocument()
-    await user.click(within(dialogo).getByRole('button', { name: 'Copiar sus datos' }))
-    expect(within(dialogo).getByLabelText('Nombre')).toHaveValue(bloqueado.nombre)
-    expect(within(dialogo).getByLabelText('Universidad')).toHaveValue(bloqueado.universidad)
-    expect(within(dialogo).getByLabelText('Profesión o título')).not.toHaveValue('')
   })
 
   it('the Auxiliar can register peers too', async () => {
@@ -134,7 +142,7 @@ describe('registering a peer', () => {
 describe('blocked peers (/pares/bloqueados)', () => {
   it('lists blocked peers with reason and date', async () => {
     montarRuta('/reep/pares/bloqueados')
-    expect(await screen.findByText('4 pares no reciben nuevas invitaciones')).toBeInTheDocument()
+    expect(await screen.findByText('8 pares no reciben nuevas invitaciones')).toBeInTheDocument()
     expect(screen.getAllByText('No desea participar', { selector: 'td' }).length).toBeGreaterThan(0)
     expect(screen.getAllByText('Sin respuesta · 2.º intento').length).toBeGreaterThan(0)
     expect(screen.getByRole('link', { name: 'Volver a la base' })).toHaveAttribute(
@@ -158,13 +166,13 @@ describe('blocked peers (/pares/bloqueados)', () => {
       'Manifestó interés en volver a participar.',
     )
     await user.click(within(dialogo).getByRole('button', { name: 'Desbloquear' }))
-    expect(await screen.findByText('3 pares no reciben nuevas invitaciones')).toBeInTheDocument()
+    expect(await screen.findByText('7 pares no reciben nuevas invitaciones')).toBeInTheDocument()
     expect(screen.queryByText('Paula Andrea Narváez')).toBeNull()
   })
 
   it('the Auxiliar can see the list and unblock', async () => {
     montarRuta('/reep/pares/bloqueados', AUXILIAR)
-    expect(await screen.findByText('4 pares no reciben nuevas invitaciones')).toBeInTheDocument()
+    expect(await screen.findByText('8 pares no reciben nuevas invitaciones')).toBeInTheDocument()
     expect(screen.getAllByRole('button', { name: /Desbloquear/ }).length).toBeGreaterThan(0)
   })
 })
@@ -207,10 +215,10 @@ describe('peer record (/pares/:id)', () => {
     expect(screen.getByRole('button', { name: 'Bloquear' })).toBeInTheDocument()
   })
 
-  it('a peer of the other journal is not found', async () => {
+  it('the same peer record opens from the other journal, with the journal of each participation', async () => {
     montarRuta('/ire/pares/reep-par-1')
     expect(
-      await screen.findByRole('heading', { level: 1, name: 'Par evaluador no encontrado' }),
+      await screen.findByRole('heading', { level: 1, name: 'Luz Marina Burbano' }),
     ).toBeInTheDocument()
   })
 })

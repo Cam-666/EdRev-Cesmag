@@ -27,6 +27,7 @@ export type EstadoDistintivo =
   // Peer availability
   | 'disponible'
   | 'conflicto'
+  | 'misma-institucion'
   // Account status
   | 'activo'
   | 'inhabilitado'
@@ -63,6 +64,7 @@ export const DEFINICIONES_ESTADO: Record<EstadoDistintivo, Definicion> = {
   entrego: { texto: 'Entregó', simbolo: '✓', tono: 'exito' },
   disponible: { texto: 'Disponible', simbolo: '✓', tono: 'exito' },
   conflicto: { texto: 'Conflicto posible', simbolo: '!', tono: 'alerta' },
+  'misma-institucion': { texto: 'Misma institución', simbolo: '!', tono: 'error' },
   activo: { texto: 'Activo', simbolo: '✓', tono: 'exito' },
   inhabilitado: { texto: 'Inhabilitado', simbolo: '⊘', tono: 'neutro' },
   emitida: { texto: 'Emitida', simbolo: '✓', tono: 'exito' },

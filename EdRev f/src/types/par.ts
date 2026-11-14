@@ -70,7 +70,7 @@ export interface EntregaRegistrada extends Asignacion {
   constanciaId: string | null
 }
 
-export type EstadoDisponibilidad = 'disponible' | 'bloqueado' | 'conflicto'
+export type EstadoDisponibilidad = 'disponible' | 'bloqueado' | 'conflicto' | 'misma-institucion'
 
 /** Row of the peers list; `conflicto` = "Conflicto posible" (peer from Universidad CESMAG or from the author's university). */
 export interface ParListado extends Pick<
@@ -82,6 +82,8 @@ export interface ParListado extends Pick<
 }
 
 export interface Participacion {
+  /** Journal of the article (the base of peers is common to both). */
+  revista: Revista
   asignacionId: string
   articuloId: string
   numeroOjs: string
@@ -142,13 +144,3 @@ export interface CandidatoPar {
 /** Body of an assignment: a peer of the base, or a new candidate saved in the base first. */
 export type DatosAsignacion = { parId: string } | { nuevo: CandidatoPar }
 
-/** The same email in the base of the other journal (RF-12): its data can be copied. */
-export interface ParEnOtraRevista {
-  revista: Revista
-  nombre: string
-  profesion: string
-  correo: string
-  universidad: string
-  area: string
-  bloqueo: ParEvaluador['bloqueo']
-}

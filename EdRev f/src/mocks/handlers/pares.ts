@@ -4,18 +4,17 @@
  * Covers: RF-12..RF-18, RNF-06. Simulates the backend; permissions are enforced here.
  */
 import { http, HttpResponse } from 'msw'
-import { autorPorId, baseDe } from '../db'
+import { autorPorId, baseDe, todasLasAsignaciones } from '../db'
 import type { SeedRevista } from '../seed/fabrica'
 import { ahoraIso, contexto, error, sinTildes } from './util'
+import { mismaInstitucion } from '@/lib/dominio/conflicto'
 import { detectarConflicto } from '@/lib/dominio/conflicto'
-import type { Revista } from '@/types/revista'
 import { enCurso } from '@/lib/dominio/pares'
 import type {
   EstadoDisponibilidad,
   MotivoBloqueo,
   NuevoPar,
   ParDetalle,
-  ParEnOtraRevista,
   ParEvaluador,
   ParListado,
 } from '@/types/par'
@@ -29,8 +28,8 @@ export function autoresDeArticulo(base: SeedRevista, articuloId: string) {
   })
 }
 
-function evaluaciones(base: SeedRevista, parId: string): number {
-  return base.asignaciones.filter((a) => a.parId === parId && a.estado === 'entrego').length
+function evaluaciones(parId: string): number {
+  return todasLasAsignaciones().filter((a) => a.parId === parId && a.estado === 'entrego').length
 }
 
 function disponibilidad(
@@ -40,7 +39,8 @@ function disponibilidad(
 ): EstadoDisponibilidad {
   if (par.bloqueo) return 'bloqueado'
   const autores = articuloId ? autoresDeArticulo(base, articuloId) : []
-  return detectarConflicto(par, autores) ? 'conflicto' : 'disponible'
+  if (mismaInstitucion(par, autores)) return 'misma-institucion'
+  return detectarConflicto(par) ? 'conflicto' : 'disponible'
 }
 
 function listado(base: SeedRevista, par: ParEvaluador, articuloId: string | null): ParListado {
@@ -51,20 +51,27 @@ function listado(base: SeedRevista, par: ParEvaluador, articuloId: string | null
     universidad: par.universidad,
     area: par.area,
     bloqueo: par.bloqueo,
-    evaluaciones: evaluaciones(base, par.id),
+    evaluaciones: evaluaciones(par.id),
     estado: disponibilidad(base, par, articuloId),
   }
 }
 
-function detalle(base: SeedRevista, par: ParEvaluador): ParDetalle {
-  const mias = base.asignaciones.filter((a) => a.parId === par.id)
-  const participaciones = mias
-    .map((a) => {
+function detalle(par: ParEvaluador): ParDetalle {
+  // The base of peers is common: the history gathers the evaluations of both journals.
+  const propias = (['reep', 'ire'] as const).flatMap((revista) =>
+    baseDe(revista)
+      .asignaciones.filter((a) => a.parId === par.id)
+      .map((a) => ({ a, base: baseDe(revista), revista })),
+  )
+  const mias = propias.map((x) => x.a)
+  const participaciones = propias
+    .map(({ a, base, revista }) => {
       const articulo = base.articulos.find((x) => x.id === a.articuloId)
       const constancia = base.constancias.find((c) => c.asignacionId === a.id)
       return {
         asignacionId: a.id,
         articuloId: a.articuloId,
+        revista,
         numeroOjs: articulo?.numeroOjs ?? a.articuloId,
         titulo: articulo?.titulo ?? '',
         estado: a.estado,
@@ -106,7 +113,7 @@ export const handlersPares = [
     const todos = c.base.pares.map((p) => listado(c.base, p, articulo))
     // RF-19: peers that can be assigned have no evaluation in progress and are not in the article.
     const ocupados = new Set(
-      c.base.asignaciones
+      todasLasAsignaciones()
         .filter((a) => enCurso(a) || a.articuloId === articulo)
         .map((a) => a.parId),
     )
@@ -120,7 +127,7 @@ export const handlersPares = [
           : estado === 'disponibles'
             ? p.estado !== 'bloqueado'
             : estado === 'asignables'
-              ? p.estado !== 'bloqueado' && !ocupados.has(p.id)
+              ? p.estado !== 'bloqueado' && p.estado !== 'misma-institucion' && !ocupados.has(p.id)
               : true,
       )
       .sort((a, b) => a.nombre.localeCompare(b.nombre))
@@ -148,32 +155,12 @@ export const handlersPares = [
     return HttpResponse.json(lista)
   }),
 
-  // RF-12: the same email in the base of the other journal, to warn and offer to copy its data.
-  http.get('*/api/:revista/pares/en-otra-revista', ({ params, request }) => {
-    const c = contexto(params, request)
-    if (!c.ok) return c.respuesta
-    const correo = (new URL(request.url).searchParams.get('correo') ?? '').trim().toLowerCase()
-    const otra: Revista = c.revista === 'reep' ? 'ire' : 'reep'
-    const par = baseDe(otra).pares.find((p) => p.correo.toLowerCase() === correo)
-    if (!correo || !par) return error(404, 'No está en la otra revista')
-    const encontrado: ParEnOtraRevista = {
-      revista: otra,
-      nombre: par.nombre,
-      profesion: par.profesion,
-      correo: par.correo,
-      universidad: par.universidad,
-      area: par.area,
-      bloqueo: par.bloqueo,
-    }
-    return HttpResponse.json(encontrado)
-  }),
-
   http.get('*/api/:revista/pares/:id', ({ params, request }) => {
     const c = contexto(params, request)
     if (!c.ok) return c.respuesta
     const par = c.base.pares.find((p) => p.id === params.id)
     if (!par) return error(404, 'Par evaluador no encontrado')
-    return HttpResponse.json(detalle(c.base, par))
+    return HttpResponse.json(detalle(par))
   }),
 
   http.post('*/api/:revista/pares', async ({ params, request }) => {
@@ -189,7 +176,7 @@ export const handlersPares = [
       return error(422, 'Complete nombre, correo, universidad y área temática')
     }
     if (c.base.pares.some((p) => p.correo.toLowerCase() === datos.correo.trim().toLowerCase())) {
-      return error(409, 'Ya existe un par con ese correo en esta revista')
+      return error(409, 'Ya existe un par con ese correo en la base de pares')
     }
     const par: ParEvaluador = {
       id: `${c.revista}-par-n${c.base.pares.length + 1}`,
@@ -211,7 +198,7 @@ export const handlersPares = [
       fecha: ahoraIso(),
       usuario: c.usuario.nombre,
     })
-    return HttpResponse.json(detalle(c.base, par), { status: 201 })
+    return HttpResponse.json(detalle(par), { status: 201 })
   }),
 
   http.patch('*/api/:revista/pares/:id', async ({ params, request }) => {
@@ -228,7 +215,7 @@ export const handlersPares = [
         (p) => p.id !== par.id && p.correo.toLowerCase() === cambios.correo?.toLowerCase(),
       )
     ) {
-      return error(409, 'Ya existe un par con ese correo en esta revista')
+      return error(409, 'Ya existe un par con ese correo en la base de pares')
     }
     Object.assign(par, cambios)
     c.base.auditoria.unshift({
@@ -240,7 +227,7 @@ export const handlersPares = [
       fecha: ahoraIso(),
       usuario: c.usuario.nombre,
     })
-    return HttpResponse.json(detalle(c.base, par))
+    return HttpResponse.json(detalle(par))
   }),
 
   http.post('*/api/:revista/pares/:id/bloquear', async ({ params, request }) => {
@@ -260,7 +247,7 @@ export const handlersPares = [
       fecha: ahoraIso(),
       usuario: c.usuario.nombre,
     })
-    return HttpResponse.json(detalle(c.base, par))
+    return HttpResponse.json(detalle(par))
   }),
 
   http.post('*/api/:revista/pares/:id/desbloquear', async ({ params, request }) => {
@@ -281,6 +268,6 @@ export const handlersPares = [
       fecha: ahoraIso(),
       usuario: c.usuario.nombre,
     })
-    return HttpResponse.json(detalle(c.base, par))
+    return HttpResponse.json(detalle(par))
   }),
 ]

@@ -161,10 +161,6 @@ describe('articles API (mock)', () => {
     ])
     expect(tercera.coincidencias).toBe(9)
     expect(tercera.rondasComite[0]?.usuario).toBe('Andrea Villota')
-    // Approved: the article can no longer change journal
-    expect((await llamar('/reep/articulos/2026-032/trasladar', { metodo: 'POST' })).status).toBe(
-      409,
-    )
   })
 
   it('a rejected round leaves the article Rechazado, with no more rounds', async () => {
@@ -203,13 +199,66 @@ describe('articles API (mock)', () => {
     expect((await llamar('/reep/articulos/2026-021')).status).toBe(200)
   })
 
-  it('an article with peers or already approved cannot change journal', async () => {
-    expect((await llamar('/reep/articulos/2026-034/trasladar', { metodo: 'POST' })).status).toBe(
-      409,
-    )
-    expect((await llamar('/reep/articulos/2026-033/trasladar', { metodo: 'POST' })).status).toBe(
-      409,
-    )
+  it('an article changes journal at any stage: with peers, approved and published (RF-07)', async () => {
+    // 2026-034 has peers assigned; a published article is taken from the list by its issue.
+    const conPares = await llamar('/reep/articulos/2026-034/trasladar', { metodo: 'POST' })
+    expect(conPares.status).toBe(200)
+    const movido = (await conPares.json()) as ArticuloDetalle
+    expect(movido.revista).toBe('ire')
+    expect(movido.asignaciones.length).toBeGreaterThan(0)
+
+    const publicados = (await (
+      await llamar('/reep/articulos?publicacion=10-2&porPagina=50')
+    ).json()) as RespuestaListado
+    const publicado = publicados.items[0]
+    if (!publicado) throw new Error('seed missing: no published article')
+    const r = await llamar(`/reep/articulos/${publicado.id}/trasladar`, { metodo: 'POST' })
+    expect(r.status).toBe(200)
+    expect(((await r.json()) as ArticuloDetalle).publicacion).toBeNull()
+    const historial = (await (await llamar(`/ire/articulos/${publicado.id}/historial`)).json()) as {
+      auditoria: Array<{ accion: string }>
+    }
+    expect(historial.auditoria[0]?.accion).toContain('se quitó su publicación')
+  })
+
+  it('an open article from a previous year passes by itself to the current year (anio filter)', async () => {
+    const anioActual = new Date().getFullYear()
+    const crear = async (numero: string, fecha: string) => {
+      const r = await llamar('/reep/articulos', {
+        metodo: 'POST',
+        cuerpo: {
+          numeroOjs: numero,
+          titulo: `Pendiente ${numero}`,
+          tipo: 'reflexion',
+          fechaPostulacion: fecha,
+          autores: [{ autorId: 'reep-au-3' }],
+        },
+      })
+      return (await r.json()) as ArticuloDetalle
+    }
+    const pendiente = await crear('2024-901', '2024-09-10')
+    const cerrado = await crear('2024-902', '2024-09-12')
+    await llamar(`/reep/articulos/${cerrado.id}/cerrar`, {
+      metodo: 'POST',
+      cuerpo: { estado: 'rechazado', motivo: 'No cumple', publicacion: null },
+    })
+
+    const lista = async (anio: number) =>
+      (
+        (await (
+          await llamar(`/reep/articulos?anio=${anio}&porPagina=100`)
+        ).json()) as RespuestaListado
+      ).items
+    const delActual = await lista(anioActual)
+    expect(delActual.find((a) => a.id === pendiente.id)?.fechaPostulacion).toBe('2024-09-10')
+    expect(delActual.some((a) => a.id === cerrado.id)).toBe(false)
+    const de2024 = await lista(2024)
+    expect(de2024.some((a) => a.id === cerrado.id)).toBe(true)
+    expect(de2024.some((a) => a.id === pendiente.id)).toBe(false)
+
+    const anios = (await (await llamar('/reep/articulos/anios')).json()) as number[]
+    expect(anios).toEqual(expect.arrayContaining([anioActual, 2024]))
+    expect(anios[0]).toBe(anioActual)
   })
 
   it('closes the process with a reason; approving needs volume and number together', async () => {
