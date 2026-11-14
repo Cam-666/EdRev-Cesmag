@@ -3,17 +3,18 @@
  *
  *   npm run migrar -- reep ruta/al/archivo.xlsx            (carga)
  *   npm run migrar -- ire ruta/al/archivo.csv --simular    (prueba: no guarda nada)
+ *   npm run migrar -- todas ruta/al/archivo.xlsx           (ambas revistas mezcladas: usa la columna «Revista»)
  *
  * Reads the first sheet; the first row is the headings (see servicios/migracion.ts).
  */
 import ExcelJS from 'exceljs'
 import { enTransaccion, pool } from '../src/db.js'
 import { REVISTAS, type Sigla } from '../src/lib/http.js'
-import { migrarFilas, type FilaCruda } from '../src/servicios/migracion.js'
+import { migrarFilas, repartirPorRevista, type FilaCruda } from '../src/servicios/migracion.js'
 
 const [sigla, ruta, ...opciones] = process.argv.slice(2)
-if (!sigla || !(sigla in REVISTAS) || !ruta) {
-  console.error('Uso: npm run migrar -- <reep|ire> <archivo.xlsx|archivo.csv> [--simular]')
+if (!sigla || !(sigla in REVISTAS || sigla === 'todas') || !ruta) {
+  console.error('Uso: npm run migrar -- <reep|ire|todas> <archivo.xlsx|archivo.csv> [--simular]')
   process.exit(1)
 }
 
@@ -47,12 +48,24 @@ hoja.eachRow((fila, n) => {
 })
 
 const simular = opciones.includes('--simular')
+const trabajos: Array<{ nombre: string; id: number; filas: FilaCruda[] }> = []
+let sinRevista = 0
+if (sigla === 'todas') {
+  const reparto = repartirPorRevista(filas)
+  sinRevista = reparto.sinRevista
+  for (const [nombre, id] of Object.entries(REVISTAS)) trabajos.push({ nombre, id, filas: reparto.porRevista.get(id) ?? [] })
+} else {
+  trabajos.push({ nombre: sigla, id: REVISTAS[sigla as Sigla], filas })
+}
+
 const resumen = await enTransaccion(async (c) => {
-  const r = await migrarFilas(c, REVISTAS[sigla as Sigla], filas)
-  if (simular) throw Object.assign(new Error('simulacion'), { resumen: r })
-  return r
+  const salida: Record<string, unknown> = {}
+  for (const t of trabajos) salida[t.nombre] = await migrarFilas(c, t.id, t.filas)
+  if (sinRevista > 0) salida.filasSinRevistaClara = sinRevista
+  if (simular) throw Object.assign(new Error('simulacion'), { resumen: salida })
+  return salida
 }).catch((e: Error & { resumen?: unknown }) => {
-  if (e.message === 'simulacion') return e.resumen as Awaited<ReturnType<typeof migrarFilas>>
+  if (e.message === 'simulacion') return e.resumen
   throw e
 })
 

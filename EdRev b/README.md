@@ -89,8 +89,17 @@ npm run migrar -- reep ruta/al/archivo.xlsx                     (carga real)
 Lee la primera hoja de un `.xlsx` o `.csv`; la primera fila son los encabezados. Una fila por artículo y par (un artículo con tres pares ocupa tres filas con el mismo N.º OJS). Encabezados: N.º OJS, Título, Tipo de artículo, Fecha de postulación, Estado, Autores (separados por `;`), Par, Correo par, Universidad par, Concepto, Fecha de entrega, Constancia (Sí/X marca la constancia ya emitida). Ver `db/plantilla_migracion.csv`.
 
 - Lo que no coincide con las listas del sistema (tipo, estado, concepto, correo) se carga vacío y aparece en **Por corregir**.
+- Si un mismo archivo trae las dos revistas, agregue una columna **Revista** (REEP / IRE, o el nombre de la revista) y use `npm run migrar -- todas archivo.xlsx`: cada fila va a su revista y las que no la indican se informan aparte.
 - Los artículos cuyo N.º OJS ya existe en la revista se omiten, así que se puede repetir la carga.
 - Si los encabezados del Excel real son distintos, se agregan sus nombres en `ALIAS` de `src/servicios/migracion.ts`.
+
+## Respaldo de la base (RNF-08)
+
+```
+npm run respaldo
+```
+
+Crea `respaldos/edrev-AAAAMMDD-HHMM.sql` con `pg_dump` y conserva los últimos 14. Si `pg_dump` no está en el PATH, ponga su ruta en `PG_DUMP_RUTA` (en Windows: `C:\Program Files\PostgreSQL8in\pg_dump.exe`). Para restaurar: `psql -d edrev -f respaldos/<archivo>.sql`. Para programarlo cada día, use el Programador de tareas de Windows (acción: `npm run respaldo` en la carpeta `EdRev b`) o `cron` en Linux. Copie la carpeta `respaldos/` fuera del servidor: contiene datos personales.
 
 ## Variables de entorno
 

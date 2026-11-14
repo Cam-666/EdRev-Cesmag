@@ -6,6 +6,7 @@
  * kept so the delivered evaluations without constancia show as pending (RF-43). Every migrated
  * article and evaluation leaves a «migracion» trace (that is how the page tells «migrado» apart).
  * An article whose OJS number already exists in the journal is skipped, so the load can be rerun.
+ * A file with both journals mixed has a «Revista» column; `repartirPorRevista` splits its rows.
  */
 import type { Cliente } from '../db.js'
 import { auditar } from '../lib/auditoria.js'
@@ -239,4 +240,28 @@ export async function migrarFilas(
     }
   }
   return resumen
+}
+
+const ALIAS_REVISTA = ['revista', 'journal', 'revista_del_articulo']
+
+/** The journal a row says it belongs to (1 REEP, 2 IRE), by its sigla or its name; null if unclear. */
+export function revistaDeFila(fila: FilaCruda): number | null {
+  const porNombre = new Map(Object.entries(fila).map(([k, v]) => [normalizar(k), v]))
+  const valor = limpio(texto(ALIAS_REVISTA.map((a) => porNombre.get(a)).find((v) => v !== undefined && v !== null)))
+  if (!valor) return null
+  if (valor === 'ire' || valor.includes('investigium')) return 2
+  if (valor === 'reep' || valor.includes('educacion') || valor.includes('pedagogia')) return 1
+  return null
+}
+
+/** Splits the rows of a file with both journals mixed; the rows with no clear journal are counted apart. */
+export function repartirPorRevista(filas: FilaCruda[]): { porRevista: Map<number, FilaCruda[]>; sinRevista: number } {
+  const porRevista = new Map<number, FilaCruda[]>()
+  let sinRevista = 0
+  for (const f of filas) {
+    const r = revistaDeFila(f)
+    if (r === null) sinRevista += 1
+    else porRevista.set(r, [...(porRevista.get(r) ?? []), f])
+  }
+  return { porRevista, sinRevista }
 }

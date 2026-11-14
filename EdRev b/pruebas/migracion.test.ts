@@ -3,7 +3,7 @@
  */
 import { describe, expect, it } from 'vitest'
 import { enTransaccion } from '../src/db.js'
-import { migrarFilas } from '../src/servicios/migracion.js'
+import { migrarFilas, repartirPorRevista, revistaDeFila } from '../src/servicios/migracion.js'
 import { como } from './api.js'
 
 const filas = [
@@ -92,5 +92,26 @@ describe('migración del Excel (RF-42 a RF-44)', () => {
     expect((await api.get(tipo.enlace)).body.tipo).toBe('reflexion')
     const historial = (await api.get(`/auditoria?tipo=edicion&porPagina=20`)).body.items as Array<{ accion: string }>
     expect(historial.some((a) => a.accion.startsWith('Corrigió un dato migrado'))).toBe(true)
+  })
+
+  it('un archivo con las dos revistas mezcladas se reparte por la columna «Revista»', async () => {
+    expect(revistaDeFila({ Revista: 'REEP' })).toBe(1)
+    expect(revistaDeFila({ revista: 'Revista Electrónica en Educación y Pedagogía' })).toBe(1)
+    expect(revistaDeFila({ Revista: 'Investigium IRE' })).toBe(2)
+    expect(revistaDeFila({ Revista: 'otra' })).toBeNull()
+
+    const mezcla = [
+      { Revista: 'REEP', 'N.º OJS': 'X-1', Título: 'De la primera', Tipo: 'Reflexión' },
+      { Revista: 'IRE', 'N.º OJS': 'X-1', Título: 'Mismo número, otra revista', Tipo: 'Revisión' },
+      { 'N.º OJS': 'X-2', Título: 'Sin revista' },
+    ]
+    const { porRevista, sinRevista } = repartirPorRevista(mezcla)
+    expect(sinRevista).toBe(1)
+    const a = await enTransaccion((c) => migrarFilas(c, 1, porRevista.get(1) ?? []))
+    const b = await enTransaccion((c) => migrarFilas(c, 2, porRevista.get(2) ?? []))
+    expect([a.articulos, b.articulos]).toEqual([1, 1])
+    const api = await como()
+    expect((await api.get('/ire/articulos/existe?numeroOjs=X-1')).body.existe).toBe(true)
+    expect((await api.get('/reep/articulos/existe?numeroOjs=X-1')).body.existe).toBe(true)
   })
 })

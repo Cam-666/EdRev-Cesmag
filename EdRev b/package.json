@@ -15,7 +15,8 @@
     "db:crear": "tsx --env-file=.env scripts/crearBase.ts",
     "db:init": "tsx --env-file=.env scripts/iniciarBase.ts",
     "test": "vitest run",
-    "migrar": "tsx --env-file=.env scripts/migrarExcel.ts"
+    "migrar": "tsx --env-file=.env scripts/migrarExcel.ts",
+    "respaldo": "tsx --env-file=.env scripts/respaldo.ts"
   },
   "dependencies": {
     "bcryptjs": "^3.0.2",
