@@ -153,8 +153,7 @@ export const SEED_REEP: SeedRevista = construirSeed({
       f: '2026-10-02',
       pub: 'Vol. 10 n.º 2',
       ap: [21, 8],
-      ri: 'modificaciones-basicas',
-      rf: 'pasa-a-pares',
+      com: ['ajustes'],
       au: [1, 2, 3],
       as: [
         {
@@ -187,7 +186,7 @@ export const SEED_REEP: SeedRevista = construirSeed({
       e: 'en-evaluacion',
       f: '2026-09-28',
       ap: [12, 5],
-      ri: 'sin-modificaciones',
+      com: ['aprobado'],
       au: [4, 5],
       as: [
         {
@@ -210,7 +209,7 @@ export const SEED_REEP: SeedRevista = construirSeed({
       e: 'en-evaluacion',
       f: '2026-08-20',
       ap: [9, 2],
-      ri: 'pasa-a-pares',
+      com: ['aprobado'],
       au: [6, 7],
       as: [
         {
@@ -233,8 +232,7 @@ export const SEED_REEP: SeedRevista = construirSeed({
       f: '2026-05-11',
       pub: 'Vol. 10 n.º 2',
       ap: [7, 1],
-      ri: 'pasa-a-pares',
-      rf: 'sin-modificaciones',
+      com: ['aprobado'],
       au: [8, 9],
       as: [
         {
@@ -276,8 +274,7 @@ export const SEED_REEP: SeedRevista = construirSeed({
       f: '2026-06-30',
       pub: 'Vol. 10 n.º 1',
       ap: [6, 0],
-      ri: 'pasa-a-pares',
-      rf: 'sin-modificaciones',
+      com: ['aprobado'],
       au: [10],
       as: [
         {
@@ -308,7 +305,7 @@ export const SEED_REEP: SeedRevista = construirSeed({
       e: 'en-revision',
       f: '2026-08-12',
       ap: [14, 3],
-      ri: 'modificaciones-basicas',
+      com: ['ajustes'],
       au: [11, 12],
     },
     {
@@ -318,7 +315,7 @@ export const SEED_REEP: SeedRevista = construirSeed({
       e: 'archivado',
       f: '2026-07-09',
       ap: [11, 4],
-      ri: 'faltan-documentos',
+      com: ['ajustes'],
       au: [13, 14, 15],
       arch: [
         '2026-09-30',
@@ -333,8 +330,7 @@ export const SEED_REEP: SeedRevista = construirSeed({
       f: '2025-03-12',
       pub: 'Vol. 9 n.º 1',
       ap: [8, 2],
-      ri: 'pasa-a-pares',
-      rf: 'sin-modificaciones',
+      com: ['aprobado'],
       au: [1, 16],
       as: [
         {
@@ -367,8 +363,7 @@ export const SEED_REEP: SeedRevista = construirSeed({
       f: '2024-05-20',
       pub: 'Vol. 8 n.º 2',
       ap: [6, 0],
-      ri: 'pasa-a-pares',
-      rf: 'sin-modificaciones',
+      com: ['aprobado'],
       au: [1, 17],
       as: [
         {
@@ -401,8 +396,7 @@ export const SEED_REEP: SeedRevista = construirSeed({
       f: '2025-06-02',
       pub: 'Vol. 9 n.º 2',
       ap: [10, 3],
-      ri: 'pasa-a-pares',
-      rf: 'sin-modificaciones',
+      com: ['aprobado'],
       au: [18, 19],
       as: [
         { par: 0, e: 'no-acepto', inv: '2025-06-10', resp: '2025-06-12' },
@@ -436,8 +430,7 @@ export const SEED_REEP: SeedRevista = construirSeed({
       f: '2026-02-10',
       pub: 'Vol. 10 n.º 1',
       ap: [5, 1],
-      ri: 'pasa-a-pares',
-      rf: 'sin-modificaciones',
+      com: ['aprobado'],
       au: [20],
       as: [
         {
@@ -469,7 +462,7 @@ export const SEED_REEP: SeedRevista = construirSeed({
       e: 'en-evaluacion',
       f: '2026-09-15',
       ap: [13, 6],
-      ri: 'pasa-a-pares',
+      com: ['aprobado'],
       au: [21, 22],
       as: [
         { par: 13, e: 'acepto', inv: '2026-09-20', resp: '2026-09-22' },
@@ -483,7 +476,7 @@ export const SEED_REEP: SeedRevista = construirSeed({
       e: 'en-evaluacion',
       f: '2026-09-22',
       ap: [9, 4],
-      ri: 'pasa-a-pares',
+      com: ['aprobado'],
       au: [23],
       as: [
         { par: 10, e: 'segundo-intento', inv: '2026-10-01' },
@@ -498,7 +491,7 @@ export const SEED_REEP: SeedRevista = construirSeed({
       e: 'en-revision',
       f: '2026-10-10',
       ap: [18, 7],
-      ri: 'modificaciones-basicas',
+      com: ['ajustes'],
       au: [24, 25],
     },
     {
@@ -531,8 +524,10 @@ export const SEED_REEP: SeedRevista = construirSeed({
       n: '2026-033',
       t: 'Aprendizaje basado en proyectos en la ruralidad',
       tipo: 'investigacion',
-      e: 'postulado',
+      e: 'en-revision',
       f: '2026-10-30',
+      ap: [9, 3],
+      com: ['ajustes', 'aprobado'],
       au: [15, 19],
     },
     {
@@ -542,7 +537,7 @@ export const SEED_REEP: SeedRevista = construirSeed({
       e: 'rechazado',
       f: '2025-09-03',
       ap: [31, 12],
-      ri: 'no-publicable',
+      com: ['rechazado'],
       au: [12],
     },
     {
@@ -552,8 +547,7 @@ export const SEED_REEP: SeedRevista = construirSeed({
       e: 'rechazado',
       f: '2025-11-12',
       ap: [8, 2],
-      ri: 'pasa-a-pares',
-      rf: 'no-publicable',
+      com: ['aprobado'],
       au: [4],
       as: [
         {
@@ -579,70 +573,25 @@ export const SEED_REEP: SeedRevista = construirSeed({
       ],
     },
   ],
-  observaciones: [
-    {
-      n: '2026-034',
-      f: '2026-10-28T15:40:00',
-      u: 'Ma. Camila Mendoza',
-      t: 'Conceptos divergentes: se asigna un tercer par de desempate.',
-    },
-    {
-      n: '2026-034',
-      f: '2026-10-14T09:41:00',
-      u: 'Andrea Villota',
-      t: 'Se corrigió el correo del par 2 y se reenvió la invitación.',
-    },
-    {
-      n: '2026-034',
-      f: '2026-10-03T08:52:00',
-      u: 'Andrea Villota',
-      t: 'Antiplagio por encima del 15 % permitido.',
-    },
-    {
-      n: '2026-007',
-      f: '2026-09-30T10:00:00',
-      u: 'Ma. Camila Mendoza',
-      t: 'Se archiva el artículo por falta de respuesta del autor.',
-    },
-    {
-      n: '2026-007',
-      f: '2026-08-25T09:00:00',
-      u: 'Andrea Villota',
-      t: 'Segundo aviso al autor, sin respuesta.',
-    },
-    {
-      n: '2026-007',
-      f: '2026-07-20T10:15:00',
-      u: 'Andrea Villota',
-      t: 'Se solicitaron modificaciones al autor.',
-    },
-    {
-      n: '2026-015',
-      f: '2026-08-20T11:30:00',
-      u: 'Andrea Villota',
-      t: 'Pendiente la versión corregida del apartado metodológico.',
-    },
-    {
-      n: '2026-026',
-      f: '2026-10-19T08:45:00',
-      u: 'Andrea Villota',
-      t: 'Antiplagio por encima del 15 %: se consultará con el comité.',
-    },
+  porCorregir: [
+    { campo: 'tipo-articulo', ref: '2024-018', excel: 'Artículo corto' },
+    { campo: 'estado-articulo', ref: '2025-028', excel: 'En espera del autor' },
+    { campo: 'concepto', ref: '2025-041#2', excel: 'Publicable con ajustes menores' },
   ],
   correosExtra: [
     {
       n: '2026-034',
-      tipo: 'reenvio',
+      tipo: 'segundo-intento',
       dest: 'j.rosero@umariana.edu.co',
       f: '2026-10-14T09:41:00',
       e: 'rebotado',
     },
     {
       n: '2026-031',
-      tipo: 'recordatorio',
+      tipo: 'segundo-intento',
       dest: 'r.eraso@udenar.edu.co',
       f: '2026-10-27T09:30:00',
-      e: 'en-cola',
+      e: 'fallido',
     },
   ],
 })

@@ -49,7 +49,6 @@ export const SEED_IRE: SeedRevista = construirSeed({
       correo: 'a.portilla@udenar.edu.co',
       universidad: NARINO,
       area: 'Memoria y conflicto',
-      autorizo: '2023-05-08',
     },
     {
       nombre: 'Sonia Bastidas Melo',
@@ -149,7 +148,7 @@ export const SEED_IRE: SeedRevista = construirSeed({
       f: '2026-09-28',
       pub: 'Vol. 13 n.º 2',
       ap: [9, 3],
-      ri: 'pasa-a-pares',
+      com: ['aprobado'],
       au: [1, 2, 3],
       as: [
         {
@@ -173,7 +172,7 @@ export const SEED_IRE: SeedRevista = construirSeed({
       e: 'en-evaluacion',
       f: '2026-09-19',
       ap: [11, 4],
-      ri: 'pasa-a-pares',
+      com: ['aprobado'],
       au: [6, 7],
       as: [
         {
@@ -196,7 +195,7 @@ export const SEED_IRE: SeedRevista = construirSeed({
       e: 'en-evaluacion',
       f: '2026-06-12',
       ap: [8, 1],
-      ri: 'pasa-a-pares',
+      com: ['aprobado'],
       au: [8, 9],
       as: [
         {
@@ -219,8 +218,7 @@ export const SEED_IRE: SeedRevista = construirSeed({
       f: '2026-05-24',
       pub: 'Vol. 13 n.º 1',
       ap: [7, 2],
-      ri: 'pasa-a-pares',
-      rf: 'sin-modificaciones',
+      com: ['aprobado'],
       au: [10, 11],
       as: [
         {
@@ -262,8 +260,7 @@ export const SEED_IRE: SeedRevista = construirSeed({
       f: '2026-04-11',
       pub: 'Vol. 13 n.º 1',
       ap: [6, 1],
-      ri: 'pasa-a-pares',
-      rf: 'sin-modificaciones',
+      com: ['aprobado'],
       au: [12],
       as: [
         {
@@ -294,7 +291,7 @@ export const SEED_IRE: SeedRevista = construirSeed({
       e: 'en-revision',
       f: '2026-07-29',
       ap: [10, 3],
-      ri: 'modificaciones-basicas',
+      com: ['ajustes'],
       au: [13, 14],
     },
     {
@@ -304,7 +301,7 @@ export const SEED_IRE: SeedRevista = construirSeed({
       e: 'archivado',
       f: '2026-06-18',
       ap: [7, 2],
-      ri: 'faltan-documentos',
+      com: ['ajustes'],
       au: [15, 16],
       arch: [
         '2026-06-30',
@@ -319,8 +316,7 @@ export const SEED_IRE: SeedRevista = construirSeed({
       f: '2025-02-10',
       pub: 'Vol. 12 n.º 1',
       ap: [8, 2],
-      ri: 'pasa-a-pares',
-      rf: 'sin-modificaciones',
+      com: ['aprobado'],
       au: [3, 17],
       as: [
         {
@@ -353,8 +349,7 @@ export const SEED_IRE: SeedRevista = construirSeed({
       f: '2024-04-08',
       pub: 'Vol. 11 n.º 2',
       ap: [5, 0],
-      ri: 'pasa-a-pares',
-      rf: 'sin-modificaciones',
+      com: ['aprobado'],
       au: [3],
       as: [
         {
@@ -386,7 +381,7 @@ export const SEED_IRE: SeedRevista = construirSeed({
       e: 'en-evaluacion',
       f: '2026-09-05',
       ap: [12, 5],
-      ri: 'pasa-a-pares',
+      com: ['aprobado'],
       au: [18, 19],
       as: [
         { par: 10, e: 'acepto', inv: '2026-09-10', resp: '2026-09-12' },
@@ -400,7 +395,7 @@ export const SEED_IRE: SeedRevista = construirSeed({
       e: 'en-evaluacion',
       f: '2026-09-12',
       ap: [10, 6],
-      ri: 'pasa-a-pares',
+      com: ['aprobado'],
       au: [20],
       as: [
         { par: 6, e: 'acepto', inv: '2026-09-18', resp: '2026-09-20' },
@@ -424,8 +419,7 @@ export const SEED_IRE: SeedRevista = construirSeed({
       f: '2026-01-20',
       pub: 'Vol. 13 n.º 1',
       ap: [4, 0],
-      ri: 'pasa-a-pares',
-      rf: 'sin-modificaciones',
+      com: ['aprobado'],
       au: [23],
       as: [
         {
@@ -458,8 +452,7 @@ export const SEED_IRE: SeedRevista = construirSeed({
       f: '2026-02-03',
       pub: 'Vol. 13 n.º 1',
       ap: [6, 1],
-      ri: 'pasa-a-pares',
-      rf: 'sin-modificaciones',
+      com: ['aprobado'],
       au: [24],
       as: [
         {
@@ -507,7 +500,7 @@ export const SEED_IRE: SeedRevista = construirSeed({
       e: 'rechazado',
       f: '2025-08-14',
       ap: [29, 10],
-      ri: 'no-publicable',
+      com: ['rechazado'],
       au: [5],
     },
     {
@@ -517,8 +510,7 @@ export const SEED_IRE: SeedRevista = construirSeed({
       e: 'rechazado',
       f: '2025-10-22',
       ap: [9, 2],
-      ri: 'pasa-a-pares',
-      rf: 'no-publicable',
+      com: ['aprobado'],
       au: [7],
       as: [
         {
@@ -550,7 +542,7 @@ export const SEED_IRE: SeedRevista = construirSeed({
       e: 'en-revision',
       f: '2026-10-02',
       ap: [13, 5],
-      ri: 'modificaciones-basicas',
+      com: ['ajustes'],
       au: [9],
     },
     {
@@ -563,61 +555,22 @@ export const SEED_IRE: SeedRevista = construirSeed({
       au: [16],
     },
   ],
-  observaciones: [
-    {
-      n: '2026-077',
-      f: '2026-10-27T11:05:00',
-      u: 'Ma. Camila Mendoza',
-      t: 'Se solicitó al par 2 confirmar su participación.',
-    },
-    {
-      n: '2026-077',
-      f: '2026-10-16T08:02:00',
-      u: 'Andrea Villota',
-      t: 'Segundo intento con la Mg. Bastidas antes de aplicar el bloqueo.',
-    },
-    {
-      n: '2026-077',
-      f: '2026-10-06T08:30:00',
-      u: 'Andrea Villota',
-      t: 'Se asignó al tercer par para no detener la evaluación.',
-    },
-    {
-      n: '2026-077',
-      f: '2026-10-01T08:30:00',
-      u: 'Andrea Villota',
-      t: 'Antiplagio dentro del límite: 9 % de coincidencias.',
-    },
-    {
-      n: '2026-044',
-      f: '2026-08-14T10:20:00',
-      u: 'Andrea Villota',
-      t: 'Se solicitó a los autores ajustar la sección de resultados.',
-    },
-    {
-      n: '2026-022',
-      f: '2026-06-30T10:00:00',
-      u: 'Ma. Camila Mendoza',
-      t: 'Se archiva el artículo por falta de respuesta de la autora.',
-    },
-    {
-      n: '2026-022',
-      f: '2026-06-24T09:10:00',
-      u: 'Andrea Villota',
-      t: 'Se solicitaron modificaciones a la autora.',
-    },
+  porCorregir: [
+    { campo: 'tipo-articulo', ref: '2025-070', excel: 'Reporte de caso' },
+    { campo: 'concepto', ref: '2024-037#1', excel: 'Aceptado con cambios' },
+    { campo: 'correo-par', ref: '4', excel: '' },
   ],
   correosExtra: [
     {
       n: '2026-077',
-      tipo: 'recordatorio',
+      tipo: 'segundo-intento',
       dest: 's.bastidas@univalle.edu.co',
       f: '2026-10-27T09:30:00',
-      e: 'en-cola',
+      e: 'fallido',
     },
     {
       n: '2026-071',
-      tipo: 'reenvio',
+      tipo: 'segundo-intento',
       dest: 'r.guerrero@unal.edu.co',
       f: '2026-10-18T10:05:00',
       e: 'rebotado',

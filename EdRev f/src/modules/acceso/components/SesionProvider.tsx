@@ -3,12 +3,12 @@
  * guards and hooks read it, screens never touch it directly.
  * Covers: HU-28, RF-39, RNF-05. In production this wraps the JWT session of the backend.
  */
-import { useCallback, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import type { ReactNode } from 'react'
 import { SesionContext } from '../hooks/SesionContext'
 import type { CierreSesion } from '../hooks/SesionContext'
-import { borrarSesion, guardarSesion, leerSesion } from '../services/almacenSesion'
-import { establecerToken } from '@/lib/api/cliente'
+import { borrarSesion, guardarSesion, leerSesion, leerToken } from '../services/almacenSesion'
+import { alExpirarSesion, establecerToken } from '@/lib/api/cliente'
 import { mocksActivos } from '@/mocks/habilitar'
 import { tokenMock } from '@/mocks/token'
 import type { MotivoCierre, RespuestaIngreso } from '@/types/acceso'
@@ -21,19 +21,29 @@ export interface SesionProviderProps {
 }
 
 export function SesionProvider({ usuarioInicial, children }: SesionProviderProps) {
-  // While MSW is on, a restored or forced session gets the matching mock token; with the real
-  // backend a cookie/JWT replaces it. Runs once, before any child fetches.
+  // While MSW is on, a restored or forced session gets the matching mock token. With the real
+  // backend the token saved with the session is restored; a profile without its token cannot make
+  // any request, so that session is discarded and the user signs in again. Runs once, before any
+  // child fetches.
   const [inicial] = useState(() => {
-    const u = usuarioInicial !== undefined ? usuarioInicial : leerSesion()
-    establecerToken(u && mocksActivos() ? tokenMock(u.id) : null)
+    let u = usuarioInicial !== undefined ? usuarioInicial : leerSesion()
+    if (u && mocksActivos()) establecerToken(tokenMock(u.id))
+    else {
+      const token = usuarioInicial === undefined ? leerToken() : null
+      if (u && usuarioInicial === undefined && !token) {
+        borrarSesion()
+        u = null
+      }
+      establecerToken(u ? token : null)
+    }
     return u
   })
   const [usuario, setUsuario] = useState<Usuario | null>(inicial)
   const [ultimoCierre, setUltimoCierre] = useState<CierreSesion | null>(null)
 
-  const iniciarSesion = useCallback((respuesta: RespuestaIngreso, mantener = false) => {
+  const iniciarSesion = useCallback((respuesta: RespuestaIngreso) => {
     establecerToken(respuesta.token)
-    guardarSesion(respuesta.usuario, mantener)
+    guardarSesion(respuesta.usuario, respuesta.token)
     setUltimoCierre(null)
     setUsuario(respuesta.usuario)
   }, [])
@@ -49,6 +59,13 @@ export function SesionProvider({ usuarioInicial, children }: SesionProviderProps
     },
     [usuario],
   )
+
+  // The backend rejected the token: the session expired, so the user is taken to the login.
+  useEffect(() => {
+    if (!usuario) return
+    alExpirarSesion(() => cerrarSesion('inactividad'))
+    return () => alExpirarSesion(null)
+  }, [usuario, cerrarSesion])
 
   const valor = useMemo(
     () => ({ usuario, ultimoCierre, iniciarSesion, cerrarSesion }),

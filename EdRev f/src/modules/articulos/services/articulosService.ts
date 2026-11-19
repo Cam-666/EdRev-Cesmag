@@ -6,15 +6,16 @@
 import { solicitar } from '@/lib/api/cliente'
 import type {
   ArticuloDetalle,
+  CierreArticulo,
   EdicionArticulo,
   FiltrosArticulos,
   NuevoArticulo,
-  RegistroRevision,
+  NuevaRonda,
   RespuestaListado,
   EstadoArticulo,
 } from '@/types/articulo'
 import type { DatosAutor } from '@/types/autor'
-import type { HistorialArticulo, Observacion } from '@/types/historial'
+import type { HistorialArticulo } from '@/types/historial'
 import type { Revista } from '@/types/revista'
 
 function json(cuerpo: unknown): { body: string } {
@@ -26,13 +27,23 @@ export function listarArticulos(revista: Revista, f: FiltrosArticulos): Promise<
   if (f.q) q.set('q', f.q)
   if (f.estado) q.set('estado', f.estado)
   if (f.publicacion) q.set('publicacion', f.publicacion)
+  if (f.anio) q.set('anio', String(f.anio))
   if (f.desde) q.set('desde', f.desde)
   if (f.hasta) q.set('hasta', f.hasta)
+  if (f.sinResponder) q.set('sinResponder', '1')
   return solicitar<RespuestaListado>(`/${revista}/articulos?${q.toString()}`)
 }
 
-export function listarPublicaciones(revista: Revista): Promise<string[]> {
-  return solicitar<string[]>(`/${revista}/publicaciones`)
+/** Issues used by the journal's articles, most recent first (RF-35). */
+export function listarPublicaciones(
+  revista: Revista,
+): Promise<Array<{ valor: string; etiqueta: string }>> {
+  return solicitar<Array<{ valor: string; etiqueta: string }>>(`/${revista}/publicaciones`)
+}
+
+/** Years of management that have articles, newest first (the current one always). */
+export function listarAnios(revista: Revista): Promise<number[]> {
+  return solicitar<number[]>(`/${revista}/articulos/anios`)
 }
 
 export function obtenerArticulo(revista: Revista, id: string): Promise<ArticuloDetalle> {
@@ -72,34 +83,38 @@ export function agregarAutorAArticulo(
   })
 }
 
-export function registrarRevision(
+export function registrarRonda(
   revista: Revista,
   id: string,
-  datos: RegistroRevision,
+  ronda: NuevaRonda,
 ): Promise<ArticuloDetalle> {
-  return solicitar<ArticuloDetalle>(`/${revista}/articulos/${encodeURIComponent(id)}/revision`, {
-    method: 'PUT',
-    ...json(datos),
+  return solicitar<ArticuloDetalle>(`/${revista}/articulos/${encodeURIComponent(id)}/rondas`, {
+    method: 'POST',
+    ...json(ronda),
   })
 }
 
-export function listarObservaciones(revista: Revista, id: string): Promise<Observacion[]> {
-  return solicitar<Observacion[]>(`/${revista}/articulos/${encodeURIComponent(id)}/observaciones`)
-}
-
-export function agregarObservacion(
-  revista: Revista,
-  id: string,
-  texto: string,
-): Promise<Observacion> {
-  return solicitar<Observacion>(`/${revista}/articulos/${encodeURIComponent(id)}/observaciones`, {
+/** Moves the article to the other journal while it is in the committee review (RF-07). */
+export function trasladarArticulo(revista: Revista, id: string): Promise<ArticuloDetalle> {
+  return solicitar<ArticuloDetalle>(`/${revista}/articulos/${encodeURIComponent(id)}/trasladar`, {
     method: 'POST',
-    ...json({ texto }),
   })
 }
 
 export function obtenerHistorial(revista: Revista, id: string): Promise<HistorialArticulo> {
   return solicitar<HistorialArticulo>(`/${revista}/articulos/${encodeURIComponent(id)}/historial`)
+}
+
+/** Closes the process as approved, rejected or archived, with its reason (RF-08). */
+export function cerrarArticulo(
+  revista: Revista,
+  id: string,
+  cierre: CierreArticulo,
+): Promise<ArticuloDetalle> {
+  return solicitar<ArticuloDetalle>(`/${revista}/articulos/${encodeURIComponent(id)}/cerrar`, {
+    method: 'POST',
+    ...json(cierre),
+  })
 }
 
 export function reabrirArticulo(

@@ -1,11 +1,15 @@
 /*
- * FichaArticuloLayout — article sheet shell: header + five routed tabs (Resumen, Autores,
- * Pares y evaluación, Observaciones, Historial). Each datum appears in a single tab. It loads the
+ * FichaArticuloLayout — article sheet shell: header + five routed tabs (Resumen, Revisión del
+ * comité, Autores, Pares y evaluación, Historial de correos y cambios) as RF-36 lists them. «Cambiar de revista» is offered
+ * while the article is in the committee review (RF-07). Each datum appears in a single tab. It loads the
  * article once and hands it to the tabs through the outlet context.
  * Covers: RF-36, HU-26 (criterion 3), RF-01/RF-04 (edit).
  */
+import { BotonVolver } from '@/components/common/BotonVolver'
 import { useState } from 'react'
 import { Outlet, useLocation, useNavigate, useParams } from 'react-router-dom'
+import { CambiarRevistaModal } from './CambiarRevistaModal'
+import { CerrarProcesoModal } from './CerrarProcesoModal'
 import { EditarArticuloModal } from './EditarArticuloModal'
 import { EncabezadoFicha } from './EncabezadoFicha'
 import { useArticulo } from '../hooks/useArticulo'
@@ -15,11 +19,24 @@ import { Boton } from '@/components/common/Boton'
 import { EnlaceBoton } from '@/components/common/EnlaceBoton'
 import { EstadoConsulta } from '@/components/common/EstadoConsulta'
 import { Pestanas } from '@/components/common/Pestanas'
-import { AccionesEncabezado } from '@/lib/encabezado/AccionesEncabezado'
 import { ErrorApi } from '@/lib/api/cliente'
+import { requiereNuevaRevision } from '@/lib/dominio/comite'
+import { TEXTO_RESULTADO } from '@/lib/dominio/resultadoPares'
 import { useRevista } from '@/lib/revista/useRevista'
+import type { EstadoArticulo } from '@/types/articulo'
+import type { ResultadoPares } from '@/types/par'
 
-const SEGMENTOS = ['autores', 'pares', 'observaciones', 'historial'] as const
+/** States whose process is still open (RF-08). */
+const ABIERTOS: readonly EstadoArticulo[] = ['postulado', 'en-revision', 'en-evaluacion']
+
+/** The result of the peers is news only while the article is in the state it led to. */
+function muestraResultado(resultado: ResultadoPares, estado: EstadoArticulo): boolean {
+  if (resultado === 'no-publicable') return estado === 'rechazado'
+  if (resultado === 'publicable-con-modificaciones') return estado === 'postulado'
+  return estado === 'en-evaluacion' || estado === 'en-revision' || estado === 'aprobado'
+}
+
+const SEGMENTOS = ['comite', 'autores', 'pares', 'historial'] as const
 
 function pestanaActiva(pathname: string, base: string): string {
   const resto = pathname.slice(base.length).split('/').filter(Boolean)[0]
@@ -33,7 +50,11 @@ export function FichaArticuloLayout() {
   const navigate = useNavigate()
   const consulta = useArticulo(id)
   const puedeEditar = usePermiso('registrar-datos')
+  const puedeCambiar = usePermiso('registrar-revision')
   const [editando, setEditando] = useState(false)
+  const [cambiando, setCambiando] = useState(false)
+  const puedeCerrar = usePermiso('cerrar-articulo')
+  const [cerrando, setCerrando] = useState(false)
   const base = `/${revista}/articulos/${encodeURIComponent(id)}`
 
   if (consulta.error instanceof ErrorApi && consulta.error.estado === 404) {
@@ -66,25 +87,98 @@ export function FichaArticuloLayout() {
     >
       {articulo && (
         <div className="flex flex-col gap-4">
-          {puedeEditar && (
-            <AccionesEncabezado>
-              <Boton variante="neutro" tamano="sm" onClick={() => setEditando(true)}>
-                Editar
-              </Boton>
-            </AccionesEncabezado>
-          )}
-          <EncabezadoFicha articulo={articulo} />
+          <BotonVolver to={`/${revista}/articulos`}>Volver a artículos</BotonVolver>
+          <EncabezadoFicha
+            articulo={articulo}
+            acciones={
+              <>
+                {puedeCambiar && (
+                  <Boton variante="secundario" tamano="sm" onClick={() => setCambiando(true)}>
+                    Cambiar de revista
+                  </Boton>
+                )}
+                {puedeEditar && (
+                  <Boton variante="secundario" tamano="sm" onClick={() => setEditando(true)}>
+                    Editar
+                  </Boton>
+                )}
+                {puedeCerrar && ABIERTOS.includes(articulo.estado) && (
+                  <Boton variante="secundario" tamano="sm" onClick={() => setCerrando(true)}>
+                    Cerrar proceso
+                  </Boton>
+                )}
+              </>
+            }
+          />
+          {articulo.resultadoPares &&
+            muestraResultado(articulo.resultadoPares, articulo.estado) && (
+              <Alerta
+                tipo={articulo.resultadoPares === 'publicable' ? 'exito' : 'informacion'}
+                titulo="Resultado de la evaluación por pares"
+                accion={
+                  articulo.resultadoPares === 'publicable' &&
+                  ABIERTOS.includes(articulo.estado) &&
+                  puedeCerrar ? (
+                    <Boton variante="secundario" tamano="sm" onClick={() => setCerrando(true)}>
+                      Asignar volumen y número
+                    </Boton>
+                  ) : articulo.resultadoPares === 'publicable-con-modificaciones' ? (
+                    <EnlaceBoton
+                      variante="secundario"
+                      tamano="sm"
+                      to={`/${revista}/articulos/${encodeURIComponent(articulo.id)}/comite`}
+                    >
+                      Ir a la revisión del comité
+                    </EnlaceBoton>
+                  ) : undefined
+                }
+              >
+                {TEXTO_RESULTADO[articulo.resultadoPares]}
+                {articulo.resultadoPares !== 'publicable' || articulo.estado === 'aprobado'
+                  ? ' Emita la constancia de cada par desde la pestaña «Pares y evaluación».'
+                  : ''}
+              </Alerta>
+            )}
+          {requiereNuevaRevision(articulo) &&
+            articulo.resultadoPares !== 'publicable-con-modificaciones' && (
+              <Alerta
+                tipo="advertencia"
+                titulo="Este artículo debe revisarse de nuevo"
+                accion={
+                  <EnlaceBoton
+                    variante="secundario"
+                    tamano="sm"
+                    to={`/${revista}/articulos/${encodeURIComponent(articulo.id)}/comite`}
+                  >
+                    Ir a la revisión del comité
+                  </EnlaceBoton>
+                }
+              >
+                El proceso fue retomado. El comité editorial debe registrar una nueva ronda de
+                revisión antes de asignar pares evaluadores.
+              </Alerta>
+            )}
           <Pestanas
             etiqueta="Secciones del artículo"
             valor={pestanaActiva(pathname, base)}
             onCambio={(v) => navigate(v === 'resumen' ? base : `${base}/${v}`)}
             pestanas={[
               { valor: 'resumen', etiqueta: 'Resumen', contenido: panel },
+              { valor: 'comite', etiqueta: 'Revisión del comité', contenido: panel },
               { valor: 'autores', etiqueta: 'Autores', contenido: panel },
               { valor: 'pares', etiqueta: 'Pares y evaluación', contenido: panel },
-              { valor: 'observaciones', etiqueta: 'Observaciones', contenido: panel },
               { valor: 'historial', etiqueta: 'Historial', contenido: panel },
             ]}
+          />
+          <CerrarProcesoModal
+            articulo={articulo}
+            abierto={cerrando}
+            onCerrar={() => setCerrando(false)}
+          />
+          <CambiarRevistaModal
+            articulo={articulo}
+            abierto={cambiando}
+            onCerrar={() => setCambiando(false)}
           />
           <EditarArticuloModal
             articulo={articulo}

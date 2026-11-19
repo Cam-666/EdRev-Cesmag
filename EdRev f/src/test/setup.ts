@@ -18,9 +18,13 @@ class ResizeObserverStub {
   disconnect() {}
 }
 globalThis.ResizeObserver ??= ResizeObserverStub
-window.HTMLElement.prototype.scrollIntoView ??= () => {}
-window.HTMLElement.prototype.hasPointerCapture ??= () => false
-window.HTMLElement.prototype.releasePointerCapture ??= () => {}
+// API-only test files may run in Node (e.g. multipart uploads), where there is no window.
+const enNavegador = typeof window !== 'undefined'
+if (enNavegador) {
+  window.HTMLElement.prototype.scrollIntoView ??= () => {}
+  window.HTMLElement.prototype.hasPointerCapture ??= () => false
+  window.HTMLElement.prototype.releasePointerCapture ??= () => {}
+}
 
 // Node's fetch needs an absolute URL; MSW matches any host.
 vi.stubEnv('VITE_API_URL', 'http://localhost/api')
@@ -31,7 +35,9 @@ afterEach(() => {
   server.resetHandlers()
   reiniciarEstadoAcceso()
   reiniciarDb()
-  window.sessionStorage.clear()
-  window.localStorage.clear()
+  if (enNavegador) {
+    window.sessionStorage.clear()
+    window.localStorage.clear()
+  }
 })
 afterAll(() => server.close())

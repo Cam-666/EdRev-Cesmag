@@ -4,14 +4,14 @@
  * Each journal is built separately: nothing here ever mixes REEP and IRE.
  */
 import type {
-  Antiplagio,
   Articulo,
   EstadoArticulo,
-  ResultadoComite,
+  ResultadoRonda,
+  RondaComite,
   TipoArticulo,
 } from '@/types/articulo'
 import type { Autor } from '@/types/autor'
-import type { CorreoEnviado, EntradaAuditoria, Observacion } from '@/types/historial'
+import type { CorreoEnviado, EntradaAuditoria } from '@/types/historial'
 import type {
   Asignacion,
   ConceptoPar,
@@ -20,6 +20,7 @@ import type {
   MotivoBloqueo,
   ParEvaluador,
 } from '@/types/par'
+import type { CampoPorCorregir, RegistroPorCorregir } from '@/types/migracion'
 import type { Revista } from '@/types/revista'
 
 export interface SeedRevista {
@@ -29,8 +30,9 @@ export interface SeedRevista {
   asignaciones: Asignacion[]
   constancias: Constancia[]
   correos: CorreoEnviado[]
-  observaciones: Observacion[]
   auditoria: EntradaAuditoria[]
+  /** Migrated records whose Excel text did not fit the closed lists (RF-44). */
+  porCorregir: RegistroPorCorregir[]
 }
 
 /** [name, orcid, affiliation, country?] */
@@ -38,12 +40,13 @@ export type AutorSeed = [string, string, string, string?]
 
 export interface ParSeed {
   nombre: string
+  /** Profession or title; a default one is given when omitted. */
+  prof?: string
   correo: string
   universidad: string
   area: string
   /** [reason, ISO date] when the peer is blocked. */
   bloqueo?: [MotivoBloqueo, string]
-  autorizo?: string
 }
 
 export interface AsigSeed {
@@ -72,20 +75,13 @@ export interface ArtSeed {
   pub?: string
   /** [coincidences %, AI %] */
   ap?: [number, number]
-  ri?: ResultadoComite
-  rf?: ResultadoComite
+  /** Results of the committee rounds, oldest first. An article with peers always ends approved. */
+  com?: ResultadoRonda[]
   /** 1-based indices in the authors list, in order. */
   au: number[]
   as?: AsigSeed[]
   /** [archive date, reason] */
   arch?: [string, string]
-}
-
-export interface ObsSeed {
-  n: string
-  f: string
-  u: string
-  t: string
 }
 
 export interface CorreoSeed {
@@ -96,13 +92,27 @@ export interface CorreoSeed {
   e: CorreoEnviado['estado']
 }
 
+/**
+ * A datum of the Excel that did not fit: `ref` is the article number, `article#order` for an
+ * evaluation, or the peer index for a peer without email.
+ */
+export interface PorCorregirSeed {
+  campo: CampoPorCorregir
+  ref: string
+  excel: string
+}
+
+/** Articles postulated before the system: they come from the Excel (RF-42). */
+const ANTES_DEL_SISTEMA = '2026-01-01'
+const EQUIPO = 'Equipo del proyecto'
+
 export interface EntradaSeed {
   revista: Revista
   autores: AutorSeed[]
   pares: ParSeed[]
   articulos: ArtSeed[]
-  observaciones?: ObsSeed[]
   correosExtra?: CorreoSeed[]
+  porCorregir?: PorCorregirSeed[]
 }
 
 const DOMINIOS: Record<string, string> = {
@@ -137,6 +147,26 @@ function fechaHora(fecha: string, hora: string): string {
   return `${fecha}T${hora}:00`
 }
 
+/** "Vol. 10 n.º 2" → { volumen: 10, numero: 2 } */
+function leerPublicacion(texto: string): { volumen: number; numero: number } {
+  const [volumen = 0, numero = 0] = (texto.match(/\d+/g) ?? []).map(Number)
+  return { volumen, numero }
+}
+
+const PROFESIONES = [
+  'Magíster en Educación',
+  'Doctorado en Ciencias de la Educación',
+  'Magíster en Pedagogía',
+  'Doctorado en Ciencias Sociales',
+  'Magíster en Estudios Sociales',
+]
+
+const OBSERVACION_RONDA: Record<ResultadoRonda, string> = {
+  aprobado: 'Cumple con la política editorial y el formato. Pasa a pares evaluadores.',
+  ajustes: 'Ajustar el resumen, las normas de citación y la estructura del método.',
+  rechazado: 'No corresponde al enfoque temático de la revista.',
+}
+
 export function construirSeed(entrada: EntradaSeed): SeedRevista {
   const { revista } = entrada
   const p = revista
@@ -159,11 +189,11 @@ export function construirSeed(entrada: EntradaSeed): SeedRevista {
     id: `${p}-par-${i + 1}`,
     revista,
     nombre: s.nombre,
+    profesion: s.prof ?? PROFESIONES[i % PROFESIONES.length] ?? '',
     correo: s.correo,
     universidad: s.universidad,
     area: s.area,
     bloqueo: s.bloqueo ? { motivo: s.bloqueo[0], fecha: s.bloqueo[1] } : null,
-    autorizoDatosEn: s.autorizo ?? '2024-03-14',
   }))
 
   const articulos: Articulo[] = []
@@ -175,16 +205,18 @@ export function construirSeed(entrada: EntradaSeed): SeedRevista {
   const nid = () => String(++seq).padStart(4, '0')
 
   for (const s of entrada.articulos) {
-    const fechaAp = sumarDias(s.f, 3)
-    const antiplagio: Antiplagio | null = s.ap
-      ? {
-          coincidencias: s.ap[0],
-          atribuidoIa: s.ap[1],
-          observacion: `Antiplagio: ${s.ap[0]} % y ${s.ap[1]} %.`,
-          fecha: fechaHora(fechaAp, '08:52'),
-          usuario: AUXILIAR,
-        }
-      : null
+    const resultados = [...(s.com ?? [])]
+    if ((s.as ?? []).length > 0 && resultados[resultados.length - 1] !== 'aprobado') {
+      resultados.push('aprobado')
+    }
+    const rondasComite: RondaComite[] = resultados.map((resultado, i) => ({
+      id: `${s.n}-r${i + 1}`,
+      numero: i + 1,
+      resultado,
+      observacion: OBSERVACION_RONDA[resultado],
+      fecha: fechaHora(sumarDias(s.f, 9 + i * 6), '10:24'),
+      usuario: i % 2 === 0 ? ADMIN : AUXILIAR,
+    }))
 
     articulos.push({
       id: s.n,
@@ -194,52 +226,39 @@ export function construirSeed(entrada: EntradaSeed): SeedRevista {
       tipo: s.tipo,
       estado: s.e,
       fechaPostulacion: s.f,
-      numeroPublicacion: s.pub ?? null,
-      antiplagio,
-      revisionInicial: s.ri
-        ? {
-            resultado: s.ri,
-            observacion: '',
-            fecha: fechaHora(sumarDias(s.f, 9), '10:24'),
-            usuario: ADMIN,
-          }
-        : null,
-      revisionFinal: s.rf
-        ? {
-            resultado: s.rf,
-            observacion: '',
-            fecha: fechaHora(sumarDias(s.f, 12), '10:30'),
-            usuario: ADMIN,
-          }
-        : null,
+      publicacion: s.pub ? leerPublicacion(s.pub) : null,
+      coincidencias: s.ap ? s.ap[0] : null,
+      atribuidoIa: s.ap ? s.ap[1] : null,
+      rondasComite,
       autoresIds: s.au.map((i) => `${p}-au-${i}`),
       archivadoEn: s.arch ? s.arch[0] : null,
       motivoArchivo: s.arch ? s.arch[1] : null,
     })
 
+    const migrado = s.f < ANTES_DEL_SISTEMA
     auditoria.push({
       id: `${p}-aud-${nid()}`,
       revista,
       articuloId: s.n,
-      tipo: 'registro',
-      accion: `Registró el artículo ${s.n}`,
+      tipo: migrado ? 'migracion' : 'registro',
+      accion: migrado ? 'Cargó el artículo desde el Excel' : `Registró el artículo ${s.n}`,
       fecha: fechaHora(s.f, '09:15'),
-      usuario: AUXILIAR,
+      usuario: migrado ? EQUIPO : AUXILIAR,
     })
-    if (antiplagio) {
+    for (const r of rondasComite) {
       auditoria.push({
         id: `${p}-aud-${nid()}`,
         revista,
         articuloId: s.n,
         tipo: 'revision',
-        accion: 'Registró el porcentaje de antiplagio',
-        fecha: antiplagio.fecha,
-        usuario: AUXILIAR,
+        accion: `Registró la ronda ${r.numero} de la revisión del comité`,
+        fecha: r.fecha,
+        usuario: r.usuario,
       })
     }
 
     ;(s.as ?? []).forEach((a, idx) => {
-      const orden = (idx + 1) as 1 | 2 | 3
+      const orden = idx + 1
       const par = pares[a.par]
       if (!par) throw new Error(`Seed ${revista}: unknown peer ${a.par} in ${s.n}`)
       const asigId = `${s.n}-p${orden}`
@@ -271,22 +290,26 @@ export function construirSeed(entrada: EntradaSeed): SeedRevista {
         id: `${p}-cor-${nid()}`,
         revista,
         articuloId: s.n,
+        asignacionId: asigId,
         tipo: 'invitacion',
         destinatario: par.correo,
         asunto: `Invitación a evaluar un artículo · ${revista === 'reep' ? 'Educación y Pedagogía' : 'Investigium IRE'}`,
         fechaEnvio: fechaHora(a.inv, '08:17'),
-        estado: 'entregado',
+        estado: 'enviado',
+        atendido: false,
       })
       if (intento >= 2) {
         correos.push({
           id: `${p}-cor-${nid()}`,
           revista,
           articuloId: s.n,
-          tipo: 'reenvio',
+          asignacionId: asigId,
+          tipo: 'segundo-intento',
           destinatario: par.correo,
-          asunto: 'Reenvío de la invitación a evaluar',
+          asunto: 'Segundo intento: invitación a evaluar un artículo',
           fechaEnvio: fechaHora(sumarDias(a.inv, 7), '08:02'),
-          estado: 'entregado',
+          estado: 'enviado',
+          atendido: false,
         })
       }
       if (a.ent) {
@@ -324,11 +347,13 @@ export function construirSeed(entrada: EntradaSeed): SeedRevista {
             id: `${p}-cor-${nid()}`,
             revista,
             articuloId: s.n,
+            asignacionId: asigId,
             tipo: 'agradecimiento',
             destinatario: par.correo,
             asunto: 'Gracias por su evaluación · constancia adjunta',
             fechaEnvio: f,
-            estado: 'entregado',
+            estado: 'enviado',
+            atendido: false,
           })
         }
       }
@@ -348,18 +373,20 @@ export function construirSeed(entrada: EntradaSeed): SeedRevista {
   }
 
   for (const c of entrada.correosExtra ?? []) {
+    const par = pares.find((x) => x.correo === c.dest)
+    const asignacion = asignaciones.find((a) => a.articuloId === c.n && a.parId === par?.id)
+    if (!asignacion) throw new Error(`Seed ${revista}: no assignment for the mail to ${c.dest}`)
     correos.push({
       id: `${p}-cor-${nid()}`,
       revista,
       articuloId: c.n,
+      asignacionId: asignacion.id,
       tipo: c.tipo,
       destinatario: c.dest,
-      asunto:
-        c.tipo === 'recordatorio'
-          ? 'Recordatorio: invitación a evaluar un artículo'
-          : 'Reenvío de la invitación a evaluar',
+      asunto: 'Segundo intento: invitación a evaluar un artículo',
       fechaEnvio: c.f,
       estado: c.e,
+      atendido: false,
     })
     if (c.e === 'rebotado') {
       auditoria.push({
@@ -374,13 +401,45 @@ export function construirSeed(entrada: EntradaSeed): SeedRevista {
     }
   }
 
-  const observaciones: Observacion[] = (entrada.observaciones ?? []).map((o) => ({
-    id: `${p}-obs-${nid()}`,
-    articuloId: o.n,
-    texto: o.t,
-    fecha: o.f,
-    usuario: o.u,
-  }))
+  // RF-44: what did not fit is loaded with the datum empty and listed to be corrected.
+  const porCorregir: RegistroPorCorregir[] = (entrada.porCorregir ?? []).map((x, i) => {
+    const id = `${p}-pc-${i + 1}`
+    if (x.campo === 'correo-par') {
+      const par = pares[Number(x.ref)]
+      if (!par) throw new Error(`Seed ${revista}: unknown peer ${x.ref}`)
+      par.correo = ''
+      return {
+        id,
+        campo: x.campo,
+        valorExcel: x.excel,
+        descripcion: par.nombre,
+        enlace: `/${revista}/pares/${par.id}`,
+      }
+    }
+    const [n = '', orden] = x.ref.split('#')
+    const articulo = articulos.find((a) => a.id === n)
+    if (!articulo) throw new Error(`Seed ${revista}: unknown article ${n}`)
+    const descripcion = `${articulo.numeroOjs} · ${articulo.titulo}`
+    if (x.campo === 'concepto') {
+      const asignacion = asignaciones.find((a) => a.id === `${n}-p${orden}`)
+      if (!asignacion) throw new Error(`Seed ${revista}: unknown evaluation ${x.ref}`)
+      asignacion.concepto = null
+      return {
+        id,
+        campo: x.campo,
+        valorExcel: x.excel,
+        descripcion: `${descripcion} · par ${orden}`,
+        enlace: `/${revista}/articulos/${n}/pares`,
+      }
+    }
+    return {
+      id,
+      campo: x.campo,
+      valorExcel: x.excel,
+      descripcion,
+      enlace: `/${revista}/articulos/${n}`,
+    }
+  })
 
   const porFecha = (a: { fecha: string }, b: { fecha: string }) => (a.fecha < b.fecha ? 1 : -1)
   return {
@@ -390,8 +449,8 @@ export function construirSeed(entrada: EntradaSeed): SeedRevista {
     asignaciones,
     constancias,
     correos: correos.sort((a, b) => (a.fechaEnvio < b.fechaEnvio ? 1 : -1)),
-    observaciones: observaciones.sort(porFecha),
     auditoria: auditoria.sort(porFecha),
+    porCorregir,
   }
 }
 

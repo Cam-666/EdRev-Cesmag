@@ -17,7 +17,7 @@ export const esquemaAutor = z.object({
   orcid: z
     .string()
     .trim()
-    .regex(/^\d{4}-\d{4}-\d{4}-\d{3}[\dX]$/, 'Use el formato 0000-0000-0000-0000.'),
+    .regex(/^(\d{4}-\d{4}-\d{4}-\d{3}[\dX])?$/, 'Use el formato 0000-0000-0000-0000.'),
   filiacion: z.string().trim().min(1, 'Escriba la filiación institucional.'),
   pais: z.string().trim().min(1, 'Escriba el país.'),
 })

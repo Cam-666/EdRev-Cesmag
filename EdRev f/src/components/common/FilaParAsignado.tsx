@@ -9,7 +9,7 @@ import type { EstadoDistintivo } from './DistintivoEstado'
 import { formatearFecha } from '@/lib/format'
 
 export interface FilaParAsignadoProps {
-  orden: 1 | 2 | 3
+  orden: number
   nombre: string
   universidad: string
   estado: EstadoDistintivo

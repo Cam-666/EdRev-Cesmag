@@ -10,7 +10,7 @@ import { useArticuloActual } from '../hooks/useArticuloActual'
 import { EditarAutorModal } from '@/modules/autores/components/EditarAutorModal'
 import { usePermiso } from '@/modules/acceso/hooks/usePermiso'
 import { Boton } from '@/components/common/Boton'
-import { AccionesEncabezado } from '@/lib/encabezado/AccionesEncabezado'
+import { EncabezadoPagina } from '@/components/common/EncabezadoPagina'
 import type { Autor } from '@/types/autor'
 
 export function ArticuloAutoresPage() {
@@ -21,26 +21,25 @@ export function ArticuloAutoresPage() {
 
   return (
     <section className="flex flex-col gap-4">
-      {puedeRegistrar && (
-        <AccionesEncabezado>
-          <Boton tamano="sm" onClick={() => setAgregando(true)}>
-            Agregar autor
-          </Boton>
-        </AccionesEncabezado>
-      )}
-      <div className="flex items-center justify-between">
-        <h2 className="text-titulo-16">Autores del artículo</h2>
+      <EncabezadoPagina
+        nivel="h2"
+        titulo="Autores del artículo"
+        acciones={
+          puedeRegistrar && (
+            <Boton tamano="sm" onClick={() => setAgregando(true)}>
+              Agregar autor
+            </Boton>
+          )
+        }
+      >
         <p className="text-etiqueta-13 text-texto-secundario">
           {articulo.autores.length} de {MAX_AUTORES}
         </p>
-      </div>
+      </EncabezadoPagina>
       <TablaAutoresArticulo
         autores={articulo.autores}
         onEditar={puedeRegistrar ? (a) => setEditando(a) : undefined}
       />
-      <p className="text-cuerpo-13 text-texto-secundario">
-        El orden identifica al autor principal y se conserva tal como se registró.
-      </p>
       <AgregarAutorModal
         articulo={articulo}
         abierto={agregando}

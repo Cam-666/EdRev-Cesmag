@@ -17,12 +17,30 @@ const correoInstitucional = z
 export const esquemaIngreso = z.object({
   correo: correoInstitucional,
   contrasena: z.string().min(1, 'Escriba su contraseña.'),
-  mantener: z.boolean(),
 })
 
 export const esquemaRecuperacion = z.object({
   correo: correoInstitucional,
 })
 
+/** New password: at least 8 characters with letters and numbers, typed twice. */
+export const esquemaNuevaContrasena = z
+  .object({
+    contrasena: z
+      .string()
+      .min(
+        POLITICA_ACCESO.contrasenaMinima,
+        `Use al menos ${POLITICA_ACCESO.contrasenaMinima} caracteres.`,
+      )
+      .regex(/[A-Za-zÁÉÍÓÚÑáéíóúñ]/, 'Incluya al menos una letra.')
+      .regex(/\d/, 'Incluya al menos un número.'),
+    confirmacion: z.string().min(1, 'Escriba de nuevo la contraseña.'),
+  })
+  .refine((v) => v.contrasena === v.confirmacion, {
+    path: ['confirmacion'],
+    message: 'Las dos contraseñas no coinciden.',
+  })
+
 export type DatosIngreso = z.infer<typeof esquemaIngreso>
+export type DatosNuevaContrasena = z.infer<typeof esquemaNuevaContrasena>
 export type DatosRecuperacion = z.infer<typeof esquemaRecuperacion>

@@ -1,16 +1,16 @@
 /*
  * AppLayout — shell for every screen except access: side panel, top bar, main landmark and
- * skip link. data-revista on the root rewrites the journal CSS variables; only the top bar and
- * ISSN pill consume them. Covers: RF-02, RNF-11 (skip link, landmarks).
+ * skip link. On small screens the side panel opens from «Menú» (RNF-10). data-revista on the root rewrites the journal CSS variables; only the top bar and
+ * ISSN pill consume them. When printed (for example the report saved as PDF) only the content shows. Covers: RF-02, RNF-11 (skip link, landmarks).
  */
-import { useState } from 'react'
-import { Outlet, useLocation, useNavigate } from 'react-router-dom'
-import { DestinoAcciones } from '@/lib/encabezado/DestinoAcciones'
+import { Outlet, useLocation } from 'react-router-dom'
 import { useRevistaOpcional } from '@/lib/revista/useRevista'
 import { EncabezadoComun } from '@/components/common/EncabezadoComun'
 import { EncabezadoRevista } from '@/components/common/EncabezadoRevista'
+import { MenuMovil } from '@/components/common/MenuMovil'
 import { PanelLateral } from '@/components/common/PanelLateral'
 import { SelectorUsuarioDemo } from '@/modules/acceso/components/SelectorUsuarioDemo'
+import { puede } from '@/modules/acceso/config/permisos'
 import { POLITICA_ACCESO } from '@/modules/acceso/config/politicaAcceso'
 import { useCierrePorInactividad } from '@/modules/acceso/hooks/useCierrePorInactividad'
 import { useSesion, useUsuarioActual } from '@/modules/acceso/hooks/useSesion'
@@ -20,15 +20,19 @@ export function AppLayout() {
   const contexto = useRevistaOpcional()
   const revista = contexto?.revista ?? null
   const { pathname } = useLocation()
-  const navigate = useNavigate()
   const usuario = useUsuarioActual()
   const { cerrarSesion } = useSesion()
-  const [destino, setDestino] = useState<HTMLElement | null>(null)
+
+  const panel = {
+    revistaActiva: revista,
+    rutaActual: pathname,
+    usuario: { nombre: usuario.nombre, perfil: ETIQUETA_PERFIL[usuario.perfil] },
+    onCerrarSesion: () => cerrarSesion('manual'),
+    mostrarAdministracion: puede(usuario.perfil, 'administrar'),
+  }
 
   // RNF-05: the session closes after a period of inactivity.
   useCierrePorInactividad(POLITICA_ACCESO.inactividadMinutos, () => cerrarSesion('inactividad'))
-
-  const acciones = <div ref={setDestino} className="flex items-center gap-2" />
 
   return (
     <div data-revista={revista ?? undefined} className="flex min-h-screen">
@@ -38,26 +42,23 @@ export function AppLayout() {
       >
         Saltar al contenido
       </a>
-      <PanelLateral
-        revistaActiva={revista}
-        rutaActual={pathname}
-        usuario={{ nombre: usuario.nombre, perfil: ETIQUETA_PERFIL[usuario.perfil] }}
-        onAbrirRevista={(r) => navigate(`/${r}/tablero`)}
-        onCerrarSesion={() => cerrarSesion('manual')}
-      />
+      <PanelLateral {...panel} className="hidden lg:flex print:hidden" />
       <div className="flex min-w-0 flex-1 flex-col">
-        {revista ? (
-          <EncabezadoRevista revista={revista} acciones={acciones} />
-        ) : (
-          <EncabezadoComun acciones={acciones} />
-        )}
-        <main id="contenido" tabIndex={-1} className="flex-1 p-6">
-          <DestinoAcciones.Provider value={destino}>
-            <Outlet />
-          </DestinoAcciones.Provider>
+        <div className="flex items-center border-b border-borde-base bg-superficie-tarjeta px-2 py-1 lg:hidden print:hidden">
+          <MenuMovil ruta={pathname}>
+            <PanelLateral {...panel} className="h-full" />
+          </MenuMovil>
+        </div>
+        <div className="print:hidden">
+          {revista ? <EncabezadoRevista revista={revista} /> : <EncabezadoComun />}
+        </div>
+        <main id="contenido" tabIndex={-1} className="flex-1 p-4 sm:p-6 print:p-0">
+          <Outlet />
         </main>
       </div>
-      <SelectorUsuarioDemo />
+      <div className="print:hidden">
+        <SelectorUsuarioDemo />
+      </div>
     </div>
   )
 }

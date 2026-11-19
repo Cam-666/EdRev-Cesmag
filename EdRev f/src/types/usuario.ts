@@ -15,3 +15,10 @@ export const ETIQUETA_PERFIL: Record<Perfil, string> = {
   administrador: 'Administradora',
   auxiliar: 'Auxiliar',
 }
+
+/** Data to create or edit an account (RF-40). */
+export interface DatosUsuario {
+  nombre: string
+  correo: string
+  perfil: Perfil
+}

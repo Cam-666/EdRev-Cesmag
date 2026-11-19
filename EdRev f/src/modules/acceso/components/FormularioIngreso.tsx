@@ -6,7 +6,7 @@
 import { zodResolver } from '@hookform/resolvers/zod'
 import { format, parseISO } from 'date-fns'
 import { useState } from 'react'
-import { Controller, useForm } from 'react-hook-form'
+import { useForm } from 'react-hook-form'
 import { Link } from 'react-router-dom'
 import { POLITICA_ACCESO } from '../config/politicaAcceso'
 import { esquemaIngreso } from '../config/esquemas'
@@ -18,7 +18,6 @@ import { Alerta } from '@/components/common/Alerta'
 import { Boton } from '@/components/common/Boton'
 import { CampoContrasena } from '@/components/common/CampoContrasena'
 import { CampoTexto } from '@/components/common/CampoTexto'
-import { Casilla } from '@/components/common/Casilla'
 import { ErrorApi } from '@/lib/api/cliente'
 import type { DetalleErrorIngreso } from '@/types/acceso'
 
@@ -63,11 +62,10 @@ export function FormularioIngreso({
   const {
     register,
     handleSubmit,
-    control,
     formState: { errors },
   } = useForm<DatosIngreso>({
     resolver: zodResolver(esquemaIngreso),
-    defaultValues: { correo: correoInicial, contrasena: '', mantener: false },
+    defaultValues: { correo: correoInicial, contrasena: '' },
   })
 
   const bloqueado = bloqueo.segundos > 0
@@ -77,7 +75,7 @@ export function FormularioIngreso({
     mutacion.mutate(
       { correo: datos.correo.trim().toLowerCase(), contrasena: datos.contrasena },
       {
-        onSuccess: (respuesta) => iniciarSesion(respuesta, datos.mantener),
+        onSuccess: (respuesta) => iniciarSesion(respuesta),
         onError: (error) => {
           const detalle = detalleDeError(error)
           if (detalle?.motivo === 'bloqueada' && detalle.bloqueadoHasta) {
@@ -105,17 +103,6 @@ export function FormularioIngreso({
         autoComplete="current-password"
         error={errors.contrasena?.message}
         {...register('contrasena')}
-      />
-      <Controller
-        control={control}
-        name="mantener"
-        render={({ field }) => (
-          <Casilla
-            etiqueta="Mantener la sesión iniciada"
-            marcada={field.value}
-            onCambio={field.onChange}
-          />
-        )}
       />
       <Boton type="submit" className="w-full" cargando={mutacion.isPending} disabled={bloqueado}>
         {reanudar ? 'Reanudar sesión' : 'Ingresar'}

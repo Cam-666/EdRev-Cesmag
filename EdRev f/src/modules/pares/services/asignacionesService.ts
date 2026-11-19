@@ -1,15 +1,16 @@
 /*
  * asignacionesService — HTTP calls to assign peers to an article and follow their answer:
- * invitation preview, assignment (the server sends the invitation), resend / reminder, the peer's
+ * assignment of an available peer or a new candidate (the server sends the invitation), resend / reminder, the peer's
  * answer, delivery mark and concept. Covers: RF-17, RF-19..RF-29.
  */
 import { solicitar } from '@/lib/api/cliente'
 import type {
   Asignacion,
   ConceptoPar,
+  DatosAsignacion,
+  EntregaRegistrada,
   ResultadoAsignacion,
   RespuestaPar,
-  VistaPreviaInvitacion,
 } from '@/types/par'
 import type { Revista } from '@/types/revista'
 
@@ -19,35 +20,24 @@ function json(cuerpo: unknown): { body: string } {
 
 const art = (id: string) => encodeURIComponent(id)
 
-export function obtenerVistaPrevia(
-  revista: Revista,
-  articuloId: string,
-  parId: string,
-): Promise<VistaPreviaInvitacion> {
-  return solicitar<VistaPreviaInvitacion>(
-    `/${revista}/articulos/${art(articuloId)}/asignaciones/vista-previa?parId=${encodeURIComponent(parId)}`,
-  )
-}
-
 export function asignarPar(
   revista: Revista,
   articuloId: string,
-  parId: string,
+  datos: DatosAsignacion,
 ): Promise<ResultadoAsignacion> {
   return solicitar<ResultadoAsignacion>(`/${revista}/articulos/${art(articuloId)}/asignaciones`, {
     method: 'POST',
-    ...json({ parId }),
+    ...json(datos),
   })
 }
 
+/** RF-28: resends the invitation after a bounce or a failure (it is not a new attempt). */
 export function reenviarInvitacion(
   revista: Revista,
   asignacionId: string,
-  tipo: 'reenvio' | 'recordatorio',
 ): Promise<ResultadoAsignacion> {
   return solicitar<ResultadoAsignacion>(`/${revista}/asignaciones/${art(asignacionId)}/reenviar`, {
     method: 'POST',
-    ...json({ tipo }),
   })
 }
 
@@ -66,10 +56,11 @@ export function marcarEntrega(
   revista: Revista,
   asignacionId: string,
   fecha: string,
-): Promise<Asignacion> {
-  return solicitar<Asignacion>(`/${revista}/asignaciones/${art(asignacionId)}/entrega`, {
+  concepto: ConceptoPar,
+): Promise<EntregaRegistrada> {
+  return solicitar<EntregaRegistrada>(`/${revista}/asignaciones/${art(asignacionId)}/entrega`, {
     method: 'POST',
-    ...json({ fecha }),
+    ...json({ fecha, concepto }),
   })
 }
 

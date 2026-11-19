@@ -71,10 +71,10 @@ export function SeccionDominio() {
             f === 'a' ? (
               <FilaCorreoEnviado
                 key={f}
-                tipo="Agradecimiento con constancia"
+                tipo="Agradecimiento"
                 destinatario="lm.burbano@udenar.edu.co"
                 fechaEnvio="2026-10-26T16:02:00"
-                resultado="entregado"
+                resultado="enviado"
               />
             ) : f === 'b' ? (
               <FilaCorreoEnviado
@@ -104,22 +104,8 @@ export function SeccionDominio() {
 
       <Seccion titulo="EncabezadoRevista (60 px, solo la barra cambia entre revistas)">
         <div className="flex flex-col gap-3">
-          <EncabezadoRevista
-            revista="reep"
-            acciones={
-              <Boton variante="neutro" tamano="sm">
-                Registrar artículo
-              </Boton>
-            }
-          />
-          <EncabezadoRevista
-            revista="ire"
-            acciones={
-              <Boton variante="neutro" tamano="sm">
-                Registrar artículo
-              </Boton>
-            }
-          />
+          <EncabezadoRevista revista="reep" />
+          <EncabezadoRevista revista="ire" />
         </div>
       </Seccion>
     </>

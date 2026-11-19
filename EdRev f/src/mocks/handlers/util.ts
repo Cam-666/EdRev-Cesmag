@@ -4,9 +4,8 @@
  */
 import { format } from 'date-fns'
 import { HttpResponse } from 'msw'
-import { baseDe } from '../db'
+import { baseDe, usuarios } from '../db'
 import type { SeedRevista } from '../seed/fabrica'
-import { USUARIOS_SEED } from '../seed/usuarios'
 import { idUsuarioDeAutorizacion } from '../token'
 import { puede } from '@/modules/acceso/config/permisos'
 import type { Accion } from '@/modules/acceso/config/permisos'
@@ -25,8 +24,8 @@ export function sinTildes(texto: string): string {
     .toLowerCase()
 }
 
-export function error(estado: number, mensaje: string) {
-  return HttpResponse.json({ mensaje }, { status: estado })
+export function error(estado: number, mensaje: string, extra: Record<string, unknown> = {}) {
+  return HttpResponse.json({ mensaje, ...extra }, { status: estado })
 }
 
 type Contexto =
@@ -44,10 +43,23 @@ export function contexto(
     return { ok: false, respuesta: error(404, 'Revista no encontrada') }
   }
   const id = idUsuarioDeAutorizacion(request.headers.get('Authorization'))
-  const usuario = USUARIOS_SEED.find((u) => u.id === id && u.estado === 'activo')
+  const usuario = usuarios().find((u) => u.id === id && u.estado === 'activo')
   if (!usuario) return { ok: false, respuesta: error(401, 'No autenticado') }
   if (accion && !puede(usuario.perfil, accion)) {
     return { ok: false, respuesta: error(403, 'Sin permiso para esta acción') }
   }
   return { ok: true, revista, base: baseDe(revista), usuario }
+}
+
+type ContextoGlobal = { ok: true; usuario: Usuario } | { ok: false; respuesta: Response }
+
+/** Session (and optionally a permission) for endpoints that are not scoped to one journal. */
+export function contextoGlobal(request: Request, accion?: Accion): ContextoGlobal {
+  const id = idUsuarioDeAutorizacion(request.headers.get('Authorization'))
+  const usuario = usuarios().find((u) => u.id === id && u.estado === 'activo')
+  if (!usuario) return { ok: false, respuesta: error(401, 'No autenticado') }
+  if (accion && !puede(usuario.perfil, accion)) {
+    return { ok: false, respuesta: error(403, 'Sin permiso para esta acción') }
+  }
+  return { ok: true, usuario }
 }

@@ -15,19 +15,26 @@ export type EstadoDistintivo =
   | 'archivado'
   | 'bloqueado'
   | 'pendiente'
+  // Committee round result (RF-06)
+  | 'ajustes'
   // Assignment status (RF-22)
   | 'invitado'
   | 'segundo-intento'
   | 'acepto'
   | 'no-acepto'
+  | 'sin-respuesta'
   | 'entrego'
   // Peer availability
   | 'disponible'
-  | 'conflicto'
+  | 'misma-institucion'
+  // Account status
+  | 'activo'
+  | 'inhabilitado'
   // Constancia / mail result
   | 'emitida'
-  | 'entregado'
+  | 'enviado'
   | 'rebotado'
+  | 'fallido'
   | 'en-cola'
 
 type Tono = 'exito' | 'alerta' | 'error' | 'info' | 'neutro'
@@ -47,16 +54,21 @@ export const DEFINICIONES_ESTADO: Record<EstadoDistintivo, Definicion> = {
   archivado: { texto: 'Archivado', simbolo: '▣', tono: 'neutro' },
   bloqueado: { texto: 'Bloqueado', simbolo: '⊘', tono: 'error' },
   pendiente: { texto: 'Pendiente', simbolo: '!', tono: 'alerta' },
+  ajustes: { texto: 'Requiere ajustes', simbolo: '!', tono: 'alerta' },
   invitado: { texto: 'Invitado', simbolo: '✉', tono: 'alerta' },
   'segundo-intento': { texto: '2.º intento', simbolo: '↻', tono: 'alerta' },
   acepto: { texto: 'Aceptó', simbolo: '✓', tono: 'info' },
   'no-acepto': { texto: 'No aceptó', simbolo: '✕', tono: 'error' },
+  'sin-respuesta': { texto: 'Sin respuesta', simbolo: '⊘', tono: 'error' },
   entrego: { texto: 'Entregó', simbolo: '✓', tono: 'exito' },
   disponible: { texto: 'Disponible', simbolo: '✓', tono: 'exito' },
-  conflicto: { texto: 'Conflicto posible', simbolo: '!', tono: 'alerta' },
+  'misma-institucion': { texto: 'Misma institución', simbolo: '!', tono: 'error' },
+  activo: { texto: 'Activo', simbolo: '✓', tono: 'exito' },
+  inhabilitado: { texto: 'Inhabilitado', simbolo: '⊘', tono: 'neutro' },
   emitida: { texto: 'Emitida', simbolo: '✓', tono: 'exito' },
-  entregado: { texto: 'Entregado', simbolo: '✓', tono: 'exito' },
+  enviado: { texto: 'Enviado', simbolo: '✓', tono: 'exito' },
   rebotado: { texto: 'Rebotado', simbolo: '✕', tono: 'error' },
+  fallido: { texto: 'Fallido', simbolo: '!', tono: 'alerta' },
   'en-cola': { texto: 'En cola', simbolo: '◷', tono: 'alerta' },
 }
 

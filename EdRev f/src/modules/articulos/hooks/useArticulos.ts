@@ -1,5 +1,5 @@
 import { keepPreviousData, useQuery } from '@tanstack/react-query'
-import { listarArticulos, listarPublicaciones } from '../services/articulosService'
+import { listarArticulos, listarAnios, listarPublicaciones } from '../services/articulosService'
 import { useRevista } from '@/lib/revista/useRevista'
 import type { FiltrosArticulos } from '@/types/articulo'
 
@@ -18,5 +18,13 @@ export function usePublicaciones() {
   return useQuery({
     queryKey: ['articulos', revista, 'publicaciones'],
     queryFn: () => listarPublicaciones(revista),
+  })
+}
+
+export function useAnios() {
+  const { revista } = useRevista()
+  return useQuery({
+    queryKey: ['articulos', revista, 'anios'],
+    queryFn: () => listarAnios(revista),
   })
 }

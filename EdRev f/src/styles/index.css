@@ -20,6 +20,17 @@
     outline: 2px solid var(--borde-foco);
     outline-offset: 2px;
   }
+  /* Printed pages (the report saved as PDF): A4 with margins and a white sheet. */
+  @media print {
+    @page {
+      size: A4;
+      margin: 18mm 16mm;
+    }
+    html,
+    body {
+      background-color: var(--neutro-0);
+    }
+  }
   @media (prefers-reduced-motion: reduce) {
     * {
       animation-duration: 0.01ms !important;

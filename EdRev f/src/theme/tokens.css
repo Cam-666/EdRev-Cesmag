@@ -46,6 +46,11 @@
   --borde-foco: var(--cesmag-azul);
   --texto-placeholder: var(--neutro-600);
 
+  /* Data series of the reports: one color per journal (validated for color-blind readers) */
+  --serie-reep: #d81b60;
+  --serie-ire: #2a78d6;
+  --serie-unica: #2a78d6;
+
   /* Overlays (modal scrim, hover tint on dark panel) */
   --velo-modal: rgb(20 32 46 / 0.55);
   --velo-panel: rgb(255 255 255 / 0.12);

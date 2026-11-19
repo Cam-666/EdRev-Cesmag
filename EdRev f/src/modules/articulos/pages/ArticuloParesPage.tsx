@@ -1,77 +1,130 @@
 /*
  * ArticuloParesPage — Pares y evaluación tab (/:revista/articulos/:id/pares): assigned peers in
- * order with status, concept, delivery date and their actions; "Asignar par" (and "Asignar
- * desempate" when the first two concepts contradict) lead to the assignment screen. Right after an
- * assignment it confirms the invitation, or warns that it bounced (the assignment is kept).
- * Covers: RF-19..RF-23, RF-24, RF-27, RF-28, HU-13..HU-19.
+ * order with status, concept, delivery date and their actions. «Asignar par» is always on the page
+ * for those who may assign; it is blocked, with the reason beside it, while the committee has not
+ * approved the article or when the article already has its two peers. Once the committee approved
+ * the article it opens the assignment panel (choose an available peer or register a new
+ * candidate); the committee review lands here with it open (?asignar=1). An article has two
+ * peers: with two (invited, accepted or delivered) no more are searched, and a third is allowed only
+ * when their concepts do not coincide. Each assignment reports the invitation, a bounce or a warning.
+ * Covers: RF-17, RF-19..RF-24, RF-27, RF-28, HU-13..HU-19.
  */
-import { useLocation } from 'react-router-dom'
+import { useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { ListaParesAsignados } from '../components/ListaParesAsignados'
-import { MAX_PARES } from '../config/listas'
-import { conceptosContradictorios } from '../config/reglas'
 import { useArticuloActual } from '../hooks/useArticuloActual'
-import { esEstadoTrasAsignar } from '@/modules/pares/config/navegacion'
+import { AsignarParPanel } from '@/modules/pares/components/AsignarParPanel'
 import { usePermiso } from '@/modules/acceso/hooks/usePermiso'
 import { Alerta } from '@/components/common/Alerta'
+import { Boton } from '@/components/common/Boton'
+import { EncabezadoPagina } from '@/components/common/EncabezadoPagina'
 import { EnlaceBoton } from '@/components/common/EnlaceBoton'
-import { AccionesEncabezado } from '@/lib/encabezado/AccionesEncabezado'
-import { useRevista } from '@/lib/revista/useRevista'
+import { puedeAsignarPares, requiereNuevaRevision } from '@/lib/dominio/comite'
+import { PARES_BASE, reglaPares } from '@/lib/dominio/pares'
+import type { ResultadoAsignacion } from '@/types/par'
 
 export function ArticuloParesPage() {
-  const { revista } = useRevista()
   const articulo = useArticuloActual()
-  const { state } = useLocation()
-  const puedeAsignar = usePermiso('asignar-pares')
-  const envio = esEstadoTrasAsignar(state) ? state.envio : null
+  const [params, setParams] = useSearchParams()
+  const [envio, setEnvio] = useState<ResultadoAsignacion | null>(null)
+  const permiso = usePermiso('asignar-pares')
 
-  const [primero, segundo] = articulo.asignaciones
-  const hayLugar = articulo.asignaciones.length < MAX_PARES
-  const divergen = conceptosContradictorios(primero?.concepto ?? null, segundo?.concepto ?? null)
-  const hacia = `/${revista}/pares?articulo=${encodeURIComponent(articulo.id)}`
+  const regla = reglaPares(articulo.asignaciones)
+  const desempate = regla.desempate
+  const aprobado = puedeAsignarPares(articulo)
+  const puedeAsignar = permiso && aprobado && regla.puede
+  const abierto = puedeAsignar && params.get('asignar') === '1'
+  // Why the button is blocked, shown beside it (a blocked button alone does not explain itself).
+  const motivoBloqueo =
+    requiereNuevaRevision(articulo) && articulo.resultadoPares === 'publicable-con-modificaciones'
+      ? 'Los pares ya evaluaron el artículo; el comité editorial debe revisar si los autores lo corrigieron.'
+      : requiereNuevaRevision(articulo)
+        ? 'El proceso fue retomado y el comité editorial debe revisar de nuevo el artículo.'
+        : !aprobado
+          ? 'El comité editorial aún no ha aprobado el artículo.'
+          : !regla.puede
+            ? regla.motivo
+            : null
+
+  function abrir(valor: boolean) {
+    const siguiente = new URLSearchParams(params)
+    if (valor) siguiente.set('asignar', '1')
+    else siguiente.delete('asignar')
+    setParams(siguiente, { replace: true })
+  }
 
   return (
     <section className="flex flex-col gap-4">
-      {puedeAsignar && hayLugar && articulo.estado !== 'archivado' && (
-        <AccionesEncabezado>
-          <EnlaceBoton tamano="sm" to={hacia}>
-            Asignar par
-          </EnlaceBoton>
-          {divergen && (
-            <EnlaceBoton variante="neutro" tamano="sm" to={hacia}>
-              Asignar desempate
-            </EnlaceBoton>
-          )}
-        </AccionesEncabezado>
-      )}
-
-      {envio?.estado === 'entregado' && (
-        <Alerta tipo="exito" titulo="Par asignado e invitación enviada">
-          Se envió la invitación a {envio.nombre} ({envio.destinatario}). Quedó registrada en el
-          historial del artículo y en Correos enviados.
-        </Alerta>
-      )}
-      {envio?.estado === 'en-cola' && (
-        <Alerta tipo="informacion" titulo="Par asignado">
-          La invitación a {envio.nombre} quedó en cola de envío.
-        </Alerta>
-      )}
-      {envio?.estado === 'rebotado' && (
-        <Alerta
-          tipo="error"
-          titulo="La invitación no se pudo entregar"
-          accion={
-            <EnlaceBoton
-              variante="secundario"
+      <EncabezadoPagina
+        nivel="h2"
+        titulo="Pares y evaluación"
+        acciones={
+          permiso &&
+          !abierto && (
+            <Boton
               tamano="sm"
-              to={`/${revista}/pares/${encodeURIComponent(envio.parId)}`}
+              disabled={!puedeAsignar}
+              aria-describedby={motivoBloqueo ? 'motivo-asignar-par' : undefined}
+              onClick={() => {
+                setEnvio(null)
+                abrir(true)
+              }}
             >
-              Corregir correo
-            </EnlaceBoton>
-          }
-        >
-          La dirección {envio.destinatario} rebotó. La asignación de {envio.nombre} se conservó:
-          corrija el correo del par y reenvíe la invitación.
-        </Alerta>
+              {desempate ? 'Asignar par de desempate' : 'Asignar par'}
+            </Boton>
+          )
+        }
+      >
+        <p className="text-cuerpo-13 text-texto-secundario">
+          {puedeAsignarPares(articulo) || articulo.asignaciones.length > 0
+            ? `${Math.min(regla.lugares, PARES_BASE)} de ${PARES_BASE} pares evaluadores`
+            : 'El comité editorial aún no ha aprobado el artículo.'}
+        </p>
+        {permiso && !abierto && motivoBloqueo && (
+          <p id="motivo-asignar-par" className="text-cuerpo-13 text-texto-secundario">
+            Asignar par no está disponible: {motivoBloqueo}
+          </p>
+        )}
+      </EncabezadoPagina>
+
+      <div role="status" aria-live="polite" className="flex flex-col gap-3">
+        {aprobado && !regla.puede && (
+          <Alerta tipo="informacion" titulo="El artículo ya tiene sus pares evaluadores">
+            {regla.motivo}
+          </Alerta>
+        )}
+        {envio && envio.correo.estado !== 'rebotado' && (
+          <Alerta tipo="exito" titulo="Par asignado e invitación enviada">
+            Se envió la invitación a {envio.par.nombre} ({envio.correo.destinatario}).
+          </Alerta>
+        )}
+        {envio?.correo.estado === 'rebotado' && (
+          <Alerta
+            tipo="error"
+            titulo="La invitación no se pudo entregar"
+            accion={
+              <EnlaceBoton
+                variante="secundario"
+                tamano="sm"
+                to={`/pares/${encodeURIComponent(envio.par.id)}`}
+              >
+                Corregir correo
+              </EnlaceBoton>
+            }
+          >
+            La dirección {envio.correo.destinatario} rebotó. La asignación de {envio.par.nombre} se
+            conservó.
+          </Alerta>
+        )}
+      </div>
+
+      {abierto && (
+        <AsignarParPanel
+          articuloId={articulo.id}
+          esDesempate={desempate}
+          onAsignado={setEnvio}
+          onCerrar={() => abrir(false)}
+        />
       )}
 
       <ListaParesAsignados asignaciones={articulo.asignaciones} />

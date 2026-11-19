@@ -1,6 +1,6 @@
 /*
  * RecuperarPage — Recuperar contraseña (/acceso/recuperar).
- * Covers: RNF-11. No RF/HU yet: password recovery is a pending requirement to incorporate.
+ * Covers: RF-46, HU-28 (criterion 2), RNF-11.
  */
 import { useNavigate } from 'react-router-dom'
 import { FormularioRecuperar } from '../components/FormularioRecuperar'
@@ -14,7 +14,9 @@ export function RecuperarPage() {
       subtitulo="Le enviaremos un enlace para crear una contraseña nueva"
     >
       <FormularioRecuperar
-        onEnviado={(correo) => navigate('/acceso/recuperar/enviado', { state: { correo } })}
+        onEnviado={(correo, enlaceDemo) =>
+          navigate('/acceso/recuperar/enviado', { state: { correo, enlaceDemo } })
+        }
       />
     </TarjetaAcceso>
   )

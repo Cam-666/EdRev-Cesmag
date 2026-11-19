@@ -105,7 +105,7 @@ export function FormularioAutor({
             etiqueta="Buscar ficha existente"
             type="search"
             placeholder="Nombre u ORCID"
-            ayuda="Si ya postuló antes, sus datos se llenan solos."
+            ayuda="Si el autor ya postuló un artículo, sus datos se completan automáticamente."
             value={busqueda}
             onChange={(e) => setBusqueda(e.target.value)}
             disabled={soloLectura}
@@ -124,7 +124,7 @@ export function FormularioAutor({
                   >
                     <span className="text-cuerpo-15-enfasis text-texto-principal">{a.nombre}</span>
                     <span className="text-cuerpo-13 text-texto-secundario">
-                      {a.orcid} · {a.filiacion}
+                      {[a.orcid, a.filiacion].filter(Boolean).join(' · ')}
                     </span>
                   </button>
                 </li>
@@ -170,7 +170,7 @@ export function FormularioAutor({
           {...register('correo')}
         />
         <CampoTexto
-          etiqueta="ORCID"
+          etiqueta="ORCID (opcional)"
           placeholder="0000-0000-0000-0000"
           autoComplete="off"
           readOnly={soloLectura}

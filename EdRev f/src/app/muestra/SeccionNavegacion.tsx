@@ -45,11 +45,6 @@ export function SeccionNavegacion() {
               etiqueta: 'Pares y evaluación',
               contenido: <p>Asignaciones y resultados.</p>,
             },
-            {
-              valor: 'observaciones',
-              etiqueta: 'Observaciones',
-              contenido: <p>Notas internas.</p>,
-            },
             { valor: 'historial', etiqueta: 'Historial', contenido: <p>Correos y auditoría.</p> },
           ]}
         />

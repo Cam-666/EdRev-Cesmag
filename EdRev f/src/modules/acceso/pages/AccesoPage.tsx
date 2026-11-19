@@ -2,7 +2,6 @@
  * AccesoPage — Iniciar sesión (/acceso), with its two Figma variants: wrong credentials /
  * lockout (alert inside the form) and "Su sesión expiró" after 30 minutes of inactivity.
  * Covers: RF-39, HU-28, RNF-04, RNF-05, RNF-11.
- * Pending requirements (no RF/HU): attempt lockout, "mantener la sesión" vs inactivity logout.
  */
 import { Navigate, useLocation } from 'react-router-dom'
 import { POLITICA_ACCESO } from '../config/politicaAcceso'
@@ -13,12 +12,16 @@ import { Alerta } from '@/components/common/Alerta'
 
 interface EstadoNavegacion {
   desde?: string
+  /** Set by «Definir contraseña» right after saving the new password. */
+  correo?: string
+  contrasenaDefinida?: boolean
 }
 
 export function AccesoPage() {
   const { usuario, ultimoCierre } = useSesion()
   const ubicacion = useLocation()
-  const desde = (ubicacion.state as EstadoNavegacion | null)?.desde
+  const estado = ubicacion.state as EstadoNavegacion | null
+  const desde = estado?.desde
 
   if (usuario) return <Navigate to={desde ?? '/inicio'} replace />
 
@@ -38,7 +41,13 @@ export function AccesoPage() {
           guardado se conserva.
         </Alerta>
       )}
-      <FormularioIngreso reanudar={expirada} correoInicial={ultimoCierre?.correo} />
+      {estado?.contrasenaDefinida && (
+        <Alerta tipo="exito">Contraseña guardada. Ya puede ingresar.</Alerta>
+      )}
+      <FormularioIngreso
+        reanudar={expirada}
+        correoInicial={estado?.correo ?? ultimoCierre?.correo}
+      />
     </TarjetaAcceso>
   )
 }

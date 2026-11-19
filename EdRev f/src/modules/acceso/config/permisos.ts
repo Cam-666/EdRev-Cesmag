@@ -1,7 +1,8 @@
 /*
  * permisos — single source of truth for what each profile can do (authorization).
  * Covers: RNF-05, HU-29 (criterion 3), HU-11, HU-16, HU-21, HU-23.
- * Rule of thumb from the requirements: the Auxiliar only registers and consults.
+ * The Auxiliar does all the editorial work of both journals; only administration (accounts,
+ * templates, audit) is reserved to the Administradora.
  */
 import type { Perfil } from '@/types/usuario'
 
@@ -26,6 +27,8 @@ export type Accion =
   | 'registrar-respuesta'
   /** Reopen an archived article (RF-08). */
   | 'reabrir-articulo'
+  /** Close the process of an article as approved, rejected or archived (RF-08). */
+  | 'cerrar-articulo'
   /** Accounts, templates, parameters (RF-40, RNF-19). */
   | 'administrar'
 
@@ -40,12 +43,13 @@ const TODAS: readonly Accion[] = [
   'desbloquear-par',
   'registrar-respuesta',
   'reabrir-articulo',
+  'cerrar-articulo',
   'administrar',
 ]
 
 const PERMISOS: Record<Perfil, ReadonlySet<Accion>> = {
   administrador: new Set(TODAS),
-  auxiliar: new Set<Accion>(['registrar-datos', 'asignar-pares']),
+  auxiliar: new Set(TODAS.filter((a) => a !== 'administrar')),
 }
 
 export function puede(perfil: Perfil, accion: Accion): boolean {

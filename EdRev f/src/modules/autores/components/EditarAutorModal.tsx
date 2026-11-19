@@ -1,6 +1,6 @@
 /*
- * EditarAutorModal — edits the reusable record of an author (the change is seen by every article
- * of the journal that includes the author). No Figma design for the dialog itself.
+ * EditarAutorModal — edits the record of an author of the common directory (the change is seen by
+ * every article that includes the author, in both journals). No Figma design for the dialog itself.
  * Covers: RF-09, RF-10, RF-44 (manual correction), RNF-05 (Auxiliar can register data).
  */
 import { FormularioAutor } from './FormularioAutor'
@@ -20,7 +20,7 @@ export function EditarAutorModal({ autor, onCerrar }: EditarAutorModalProps) {
       abierto={autor !== null}
       onCerrar={onCerrar}
       titulo="Editar autor"
-      descripcion="Los cambios se aplican a la ficha del autor en esta revista."
+      descripcion="Los cambios se aplican a la ficha del autor en ambas revistas."
     >
       {autor && (
         <FormularioAutor

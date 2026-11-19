@@ -13,8 +13,8 @@ export interface SesionContextValue {
   usuario: Usuario | null
   /** Why the last session ended; null after a new login or before any session. */
   ultimoCierre: CierreSesion | null
-  /** `mantener` keeps the profile across browser restarts (the inactivity timeout still applies). */
-  iniciarSesion: (respuesta: RespuestaIngreso, mantener?: boolean) => void
+  /** The session lives only in this browser tab; there is no "keep me signed in" (RNF-05). */
+  iniciarSesion: (respuesta: RespuestaIngreso) => void
   cerrarSesion: (motivo?: MotivoCierre) => void
 }
 

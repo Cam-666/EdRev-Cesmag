@@ -4,8 +4,9 @@
  * every participation with concept and constancia. Edit, block / unblock and assign from here.
  * Covers: RF-15, RF-16, RF-18, RNF-06, HU-23 (constancias visible from the peer's record).
  */
+import { BotonVolver } from '@/components/common/BotonVolver'
 import { useState } from 'react'
-import { useParams, useSearchParams } from 'react-router-dom'
+import { useParams } from 'react-router-dom'
 import { BloquearParModal } from '../components/BloquearParModal'
 import { DesbloquearParModal } from '../components/DesbloquearParModal'
 import { ParModal } from '../components/ParModal'
@@ -18,19 +19,14 @@ import { Boton } from '@/components/common/Boton'
 import { DistintivoEstado } from '@/components/common/DistintivoEstado'
 import { EnlaceBoton } from '@/components/common/EnlaceBoton'
 import { EstadoConsulta } from '@/components/common/EstadoConsulta'
-import { AccionesEncabezado } from '@/lib/encabezado/AccionesEncabezado'
+import { EncabezadoPagina } from '@/components/common/EncabezadoPagina'
 import { ErrorApi } from '@/lib/api/cliente'
-import { formatearFecha, formatearFechaLarga } from '@/lib/format'
-import { useRevista } from '@/lib/revista/useRevista'
+import { formatearFecha } from '@/lib/format'
 
 export function ParDetallePage() {
-  const { revista } = useRevista()
   const { id = '' } = useParams()
-  const [params] = useSearchParams()
-  const articulo = params.get('articulo')
   const consulta = usePar(id)
   const puedeEditar = usePermiso('registrar-datos')
-  const puedeAsignar = usePermiso('asignar-pares')
   const puedeBloquear = usePermiso('bloquear-par')
   const puedeDesbloquear = usePermiso('desbloquear-par')
   const [editando, setEditando] = useState(false)
@@ -44,12 +40,12 @@ export function ParDetallePage() {
         <Alerta
           tipo="advertencia"
           accion={
-            <EnlaceBoton variante="secundario" tamano="sm" to={`/${revista}/pares`}>
+            <EnlaceBoton variante="secundario" tamano="sm" to="/pares">
               Volver a la base
             </EnlaceBoton>
           }
         >
-          No existe ese par en la base de esta revista.
+          No existe ese par en la base de pares.
         </Alerta>
       </section>
     )
@@ -67,37 +63,32 @@ export function ParDetallePage() {
     >
       {par && (
         <section className="flex flex-col gap-6">
-          <AccionesEncabezado>
-            {articulo && puedeAsignar && !bloqueado && (
-              <EnlaceBoton
-                tamano="sm"
-                to={`/${revista}/pares/asignar?articulo=${encodeURIComponent(articulo)}&par=${encodeURIComponent(par.id)}`}
-              >
-                Asignar
-              </EnlaceBoton>
-            )}
-            {puedeEditar && (
-              <Boton variante="neutro" tamano="sm" onClick={() => setEditando(true)}>
-                Editar
-              </Boton>
-            )}
-            {bloqueado
-              ? puedeDesbloquear && (
-                  <Boton variante="neutro" tamano="sm" onClick={() => setDesbloqueando(true)}>
-                    Desbloquear
-                  </Boton>
-                )
-              : puedeBloquear && (
-                  <Boton variante="peligro" tamano="sm" onClick={() => setBloqueando(true)}>
-                    Bloquear
+          <BotonVolver to="/pares">Volver a pares evaluadores</BotonVolver>
+          <EncabezadoPagina
+            titulo={par.nombre}
+            acciones={
+              <>
+                {puedeEditar && (
+                  <Boton variante="neutro" tamano="sm" onClick={() => setEditando(true)}>
+                    Editar
                   </Boton>
                 )}
-          </AccionesEncabezado>
-
-          <header>
-            <h1 className="text-titulo-24">{par.nombre}</h1>
-            <p className="text-cuerpo-13 text-texto-secundario">Par evaluador de esta revista</p>
-          </header>
+                {bloqueado
+                  ? puedeDesbloquear && (
+                      <Boton variante="neutro" tamano="sm" onClick={() => setDesbloqueando(true)}>
+                        Desbloquear
+                      </Boton>
+                    )
+                  : puedeBloquear && (
+                      <Boton variante="peligro" tamano="sm" onClick={() => setBloqueando(true)}>
+                        Bloquear
+                      </Boton>
+                    )}
+              </>
+            }
+          >
+            <p className="text-cuerpo-13 text-texto-secundario">Par evaluador de la base común</p>
+          </EncabezadoPagina>
 
           {par.bloqueo && (
             <Alerta tipo="error" titulo="Par bloqueado">
@@ -116,8 +107,12 @@ export function ParDetallePage() {
               </h2>
               <dl className="grid grid-cols-2 gap-x-6 gap-y-3">
                 <div>
+                  <dt className="text-micro-11 uppercase text-texto-secundario">Profesión</dt>
+                  <dd className="text-cuerpo-15">{par.profesion || 'Sin registrar'}</dd>
+                </div>
+                <div>
                   <dt className="text-micro-11 uppercase text-texto-secundario">Correo</dt>
-                  <dd className="text-cuerpo-15">{par.correo}</dd>
+                  <dd className="text-cuerpo-15">{par.correo || 'Sin correo'}</dd>
                 </div>
                 <div>
                   <dt className="text-micro-11 uppercase text-texto-secundario">Área</dt>
@@ -134,11 +129,6 @@ export function ParDetallePage() {
                   </dd>
                 </div>
               </dl>
-              <p className="text-cuerpo-13 text-texto-secundario">
-                {par.autorizoDatosEn
-                  ? `Autorizó el tratamiento de sus datos el ${formatearFechaLarga(par.autorizoDatosEn)}.`
-                  : 'Aún no registra la autorización de tratamiento de datos personales.'}
-              </p>
             </section>
 
             <section
@@ -177,7 +167,7 @@ export function ParDetallePage() {
             <h2 id="titulo-participaciones" className="text-titulo-16">
               Participaciones
             </h2>
-            <TablaParticipaciones revista={revista} participaciones={par.participaciones} />
+            <TablaParticipaciones participaciones={par.participaciones} />
           </section>
 
           <ParModal abierto={editando} onCerrar={() => setEditando(false)} par={par} />

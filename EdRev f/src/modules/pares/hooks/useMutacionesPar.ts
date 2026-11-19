@@ -4,11 +4,11 @@
 import { useMutation } from '@tanstack/react-query'
 import { bloquearPar, desbloquearPar, editarPar, registrarPar } from '../services/paresService'
 import { useInvalidarPares } from './useInvalidarPares'
-import { useRevista } from '@/lib/revista/useRevista'
+import { useRevistaDatos } from '@/lib/revista/useRevista'
 import type { MotivoBloqueo, NuevoPar, ParEvaluador } from '@/types/par'
 
 export function useRegistrarPar() {
-  const { revista } = useRevista()
+  const revista = useRevistaDatos()
   const invalidar = useInvalidarPares()
   return useMutation({
     mutationFn: (datos: NuevoPar) => registrarPar(revista, datos),
@@ -17,18 +17,20 @@ export function useRegistrarPar() {
 }
 
 export function useEditarPar(id: string) {
-  const { revista } = useRevista()
+  const revista = useRevistaDatos()
   const invalidar = useInvalidarPares()
   return useMutation({
     mutationFn: (
-      cambios: Partial<Pick<ParEvaluador, 'nombre' | 'correo' | 'universidad' | 'area'>>,
+      cambios: Partial<
+        Pick<ParEvaluador, 'nombre' | 'profesion' | 'correo' | 'universidad' | 'area'>
+      >,
     ) => editarPar(revista, id, cambios),
     onSuccess: invalidar,
   })
 }
 
 export function useBloquearPar(id: string) {
-  const { revista } = useRevista()
+  const revista = useRevistaDatos()
   const invalidar = useInvalidarPares()
   return useMutation({
     mutationFn: (motivo: MotivoBloqueo) => bloquearPar(revista, id, motivo),
@@ -37,7 +39,7 @@ export function useBloquearPar(id: string) {
 }
 
 export function useDesbloquearPar() {
-  const { revista } = useRevista()
+  const revista = useRevistaDatos()
   const invalidar = useInvalidarPares()
   return useMutation({
     mutationFn: ({ id, motivo }: { id: string; motivo: string }) =>

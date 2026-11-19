@@ -1,31 +1,64 @@
 /*
  * MSW handlers for articles of a journal: list with filters and pagination, sheet, creation,
- * edition, anti-plagiarism + committee review, observations, history and reopening.
+ * edition, rounds of the committee review with the anti-plagiarism report, change of journal
+ * during that review, history, closing (approved / rejected / archived) and reopening.
  * Covers: RF-01..RF-08, RF-26, RF-35, RF-36, RF-41. Simulates the backend; permissions are
  * enforced here the way the real API will (the frontend guards are only for experience).
  */
 import { http, HttpResponse } from 'msw'
+import { autorPorId, baseDe, registrarAutor } from '../db'
+import { ultimoCorreo } from './asignaciones'
 import type { SeedRevista } from '../seed/fabrica'
 import { ahoraIso, contexto, error, sinTildes } from './util'
+import { anioDeGestion } from '@/lib/dominio/anios'
+import { puedeRegistrarRonda } from '@/lib/dominio/comite'
+import { resultadoDePares } from '@/lib/dominio/resultadoPares'
+import {
+  clavePublicacion,
+  compararPublicaciones,
+  etiquetaPublicacion,
+} from '@/lib/dominio/publicacion'
 import type {
   Articulo,
   ArticuloDetalle,
   ArticuloListado,
+  CierreArticulo,
   EdicionArticulo,
   EstadoArticulo,
+  NuevaRonda,
   NuevoArticulo,
-  RegistroRevision,
-  ResultadoComite,
+  Publicacion,
+  ResultadoRonda,
 } from '@/types/articulo'
-import type { Autor, AutorDeArticulo } from '@/types/autor'
+import type { AutorDeArticulo } from '@/types/autor'
+import { REVISTAS } from '@/types/revista'
+import type { Revista } from '@/types/revista'
 import type { EntradaAuditoria, TipoAuditoria } from '@/types/historial'
 
 const MAX_AUTORES = 7
+const CERRADOS: readonly EstadoArticulo[] = ['aprobado', 'rechazado', 'archivado']
+const ETIQUETA_CIERRE: Record<CierreArticulo['estado'], string> = {
+  aprobado: 'Aprobado',
+  rechazado: 'Rechazado',
+  archivado: 'Archivado',
+}
+
+function publicacionValida(p: Publicacion): boolean {
+  return Number.isInteger(p.volumen) && Number.isInteger(p.numero) && p.volumen > 0 && p.numero > 0
+}
+
+const RESULTADOS: readonly ResultadoRonda[] = ['aprobado', 'rechazado', 'ajustes']
+
+const ETIQUETA_RONDA: Record<ResultadoRonda, string> = {
+  aprobado: 'Aprobado',
+  rechazado: 'Rechazado',
+  ajustes: 'Requiere ajustes',
+}
 
 function detalle(base: SeedRevista, a: Articulo): ArticuloDetalle {
   const { autoresIds, ...resto } = a
   const autores: AutorDeArticulo[] = autoresIds.flatMap((id, i) => {
-    const autor = base.autores.find((x) => x.id === id)
+    const autor = autorPorId(id)
     return autor ? [{ ...autor, orden: i + 1 }] : []
   })
   const asignaciones = base.asignaciones
@@ -40,6 +73,11 @@ function detalle(base: SeedRevista, a: Articulo): ArticuloDetalle {
           ...x,
           par: { id: par.id, nombre: par.nombre, correo: par.correo, universidad: par.universidad },
           constanciaEmitida: constancia?.estado === 'emitida',
+          constanciaId: constancia?.id ?? null,
+          ultimoCorreo: (() => {
+            const u = ultimoCorreo(base, x.id)
+            return u ? { tipo: u.tipo, estado: u.estado, atendido: u.atendido } : null
+          })(),
         },
       ]
     })
@@ -47,7 +85,8 @@ function detalle(base: SeedRevista, a: Articulo): ArticuloDetalle {
     ...resto,
     autores,
     asignaciones,
-    totalObservaciones: base.observaciones.filter((o) => o.articuloId === a.id).length,
+    resultadoPares: resultadoDePares(asignaciones),
+    migrado: base.auditoria.some((x) => x.articuloId === a.id && x.tipo === 'migracion'),
   }
 }
 
@@ -60,11 +99,9 @@ function listado(base: SeedRevista, a: Articulo): ArticuloListado {
     tipo: a.tipo,
     estado: a.estado,
     fechaPostulacion: a.fechaPostulacion,
-    numeroPublicacion: a.numeroPublicacion,
-    paresRespondieron: asignadas.filter(
-      (x) => x.estado !== 'invitado' && x.estado !== 'segundo-intento',
-    ).length,
-    paresAsignados: asignadas.length,
+    publicacion: a.publicacion,
+    paresEntregaron: asignadas.filter((x) => x.estado === 'entrego').length,
+    paresAsignados: asignadas.filter((x) => x.estado === 'acepto' || x.estado === 'entrego').length,
   }
 }
 
@@ -88,16 +125,16 @@ function auditar(
   base.auditoria.unshift(entrada)
 }
 
-/** RF-06: the committee result moves an article that is still being screened. */
-function estadoTrasRevision(actual: EstadoArticulo, resultado: ResultadoComite): EstadoArticulo {
-  if (actual !== 'postulado' && actual !== 'en-revision') return actual
-  if (resultado === 'no-publicable') return 'rechazado'
-  if (resultado === 'publicable-siea') return 'aprobado'
-  if (resultado === 'sin-modificaciones' || resultado === 'pasa-a-pares') return 'en-evaluacion'
-  return 'en-revision'
-}
-
 export const handlersArticulos = [
+  // The years that have articles (the current one always), newest first.
+  http.get('*/api/:revista/articulos/anios', ({ params, request }) => {
+    const c = contexto(params, request)
+    if (!c.ok) return c.respuesta
+    const anios = new Set(c.base.articulos.flatMap((a) => anioDeGestion(a) ?? []))
+    anios.add(new Date().getFullYear())
+    return HttpResponse.json([...anios].sort((x, y) => y - x))
+  }),
+
   http.get('*/api/:revista/articulos', ({ params, request }) => {
     const c = contexto(params, request)
     if (!c.ok) return c.respuesta
@@ -107,15 +144,28 @@ export const handlersArticulos = [
     const publicacion = url.searchParams.get('publicacion')
     const desde = url.searchParams.get('desde')
     const hasta = url.searchParams.get('hasta')
+    const sinResponder = url.searchParams.get('sinResponder') === '1'
+    const anio = Number(url.searchParams.get('anio') ?? 0)
     const pagina = Math.max(1, Number(url.searchParams.get('pagina') ?? 1))
     const porPagina = Math.max(1, Number(url.searchParams.get('porPagina') ?? 6))
 
     const filtrados = c.base.articulos
       .filter((a) => !q || sinTildes(a.titulo).includes(q) || sinTildes(a.numeroOjs).includes(q))
       .filter((a) => !estado || a.estado === estado)
-      .filter((a) => !publicacion || a.numeroPublicacion === publicacion)
+      .filter((a) => !anio || anioDeGestion(a) === anio)
+      .filter(
+        (a) => !publicacion || (a.publicacion && clavePublicacion(a.publicacion) === publicacion),
+      )
       .filter((a) => !desde || a.fechaPostulacion >= desde)
       .filter((a) => !hasta || a.fechaPostulacion <= hasta)
+      .filter(
+        (a) =>
+          !sinResponder ||
+          c.base.asignaciones.some(
+            (x) =>
+              x.articuloId === a.id && (x.estado === 'invitado' || x.estado === 'segundo-intento'),
+          ),
+      )
       .sort((a, b) =>
         a.fechaPostulacion === b.fechaPostulacion
           ? b.numeroOjs.localeCompare(a.numeroOjs)
@@ -138,12 +188,15 @@ export const handlersArticulos = [
   http.get('*/api/:revista/publicaciones', ({ params, request }) => {
     const c = contexto(params, request)
     if (!c.ok) return c.respuesta
-    const lista = [
-      ...new Set(
-        c.base.articulos.flatMap((a) => (a.numeroPublicacion ? [a.numeroPublicacion] : [])),
-      ),
-    ]
-    return HttpResponse.json(lista.sort().reverse())
+    const unicas = new Map<string, Publicacion>()
+    for (const a of c.base.articulos) {
+      if (a.publicacion) unicas.set(clavePublicacion(a.publicacion), a.publicacion)
+    }
+    // RF-35: from the most recent to the oldest.
+    const lista = [...unicas.values()]
+      .sort(compararPublicaciones)
+      .map((p) => ({ valor: clavePublicacion(p), etiqueta: etiquetaPublicacion(p) }))
+    return HttpResponse.json(lista)
   }),
 
   http.get('*/api/:revista/articulos/:id', ({ params, request }) => {
@@ -164,18 +217,11 @@ export const handlersArticulos = [
       return error(422, `El artículo admite de 1 a ${MAX_AUTORES} autores`)
     }
 
-    const autoresIds = datos.autores.map((a): string => {
-      if ('autorId' in a) return a.autorId
-      const nuevo: Autor = {
-        id: `${c.revista}-au-n${c.base.autores.length + 1}`,
-        revista: c.revista,
-        ...a.nuevo,
-      }
-      c.base.autores.push(nuevo)
-      return nuevo.id
-    })
-    if (autoresIds.some((id) => !c.base.autores.some((a) => a.id === id))) {
-      return error(422, 'Autor no encontrado en esta revista')
+    const autoresIds = datos.autores.map((a): string =>
+      'autorId' in a ? a.autorId : registrarAutor(c.revista, a.nuevo).id,
+    )
+    if (autoresIds.some((id) => !autorPorId(id))) {
+      return error(422, 'Autor no encontrado en el directorio')
     }
 
     const numero = datos.numeroOjs.trim()
@@ -188,10 +234,10 @@ export const handlersArticulos = [
       tipo: datos.tipo,
       estado: 'postulado',
       fechaPostulacion: datos.fechaPostulacion,
-      numeroPublicacion: null,
-      antiplagio: null,
-      revisionInicial: null,
-      revisionFinal: null,
+      publicacion: null,
+      coincidencias: null,
+      atribuidoIa: null,
+      rondasComite: [],
       autoresIds,
       archivadoEn: null,
       motivoArchivo: null,
@@ -216,8 +262,11 @@ export const handlersArticulos = [
     const cambios = (await request.json()) as EdicionArticulo
     if (cambios.titulo !== undefined) articulo.titulo = cambios.titulo.trim()
     if (cambios.tipo !== undefined) articulo.tipo = cambios.tipo
-    if (cambios.numeroPublicacion !== undefined) {
-      articulo.numeroPublicacion = cambios.numeroPublicacion?.trim() || null
+    if (cambios.publicacion !== undefined) {
+      if (cambios.publicacion && !publicacionValida(cambios.publicacion)) {
+        return error(422, 'Escriba el volumen y el número juntos')
+      }
+      articulo.publicacion = cambios.publicacion
     }
     auditar(
       c.base,
@@ -230,49 +279,93 @@ export const handlersArticulos = [
     return HttpResponse.json(detalle(c.base, articulo))
   }),
 
-  http.put('*/api/:revista/articulos/:id/revision', async ({ params, request }) => {
+  http.post('*/api/:revista/articulos/:id/rondas', async ({ params, request }) => {
     const c = contexto(params, request, 'registrar-revision')
     if (!c.ok) return c.respuesta
     const articulo = c.base.articulos.find((a) => a.id === params.id)
     if (!articulo) return error(404, 'Artículo no encontrado')
-    const { antiplagio, revision } = (await request.json()) as RegistroRevision
-    const fecha = ahoraIso()
+    const tienePares = c.base.asignaciones.some((x) => x.articuloId === articulo.id)
+    if (!puedeRegistrarRonda(articulo, tienePares)) {
+      return error(409, 'La revisión del comité ya terminó para este artículo')
+    }
+    const ronda = (await request.json()) as NuevaRonda
+    const valido = (n: number | null) => n === null || (Number.isFinite(n) && n >= 0 && n <= 100)
+    if (!valido(ronda.coincidencias) || !valido(ronda.atribuidoIa)) {
+      return error(422, 'Los porcentajes deben estar entre 0 y 100')
+    }
+    if (ronda.coincidencias === null) {
+      return error(422, 'Registre el porcentaje de coincidencias del reporte antiplagio')
+    }
+    // The committee chooses the result (RF-06).
+    if (!RESULTADOS.includes(ronda.resultado)) return error(422, 'Seleccione el resultado')
+    const resultado = ronda.resultado
 
-    if (antiplagio) {
-      const valido = (n: number) => Number.isFinite(n) && n >= 0 && n <= 100
-      if (!valido(antiplagio.coincidencias) || !valido(antiplagio.atribuidoIa)) {
-        return error(422, 'Los porcentajes deben estar entre 0 y 100')
-      }
-      articulo.antiplagio = { ...antiplagio, fecha, usuario: c.usuario.nombre }
-      auditar(
-        c.base,
-        c.revista,
-        articulo.id,
-        'revision',
-        'Editó el porcentaje de antiplagio',
-        c.usuario.nombre,
-      )
+    articulo.coincidencias = ronda.coincidencias
+    articulo.atribuidoIa = ronda.atribuidoIa
+    const numero = articulo.rondasComite.length + 1
+    articulo.rondasComite.push({
+      id: `${articulo.id}-r${numero}`,
+      numero,
+      resultado,
+      observacion: ronda.observacion.trim(),
+      fecha: ahoraIso(),
+      usuario: c.usuario.nombre,
+    })
+    // No result closes the process: the article stays in review.
+    articulo.estado = 'en-revision'
+    auditar(
+      c.base,
+      c.revista,
+      articulo.id,
+      'revision',
+      `Registró la ronda ${numero} de la revisión del comité: ${ETIQUETA_RONDA[resultado]}`,
+      c.usuario.nombre,
+    )
+    return HttpResponse.json(detalle(c.base, articulo), { status: 201 })
+  }),
+
+  http.post('*/api/:revista/articulos/:id/trasladar', ({ params, request }) => {
+    const c = contexto(params, request, 'registrar-revision')
+    if (!c.ok) return c.respuesta
+    const articulo = c.base.articulos.find((a) => a.id === params.id)
+    if (!articulo) return error(404, 'Artículo no encontrado')
+    const destino: Revista = c.revista === 'reep' ? 'ire' : 'reep'
+    const otra = baseDe(destino)
+    if (otra.articulos.some((a) => a.id === articulo.id)) {
+      return error(409, `Ya existe un artículo con el número ${articulo.id} en la otra revista`)
     }
-    if (revision) {
-      const registro = {
-        resultado: revision.resultado,
-        observacion: revision.observacion,
-        fecha,
-        usuario: c.usuario.nombre,
-      }
-      if (revision.etapa === 'inicial') articulo.revisionInicial = registro
-      else articulo.revisionFinal = registro
-      articulo.estado = estadoTrasRevision(articulo.estado, revision.resultado)
-      auditar(
-        c.base,
-        c.revista,
-        articulo.id,
-        'revision',
-        `Registró la revisión ${revision.etapa} del comité`,
-        c.usuario.nombre,
-      )
-    }
-    return HttpResponse.json(detalle(c.base, articulo))
+    // The article moves with its own records; nothing of the old journal keeps pointing at it.
+    const propio = (x: { articuloId: string | null }) => x.articuloId === articulo.id
+    c.base.articulos = c.base.articulos.filter((a) => a.id !== articulo.id)
+    otra.auditoria.unshift(
+      ...c.base.auditoria.filter(propio).map((x) => ({ ...x, revista: destino })),
+    )
+    c.base.auditoria = c.base.auditoria.filter((x) => !propio(x))
+    // RF-07: at any stage. The evaluations, mails and constancias go along (the peers are a common
+    // base); the volume and number belong to the journal, so they are cleared.
+    const asignaciones = c.base.asignaciones.filter(propio)
+    const ids = new Set(asignaciones.map((x) => x.id))
+    c.base.asignaciones = c.base.asignaciones.filter((x) => !propio(x))
+    otra.asignaciones.push(...asignaciones)
+    otra.correos.unshift(...c.base.correos.filter(propio).map((x) => ({ ...x, revista: destino })))
+    c.base.correos = c.base.correos.filter((x) => !propio(x))
+    otra.constancias.push(...c.base.constancias.filter((x) => ids.has(x.asignacionId)))
+    c.base.constancias = c.base.constancias.filter((x) => !ids.has(x.asignacionId))
+    const quitada = articulo.publicacion
+      ? `; se quitó su publicación Vol. ${articulo.publicacion.volumen} n.º ${articulo.publicacion.numero}, que era de la otra revista`
+      : ''
+    articulo.publicacion = null
+    articulo.revista = destino
+    otra.articulos.unshift(articulo)
+    auditar(
+      otra,
+      destino,
+      articulo.id,
+      'traslado',
+      `Cambió el artículo de ${REVISTAS[c.revista].nombreCorto} a ${REVISTAS[destino].nombreCorto}${quitada}`,
+      c.usuario.nombre,
+    )
+    return HttpResponse.json(detalle(otra, articulo))
   }),
 
   http.post('*/api/:revista/articulos/:id/autores', async ({ params, request }) => {
@@ -287,18 +380,11 @@ export const handlersArticulos = [
     let autorId: string
     if ('autorId' in entrada) {
       autorId = entrada.autorId
-      if (!c.base.autores.some((a) => a.id === autorId))
-        return error(422, 'Autor no encontrado en esta revista')
+      if (!autorPorId(autorId)) return error(422, 'Autor no encontrado en el directorio')
       if (articulo.autoresIds.includes(autorId))
         return error(409, 'El autor ya está en el artículo')
     } else {
-      const nuevo: Autor = {
-        id: `${c.revista}-au-n${c.base.autores.length + 1}`,
-        revista: c.revista,
-        ...entrada.nuevo,
-      }
-      c.base.autores.push(nuevo)
-      autorId = nuevo.id
+      autorId = registrarAutor(c.revista, entrada.nuevo).id
     }
     articulo.autoresIds.push(autorId)
     auditar(
@@ -312,39 +398,6 @@ export const handlersArticulos = [
     return HttpResponse.json(detalle(c.base, articulo), { status: 201 })
   }),
 
-  http.get('*/api/:revista/articulos/:id/observaciones', ({ params, request }) => {
-    const c = contexto(params, request)
-    if (!c.ok) return c.respuesta
-    return HttpResponse.json(c.base.observaciones.filter((o) => o.articuloId === params.id))
-  }),
-
-  http.post('*/api/:revista/articulos/:id/observaciones', async ({ params, request }) => {
-    const c = contexto(params, request, 'registrar-datos')
-    if (!c.ok) return c.respuesta
-    const articulo = c.base.articulos.find((a) => a.id === params.id)
-    if (!articulo) return error(404, 'Artículo no encontrado')
-    const { texto } = (await request.json()) as { texto: string }
-    if (!texto.trim()) return error(422, 'La observación no puede estar vacía')
-    const nueva = {
-      id: `${c.revista}-obs-n${c.base.observaciones.length + 1}`,
-      articuloId: articulo.id,
-      texto: texto.trim(),
-      fecha: ahoraIso(),
-      usuario: c.usuario.nombre,
-    }
-    // Never overwrites an earlier one (HU-04): each observation is its own record.
-    c.base.observaciones.unshift(nueva)
-    auditar(
-      c.base,
-      c.revista,
-      articulo.id,
-      'observacion',
-      'Agregó una observación',
-      c.usuario.nombre,
-    )
-    return HttpResponse.json(nueva, { status: 201 })
-  }),
-
   http.get('*/api/:revista/articulos/:id/historial', ({ params, request }) => {
     const c = contexto(params, request)
     if (!c.ok) return c.respuesta
@@ -352,6 +405,40 @@ export const handlersArticulos = [
       correos: c.base.correos.filter((x) => x.articuloId === params.id),
       auditoria: c.base.auditoria.filter((x) => x.articuloId === params.id),
     })
+  }),
+
+  http.post('*/api/:revista/articulos/:id/cerrar', async ({ params, request }) => {
+    const c = contexto(params, request, 'cerrar-articulo')
+    if (!c.ok) return c.respuesta
+    const articulo = c.base.articulos.find((a) => a.id === params.id)
+    if (!articulo) return error(404, 'Artículo no encontrado')
+    if (CERRADOS.includes(articulo.estado))
+      return error(409, 'El proceso del artículo ya está cerrado')
+    const cierre = (await request.json()) as CierreArticulo
+    if (!CERRADOS.includes(cierre.estado)) return error(422, 'Elija cómo se cierra el proceso')
+    if (!cierre.motivo.trim()) return error(422, 'Escriba el motivo del cierre')
+    if (cierre.estado === 'aprobado') {
+      if (!cierre.publicacion || !publicacionValida(cierre.publicacion)) {
+        return error(422, 'Al aprobarlo, registre el volumen y el número de la publicación')
+      }
+      articulo.publicacion = cierre.publicacion
+    }
+    // RF-08: everything registered so far is kept; only the state changes.
+    articulo.estado = cierre.estado
+    if (cierre.estado === 'archivado') {
+      articulo.archivadoEn = ahoraIso()
+      articulo.motivoArchivo = cierre.motivo.trim()
+    }
+    // The reason stays in the history (D16: no separate notes).
+    auditar(
+      c.base,
+      c.revista,
+      articulo.id,
+      'cierre',
+      `Cerró el proceso como ${ETIQUETA_CIERRE[cierre.estado]}: ${cierre.motivo.trim()}`,
+      c.usuario.nombre,
+    )
+    return HttpResponse.json(detalle(c.base, articulo))
   }),
 
   http.post('*/api/:revista/articulos/:id/reabrir', async ({ params, request }) => {
@@ -367,19 +454,12 @@ export const handlersArticulos = [
     articulo.estado = estado
     articulo.archivadoEn = null
     articulo.motivoArchivo = null
-    c.base.observaciones.unshift({
-      id: `${c.revista}-obs-n${c.base.observaciones.length + 1}`,
-      articuloId: articulo.id,
-      texto: `Se retomó el proceso: ${motivo.trim()}`,
-      fecha: ahoraIso(),
-      usuario: c.usuario.nombre,
-    })
     auditar(
       c.base,
       c.revista,
       articulo.id,
       'reapertura',
-      'Retomó el proceso del artículo',
+      `Retomó el proceso: ${motivo.trim()}`,
       c.usuario.nombre,
     )
     return HttpResponse.json(detalle(c.base, articulo))

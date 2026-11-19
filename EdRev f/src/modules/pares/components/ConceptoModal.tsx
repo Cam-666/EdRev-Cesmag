@@ -1,7 +1,7 @@
 /*
  * ConceptoModal — registers the concept issued by a peer, chosen from the closed list of the
  * evaluation form (publicable, publicable con modificaciones sustanciales, no publicable). Each
- * peer has its own concept. Covers: RF-20, HU-14. Administradora only (RNF-05).
+ * peer has its own concept. Covers: RF-20, HU-14. Both profiles (RNF-05).
  */
 import { useState } from 'react'
 import { OPCIONES_CONCEPTO } from '../config/listas'

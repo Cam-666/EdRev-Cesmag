@@ -11,6 +11,7 @@ function hoy(): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
 }
 
+/** A new article approved by the committee, ready to receive peers. */
 async function articuloNuevo(numero: string, autorId = 'reep-au-3') {
   const r = await llamar('/reep/articulos', {
     metodo: 'POST',
@@ -22,148 +23,127 @@ async function articuloNuevo(numero: string, autorId = 'reep-au-3') {
       autores: [{ autorId }],
     },
   })
-  return json<ArticuloDetalle>(r)
+  const articulo = await json<ArticuloDetalle>(r)
+  await llamar(`/reep/articulos/${articulo.id}/rondas`, {
+    metodo: 'POST',
+    cuerpo: { coincidencias: 5, atribuidoIa: 1, resultado: 'aprobado', observacion: '' },
+  })
+  return articulo
 }
 
-async function asignarApi(articulo: string, parId: string) {
+async function candidatoApi(articulo: string, n: number) {
   return json<ResultadoAsignacion>(
-    await llamar(`/reep/articulos/${articulo}/asignaciones`, { metodo: 'POST', cuerpo: { parId } }),
+    await llamar(`/reep/articulos/${articulo}/asignaciones`, {
+      metodo: 'POST',
+      cuerpo: {
+        nuevo: {
+          nombre: `Candidato ${n}`,
+          correo: `candidato${n}@udenar.edu.co`,
+          universidad: 'Universidad de Nariño',
+          area: 'Educación rural',
+        },
+      },
+    }),
   )
 }
 
-describe('assigning a peer: article → peers → preview → confirm', () => {
-  it('walks the whole flow and the invitation leaves a trace in the article history', async () => {
-    const { user, router } = montarRuta('/reep/articulos/2026-009/pares')
+async function abrirPanel(user: { click: (e: Element) => Promise<void> }) {
+  await user.click(await screen.findByRole('button', { name: 'Asignar par' }))
+  return screen.findByRole('region', { name: 'Asignar par evaluador' })
+}
+
+describe('assigning a peer from the article sheet', () => {
+  it('offers «Asignar par» only once the committee approved the article', async () => {
+    montarRuta('/reep/articulos/2026-032/pares')
+    expect(
+      (await screen.findAllByText('El comité editorial aún no ha aprobado el artículo.')).length,
+    ).toBeGreaterThan(0)
+    // The button is always there, blocked, with the reason beside it
+    expect(screen.getByRole('button', { name: 'Asignar par' })).toBeDisabled()
+  })
+
+  it('assigns an available peer: the invitation goes out and the peer joins the article', async () => {
+    const { user } = montarRuta('/reep/articulos/2026-033/pares')
+    const panel = await abrirPanel(user)
+    const tabla = await within(panel).findByRole('table', { name: 'Pares disponibles' })
+    const boton = (await within(tabla).findAllByRole('button', { name: /^Asignar a / }))[0]
+    const nombre = (boton?.textContent ?? '').replace(/^Asignar a /, '')
+    await user.click(boton as HTMLElement)
+    expect(await screen.findByText('Par asignado e invitación enviada')).toBeInTheDocument()
     const lista = await screen.findByRole('list', { name: 'Pares asignados' })
-    expect(within(lista).getAllByRole('listitem')).toHaveLength(2)
-
-    await user.click(screen.getByRole('link', { name: 'Asignar par' }))
-    await waitFor(() => expect(router.state.location.pathname).toBe('/reep/pares'))
-    expect(await screen.findByText('Asignar un par al artículo 2026-009')).toBeInTheDocument()
-
-    await user.click(await screen.findByRole('link', { name: /Asignar a Hernán Delgado Ortega/ }))
-    expect(
-      await screen.findByRole('heading', { level: 1, name: 'Asignar par evaluador' }),
-    ).toBeInTheDocument()
-
-    // Preview before confirming: sender, recipient, subject, body and the no-attachments note
-    const vista = await screen.findByRole('region', { name: 'Vista previa' })
-    expect(within(vista).getByText('editorial.eyp@gmail.com')).toBeInTheDocument()
-    expect(within(vista).getByText('h.delgado@unicauca.edu.co')).toBeInTheDocument()
-    expect(
-      within(vista).getByText(
-        'Invitación a evaluar un artículo · Revista Electrónica en Educación y Pedagogía',
-      ),
-    ).toBeInTheDocument()
-    expect(within(vista).getByText(/Apreciado\(a\) Hernán Delgado Ortega/)).toBeInTheDocument()
-    expect(within(vista).getByText(/Sin adjuntos/)).toBeInTheDocument()
-    expect(screen.getByText('3 · tercer par')).toBeInTheDocument()
-    expect(screen.queryByText(/conflicto de interés/i)).toBeNull()
-
-    await user.click(screen.getByRole('button', { name: 'Asignar y enviar' }))
+    expect(await within(lista).findByText(nombre)).toBeInTheDocument()
+    // The panel stays open to keep inviting; the assigned peer is no longer available
     await waitFor(() =>
-      expect(router.state.location.pathname).toBe('/reep/articulos/2026-009/pares'),
+      expect(within(tabla).queryByRole('button', { name: `Asignar a ${nombre}` })).toBeNull(),
     )
-    expect(await screen.findByText('Par asignado e invitación enviada')).toBeInTheDocument()
+    const h = await json<{ correos: Array<{ tipo: string }> }>(
+      await llamar('/reep/articulos/2026-033/historial'),
+    )
+    expect(h.correos[0]?.tipo).toBe('invitacion')
+  })
+
+  it('registers a new candidate in the base and invites them right away', async () => {
+    const { user } = montarRuta('/reep/articulos/2026-033/pares')
+    const panel = await abrirPanel(user)
+    await user.click(within(panel).getByRole('tab', { name: 'Registrar un candidato nuevo' }))
+    await user.click(within(panel).getByRole('button', { name: 'Registrar y enviar invitación' }))
+    expect(await within(panel).findByText('Escriba el nombre del par.')).toBeInTheDocument()
+
+    await user.type(within(panel).getByLabelText('Nombre'), 'Marta Lucía Gómez')
+
+    await user.type(within(panel).getByLabelText('Profesión o título'), 'Magíster en Educación')
+    await user.type(within(panel).getByLabelText('Correo electrónico'), 'ml.gomez@udenar.edu.co')
+    await user.type(within(panel).getByLabelText('Universidad'), 'Universidad Externa de Prueba')
+    await user.type(within(panel).getByLabelText('Área temática'), 'Educación rural')
+    await user.click(within(panel).getByRole('button', { name: 'Registrar y enviar invitación' }))
     expect(
-      screen.getByText(/h\.delgado@unicauca\.edu\.co\)\. Quedó registrada/),
+      await screen.findByText(/Se envió la invitación a Marta Lucía Gómez/),
     ).toBeInTheDocument()
-    expect(
-      within(await screen.findByRole('list', { name: 'Pares asignados' })).getAllByRole('listitem'),
-    ).toHaveLength(3)
-
-    // A third peer is the maximum: no more "Asignar par"
-    expect(screen.queryByRole('link', { name: 'Asignar par' })).toBeNull()
-
-    await user.click(screen.getByRole('tab', { name: 'Historial' }))
-    const tabla = await screen.findByRole('table', { name: 'Correos enviados por este artículo' })
-    const fila = within(tabla)
-      .getAllByText('Invitación a evaluar')
-      .map((c) => c.closest('tr') as HTMLElement)
-    expect(fila.some((f) => within(f).queryByText('h.delgado@unicauca.edu.co') !== null)).toBe(true)
-    expect(screen.getByText('Asignó el par 3')).toBeInTheDocument()
+    const base = await json<{ total: number }>(await llamar('/reep/pares?estado=todos&q=gomez'))
+    expect(base.total).toBe(1)
   })
 
-  it('warns about a conflict of interest, naming the authors, and still lets the user assign', async () => {
-    const { user, router } = montarRuta('/reep/pares/asignar?articulo=2026-033&par=reep-par-6')
-    const aviso = await screen.findByText(/pertenecen a Universidad de Nariño/)
-    expect(aviso).toHaveTextContent('Paola Andrea Guerrero, Carolina Isabel Benavides')
-    expect(aviso).toHaveTextContent('Puede asignarlo de todos modos.')
-    await user.click(screen.getByRole('button', { name: 'Asignar y enviar' }))
-    await waitFor(() =>
-      expect(router.state.location.pathname).toBe('/reep/articulos/2026-033/pares'),
-    )
-    expect(await screen.findByText('Par asignado e invitación enviada')).toBeInTheDocument()
+  it('does not offer peers of the same institution as an author, and refuses a new candidate from it', async () => {
+    const articulo = await articuloNuevo('2026-072', 'reep-au-2') // author from Universidad CESMAG
+    const { user } = montarRuta(`/reep/articulos/${articulo.id}/pares`)
+    const panel = await abrirPanel(user)
+    const tabla = await within(panel).findByRole('table', { name: 'Pares disponibles' })
+    expect(within(tabla).queryByText('Universidad CESMAG')).toBeNull()
+
+    await user.click(within(panel).getByRole('tab', { name: 'Registrar un candidato nuevo' }))
+    await user.type(within(panel).getByLabelText('Nombre'), 'Par de la misma institución')
+    await user.type(within(panel).getByLabelText('Profesión o título'), 'Magíster')
+    await user.type(within(panel).getByLabelText('Correo electrónico'), 'par.misma@unicesmag.edu.co')
+    await user.type(within(panel).getByLabelText('Universidad'), 'Universidad CESMAG')
+    await user.type(within(panel).getByLabelText('Área temática'), 'Educación rural')
+    await user.click(within(panel).getByRole('button', { name: 'Registrar y enviar invitación' }))
+    expect(await screen.findByText(/la misma institución del autor/)).toBeInTheDocument()
   })
 
-  it('marks "Conflicto posible" in the list against the authors of the article being worked on', async () => {
-    montarRuta('/reep/pares?articulo=2026-033')
-    const fila = (await screen.findByText('Claudia Jurado')).closest('tr') as HTMLElement
-    expect(within(fila).getByText('Conflicto posible')).toBeInTheDocument()
-    // The warning never removes the "Asignar" action
-    expect(within(fila).getByRole('link', { name: /Asignar a Claudia Jurado/ })).toBeInTheDocument()
+  it('the committee review hands over with the panel open, and the Auxiliar can assign', async () => {
+    montarRuta('/reep/articulos/2026-033/pares?asignar=1', AUXILIAR)
+    expect(await screen.findByRole('region', { name: 'Asignar par evaluador' })).toBeInTheDocument()
   })
 
-  it('refuses a blocked peer with the reason', async () => {
-    montarRuta('/reep/pares/asignar?articulo=2026-033&par=reep-par-5')
-    expect(await screen.findByText('No se puede asignar este par')).toBeInTheDocument()
-    expect(
-      screen.getByText('El par está bloqueado y no recibe nuevas invitaciones'),
-    ).toBeInTheDocument()
-    expect(screen.queryByRole('button', { name: 'Asignar y enviar' })).toBeNull()
-  })
-
-  it('without an article it explains how to start; with only the article it goes to the peer list', async () => {
-    const sin = montarRuta('/reep/pares/asignar')
-    expect(
-      await screen.findByRole('heading', { level: 1, name: 'Asignar par evaluador' }),
-    ).toBeInTheDocument()
-    expect(screen.getByRole('link', { name: 'Ir a los artículos' })).toHaveAttribute(
-      'href',
-      '/reep/articulos',
-    )
-    sin.unmount()
-
-    const solo = montarRuta('/reep/pares/asignar?articulo=2026-033')
-    await waitFor(() => expect(solo.router.state.location.pathname).toBe('/reep/pares'))
-    expect(solo.router.state.location.search).toBe('?articulo=2026-033')
-  })
-
-  it('the Auxiliar can assign peers', async () => {
-    const { user, router } = montarRuta(
-      '/reep/pares/asignar?articulo=2026-033&par=reep-par-2',
-      AUXILIAR,
-    )
-    await user.click(await screen.findByRole('button', { name: 'Asignar y enviar' }))
-    await waitFor(() =>
-      expect(router.state.location.pathname).toBe('/reep/articulos/2026-033/pares'),
-    )
-    expect(await screen.findByText('Par asignado e invitación enviada')).toBeInTheDocument()
-  })
-
-  it('the assignment screen has no accessibility violations', async () => {
-    const { container } = montarRuta('/reep/pares/asignar?articulo=2026-033&par=reep-par-2')
-    await screen.findByRole('region', { name: 'Vista previa' })
+  it('has no accessibility violations with the panel open', async () => {
+    const { container } = montarRuta('/reep/articulos/2026-033/pares?asignar=1')
+    const panel = await screen.findByRole('region', { name: 'Asignar par evaluador' })
+    await within(panel).findByRole('table', { name: 'Pares disponibles' })
     expect(await axe(container)).toHaveNoViolations()
   })
 })
 
 describe('bounced invitation (RF-27)', () => {
   it('warns on screen, keeps the assignment and lets the user correct the email and resend', async () => {
-    const par = await json<ParDetalle>(
-      await llamar('/reep/pares', {
-        metodo: 'POST',
-        cuerpo: {
-          nombre: 'Par Rebote',
-          correo: 'par@invalido.test',
-          universidad: 'Universidad del Valle',
-          area: 'Educación rural',
-          autorizoDatos: false,
-        },
-      }),
-    )
-    const { user, router } = montarRuta(`/reep/pares/asignar?articulo=2026-033&par=${par.id}`)
-    await user.click(await screen.findByRole('button', { name: 'Asignar y enviar' }))
+    const { user, router } = montarRuta('/reep/articulos/2026-033/pares')
+    const panel = await abrirPanel(user)
+    await user.click(within(panel).getByRole('tab', { name: 'Registrar un candidato nuevo' }))
+    await user.type(within(panel).getByLabelText('Nombre'), 'Par Rebote')
+    await user.type(within(panel).getByLabelText('Profesión o título'), 'Magíster en Educación')
+    await user.type(within(panel).getByLabelText('Correo electrónico'), 'par@invalido.test')
+    await user.type(within(panel).getByLabelText('Universidad'), 'Universidad del Valle')
+    await user.type(within(panel).getByLabelText('Área temática'), 'Educación rural')
+    await user.click(within(panel).getByRole('button', { name: 'Registrar y enviar invitación' }))
     expect(await screen.findByText('La invitación no se pudo entregar')).toBeInTheDocument()
     expect(screen.getByText(/La dirección par@invalido\.test rebotó/)).toBeInTheDocument()
     // The assignment was kept
@@ -172,7 +152,9 @@ describe('bounced invitation (RF-27)', () => {
     ).toBeInTheDocument()
 
     await user.click(screen.getByRole('link', { name: 'Corregir correo' }))
-    await waitFor(() => expect(router.state.location.pathname).toBe(`/reep/pares/${par.id}`))
+    await waitFor(() =>
+      expect(router.state.location.pathname).toMatch(/^\/pares\/reep-par-n/),
+    )
     await user.click(await screen.findByRole('button', { name: 'Editar' }))
     const dialogo = await screen.findByRole('dialog', { name: 'Editar par evaluador' })
     const correo = within(dialogo).getByLabelText('Correo electrónico')
@@ -192,41 +174,25 @@ describe('bounced invitation (RF-27)', () => {
 })
 
 describe('actions on an assigned peer', () => {
-  it('Administradora: resend, reminder and register the answer; Auxiliar: only resend and reminder', async () => {
-    const admin = montarRuta('/reep/articulos/2026-012/pares')
-    expect(
-      await screen.findByRole('button', { name: /Reenviar invitación a Rodrigo Eraso/ }),
-    ).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: /Recordatorio a Rodrigo Eraso/ })).toBeInTheDocument()
-    expect(
-      screen.getByRole('button', { name: /Registrar respuesta de Rodrigo Eraso/ }),
-    ).toBeInTheDocument()
-    admin.unmount()
-
+  it('no reminder and no manual resend: only the answer, while the invitation was delivered (D7)', async () => {
     montarRuta('/reep/articulos/2026-012/pares', AUXILIAR)
     expect(
-      await screen.findByRole('button', { name: /Reenviar invitación a Rodrigo Eraso/ }),
+      await screen.findByRole('button', { name: /Registrar respuesta de Rodrigo Eraso/ }),
     ).toBeInTheDocument()
-    expect(screen.queryByRole('button', { name: /Registrar respuesta/ })).toBeNull()
+    expect(screen.queryByRole('button', { name: /Recordatorio/ })).toBeNull()
+    expect(screen.queryByRole('button', { name: /Reenviar invitación/ })).toBeNull()
+    expect(screen.getAllByText('2.º intento').length).toBeGreaterThan(0)
   })
 
-  it('a reminder is queued and says so', async () => {
-    const { user } = montarRuta('/reep/articulos/2026-012/pares')
-    await user.click(await screen.findByRole('button', { name: /Recordatorio a Rodrigo Eraso/ }))
-    expect(
-      await screen.findByText('Recordatorio a Rodrigo Eraso en cola de envío.'),
-    ).toBeInTheDocument()
-  })
-
-  it('resending moves a first invitation to "2.º intento"', async () => {
-    const { user } = montarRuta('/reep/articulos/2026-009/pares')
-    await user.click(
-      await screen.findByRole('button', { name: /Reenviar invitación a Luz Marina Burbano/ }),
-    )
-    expect(
-      await screen.findByText('Invitación reenviada a Luz Marina Burbano.'),
-    ).toBeInTheDocument()
-    expect(await screen.findAllByText('2.º intento')).not.toHaveLength(0)
+  it('an issued constancia can be downloaded and resent from the article (HU-23)', async () => {
+    const { user } = montarRuta('/reep/articulos/2026-034/pares')
+    const descargar = (
+      await screen.findAllByRole('button', { name: /^Descargar constancia de/ })
+    )[0]
+    expect(descargar).toBeInTheDocument()
+    const reenviar = (await screen.findAllByRole('button', { name: /^Reenviar constancia a/ }))[0]
+    await user.click(reenviar as HTMLElement)
+    expect(await screen.findByText(/^Constancia reenviada a/)).toBeInTheDocument()
   })
 
   it('no answer after the 2nd attempt blocks the peer, after warning about it', async () => {
@@ -245,30 +211,37 @@ describe('actions on an assigned peer', () => {
     expect(par.bloqueo?.motivo).toBe('sin-respuesta')
   })
 
-  it('accepted → mark delivery (pending constancia) → register concept', async () => {
+  it('accepted → mark delivery with concept and date → «Emitir constancia» offered right away', async () => {
     const { user } = montarRuta('/reep/articulos/2026-009/pares')
     await user.click(
       await screen.findByRole('button', { name: /Marcar entrega de Sandra Liliana Cuasapud/ }),
     )
     const dialogo = await screen.findByRole('dialog', { name: 'Marcar entrega' })
-    expect(within(dialogo).getByLabelText('Fecha de entrega')).toHaveValue(hoy())
+    expect(within(dialogo).getByLabelText('Fecha de evaluación')).toHaveValue(hoy())
+    // The concept is registered together with the date: the constancia comes after the evaluation
     await user.click(within(dialogo).getByRole('button', { name: 'Marcar entrega' }))
-    expect(
-      await screen.findByText(
-        'Entrega de Sandra Liliana Cuasapud registrada. Su constancia quedó pendiente.',
-      ),
-    ).toBeInTheDocument()
-
-    await user.click(
-      await screen.findByRole('button', { name: /Registrar concepto de Sandra Liliana Cuasapud/ }),
-    )
-    await screen.findByRole('dialog', { name: 'Registrar concepto' })
-    await user.click(screen.getByRole('button', { name: 'Registrar concepto' }))
-    expect(await screen.findByText('Seleccione el concepto del par.')).toBeInTheDocument()
+    expect(await within(dialogo).findByText('Seleccione el concepto del par.')).toBeInTheDocument()
     await elegirOpcion(user, 'Concepto', 'Publicable')
-    await user.click(screen.getByRole('button', { name: 'Registrar concepto' }))
+    await user.click(within(dialogo).getByRole('button', { name: 'Marcar entrega' }))
+
+    // RF-23: the constancia is offered right away, with the journal's template and PDF background
+    const constancia = await screen.findByRole('dialog', {
+      name: 'Emitir la constancia de Sandra Liliana Cuasapud',
+    })
+    expect(within(constancia).getByText(/Entrega registrada/)).toBeInTheDocument()
+    expect(await within(constancia).findByText(/CERTIFICA QUE/)).toBeInTheDocument()
     expect(
-      await screen.findByText('Concepto de Sandra Liliana Cuasapud registrado.'),
+      within(constancia).getByText(/Encabezado, pie y firma de «Constancia de participación»/),
+    ).toBeInTheDocument()
+    await user.click(within(constancia).getByRole('button', { name: 'Emitir y enviar' }))
+    expect(
+      await screen.findByText('Constancia enviada a Sandra Liliana Cuasapud.'),
+    ).toBeInTheDocument()
+    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull())
+
+    // The concept can still be changed afterwards
+    expect(
+      await screen.findByRole('button', { name: /Cambiar concepto de Sandra Liliana Cuasapud/ }),
     ).toBeInTheDocument()
 
     const lista = await screen.findByRole('list', { name: 'Pares asignados' })
@@ -277,10 +250,32 @@ describe('actions on an assigned peer', () => {
     expect(within(fila).getByText('Entregó')).toBeInTheDocument()
   })
 
-  it('offers "Asignar desempate" only when the first two concepts contradict', async () => {
+  it('«Más tarde» leaves the constancia pending and it can be issued later from the peer', async () => {
+    const { user } = montarRuta('/reep/articulos/2026-009/pares')
+    await user.click(
+      await screen.findByRole('button', { name: /Marcar entrega de Sandra Liliana Cuasapud/ }),
+    )
+    const dialogo = await screen.findByRole('dialog', { name: 'Marcar entrega' })
+    await elegirOpcion(user, 'Concepto', 'Publicable')
+    await user.click(within(dialogo).getByRole('button', { name: 'Marcar entrega' }))
+    const constancia = await screen.findByRole('dialog', {
+      name: 'Emitir la constancia de Sandra Liliana Cuasapud',
+    })
+    await user.click(within(constancia).getByRole('button', { name: 'Más tarde' }))
+    await user.click(
+      await screen.findByRole('button', { name: /Emitir constancia de Sandra Liliana Cuasapud/ }),
+    )
+    expect(
+      await screen.findByRole('dialog', {
+        name: 'Emitir la constancia de Sandra Liliana Cuasapud',
+      }),
+    ).toBeInTheDocument()
+  })
+
+  it('offers «Asignar par de desempate» only when the concepts of the two peers do not coincide', async () => {
     const articulo = await articuloNuevo('2026-070')
-    const a1 = await asignarApi(articulo.id, 'reep-par-1')
-    const a2 = await asignarApi(articulo.id, 'reep-par-2')
+    const a1 = await candidatoApi(articulo.id, 1)
+    const a2 = await candidatoApi(articulo.id, 2)
     for (const [id, concepto] of [
       [a1.asignacion.id, 'publicable'],
       [a2.asignacion.id, 'no-publicable'],
@@ -295,22 +290,31 @@ describe('actions on an assigned peer', () => {
 
     const { user } = montarRuta(`/reep/articulos/${articulo.id}/pares`)
     expect(
-      await screen.findByText('Los conceptos de los dos primeros pares se contradicen.'),
+      await screen.findByText(
+        'Los conceptos de los dos primeros pares no coinciden: puede asignar un tercer par de desempate.',
+      ),
     ).toBeInTheDocument()
-    await user.click(screen.getByRole('link', { name: 'Asignar desempate' }))
-    await user.click(await screen.findByRole('link', { name: /Asignar a Hernán Delgado Ortega/ }))
-    expect(await screen.findByText('3 · par de desempate')).toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: 'Asignar par de desempate' }))
+    const panel = await screen.findByRole('region', { name: 'Asignar par de desempate' })
+    const tabla = await within(panel).findByRole('table', { name: 'Pares disponibles' })
+    await user.click(
+      (await within(tabla).findAllByRole('button', { name: /^Asignar a / }))[0] as HTMLElement,
+    )
+    expect(await screen.findByText('Par asignado e invitación enviada')).toBeInTheDocument()
+    const lista = screen.getByRole('list', { name: 'Pares asignados' })
+    const tercero = (await within(lista).findAllByRole('listitem'))[2] as HTMLElement
+    expect(within(tercero).getByText('Desempate')).toBeInTheDocument()
   })
 
-  it('without contradiction there is no "Asignar desempate" (a plain third peer is offered)', async () => {
+  it('without contradiction there is no tiebreaker', async () => {
     montarRuta('/reep/articulos/2026-024/pares')
     await screen.findByRole('list', { name: 'Pares asignados' })
-    expect(screen.queryByRole('link', { name: 'Asignar desempate' })).toBeNull()
+    expect(screen.queryByRole('button', { name: 'Asignar par de desempate' })).toBeNull()
   })
 
   it('an archived article offers no assignment', async () => {
     montarRuta('/reep/articulos/2026-007/pares')
     await screen.findByText('Aún no hay pares asignados a este artículo.')
-    expect(screen.queryByRole('link', { name: 'Asignar par' })).toBeNull()
+    expect(screen.getByRole('button', { name: 'Asignar par' })).toBeDisabled()
   })
 })

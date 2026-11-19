@@ -4,17 +4,24 @@
  * Covers: RF-12..RF-18, RNF-06.
  */
 import { solicitar } from '@/lib/api/cliente'
-import type { MotivoBloqueo, NuevoPar, ParDetalle, ParEvaluador, ParListado } from '@/types/par'
+import type {
+  MotivoBloqueo,
+  NuevoPar,
+  ParDetalle,
+  ParEvaluador,
+  ParListado,
+} from '@/types/par'
 import type { Revista } from '@/types/revista'
 
-export type FiltroEstadoPares = 'disponibles' | 'bloqueados' | 'todos'
+/** `asignables`: not blocked, no evaluation in progress and not yet in the article (RF-19). */
+export type FiltroEstadoPares = 'disponibles' | 'bloqueados' | 'todos' | 'asignables'
 
 export interface FiltrosPares {
   q?: string
   area?: string
   universidad?: string
   estado: FiltroEstadoPares
-  /** Article being worked on: the "Conflicto posible" flag is computed against its authors. */
+  /** Article being worked on: the "same institution" state is computed against its authors. */
   articulo?: string
   pagina: number
   porPagina: number
@@ -64,7 +71,7 @@ export function registrarPar(revista: Revista, datos: NuevoPar): Promise<ParDeta
 export function editarPar(
   revista: Revista,
   id: string,
-  cambios: Partial<Pick<ParEvaluador, 'nombre' | 'correo' | 'universidad' | 'area'>>,
+  cambios: Partial<Pick<ParEvaluador, 'nombre' | 'profesion' | 'correo' | 'universidad' | 'area'>>,
 ): Promise<ParDetalle> {
   return solicitar<ParDetalle>(`/${revista}/pares/${encodeURIComponent(id)}`, {
     method: 'PATCH',

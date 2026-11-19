@@ -1,3 +1,4 @@
+import type { EstadoCorreo, TipoCorreo } from './historial'
 import type { Revista } from './revista'
 
 export type MotivoBloqueo = 'sin-respuesta' | 'no-desea'
@@ -7,25 +8,35 @@ export interface ParEvaluador {
   id: string
   revista: Revista
   nombre: string
+  /** Profession or academic title, e.g. "Magíster en Educación"; it goes in the invitation (RF-25). */
+  profesion: string
   correo: string
   universidad: string
   /** Free-text thematic area (RF-13). */
   area: string
   bloqueo: { motivo: MotivoBloqueo; fecha: string } | null
-  /** ISO date of the data-treatment authorization (RNF-06). */
-  autorizoDatosEn: string | null
 }
 
-export type EstadoAsignacion = 'invitado' | 'segundo-intento' | 'acepto' | 'no-acepto' | 'entrego'
+/** State of a peer in an article (RF-22). `segundo-intento` is «Invitado» after the resend. */
+export type EstadoAsignacion =
+  'invitado' | 'segundo-intento' | 'acepto' | 'no-acepto' | 'sin-respuesta' | 'entrego'
 
-export type ConceptoPar = 'publicable' | 'publicable-con-modificaciones' | 'no-publicable'
+export type ConceptoPar =
+  'publicable' | 'publicable-con-modificaciones' | 'no-publicable' | 'pendiente-formato'
 
-/** A peer assigned to an article, in order (max 3); the third can be the tiebreaker (RF-19, RF-21). */
+/** What the concepts of the peers decide for the article: a concept that is a real judgment. */
+export type ResultadoPares = Exclude<ConceptoPar, 'pendiente-formato'>
+
+/**
+ * A peer assigned to an article, in order. At most three peers who accepted or delivered; those
+ * who decline or do not answer take no place. The tiebreaker is flagged (RF-19, RF-21).
+ */
 export interface Asignacion {
   id: string
   articuloId: string
   parId: string
-  orden: 1 | 2 | 3
+  /** Order of assignment (1, 2, 3…). Peers who did not accept keep their number. */
+  orden: number
   esDesempate: boolean
   estado: EstadoAsignacion
   /** ISO 8601 dates. */
@@ -51,11 +62,20 @@ export interface Constancia {
 export interface AsignacionDetalle extends Asignacion {
   par: Pick<ParEvaluador, 'id' | 'nombre' | 'correo' | 'universidad'>
   constanciaEmitida: boolean
+  /** The constancia of a delivered evaluation (pending or issued), to issue it from the sheet. */
+  constanciaId: string | null
+  /** The last invitation mail of this peer: a bounced or failed one can be resent (RF-28). */
+  ultimoCorreo: { tipo: TipoCorreo; estado: EstadoCorreo; atendido: boolean } | null
 }
 
-export type EstadoDisponibilidad = 'disponible' | 'bloqueado' | 'conflicto'
+/** Answer of «Marcar entrega»: the constancia that can be issued right away (RF-23). */
+export interface EntregaRegistrada extends Asignacion {
+  constanciaId: string | null
+}
 
-/** Row of the peers list; `conflicto` = "Conflicto posible" (peer from Universidad CESMAG or from the author's university). */
+export type EstadoDisponibilidad = 'disponible' | 'bloqueado' | 'misma-institucion'
+
+/** Row of the peers list; `misma-institucion` = same institution as an author of the article (cannot be assigned). */
 export interface ParListado extends Pick<
   ParEvaluador,
   'id' | 'nombre' | 'correo' | 'universidad' | 'area' | 'bloqueo'
@@ -65,6 +85,8 @@ export interface ParListado extends Pick<
 }
 
 export interface Participacion {
+  /** Journal of the article (the base of peers is common to both). */
+  revista: Revista
   asignacionId: string
   articuloId: string
   numeroOjs: string
@@ -86,34 +108,35 @@ export interface ParDetalle extends ParEvaluador {
 
 export interface NuevoPar {
   nombre: string
+  profesion: string
   correo: string
   universidad: string
   area: string
-  /** RNF-06: authorization of personal-data treatment; its date is stored. */
-  autorizoDatos: boolean
-}
-
-export interface Conflicto {
-  /** Human sentence, e.g. "El par y el autor X pertenecen a la Universidad CESMAG." */
-  mensaje: string
-}
-
-/** What the invitation mail will look like before it is sent (RF-24, RF-25). */
-export interface VistaPreviaInvitacion {
-  de: string
-  para: string
-  asunto: string
-  cuerpo: string
-  adjuntos: string
-  orden: 1 | 2 | 3
-  esDesempate: boolean
-  conflicto: Conflicto | null
 }
 
 export interface ResultadoAsignacion {
   asignacion: Asignacion
-  correo: { estado: 'entregado' | 'rebotado' | 'en-cola'; destinatario: string }
+  /** The peer assigned (the new candidate, when one was registered). */
+  par: Pick<ParEvaluador, 'id' | 'nombre' | 'correo'>
+  correo: { estado: EstadoCorreo; destinatario: string }
 }
 
 /** How the dependency registers the answer of a peer to the invitation (RF-22, RF-15). */
-export type RespuestaPar = 'acepto' | 'no-acepto' | 'sin-respuesta'
+/**
+ * The peer's answer (RF-22): accepted; did not accept this invitation (not blocked); does not want
+ * to take part any more (blocked); no answer after the second attempt (blocked by the system).
+ */
+export type RespuestaPar = 'acepto' | 'no-acepto' | 'no-desea' | 'sin-respuesta'
+
+/** A brand-new candidate typed while assigning peers (RF-12, RF-19). */
+export interface CandidatoPar {
+  nombre: string
+  profesion: string
+  correo: string
+  universidad: string
+  area: string
+}
+
+/** Body of an assignment: a peer of the base, or a new candidate saved in the base first. */
+export type DatosAsignacion = { parId: string } | { nuevo: CandidatoPar }
+

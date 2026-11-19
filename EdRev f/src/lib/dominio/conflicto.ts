@@ -1,39 +1,48 @@
 /*
  * conflicto — conflict-of-interest rule when assigning a peer. Pure, shared by the mock API and
- * the interface. Covers: RF-17, HU-12. A conflict only warns; it never blocks the assignment.
+ * the interface. Covers: RF-17, HU-12. A peer of the same institution as an author is refused.
  */
 import type { Autor } from '@/types/autor'
-import type { Conflicto, ParEvaluador } from '@/types/par'
+import type { ParEvaluador } from '@/types/par'
 
-export const UNIVERSIDAD_CESMAG = 'Universidad CESMAG'
+/** Words that do not tell one institution from another: «Universidad Cesmag» and «Cesmag» are the same. */
+const GENERICAS = new Set([
+  'universidad', 'universitaria', 'universitario', 'univ', 'institucion', 'instituto', 'corporacion',
+  'fundacion', 'de', 'del', 'la', 'las', 'los', 'el', 'y', 'e', 'u', 'en', 'sede',
+])
 
-function igual(a: string, b: string): boolean {
-  const limpio = (t: string) => t.normalize('NFD').replace(/[̀-ͯ]/g, '').trim().toLowerCase()
-  return limpio(a) === limpio(b)
+function palabras(texto: string | null): Set<string> {
+  const limpio = (texto ?? '')
+    .normalize('NFD')
+    .replace(/[̀-ͯ]/g, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, ' ')
+  return new Set(limpio.split(' ').filter((p) => p && !GENERICAS.has(p)))
 }
 
 /**
- * A peer conflicts when it belongs to Universidad CESMAG or to the same university as any author
- * of the article. Without authors only the CESMAG rule can apply.
+ * Whether two names are the same institution: they coincide ignoring case, accents and the generic
+ * words (Universidad, de, la…), or all the distinctive words of one are in the other
+ * («Cesmag» in «Universidad CESMAG»).
  */
-export function detectarConflicto(
+export function mismaUniversidad(a: string | null, b: string | null): boolean {
+  const x = palabras(a)
+  const y = palabras(b)
+  if (x.size === 0 || y.size === 0) return false
+  const [corto, largo] = x.size <= y.size ? [x, y] : [y, x]
+  return [...corto].every((p) => largo.has(p))
+}
+
+/**
+ * Authors whose institution is the peer's own: the assignment is refused (RF-17, HU-12). Returns
+ * the sentence to show, or null when there is none.
+ */
+export function mismaInstitucion(
   par: Pick<ParEvaluador, 'universidad'>,
   autores: Array<Pick<Autor, 'nombre' | 'filiacion'>>,
-): Conflicto | null {
-  const delMismo = autores.filter((a) => igual(a.filiacion, par.universidad))
-  const esCesmag = igual(par.universidad, UNIVERSIDAD_CESMAG)
-
-  if (delMismo.length > 0) {
-    const nombres = delMismo.map((a) => a.nombre).join(', ')
-    const verbo = delMismo.length === 1 ? 'el autor' : 'los autores'
-    return {
-      mensaje: `El par y ${verbo} ${nombres} pertenecen a ${par.universidad}. Puede asignarlo de todos modos.`,
-    }
-  }
-  if (esCesmag) {
-    return {
-      mensaje: `El par pertenece a ${UNIVERSIDAD_CESMAG}. Puede asignarlo de todos modos.`,
-    }
-  }
-  return null
+): string | null {
+  const delMismo = autores.filter((a) => par.universidad && mismaUniversidad(a.filiacion, par.universidad))
+  if (delMismo.length === 0) return null
+  const quien = delMismo.length === 1 ? 'del autor' : 'de los autores'
+  return `El par pertenece a ${par.universidad}, la misma institución ${quien} ${delMismo.map((a) => a.nombre).join(', ')}: no se puede asignar a este artículo.`
 }

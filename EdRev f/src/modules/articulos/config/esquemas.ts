@@ -6,14 +6,7 @@ import { z } from 'zod'
 import { aNumero } from './reglas'
 
 const TIPOS = ['investigacion', 'reflexion', 'revision']
-const RESULTADOS = [
-  'sin-modificaciones',
-  'modificaciones-basicas',
-  'pasa-a-pares',
-  'faltan-documentos',
-  'no-publicable',
-  'publicable-siea',
-]
+const RESULTADOS = ['aprobado', 'rechazado', 'ajustes']
 
 const porcentaje = z
   .string()
@@ -32,32 +25,79 @@ export const esquemaDatosArticulo = z.object({
 })
 export type DatosArticuloForm = z.infer<typeof esquemaDatosArticulo>
 
-export const esquemaEdicionArticulo = z.object({
-  titulo: z.string().trim().min(1, 'Escriba el título del artículo.'),
-  tipo: z.string().refine((v) => TIPOS.includes(v), 'Seleccione el tipo de artículo.'),
-  numeroPublicacion: z.string().trim(),
-})
+const entero = (v: string) => /^\d+$/.test(v.trim()) && Number(v) > 0
+
+/** RF-04: volume and number go together (both or neither). */
+export const esquemaEdicionArticulo = z
+  .object({
+    titulo: z.string().trim().min(1, 'Escriba el título del artículo.'),
+    tipo: z.string().refine((v) => TIPOS.includes(v), 'Seleccione el tipo de artículo.'),
+    volumen: z.string().trim(),
+    numero: z.string().trim(),
+  })
+  .superRefine((v, ctx) => {
+    if (!v.volumen && !v.numero) return
+    if (!entero(v.volumen)) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['volumen'],
+        message: 'Escriba el volumen junto con el número.',
+      })
+    }
+    if (!entero(v.numero)) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['numero'],
+        message: 'Escriba el número junto con el volumen.',
+      })
+    }
+  })
 export type EdicionArticuloForm = z.infer<typeof esquemaEdicionArticulo>
 
-export const esquemaRevision = z.object({
+export const esquemaRonda = z.object({
   coincidencias: porcentaje,
   atribuidoIa: porcentaje,
-  observacionAntiplagio: z.string().trim(),
-  etapa: z.enum(['inicial', 'final']),
   resultado: z
     .string()
-    .refine((v) => v === '' || RESULTADOS.includes(v), 'Seleccione un resultado.'),
-  observacionComite: z.string().trim(),
+    .refine((v) => RESULTADOS.includes(v), 'Seleccione el resultado del comité.'),
+  observacion: z.string().trim(),
 })
-export type RevisionForm = z.infer<typeof esquemaRevision>
-
-export const esquemaObservacion = z.object({
-  texto: z.string().trim().min(1, 'Escriba la observación.'),
-})
-export type ObservacionForm = z.infer<typeof esquemaObservacion>
+export type RondaForm = z.infer<typeof esquemaRonda>
 
 export const esquemaReapertura = z.object({
   motivo: z.string().trim().min(1, 'Escriba el motivo de la reapertura.'),
   estado: z.enum(['en-revision', 'postulado']),
 })
 export type ReaperturaForm = z.infer<typeof esquemaReapertura>
+
+/** RF-08: closing needs a reason; approving also needs the volume and number (HU-05). */
+export const esquemaCierre = z
+  .object({
+    estado: z
+      .string()
+      .refine(
+        (v) => ['aprobado', 'rechazado', 'archivado'].includes(v),
+        'Elija cómo se cierra el proceso.',
+      ),
+    motivo: z.string().trim().min(1, 'Escriba el motivo del cierre.'),
+    volumen: z.string().trim(),
+    numero: z.string().trim(),
+  })
+  .superRefine((v, ctx) => {
+    if (v.estado !== 'aprobado') return
+    if (!entero(v.volumen)) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['volumen'],
+        message: 'Escriba el volumen de la publicación.',
+      })
+    }
+    if (!entero(v.numero)) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['numero'],
+        message: 'Escriba el número de la publicación.',
+      })
+    }
+  })
+export type CierreForm = z.infer<typeof esquemaCierre>

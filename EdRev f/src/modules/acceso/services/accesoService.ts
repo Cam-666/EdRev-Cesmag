@@ -1,9 +1,14 @@
 /*
  * accesoService — HTTP calls of the access module. Components never call fetch directly.
- * Covers: HU-28, RF-39.
+ * Covers: HU-28, RF-39, RF-40, RF-46.
  */
 import { solicitar } from '@/lib/api/cliente'
-import type { CredencialesIngreso, RespuestaIngreso } from '@/types/acceso'
+import type {
+  CredencialesIngreso,
+  EnlaceContrasena,
+  RespuestaEnvioEnlace,
+  RespuestaIngreso,
+} from '@/types/acceso'
 
 export function iniciarSesionApi(credenciales: CredencialesIngreso): Promise<RespuestaIngreso> {
   return solicitar<RespuestaIngreso>('/auth/login', {
@@ -12,9 +17,21 @@ export function iniciarSesionApi(credenciales: CredencialesIngreso): Promise<Res
   })
 }
 
-export async function solicitarRecuperacionApi(correo: string): Promise<void> {
-  await solicitar<unknown>('/auth/recuperar', {
+export function solicitarRecuperacionApi(correo: string): Promise<RespuestaEnvioEnlace> {
+  return solicitar<RespuestaEnvioEnlace>('/auth/recuperar', {
     method: 'POST',
     body: JSON.stringify({ correo }),
+  })
+}
+
+/** What the link is for and whose account it is; fails with 410 / 404 when it cannot be used. */
+export function consultarEnlaceApi(token: string): Promise<EnlaceContrasena> {
+  return solicitar<EnlaceContrasena>(`/auth/enlaces/${encodeURIComponent(token)}`)
+}
+
+export async function definirContrasenaApi(token: string, contrasena: string): Promise<void> {
+  await solicitar<unknown>(`/auth/enlaces/${encodeURIComponent(token)}`, {
+    method: 'POST',
+    body: JSON.stringify({ contrasena }),
   })
 }

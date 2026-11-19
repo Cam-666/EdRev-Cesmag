@@ -8,10 +8,12 @@ import { TablaArticulos } from '../components/TablaArticulos'
 import { useArticulos } from '../hooks/useArticulos'
 import { useFiltrosArticulos } from '../hooks/useFiltrosArticulos'
 import { usePermiso } from '@/modules/acceso/hooks/usePermiso'
+import { Alerta } from '@/components/common/Alerta'
+import { Boton } from '@/components/common/Boton'
 import { EnlaceBoton } from '@/components/common/EnlaceBoton'
 import { EstadoConsulta } from '@/components/common/EstadoConsulta'
 import { Paginacion } from '@/components/common/Paginacion'
-import { AccionesEncabezado } from '@/lib/encabezado/AccionesEncabezado'
+import { EncabezadoPagina } from '@/components/common/EncabezadoPagina'
 import { useRevista } from '@/lib/revista/useRevista'
 
 export function ArticulosPage() {
@@ -23,19 +25,38 @@ export function ArticulosPage() {
 
   return (
     <section className="flex flex-col gap-4">
-      {puedeRegistrar && (
-        <AccionesEncabezado>
-          <EnlaceBoton variante="neutro" tamano="sm" to={`/${revista}/articulos/nuevo`}>
-            Registrar artículo
-          </EnlaceBoton>
-        </AccionesEncabezado>
-      )}
-      <header>
-        <h1 className="text-titulo-24">Artículos</h1>
+      <EncabezadoPagina
+        titulo="Artículos"
+        acciones={
+          puedeRegistrar && (
+            <EnlaceBoton tamano="sm" to={`/${revista}/articulos/nuevo`}>
+              Registrar artículo
+            </EnlaceBoton>
+          )
+        }
+      >
         <p role="status" className="text-cuerpo-13 text-texto-secundario">
           {lista.data ? `${total} ${hayFiltros ? 'resultados' : 'registrados'}` : ' '}
         </p>
-      </header>
+      </EncabezadoPagina>
+
+      {filtros.sinResponder && (
+        <Alerta
+          tipo="advertencia"
+          titulo="Artículos con pares sin responder"
+          accion={
+            <Boton
+              variante="secundario"
+              tamano="sm"
+              onClick={() => cambiar({ sinResponder: undefined })}
+            >
+              Quitar este filtro
+            </Boton>
+          }
+        >
+          Se muestran solo los artículos que tienen pares con la invitación sin responder.
+        </Alerta>
+      )}
 
       <FiltrosArticulos filtros={filtros} onCambio={cambiar} />
 

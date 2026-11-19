@@ -1,26 +1,23 @@
 import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router-dom'
-import { vi } from 'vitest'
 import { PanelLateral } from './PanelLateral'
 
-function montar(revistaActiva: 'reep' | 'ire' | null, ruta: string, onAbrir = vi.fn()) {
+function montar(revistaActiva: 'reep' | 'ire' | null, ruta: string) {
   render(
     <MemoryRouter>
       <PanelLateral
         revistaActiva={revistaActiva}
         rutaActual={ruta}
         usuario={{ nombre: 'Ma. Camila Mendoza', perfil: 'Administradora' }}
-        onAbrirRevista={onAbrir}
         onCerrarSesion={() => undefined}
       />
     </MemoryRouter>,
   )
-  return onAbrir
 }
 
 describe('PanelLateral', () => {
-  it('opens only the active journal group, with six submodules', () => {
+  it('opens only the active journal group, with its submodules', () => {
     montar('reep', '/reep/articulos')
     const nav = screen.getByRole('navigation', { name: 'Principal' })
     expect(within(nav).getByRole('link', { name: 'Tablero' })).toHaveAttribute(
@@ -33,7 +30,7 @@ describe('PanelLateral', () => {
     )
     // IRE group is closed: its submodules are not rendered
     expect(
-      within(nav).queryByText('Pares evaluadores', { selector: '[href="/ire/pares"]' }),
+      within(nav).queryByText('Correos enviados', { selector: '[href="/ire/correos"]' }),
     ).toBeNull()
   })
 
@@ -44,9 +41,34 @@ describe('PanelLateral', () => {
     expect(actual.closest('a')).toBeNull()
   })
 
-  it('opening the other journal asks the app to switch', async () => {
-    const onAbrir = montar('reep', '/reep/tablero')
-    await userEvent.click(screen.getByRole('button', { name: /Investigium IRE/ }))
-    expect(onAbrir).toHaveBeenCalledWith('ire')
+  it('a click opens a journal group and another click closes it', async () => {
+    montar('reep', '/reep/tablero')
+    const nav = screen.getByRole('navigation', { name: 'Principal' })
+    const ire = screen.getByRole('button', { name: 'Investigium IRE' })
+    expect(ire).toHaveAttribute('aria-expanded', 'false')
+
+    await userEvent.click(ire)
+    expect(ire).toHaveAttribute('aria-expanded', 'true')
+    expect(nav.querySelector('[href="/ire/correos"]')).not.toBeNull()
+
+    await userEvent.click(ire)
+    expect(ire).toHaveAttribute('aria-expanded', 'false')
+    expect(nav.querySelector('[href="/ire/correos"]')).toBeNull()
+  })
+
+  it('the active journal group can be closed and opened again', async () => {
+    montar('reep', '/reep/articulos')
+    const reep = screen.getByRole('button', { name: 'Educación y Pedagogía' })
+    expect(reep).toHaveAttribute('aria-expanded', 'true')
+    await userEvent.click(reep)
+    expect(reep).toHaveAttribute('aria-expanded', 'false')
+    expect(screen.queryByText('Artículos')).toBeNull()
+    await userEvent.click(reep)
+    expect(screen.getByText('Artículos')).toHaveAttribute('aria-current', 'page')
+  })
+
+  it('does not show the "Módulo" labels', () => {
+    montar(null, '/inicio')
+    expect(screen.queryByText(/Módulo \d/)).toBeNull()
   })
 })

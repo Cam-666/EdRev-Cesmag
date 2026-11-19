@@ -5,6 +5,7 @@
  */
 import { ETIQUETA_TIPO } from '../config/listas'
 import { DistintivoEstado } from '@/components/common/DistintivoEstado'
+import { etiquetaPublicacion } from '@/lib/dominio/publicacion'
 import { formatearFecha } from '@/lib/format'
 import { REVISTAS } from '@/types/revista'
 import type { ArticuloDetalle } from '@/types/articulo'
@@ -18,7 +19,10 @@ export function DatosArticulo({ articulo }: DatosArticuloProps) {
     ['Número de OJS', articulo.numeroOjs],
     ['Revista', REVISTAS[articulo.revista].nombreCorto],
     ['Tipo de artículo', ETIQUETA_TIPO[articulo.tipo]],
-    ['Nº de publicación', articulo.numeroPublicacion ?? 'Sin asignar'],
+    [
+      'Publicación',
+      articulo.publicacion ? etiquetaPublicacion(articulo.publicacion) : 'Sin asignar',
+    ],
     ['Postulado', formatearFecha(articulo.fechaPostulacion)],
     ['Estado', <DistintivoEstado key="estado" estado={articulo.estado} />],
   ]

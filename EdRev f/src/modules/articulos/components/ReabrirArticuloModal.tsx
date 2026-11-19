@@ -7,6 +7,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { Controller, useForm } from 'react-hook-form'
 import { ESTADOS_REAPERTURA } from '../config/listas'
 import { esquemaReapertura } from '../config/esquemas'
+import { paresVigentes } from '../config/reglas'
 import type { ReaperturaForm } from '../config/esquemas'
 import { useReabrirArticulo } from '../hooks/useMutacionesArticulo'
 import { Alerta } from '@/components/common/Alerta'
@@ -44,20 +45,20 @@ export function ReabrirArticuloModal({
   })
 
   const conserva: Array<[string, string]> = [
-    ['Autores', `${articulo.autores.length} con su ORCID`],
+    ['Autores', String(articulo.autores.length)],
     [
       'Pares',
-      articulo.asignaciones.length === 0
+      paresVigentes(articulo.asignaciones).length === 0
         ? 'Ninguno asignado'
-        : `${articulo.asignaciones.length} asignados`,
+        : `${paresVigentes(articulo.asignaciones).length} asignados`,
     ],
     [
       'Antiplagio',
-      articulo.antiplagio
-        ? `${articulo.antiplagio.coincidencias} % · ${articulo.antiplagio.atribuidoIa} % de IA`
+      articulo.coincidencias !== null
+        ? `${articulo.coincidencias} % · ${articulo.atribuidoIa ?? 0} % de IA`
         : 'Ninguno',
     ],
-    ['Observaciones', `${articulo.totalObservaciones} fechadas`],
+    ['Revisión del comité', `${articulo.rondasComite.length} rondas`],
     [
       'Constancias',
       articulo.asignaciones.filter((a) => a.constanciaEmitida).length === 0

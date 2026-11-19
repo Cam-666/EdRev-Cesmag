@@ -1,21 +1,24 @@
 /*
  * Mutations over an article. Each one refreshes the cached article queries of the journal.
  */
-import { useMutation } from '@tanstack/react-query'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
 import {
   agregarAutorAArticulo,
+  cerrarArticulo,
   crearArticulo,
   editarArticulo,
   reabrirArticulo,
-  registrarRevision,
+  registrarRonda,
+  trasladarArticulo,
 } from '../services/articulosService'
 import { useInvalidarArticulos } from './useInvalidarArticulos'
 import { useRevista } from '@/lib/revista/useRevista'
 import type {
+  CierreArticulo,
   EdicionArticulo,
   EstadoArticulo,
+  NuevaRonda,
   NuevoArticulo,
-  RegistroRevision,
 } from '@/types/articulo'
 import type { DatosAutor } from '@/types/autor'
 
@@ -47,11 +50,30 @@ export function useAgregarAutor(id: string) {
   })
 }
 
-export function useRegistrarRevision(id: string) {
+export function useRegistrarRonda(id: string) {
   const { revista } = useRevista()
   const invalidar = useInvalidarArticulos()
   return useMutation({
-    mutationFn: (datos: RegistroRevision) => registrarRevision(revista, id, datos),
+    mutationFn: (ronda: NuevaRonda) => registrarRonda(revista, id, ronda),
+    onSuccess: invalidar,
+  })
+}
+
+/** The article leaves this journal: every article query of both journals is refreshed. */
+export function useTrasladarArticulo(id: string) {
+  const { revista } = useRevista()
+  const cliente = useQueryClient()
+  return useMutation({
+    mutationFn: () => trasladarArticulo(revista, id),
+    onSuccess: () => cliente.invalidateQueries({ queryKey: ['articulos'] }),
+  })
+}
+
+export function useCerrarArticulo(id: string) {
+  const { revista } = useRevista()
+  const invalidar = useInvalidarArticulos()
+  return useMutation({
+    mutationFn: (cierre: CierreArticulo) => cerrarArticulo(revista, id, cierre),
     onSuccess: invalidar,
   })
 }

@@ -76,10 +76,10 @@ describe('article list (/:revista/articulos)', () => {
   })
 })
 
-describe('article registration in two steps', () => {
-  it('step 1 validates required fields', async () => {
+describe('article registration (one form, then the committee review)', () => {
+  it('validates required fields', async () => {
     const { user } = montarRuta('/reep/articulos/nuevo')
-    await user.click(await screen.findByRole('button', { name: 'Continuar' }))
+    await user.click(await screen.findByRole('button', { name: 'Guardar artículo' }))
     expect(await screen.findByText('Escriba el número de OJS.')).toBeInTheDocument()
     expect(screen.getByText('Escriba el título del artículo.')).toBeInTheDocument()
     expect(screen.getByText('Seleccione el tipo de artículo.')).toBeInTheDocument()
@@ -104,28 +104,26 @@ describe('article registration in two steps', () => {
     expect(screen.queryByText(/ya está registrado/)).toBeNull()
   })
 
-  it('completes both steps, reusing an existing author, and opens the new sheet', async () => {
+  it('registers data and authors in one form and opens the committee review to fill', async () => {
     const { user, router } = montarRuta('/reep/articulos/nuevo')
+    expect(await screen.findByRole('link', { name: /Volver a artículos/ })).toHaveAttribute(
+      'href',
+      '/reep/articulos',
+    )
 
     await user.type(await screen.findByLabelText('Número de OJS'), '2026-035')
     await user.type(screen.getByLabelText('Título'), 'Narrativas docentes e identidad profesional')
     await elegirOpcion(user, 'Tipo de artículo', 'Investigación')
-    await user.click(screen.getByRole('button', { name: 'Continuar' }))
-
-    await waitFor(() =>
-      expect(router.state.location.pathname).toBe('/reep/articulos/nuevo/autores'),
-    )
-    expect(await screen.findByText('Paso 2 de 2 · 2026-035')).toBeInTheDocument()
 
     // Saving without authors is refused
-    await user.click(screen.getByRole('button', { name: 'Guardar' }))
+    await user.click(screen.getByRole('button', { name: 'Guardar artículo' }))
     expect(await screen.findByText(/Agregue al menos un autor/)).toBeInTheDocument()
 
-    // Existing author record: search by name, data fills in and becomes read-only
+    // Existing author of the common directory: search by name, data fills in, read-only
     await user.type(screen.getByLabelText('Buscar ficha existente'), 'Sandra')
     await user.click(await screen.findByRole('button', { name: /Sandra Milena Córdoba/ }))
     expect(screen.getByLabelText('Nombre completo')).toHaveValue('Sandra Milena Córdoba')
-    expect(screen.getByLabelText('ORCID')).toHaveAttribute('readonly')
+    expect(screen.getByLabelText('ORCID (opcional)')).toHaveAttribute('readonly')
     await user.click(screen.getByRole('button', { name: 'Agregar' }))
     expect(await screen.findByText('1 de 7')).toBeInTheDocument()
     expect(screen.getByText('Principal')).toBeInTheDocument()
@@ -133,31 +131,37 @@ describe('article registration in two steps', () => {
     // A brand-new author
     await user.type(screen.getByLabelText('Nombre completo'), 'Laura Sofía Rivera')
     await user.type(screen.getByLabelText('Correo electrónico'), 'laura.rivera@umariana.edu.co')
-    await user.type(screen.getByLabelText('ORCID'), '0000-0001-2345-6789')
+    await user.type(screen.getByLabelText('ORCID (opcional)'), '0000-0001-2345-6789')
     await user.type(screen.getByLabelText('Filiación'), 'Universidad Mariana')
     await user.click(screen.getByRole('button', { name: 'Agregar' }))
     expect(await screen.findByText('2 de 7')).toBeInTheDocument()
 
-    await user.click(screen.getByRole('button', { name: 'Guardar' }))
-    await waitFor(() => expect(router.state.location.pathname).toBe('/reep/articulos/2026-035'))
+    await user.click(screen.getByRole('button', { name: 'Guardar artículo' }))
+    await waitFor(() =>
+      expect(router.state.location.pathname).toBe('/reep/articulos/2026-035/comite'),
+    )
     expect(
       await screen.findByRole('heading', { level: 1, name: /2026-035 · Narrativas docentes/ }),
     ).toBeInTheDocument()
     expect(screen.getAllByText('Postulado').length).toBeGreaterThan(0)
+    expect(
+      await screen.findByRole('heading', { name: 'Ronda 1 de la revisión del comité' }),
+    ).toBeInTheDocument()
+    expect(screen.getByLabelText('Coincidencias (%)')).toHaveValue('')
   })
 
   it('validates the author form (ORCID format) before adding', async () => {
     const { user } = montarRuta('/reep/articulos/nuevo')
-    await user.type(await screen.findByLabelText('Número de OJS'), '2026-040')
-    await user.type(screen.getByLabelText('Título'), 'Prueba')
-    await elegirOpcion(user, 'Tipo de artículo', 'Revisión')
-    await user.click(screen.getByRole('button', { name: 'Continuar' }))
-    await screen.findByText('Paso 2 de 2 · 2026-040')
-
-    await user.type(screen.getByLabelText('Nombre completo'), 'Alguien')
-    await user.type(screen.getByLabelText('ORCID'), '123')
+    await user.type(await screen.findByLabelText('Nombre completo'), 'Alguien')
+    await user.type(screen.getByLabelText('ORCID (opcional)'), '123')
     await user.click(screen.getByRole('button', { name: 'Agregar' }))
     expect(await screen.findByText('Use el formato 0000-0000-0000-0000.')).toBeInTheDocument()
+  })
+
+  it('has no accessibility violations', async () => {
+    const { container } = montarRuta('/reep/articulos/nuevo')
+    await screen.findByLabelText('Número de OJS')
+    expect(await axe(container)).toHaveNoViolations()
   })
 })
 
@@ -171,13 +175,17 @@ describe('article sheet', () => {
     expect(screen.getByText('3 pares asignados')).toBeInTheDocument()
     expect(screen.getByText('Supera el 15 % aceptado. No bloquea el proceso.')).toBeInTheDocument()
     expect(screen.getByText('8 %')).toBeInTheDocument()
-    expect(screen.getByRole('link', { name: 'Editar antiplagio y revisión' })).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'Ver la revisión del comité' })).toHaveAttribute(
+      'href',
+      '/reep/articulos/2026-034/comite',
+    )
+    expect(screen.getByRole('link', { name: /Volver a artículos/ })).toBeInTheDocument()
   })
 
   it('does not warn when matches are within 15 %, whatever the AI percentage', async () => {
     montarRuta('/ire/articulos/2026-077')
     await screen.findByRole('heading', { level: 1, name: /2026-077/ })
-    expect(screen.getByText('Dentro del 15 % aceptado por la dependencia.')).toBeInTheDocument()
+    expect(screen.getByText('Antiplagio y comité editorial')).toBeInTheDocument()
     expect(screen.queryByText(/No bloquea el proceso/)).toBeNull()
   })
 
@@ -210,7 +218,7 @@ describe('article sheet', () => {
       within(agregar).getByLabelText('Correo electrónico'),
       'pedro.rojas@udenar.edu.co',
     )
-    await user.type(within(agregar).getByLabelText('ORCID'), '0000-0002-1111-2222')
+    await user.type(within(agregar).getByLabelText('ORCID (opcional)'), '0000-0002-1111-2222')
     await user.type(within(agregar).getByLabelText('Filiación'), 'Universidad de Nariño')
     await user.click(within(agregar).getByRole('button', { name: 'Agregar' }))
     expect(await screen.findByText('4 de 7')).toBeInTheDocument()
@@ -227,55 +235,27 @@ describe('article sheet', () => {
     expect(within(items[1] as HTMLElement).getByText('No publicable')).toBeInTheDocument()
     expect(within(items[2] as HTMLElement).getByText('Desempate')).toBeInTheDocument()
     expect(
-      screen.getByText('Los conceptos de los dos primeros pares se contradicen.'),
+      screen.getByText('Los conceptos de los dos primeros pares no coinciden.'),
     ).toBeInTheDocument()
-    expect(screen.getByText('Cómo se resuelve')).toBeInTheDocument()
   })
 
   it('Pares y evaluación does not show the notice when concepts agree', async () => {
     const { user } = montarRuta('/reep/articulos/2026-024')
     await user.click(await screen.findByRole('tab', { name: 'Pares y evaluación' }))
     await screen.findByRole('list', { name: 'Pares asignados' })
-    expect(screen.queryByText(/se contradicen/)).toBeNull()
+    expect(screen.queryByText(/no coinciden/)).toBeNull()
   })
 
-  it('Observaciones: newest first and a new one is added without overwriting', async () => {
-    const { user } = montarRuta('/reep/articulos/2026-034/observaciones')
-    const lista = await screen.findByRole('list', { name: 'Observaciones registradas' })
-    const antes = within(lista).getAllByRole('listitem')
-    expect(antes).toHaveLength(3)
-    expect(within(antes[0] as HTMLElement).getByText(/Conceptos divergentes/)).toBeInTheDocument()
-    expect(
-      within(antes[0] as HTMLElement).getByText(/28 oct · 15:40 · Ma\. C\. Mendoza/),
-    ).toBeInTheDocument()
-
-    expect(screen.getByText(/Se registrará como Ma\. Camila Mendoza/)).toBeInTheDocument()
-    await user.type(
-      screen.getByLabelText('Escribir una observación'),
-      'El autor solicitó ocho días de prórroga.',
-    )
-    await user.click(screen.getByRole('button', { name: 'Guardar' }))
-
-    await waitFor(() =>
-      expect(
-        within(screen.getByRole('list', { name: 'Observaciones registradas' })).getAllByRole(
-          'listitem',
-        ),
-      ).toHaveLength(4),
-    )
-    const despues = within(
-      screen.getByRole('list', { name: 'Observaciones registradas' }),
-    ).getAllByRole('listitem')
-    expect(
-      within(despues[0] as HTMLElement).getByText('El autor solicitó ocho días de prórroga.'),
-    ).toBeInTheDocument()
-    expect(within(despues[1] as HTMLElement).getByText(/Conceptos divergentes/)).toBeInTheDocument()
-  })
-
-  it('Observaciones: refuses an empty note', async () => {
-    const { user } = montarRuta('/reep/articulos/2026-034/observaciones')
-    await user.click(await screen.findByRole('button', { name: 'Guardar' }))
-    expect(await screen.findByText('Escriba la observación.')).toBeInTheDocument()
+  it('has no «Observaciones» tab: the sheet has the five tabs of RF-36 (D16)', async () => {
+    montarRuta('/reep/articulos/2026-034')
+    const pestanas = await screen.findAllByRole('tab')
+    expect(pestanas.map((t) => t.textContent)).toEqual([
+      'Resumen',
+      'Revisión del comité',
+      'Autores',
+      'Pares y evaluación',
+      'Historial',
+    ])
   })
 
   it('Historial shows mails with symbol + text result and who changed what', async () => {
@@ -283,9 +263,9 @@ describe('article sheet', () => {
     await user.click(await screen.findByRole('tab', { name: 'Historial' }))
     const tabla = await screen.findByRole('table', { name: 'Correos enviados por este artículo' })
     expect(within(tabla).getByText('Rebotado')).toBeInTheDocument()
-    expect(within(tabla).getAllByText('Entregado').length).toBeGreaterThan(0)
-    expect(within(tabla).getAllByText('Agradecimiento con constancia').length).toBeGreaterThan(0)
-    expect(screen.getByText('Quién cambió qué')).toBeInTheDocument()
+    expect(within(tabla).getAllByText('Enviado').length).toBeGreaterThan(0)
+    expect(within(tabla).getAllByText('Agradecimiento').length).toBeGreaterThan(0)
+    expect(screen.getByText('Cambios')).toBeInTheDocument()
     expect(screen.getByText('Asignó el par 3 como desempate')).toBeInTheDocument()
   })
 
@@ -300,11 +280,16 @@ describe('article sheet', () => {
     )
   })
 
-  it('edits title, type and publication number', async () => {
+  it('edits title, type and publication (volume and number together)', async () => {
     const { user } = montarRuta('/reep/articulos/2026-032')
     await user.click(await screen.findByRole('button', { name: 'Editar' }))
     const dialogo = await screen.findByRole('dialog', { name: 'Editar artículo' })
-    await user.type(within(dialogo).getByLabelText('Nº de publicación'), 'Vol. 10 n.º 2')
+    await user.type(within(dialogo).getByLabelText('Volumen'), '10')
+    await user.click(within(dialogo).getByRole('button', { name: 'Guardar cambios' }))
+    expect(
+      await within(dialogo).findByText('Escriba el número junto con el volumen.'),
+    ).toBeInTheDocument()
+    await user.type(within(dialogo).getByLabelText('Número'), '2')
     await user.click(within(dialogo).getByRole('button', { name: 'Guardar cambios' }))
     await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull())
     expect(
@@ -314,78 +299,176 @@ describe('article sheet', () => {
   })
 })
 
-describe('anti-plagiarism and committee review (/antiplagio)', () => {
-  it('warns next to the field above 15 % without blocking, and never for the AI percentage', async () => {
-    const { user } = montarRuta('/reep/articulos/2026-034/antiplagio')
-    const coincidencias = await screen.findByLabelText('Coincidencias (%)')
-    await user.clear(coincidencias)
-    await user.type(coincidencias, '9')
-    expect(screen.getByText(/están dentro del 15 % aceptado/)).toBeInTheDocument()
+describe('closing the process (RF-08)', () => {
+  it('approving asks for the reason and the volume and number together', async () => {
+    const { user } = montarRuta('/reep/articulos/2026-034')
+    await user.click(await screen.findByRole('button', { name: 'Cerrar proceso' }))
+    const dialogo = await screen.findByRole('dialog', { name: 'Cerrar el proceso' })
+    await elegirOpcion(user, 'Nuevo estado', 'Aprobado')
+    await user.click(within(dialogo).getByRole('button', { name: 'Cerrar el proceso' }))
+    expect(await within(dialogo).findByText('Escriba el motivo del cierre.')).toBeInTheDocument()
+    await user.type(within(dialogo).getByLabelText('Motivo'), 'Los pares lo consideran publicable.')
+    // The article already had Vol. 10 n.º 2: it comes filled in; without the volume it is refused
+    const volumen = within(dialogo).getByLabelText('Volumen')
+    expect(volumen).toHaveValue('10')
+    await user.clear(volumen)
+    await user.click(within(dialogo).getByRole('button', { name: 'Cerrar el proceso' }))
+    expect(
+      await within(dialogo).findByText('Escriba el volumen de la publicación.'),
+    ).toBeInTheDocument()
 
+    await user.type(volumen, '11')
+    const numero = within(dialogo).getByLabelText('Número')
+    await user.clear(numero)
+    await user.type(numero, '1')
+    await user.click(within(dialogo).getByRole('button', { name: 'Cerrar el proceso' }))
+    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull())
+    expect((await screen.findAllByText(/Vol\. 11 n\.º 1/)).length).toBeGreaterThan(0)
+    expect(screen.queryByRole('button', { name: 'Cerrar proceso' })).toBeNull()
+
+    await user.click(screen.getByRole('tab', { name: 'Historial' }))
+    expect(
+      await screen.findByText(/Cerró el proceso como Aprobado: Los pares lo consideran/),
+    ).toBeInTheDocument()
+  })
+
+  it('archiving leaves the article ready to be reopened later', async () => {
+    const { user } = montarRuta('/reep/articulos/2026-032')
+    await user.click(await screen.findByRole('button', { name: 'Cerrar proceso' }))
+    const dialogo = await screen.findByRole('dialog', { name: 'Cerrar el proceso' })
+    await elegirOpcion(user, 'Nuevo estado', 'Archivado')
+    expect(within(dialogo).queryByLabelText('Volumen')).toBeNull()
+    await user.type(within(dialogo).getByLabelText('Motivo'), 'El autor no respondió.')
+    await user.click(within(dialogo).getByRole('button', { name: 'Cerrar el proceso' }))
+    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull())
+    expect((await screen.findAllByText('Archivado')).length).toBeGreaterThan(0)
+  })
+})
+
+describe('committee review (/comite)', () => {
+  it('registers rounds with the anti-plagiarism report; the 15 % warning never blocks', async () => {
+    const { user, router } = montarRuta('/reep/articulos/2026-023/comite')
+    expect(await screen.findByText('Aún no hay rondas registradas.')).toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: 'Registrar ronda' }))
+
+    const coincidencias = await screen.findByLabelText('Coincidencias (%)')
+    expect(coincidencias).toHaveValue('11')
     const ia = screen.getByLabelText('Atribuido a IA (%)')
     await user.clear(ia)
     await user.type(ia, '95')
     expect(screen.queryByText(/superan el 15 %/)).toBeNull()
-    expect(screen.getByText('No es causal de rechazo.')).toBeInTheDocument()
+    await user.clear(coincidencias)
+    await user.type(coincidencias, '150')
+    await user.click(screen.getByRole('button', { name: 'Guardar ronda' }))
+    expect(await screen.findByText('Escriba un número entre 0 y 100.')).toBeInTheDocument()
+    expect(screen.getByText('Seleccione el resultado del comité.')).toBeInTheDocument()
 
+    // The page only suggests a result; the committee chooses it
     await user.clear(coincidencias)
     await user.type(coincidencias, '21')
     expect(
-      screen.getByText(/superan el 15 % aceptado\. No bloquea el proceso\./),
+      await screen.findByText('Sugerencia: Rechazado (no publicable)'),
     ).toBeInTheDocument()
+    expect(screen.getByText(/superan el 15 % aceptado/)).toBeInTheDocument()
+    // within the limit and with observations the suggestion changes
+    await user.clear(coincidencias)
+    await user.type(coincidencias, '11')
+    await user.type(screen.getByLabelText('Observaciones del comité'), 'Ajustar el método.')
+    expect(
+      await screen.findByText('Sugerencia: Requiere ajustes (publicable con observaciones)'),
+    ).toBeInTheDocument()
+    // nothing is chosen for the committee: the choice stays empty until it picks one
+    await elegirOpcion(user, 'Resultado del comité', 'Requiere ajustes')
+    await user.click(screen.getByRole('button', { name: 'Guardar ronda' }))
+    expect(await screen.findByText(/Ronda registrada: Requiere ajustes/)).toBeInTheDocument()
+    const lista = screen.getByRole('list', { name: 'Rondas de la revisión del comité' })
+    expect(within(lista).getByText('Ajustar el método.')).toBeInTheDocument()
+
+    // Second round: approved, so it goes straight to the assignment of peers
+    await user.click(await screen.findByRole('button', { name: 'Registrar ronda' }))
+    await screen.findByRole('heading', { name: 'Ronda 2 de la revisión del comité' })
+    expect(await screen.findByText('Sugerencia: Aprobado (publicable)')).toBeInTheDocument()
+    await elegirOpcion(user, 'Resultado del comité', 'Aprobado')
+    await user.click(screen.getByRole('button', { name: 'Guardar ronda' }))
+    await waitFor(() =>
+      expect(router.state.location.pathname).toBe('/reep/articulos/2026-023/pares'),
+    )
+    expect(router.state.location.search).toBe('?asignar=1')
   })
 
-  it('validates the percentages and saves even above the threshold', async () => {
-    const { user, router } = montarRuta('/reep/articulos/2026-034/antiplagio')
+  it('a Rechazado round does not close the process; the committee can approve a later one even above the limit', async () => {
+    const { user, router } = montarRuta('/reep/articulos/2026-026/comite')
+    await user.click(await screen.findByRole('button', { name: 'Registrar ronda' }))
     const coincidencias = await screen.findByLabelText('Coincidencias (%)')
     await user.clear(coincidencias)
-    await user.type(coincidencias, '150')
-    await user.click(screen.getByRole('button', { name: 'Guardar' }))
-    expect(await screen.findByText('Escriba un número entre 0 y 100.')).toBeInTheDocument()
+    await user.type(coincidencias, '40')
+    const ia = screen.getByLabelText('Atribuido a IA (%)')
+    await user.clear(ia)
+    await user.type(ia, '1')
+    await elegirOpcion(user, 'Resultado del comité', 'Rechazado')
+    await user.click(screen.getByRole('button', { name: 'Guardar ronda' }))
+    expect(await screen.findByText(/Ronda registrada: Rechazado/)).toBeInTheDocument()
+    expect(screen.getByText(/El artículo sigue en revisión/)).toBeInTheDocument()
+    // the process is not closed: another round can be registered
+    expect(await screen.findByRole('button', { name: 'Registrar ronda' })).toBeInTheDocument()
 
-    await user.clear(coincidencias)
-    await user.type(coincidencias, '18')
-    await user.click(screen.getByRole('button', { name: 'Guardar' }))
-    await waitFor(() => expect(router.state.location.pathname).toBe('/reep/articulos/2026-034'))
-    expect(await screen.findByText('Antiplagio 18 %')).toBeInTheDocument()
+    // the committee approves a round although the report does not: it goes on to the peers
+    await user.click(screen.getByRole('button', { name: 'Registrar ronda' }))
+    const otra = await screen.findByLabelText('Coincidencias (%)')
+    await user.clear(otra)
+    await user.type(otra, '70')
+    expect(await screen.findByText('Sugerencia: Rechazado (no publicable)')).toBeInTheDocument()
+    await elegirOpcion(user, 'Resultado del comité', 'Aprobado')
+    await user.click(screen.getByRole('button', { name: 'Guardar ronda' }))
+    await waitFor(() => expect(router.state.location.search).toBe('?asignar=1'))
   })
 
-  it('registers the committee review from the closed list and moves a screened article', async () => {
-    const { user } = montarRuta('/reep/articulos/2026-023/antiplagio')
-    await screen.findByLabelText('Coincidencias (%)')
-    await elegirOpcion(user, 'Resultado', 'Pasa a pares evaluadores')
-    await user.type(
-      screen.getByLabelText('Observación del comité'),
-      'Cumple los criterios de la revista.',
+  it('shows every round, most recent first; no new rounds once the article has peers, but it can still change journal', async () => {
+    montarRuta('/reep/articulos/2026-034/comite')
+    const lista = await screen.findByRole('list', { name: 'Rondas de la revisión del comité' })
+    const rondas = within(lista).getAllByRole('listitem')
+    expect(rondas).toHaveLength(2)
+    expect(within(rondas[0] as HTMLElement).getByText('Ronda 2')).toBeInTheDocument()
+    expect(within(rondas[0] as HTMLElement).getByText('Aprobado')).toBeInTheDocument()
+    expect(within(rondas[1] as HTMLElement).getByText('Requiere ajustes')).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Registrar ronda' })).toBeNull()
+    expect(screen.getByRole('button', { name: 'Cambiar de revista' })).toBeInTheDocument()
+  })
+
+  it('changes an article in committee review to the other journal', async () => {
+    const { user, router } = montarRuta('/reep/articulos/2026-021')
+    await user.click(await screen.findByRole('button', { name: 'Cambiar de revista' }))
+    const dialogo = await screen.findByRole('dialog', { name: 'Cambiar a Investigium IRE' })
+    await user.click(within(dialogo).getByRole('button', { name: 'Cambiar de revista' }))
+    await waitFor(() =>
+      expect(router.state.location.pathname).toBe('/ire/articulos/2026-021/comite'),
     )
-    await user.click(screen.getByRole('button', { name: 'Guardar' }))
-    await screen.findByRole('heading', { level: 1, name: /2026-023/ })
-    expect((await screen.findAllByText('En evaluación')).length).toBeGreaterThan(0)
-    expect(screen.getAllByText('Pasa a pares evaluadores').length).toBeGreaterThan(0)
-  })
-
-  it('lists what was registered before', async () => {
-    montarRuta('/reep/articulos/2026-034/antiplagio')
-    expect(await screen.findByText('Registrado antes')).toBeInTheDocument()
-    expect(screen.getByText('Antiplagio: 21 % y 8 %.')).toBeInTheDocument()
-  })
-
-  it('is closed to the Auxiliar profile', async () => {
-    montarRuta('/reep/articulos/2026-034/antiplagio', AUXILIAR)
+    expect(await screen.findByText(/ISSN: 2357-5239/)).toBeInTheDocument()
     expect(
-      await screen.findByRole('heading', { level: 1, name: 'Acceso restringido' }),
+      await screen.findByRole('heading', { level: 1, name: /2026-021 · Formación docente/ }),
     ).toBeInTheDocument()
+  })
+
+  it('the Auxiliar can register rounds', async () => {
+    montarRuta('/reep/articulos/2026-023/comite', AUXILIAR)
+    expect(await screen.findByRole('button', { name: 'Registrar ronda' })).toBeInTheDocument()
+  })
+
+  it('has no accessibility violations with the form open', async () => {
+    const { container } = montarRuta('/reep/articulos/2026-023/comite?registrar=1')
+    await screen.findByRole('heading', { name: 'Ronda 1 de la revisión del comité' })
+    expect(await axe(container)).toHaveNoViolations()
   })
 })
 
 describe('reopening an archived article (/reabrir)', () => {
-  it('shows what is kept, requires a reason and records it as an observation', async () => {
+  it('shows what is kept, requires a reason and records it in the history', async () => {
     const { user, router } = montarRuta('/reep/articulos/2026-007/reabrir')
     const dialogo = await screen.findByRole('dialog', { name: 'Retomar el proceso' })
     expect(within(dialogo).getByText(/Archivado el 30 de septiembre de 2026/)).toBeInTheDocument()
     expect(within(dialogo).getByText('Se conserva')).toBeInTheDocument()
     expect(within(dialogo).getByText('Ninguno asignado')).toBeInTheDocument()
-    expect(within(dialogo).getByText('3 con su ORCID')).toBeInTheDocument()
+    expect(within(dialogo).getByText('3')).toBeInTheDocument()
 
     await user.click(within(dialogo).getByRole('button', { name: 'Retomar' }))
     expect(
@@ -402,18 +485,17 @@ describe('reopening an archived article (/reabrir)', () => {
     await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull(), { timeout: 10000 })
     expect((await screen.findAllByText('En revisión')).length).toBeGreaterThan(0)
 
-    await user.click(await screen.findByRole('tab', { name: 'Observaciones' }))
+    await user.click(await screen.findByRole('tab', { name: 'Historial' }))
     expect(
-      await screen.findByText(/Se retomó el proceso: El autor escribió el 2 de noviembre/),
+      await screen.findByText(/Retomó el proceso: El autor escribió el 2 de noviembre/),
     ).toBeInTheDocument()
-    // The earlier history is kept: the three older observations are still there
-    expect(screen.getByText('Se solicitaron modificaciones al autor.')).toBeInTheDocument()
+    // The earlier history is kept
+    expect(screen.getByText('Archivó el artículo')).toBeInTheDocument()
   })
 
-  it('is closed to the Auxiliar profile', async () => {
+  it('is open to the Auxiliar profile', async () => {
     montarRuta('/reep/articulos/2026-007/reabrir', AUXILIAR)
-    expect(await screen.findByRole('heading', { name: 'Acceso restringido' })).toBeInTheDocument()
-    expect(screen.queryByRole('dialog')).toBeNull()
+    expect(await screen.findByRole('dialog', { name: 'Retomar el proceso' })).toBeInTheDocument()
   })
 
   it('explains that a non-archived article has nothing to resume', async () => {

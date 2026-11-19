@@ -4,9 +4,17 @@
  * Covers: RF-12..RF-18, RNF-06. Simulates the backend; permissions are enforced here.
  */
 import { http, HttpResponse } from 'msw'
+import { autorPorId, baseDe, todasLasAsignaciones } from '../db'
 import type { SeedRevista } from '../seed/fabrica'
 import { ahoraIso, contexto, error, sinTildes } from './util'
-import { detectarConflicto } from '@/lib/dominio/conflicto'
+import { mismaInstitucion } from '@/lib/dominio/conflicto'
+import { enCurso } from '@/lib/dominio/pares'
+import {
+  avisoParExistente,
+  buscarParExistente,
+  claveTexto,
+  formaExistente,
+} from '@/lib/dominio/parExistente'
 import type {
   EstadoDisponibilidad,
   MotivoBloqueo,
@@ -19,11 +27,14 @@ import type {
 export function autoresDeArticulo(base: SeedRevista, articuloId: string) {
   const articulo = base.articulos.find((a) => a.id === articuloId)
   if (!articulo) return []
-  return articulo.autoresIds.flatMap((id) => base.autores.filter((a) => a.id === id))
+  return articulo.autoresIds.flatMap((id) => {
+    const autor = autorPorId(id)
+    return autor ? [autor] : []
+  })
 }
 
-function evaluaciones(base: SeedRevista, parId: string): number {
-  return base.asignaciones.filter((a) => a.parId === parId && a.estado === 'entrego').length
+function evaluaciones(parId: string): number {
+  return todasLasAsignaciones().filter((a) => a.parId === parId && a.estado === 'entrego').length
 }
 
 function disponibilidad(
@@ -33,7 +44,8 @@ function disponibilidad(
 ): EstadoDisponibilidad {
   if (par.bloqueo) return 'bloqueado'
   const autores = articuloId ? autoresDeArticulo(base, articuloId) : []
-  return detectarConflicto(par, autores) ? 'conflicto' : 'disponible'
+  if (mismaInstitucion(par, autores)) return 'misma-institucion'
+  return 'disponible'
 }
 
 function listado(base: SeedRevista, par: ParEvaluador, articuloId: string | null): ParListado {
@@ -44,20 +56,27 @@ function listado(base: SeedRevista, par: ParEvaluador, articuloId: string | null
     universidad: par.universidad,
     area: par.area,
     bloqueo: par.bloqueo,
-    evaluaciones: evaluaciones(base, par.id),
+    evaluaciones: evaluaciones(par.id),
     estado: disponibilidad(base, par, articuloId),
   }
 }
 
-function detalle(base: SeedRevista, par: ParEvaluador): ParDetalle {
-  const mias = base.asignaciones.filter((a) => a.parId === par.id)
-  const participaciones = mias
-    .map((a) => {
+function detalle(par: ParEvaluador): ParDetalle {
+  // The base of peers is common: the history gathers the evaluations of both journals.
+  const propias = (['reep', 'ire'] as const).flatMap((revista) =>
+    baseDe(revista)
+      .asignaciones.filter((a) => a.parId === par.id)
+      .map((a) => ({ a, base: baseDe(revista), revista })),
+  )
+  const mias = propias.map((x) => x.a)
+  const participaciones = propias
+    .map(({ a, base, revista }) => {
       const articulo = base.articulos.find((x) => x.id === a.articuloId)
       const constancia = base.constancias.find((c) => c.asignacionId === a.id)
       return {
         asignacionId: a.id,
         articuloId: a.articuloId,
+        revista,
         numeroOjs: articulo?.numeroOjs ?? a.articuloId,
         titulo: articulo?.titulo ?? '',
         estado: a.estado,
@@ -97,16 +116,24 @@ export const handlersPares = [
     const porPagina = Math.max(1, Number(url.searchParams.get('porPagina') ?? 10))
 
     const todos = c.base.pares.map((p) => listado(c.base, p, articulo))
+    // RF-19: peers that can be assigned have no evaluation in progress and are not in the article.
+    const ocupados = new Set(
+      todasLasAsignaciones()
+        .filter((a) => enCurso(a) || a.articuloId === articulo)
+        .map((a) => a.parId),
+    )
     const filtrados = todos
       .filter((p) => !q || sinTildes(p.nombre).includes(q) || sinTildes(p.correo).includes(q))
       .filter((p) => !area || sinTildes(p.area).includes(area))
-      .filter((p) => !universidad || p.universidad === universidad)
+      .filter((p) => !universidad || claveTexto(p.universidad) === claveTexto(universidad))
       .filter((p) =>
         estado === 'bloqueados'
           ? p.estado === 'bloqueado'
           : estado === 'disponibles'
             ? p.estado !== 'bloqueado'
-            : true,
+            : estado === 'asignables'
+              ? p.estado !== 'bloqueado' && p.estado !== 'misma-institucion' && !ocupados.has(p.id)
+              : true,
       )
       .sort((a, b) => a.nombre.localeCompare(b.nombre))
     return HttpResponse.json({
@@ -127,9 +154,10 @@ export const handlersPares = [
   http.get('*/api/:revista/pares/universidades', ({ params, request }) => {
     const c = contexto(params, request)
     if (!c.ok) return c.respuesta
-    const lista = [...new Set(c.base.pares.map((p) => p.universidad))].sort((a, b) =>
-      a.localeCompare(b),
-    )
+    // "CESMAG" and "Cesmag" are the same university: one entry per comparison key
+    const lista = [
+      ...new Map(c.base.pares.map((p) => [claveTexto(p.universidad), p.universidad])).values(),
+    ].sort((a, b) => a.localeCompare(b))
     return HttpResponse.json(lista)
   }),
 
@@ -138,7 +166,7 @@ export const handlersPares = [
     if (!c.ok) return c.respuesta
     const par = c.base.pares.find((p) => p.id === params.id)
     if (!par) return error(404, 'Par evaluador no encontrado')
-    return HttpResponse.json(detalle(c.base, par))
+    return HttpResponse.json(detalle(par))
   }),
 
   http.post('*/api/:revista/pares', async ({ params, request }) => {
@@ -153,18 +181,17 @@ export const handlersPares = [
     ) {
       return error(422, 'Complete nombre, correo, universidad y área temática')
     }
-    if (c.base.pares.some((p) => p.correo.toLowerCase() === datos.correo.trim().toLowerCase())) {
-      return error(409, 'Ya existe un par con ese correo en esta revista')
-    }
+    const existente = buscarParExistente(c.base.pares, datos.nombre, datos.correo)
+    if (existente) return error(409, avisoParExistente(existente))
     const par: ParEvaluador = {
       id: `${c.revista}-par-n${c.base.pares.length + 1}`,
       revista: c.revista,
       nombre: datos.nombre.trim(),
+      profesion: (datos.profesion ?? '').trim(),
       correo: datos.correo.trim(),
-      universidad: datos.universidad.trim(),
+      universidad: formaExistente(c.base.pares, 'universidad', datos.universidad),
       area: datos.area.trim(),
       bloqueo: null,
-      autorizoDatosEn: datos.autorizoDatos ? ahoraIso().slice(0, 10) : null,
     }
     c.base.pares.push(par)
     c.base.auditoria.unshift({
@@ -176,7 +203,7 @@ export const handlersPares = [
       fecha: ahoraIso(),
       usuario: c.usuario.nombre,
     })
-    return HttpResponse.json(detalle(c.base, par), { status: 201 })
+    return HttpResponse.json(detalle(par), { status: 201 })
   }),
 
   http.patch('*/api/:revista/pares/:id', async ({ params, request }) => {
@@ -185,7 +212,7 @@ export const handlersPares = [
     const par = c.base.pares.find((p) => p.id === params.id)
     if (!par) return error(404, 'Par evaluador no encontrado')
     const cambios = (await request.json()) as Partial<
-      Pick<ParEvaluador, 'nombre' | 'correo' | 'universidad' | 'area'>
+      Pick<ParEvaluador, 'nombre' | 'profesion' | 'correo' | 'universidad' | 'area'>
     >
     if (
       cambios.correo &&
@@ -193,7 +220,7 @@ export const handlersPares = [
         (p) => p.id !== par.id && p.correo.toLowerCase() === cambios.correo?.toLowerCase(),
       )
     ) {
-      return error(409, 'Ya existe un par con ese correo en esta revista')
+      return error(409, 'Ya existe un par con ese correo en la base de pares')
     }
     Object.assign(par, cambios)
     c.base.auditoria.unshift({
@@ -205,7 +232,7 @@ export const handlersPares = [
       fecha: ahoraIso(),
       usuario: c.usuario.nombre,
     })
-    return HttpResponse.json(detalle(c.base, par))
+    return HttpResponse.json(detalle(par))
   }),
 
   http.post('*/api/:revista/pares/:id/bloquear', async ({ params, request }) => {
@@ -225,7 +252,7 @@ export const handlersPares = [
       fecha: ahoraIso(),
       usuario: c.usuario.nombre,
     })
-    return HttpResponse.json(detalle(c.base, par))
+    return HttpResponse.json(detalle(par))
   }),
 
   http.post('*/api/:revista/pares/:id/desbloquear', async ({ params, request }) => {
@@ -241,11 +268,11 @@ export const handlersPares = [
       id: `${c.revista}-aud-n${c.base.auditoria.length + 1}`,
       revista: c.revista,
       articuloId: null,
-      tipo: 'bloqueo',
+      tipo: 'desbloqueo',
       accion: `Desbloqueó al par ${par.nombre}: ${motivo.trim()}`,
       fecha: ahoraIso(),
       usuario: c.usuario.nombre,
     })
-    return HttpResponse.json(detalle(c.base, par))
+    return HttpResponse.json(detalle(par))
   }),
 ]

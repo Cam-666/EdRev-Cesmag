@@ -1,0 +1,52 @@
+# EdRev Cesmag completo: base de datos, API y frontend.
+#   docker compose up --build   →   frontend http://localhost:8080 · API http://localhost:3000/api
+# La primera vez PostgreSQL ejecuta EdRev b/db/*.sql (esquema y datos iniciales).
+services:
+  db:
+    image: postgres:18-alpine
+    environment:
+      POSTGRES_DB: edrev
+      POSTGRES_USER: edrev
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-cambie-esta-clave}
+    volumes:
+      - datos:/var/lib/postgresql
+      - ./EdRev b/db:/docker-entrypoint-initdb.d:ro
+    ports:
+      - "5433:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U edrev -d edrev"]
+      interval: 5s
+      retries: 10
+
+  api:
+    build: ./EdRev b
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      PORT: 3000
+      DATABASE_URL: postgres://edrev:${DB_PASSWORD:-cambie-esta-clave}@db:5432/edrev
+      # Cadena aleatoria de 32+ caracteres; el servidor no arranca con una más corta ni con un texto de ejemplo.
+      JWT_SECRET: ${JWT_SECRET:?Defina JWT_SECRET con una cadena aleatoria de 32 o más caracteres}
+      CORS_ORIGIN: http://localhost:8080
+      FRONTEND_URL: ${FRONTEND_URL:-http://localhost:8080}
+      API_PUBLICA_URL: ${API_PUBLICA_URL:-http://localhost:3000}
+      ZONA_HORARIA: ${ZONA_HORARIA:-America/Bogota}
+      CORREO_MODO: ${CORREO_MODO:-simulado}
+      BREVO_API_KEY: ${BREVO_API_KEY:-}
+      ENLACE_DEMO: ${ENLACE_DEMO:-true}
+    ports:
+      - "3000:3000"
+
+  web:
+    build:
+      context: ./EdRev f
+      args:
+        VITE_API_URL: http://localhost:3000/api
+    depends_on:
+      - api
+    ports:
+      - "8080:80"
+
+volumes:
+  datos:

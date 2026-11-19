@@ -7,14 +7,12 @@ import { DistintivoEstado } from '@/components/common/DistintivoEstado'
 import { Tabla } from '@/components/common/Tabla'
 import type { ColumnaTabla } from '@/components/common/Tabla'
 import type { Participacion } from '@/types/par'
-import type { Revista } from '@/types/revista'
 
 export interface TablaParticipacionesProps {
-  revista: Revista
   participaciones: Participacion[]
 }
 
-export function TablaParticipaciones({ revista, participaciones }: TablaParticipacionesProps) {
+export function TablaParticipaciones({ participaciones }: TablaParticipacionesProps) {
   const columnas: Array<ColumnaTabla<Participacion>> = [
     {
       clave: 'articulo',
@@ -48,7 +46,7 @@ export function TablaParticipaciones({ revista, participaciones }: TablaParticip
       columnas={columnas}
       filas={participaciones}
       obtenerClave={(p) => p.asignacionId}
-      hrefFila={(p) => `/${revista}/articulos/${encodeURIComponent(p.articuloId)}/pares`}
+      hrefFila={(p) => `/${p.revista}/articulos/${encodeURIComponent(p.articuloId)}/pares`}
       etiquetaEnlace={(p) => `Abrir el artículo ${p.numeroOjs}`}
       vacio="Este par aún no ha participado en ningún artículo."
     />

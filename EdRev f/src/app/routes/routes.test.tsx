@@ -8,24 +8,17 @@ import type { Usuario } from '@/types/usuario'
 import { REVISTAS } from '@/types/revista'
 import type { Revista } from '@/types/revista'
 
-/** The 18 views each journal has, identical for reep and ire. */
+/** The 11 views each journal has, identical for reep and ire. */
 const VISTAS = [
   'tablero',
   'articulos',
   'articulos/nuevo',
-  'articulos/nuevo/autores',
   'articulos/{id}',
   'articulos/{id}/autores',
   'articulos/{id}/pares',
-  'articulos/{id}/observaciones',
   'articulos/{id}/historial',
-  'articulos/{id}/antiplagio',
+  'articulos/{id}/comite',
   'articulos/{archivado}/reabrir',
-  'autores',
-  'pares',
-  'pares/bloqueados',
-  'pares/asignar',
-  'pares/p-1',
   'constancias',
   'correos',
 ]
@@ -43,15 +36,23 @@ function montar(ruta: string, usuario: Usuario | null = ADMINISTRADORA) {
 const REVISTAS_IDS: Revista[] = ['reep', 'ire']
 
 /** Each journal has its own articles: an ordinary one and an archived one. */
-const ARTICULOS: Record<Revista, { id: string; archivado: string }> = {
-  reep: { id: '2026-034', archivado: '2026-007' },
-  ire: { id: '2026-077', archivado: '2026-022' },
+const ARTICULOS: Record<Revista, { id: string; archivado: string; autor: string }> = {
+  reep: { id: '2026-034', archivado: '2026-007', autor: 'reep-au-3' },
+  ire: { id: '2026-077', archivado: '2026-022', autor: 'ire-au-1' },
 }
 
 describe('route table', () => {
-  it('defines 18 views per journal', () => {
-    expect(VISTAS).toHaveLength(18)
+  it('defines 11 views per journal', () => {
+    expect(VISTAS).toHaveLength(11)
   })
+
+  it.each(['/autores', '/autores/reep-au-3', '/pares', '/pares/bloqueados', '/pares/reep-par-1'])(
+    'renders the common screen %s, without a journal top bar',
+    async (ruta) => {
+      montar(ruta)
+      expect((await screen.findAllByRole('heading', { level: 1 })).length).toBeGreaterThan(0)
+    },
+  )
 
   describe.each(REVISTAS_IDS)('journal %s', (revista) => {
     const otra: Revista = revista === 'reep' ? 'ire' : 'reep'
@@ -62,6 +63,7 @@ describe('route table', () => {
         const ruta = vista
           .replace('{archivado}', ARTICULOS[revista].archivado)
           .replace('{id}', ARTICULOS[revista].id)
+          .replace('{autor}', ARTICULOS[revista].autor)
         const { container } = montar(`/${revista}/${ruta}`)
         // Article views load their data first: wait until the page title is there.
         await waitFor(() =>
@@ -102,14 +104,17 @@ describe('route table', () => {
   ])('cross-journal module %s has no journal palette and no open journal group', (ruta) => {
     const { container } = montar(ruta)
     expect(container.querySelector('[data-revista]')).toBeNull()
-    expect(screen.getByText('Las dos revistas')).toBeInTheDocument()
+    expect(screen.queryByText('Ambas revistas')).toBeNull()
     const nav = screen.getByRole('navigation', { name: 'Principal', hidden: true })
     expect(within(nav).queryByRole('link', { name: 'Tablero' })).toBeNull()
   })
 
-  it('opening the other journal in the side panel switches the top bar only', async () => {
+  it('opening the other journal in the side panel and choosing a submodule switches the top bar only', async () => {
     const { router, container } = montar('/reep/articulos')
-    await userEvent.click(screen.getByRole('button', { name: /Investigium IRE/ }))
+    await userEvent.click(screen.getByRole('button', { name: 'Investigium IRE' }))
+    expect(router.state.location.pathname).toBe('/reep/articulos')
+    const nav = screen.getByRole('navigation', { name: 'Principal' })
+    await userEvent.click(nav.querySelector('[href="/ire/tablero"]') as HTMLElement)
     expect(router.state.location.pathname).toBe('/ire/tablero')
     expect(container.querySelector('[data-revista]')).toHaveAttribute('data-revista', 'ire')
     expect(screen.getByText(/ISSN: 2357-5239/)).toBeInTheDocument()

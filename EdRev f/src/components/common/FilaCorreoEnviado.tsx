@@ -14,7 +14,9 @@ export interface FilaCorreoEnviadoProps {
   numeroOjs?: string
   /** ISO 8601 date-time. */
   fechaEnvio: string
-  resultado: Extract<EstadoDistintivo, 'entregado' | 'rebotado' | 'en-cola'>
+  resultado: Extract<EstadoDistintivo, 'en-cola' | 'enviado' | 'rebotado' | 'fallido'>
+  /** A bounced or failed mail already corrected and resent. */
+  atendido?: boolean
   accion?: ReactNode
 }
 
@@ -24,6 +26,7 @@ export function FilaCorreoEnviado({
   numeroOjs,
   fechaEnvio,
   resultado,
+  atendido = false,
   accion,
 }: FilaCorreoEnviadoProps) {
   return (
@@ -36,6 +39,9 @@ export function FilaCorreoEnviado({
       </td>
       <td className="px-4">
         <DistintivoEstado estado={resultado} />
+        {atendido && (
+          <span className="ml-2 text-cuerpo-13 text-texto-secundario">Corregido y reenviado</span>
+        )}
       </td>
       {accion !== undefined && <td className="px-4 text-right">{accion}</td>}
     </tr>
