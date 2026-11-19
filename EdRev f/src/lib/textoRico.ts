@@ -75,7 +75,8 @@ function enLinea(nodo: Node): string {
   return s
 }
 
-function alineacionDe(e: HTMLElement): Alineacion {
+/** The alignment a paragraph of the box has (left when it has none). */
+export function alineacionDe(e: HTMLElement): Alineacion {
   const dicha = e.dataset.alineacion
   if (dicha === 'centro' || dicha === 'derecha' || dicha === 'justificado' || dicha === 'izquierda') return dicha
   return DE_CSS[e.style.textAlign] ?? 'izquierda'

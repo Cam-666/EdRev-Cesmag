@@ -79,6 +79,22 @@ describe('EditorTexto: the formatting is applied in the box, not written as mark
     expect(cambios.at(-1)).toBe('Uno\n\n[centro]Dos')
   })
 
+  it('justify is its own alignment: it is stored as such and its button shows pressed, not the left one', async () => {
+    const cambios: string[] = []
+    const user = userEvent.setup()
+    render(<Prueba inicial="Un texto largo que se justifica" alCambiar={(t) => cambios.push(t)} />)
+    const caja = screen.getByRole('textbox', { name: 'Texto' })
+    expect(screen.getByRole('button', { name: 'Alinear a la izquierda' })).toHaveAttribute('aria-pressed', 'true')
+    seleccionar(caja, 3, 3)
+    await user.click(screen.getByRole('button', { name: 'Justificar' }))
+    expect(caja.querySelector('p')).toHaveStyle({ textAlign: 'justify' })
+    expect(cambios.at(-1)).toBe('[justificado]Un texto largo que se justifica')
+    expect(screen.getByRole('button', { name: 'Justificar' })).toHaveAttribute('aria-pressed', 'true')
+    expect(screen.getByRole('button', { name: 'Alinear a la izquierda' })).toHaveAttribute('aria-pressed', 'false')
+    await user.click(screen.getByRole('button', { name: 'Alinear a la izquierda' }))
+    expect(cambios.at(-1)).toBe('Un texto largo que se justifica')
+  })
+
   it('the data are inserted with a button and shown by plain names; what is stored is the marker', async () => {
     const cambios: string[] = []
     const user = userEvent.setup()

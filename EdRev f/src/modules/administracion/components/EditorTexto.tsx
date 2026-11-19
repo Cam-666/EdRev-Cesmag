@@ -6,7 +6,7 @@
  * hand: the box is converted to the stored text (see lib/textoRico and lib/formato), so the same
  * text drives the mail and the constancia PDF. Covers: RF-25, RF-30, RF-45, RNF-11.
  */
-import { useId, useLayoutEffect, useRef } from 'react'
+import { useEffect, useId, useLayoutEffect, useRef, useState } from 'react'
 import type { MouseEvent as EventoRaton } from 'react'
 import { Boton } from '@/components/common/Boton'
 import { MensajeError } from '@/components/common/MensajeError'
@@ -14,7 +14,7 @@ import { cn } from '@/lib/cn'
 import { datoVisible, ETIQUETA_DATO } from '@/lib/datosPlantilla'
 import { ALINEACIONES } from '@/lib/formato'
 import type { Alineacion } from '@/lib/formato'
-import { aHtmlEditable, CSS_ALINEACION, deEditable } from '@/lib/textoRico'
+import { alineacionDe, aHtmlEditable, CSS_ALINEACION, deEditable } from '@/lib/textoRico'
 
 export interface EditorTextoProps {
   /** The stored text (with {{markers}}, [centro] and **bold**); the editor shows it formatted. */
@@ -44,6 +44,8 @@ export function EditorTexto({ valor, onCambio, datos = [], error, ayuda }: Edito
   const ref = useRef<HTMLDivElement>(null)
   const ultimo = useRef<string | null>(null)
   const idEtiqueta = useId()
+  // The alignment of the paragraph where the cursor is, so the button of the one in use shows pressed.
+  const [activa, setActiva] = useState<Alineacion>('izquierda')
   const idError = `${idEtiqueta}-error`
   const idAyuda = `${idEtiqueta}-ayuda`
   const describedBy = [error ? idError : null, ayuda ? idAyuda : null].filter(Boolean).join(' ')
@@ -56,6 +58,19 @@ export function EditorTexto({ valor, onCambio, datos = [], error, ayuda }: Edito
       ultimo.current = valor
     }
   }, [valor])
+
+  useEffect(() => {
+    function seguir() {
+      const el = ref.current
+      const sel = window.getSelection()
+      if (!el || !sel || sel.rangeCount === 0 || !el.contains(sel.anchorNode)) return
+      let nodo: Node | null = sel.anchorNode
+      while (nodo && nodo.parentNode !== el) nodo = nodo.parentNode
+      if (nodo instanceof HTMLElement) setActiva(alineacionDe(nodo))
+    }
+    document.addEventListener('selectionchange', seguir)
+    return () => document.removeEventListener('selectionchange', seguir)
+  }, [])
 
   function emitir() {
     const el = ref.current
@@ -157,6 +172,7 @@ export function EditorTexto({ valor, onCambio, datos = [], error, ayuda }: Edito
       b.dataset.alineacion = a
       b.style.textAlign = CSS_ALINEACION[a]
     }
+    setActiva(a)
     emitir()
   }
 
@@ -210,10 +226,11 @@ export function EditorTexto({ valor, onCambio, datos = [], error, ayuda }: Edito
         {ALINEACIONES.map((a) => (
           <Boton
             key={a.valor}
-            variante="neutro"
+            variante={activa === a.valor ? 'secundario' : 'neutro'}
             tamano="sm"
             type="button"
             aria-label={a.etiqueta}
+            aria-pressed={activa === a.valor}
             onMouseDown={conservarSeleccion}
             onClick={() => alinear(a.valor)}
           >
@@ -270,7 +287,7 @@ export function EditorTexto({ valor, onCambio, datos = [], error, ayuda }: Edito
             escribir(e.clipboardData.getData('text/plain'))
           }}
           className={cn(
-            'min-h-64 rounded-md border bg-superficie-tarjeta px-3 py-2 text-cuerpo-15 text-texto-principal',
+            'min-h-64 max-w-xl rounded-md border bg-superficie-tarjeta px-3 py-2 text-cuerpo-15 text-texto-principal',
             'focus-visible:border-borde-foco [&_p]:mb-3 [&_p]:min-h-[1.5em]',
             error ? 'border-estado-error' : 'border-borde-control',
           )}
