@@ -27,11 +27,11 @@ dos revistas, las plantillas por uso con sus imágenes, `revista.issn` e `indexa
 
    Alternativa sin consola: en pgAdmin cree la base `edrev`, abra **Query Tool** sobre ella y ejecute
    `db/01_esquema.sql` y luego `db/02_datos_iniciales.sql`.
-   Una base que ya tenía datos de una versión anterior se actualiza ejecutando **una vez** `db/03_fin_y_firma.sql`
-   (agrega `plantilla.fin`, para qué sirve cada plantilla, y la firma de los correos de cada revista):
+   Una base que ya tenía datos de una versión anterior se actualiza ejecutando **una vez** `db/03_fin_de_plantilla.sql`
+   (agrega `plantilla.fin`, para qué sirve cada plantilla, y quita las columnas de firma en texto de `revista`):
 
    ```bash
-   node --env-file=.env -e "const {Pool}=require('pg');new Pool({connectionString:process.env.DATABASE_URL}).query(require('fs').readFileSync('db/03_fin_y_firma.sql','utf8')).then(()=>{console.log('listo');process.exit(0)})"
+   node --env-file=.env -e "const {Pool}=require('pg');new Pool({connectionString:process.env.DATABASE_URL}).query(require('fs').readFileSync('db/03_fin_de_plantilla.sql','utf8')).then(()=>{console.log('listo');process.exit(0)})"
    ```
 
 3. **Arrancar la API:** `npm run dev` → `http://localhost:3000/api` (prueba: `http://localhost:3000/api/salud`).
@@ -83,8 +83,10 @@ la demostración (botón «Demostración: abrir el enlace»). En producción pon
 
 Todos los correos llevan el marco institucional de la Universidad CESMAG (encabezado con el escudo, franja con la
 dependencia, contacto y avisos legales; ver `src/lib/marcoCorreo.ts`). El escudo sale de `LOGO_CORREO_URL` (por defecto,
-el que la universidad publica en su sitio). La firma como imagen de una plantilla solo se muestra cuando `API_PUBLICA_URL`
-es una dirección `https` alcanzable desde Internet; en local, escriba la firma como texto en la plantilla.
+el que la universidad publica en su sitio). La firma es una imagen que se sube en la plantilla (de invitación, de agradecimiento o de cualquier plantilla de correo) y
+cierra el correo, debajo del aviso de datos personales. Solo se muestra en los correos reales cuando `API_PUBLICA_URL`
+es una dirección `https` alcanzable desde Internet; la vista previa de la plantilla siempre la muestra. La constancia
+sale adjunta en PDF, que el cliente de correo muestra debajo del mensaje.
 
 ## Arquitectura
 

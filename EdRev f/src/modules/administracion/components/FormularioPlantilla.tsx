@@ -3,8 +3,9 @@
  * live preview filled with sample data, and validation before saving: it may only use its own
  * markers and must keep the required ones. The text can have alignment and bold. The constancia
  * (a file template) has no subject; it carries a header, a footer and a signature image (RF-30).
- * It says what the template is used for (chosen in Configuración) and a template that is not in
- * use can be deleted. Covers: RF-25, RF-30, RF-45.
+ * A mail template also takes the signature image that closes the mail. It says what the
+ * template is used for (chosen in Configuración) and a template that is not in use can be deleted.
+ * Covers: RF-25, RF-30, RF-45.
  */
 import { useState } from 'react'
 import { DATOS_EJEMPLO, ETIQUETA_USO, validarPlantilla } from '../config/plantillas'
@@ -120,6 +121,8 @@ export function FormularioPlantilla({ plantilla, onEliminada }: FormularioPlanti
             revista={plantilla.revista}
             uso={plantilla.fin === 'agradecimiento' ? 'agradecimiento' : 'invitacion'}
             cuerpo={cuerpo}
+            plantilla={plantilla.id}
+            firma={`${plantilla.imagenPie?.nombre ?? ''}:${plantilla.imagenPie?.tamano ?? 0}`}
           />
         ) : (
           <VistaPreviaConstancia plantilla={plantilla} cuerpo={cuerpo} />

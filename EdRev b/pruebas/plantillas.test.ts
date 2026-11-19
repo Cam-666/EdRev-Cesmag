@@ -165,7 +165,6 @@ describe('ISSN e indexaciones de cada revista (Configuración)', () => {
     const api = await como()
     const inicial = (await api.get('/configuracion')).body.revistas
     expect(inicial.reep.indexaciones).toContain('Publindex')
-    expect(inicial.reep).toHaveProperty('firmaNombre')
     expect(inicial.ire.issn).toBe('2357-5239')
     expect((await api.put('/configuracion/revistas/reep', { issn: '12', indexaciones: 'X' })).status).toBe(422)
     const r = await api.put('/configuracion/revistas/reep', { issn: '2590-7476', indexaciones: 'Publindex (categoría B), Scopus' })

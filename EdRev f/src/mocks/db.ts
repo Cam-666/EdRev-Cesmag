@@ -42,8 +42,8 @@ function crear(): Base {
     configuracion: {
       diasEspera: 5,
       revistas: {
-        reep: { ...clonar(DATOS_REVISTA_INICIALES).reep, firmaNombre: '', firmaCargo: '' },
-        ire: { ...clonar(DATOS_REVISTA_INICIALES).ire, firmaNombre: '', firmaCargo: '' },
+        reep: clonar(DATOS_REVISTA_INICIALES).reep,
+        ire: clonar(DATOS_REVISTA_INICIALES).ire,
       },
     },
   }

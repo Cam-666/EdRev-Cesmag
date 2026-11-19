@@ -1,7 +1,7 @@
 -- =============================================================================
 -- EdRev Cesmag · Migración para bases ya creadas (ejecutar UNA vez sobre «edrev»)
 --   · plantilla.fin: para qué sirve cada plantilla (no cambia aunque no esté en uso)
---   · revista.firma_nombre y revista.firma_cargo: quién firma los correos de la revista
+--   · quita revista.firma_nombre y revista.firma_cargo (la firma es una imagen de la plantilla, no texto)
 -- Una base nueva ya trae todo esto en 01_esquema.sql; no necesita este archivo.
 -- =============================================================================
 BEGIN;
@@ -22,7 +22,7 @@ ALTER TABLE plantilla ADD CONSTRAINT plantilla_fin_check CHECK (fin IN ('invitac
 ALTER TABLE plantilla ADD CONSTRAINT ck_fin_de_su_clase CHECK ((fin = 'constancia') = (clase = 'archivo'));
 ALTER TABLE plantilla ADD CONSTRAINT ck_en_uso_es_su_fin CHECK (tipo IS NULL OR tipo = fin);
 
-ALTER TABLE revista ADD COLUMN IF NOT EXISTS firma_nombre VARCHAR(150);
-ALTER TABLE revista ADD COLUMN IF NOT EXISTS firma_cargo  VARCHAR(150);
+ALTER TABLE revista DROP COLUMN IF EXISTS firma_nombre;
+ALTER TABLE revista DROP COLUMN IF EXISTS firma_cargo;
 
 COMMIT;

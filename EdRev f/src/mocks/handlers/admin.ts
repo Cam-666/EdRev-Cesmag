@@ -84,21 +84,6 @@ export const handlersAdmin = [
     return HttpResponse.json(configuracion().revistas[revista])
   }),
 
-  http.put('*/api/configuracion/revistas/:revista/firma', async ({ params, request }) => {
-    const c = contextoGlobal(request, 'administrar')
-    if (!c.ok) return c.respuesta
-    const revista = params.revista as Revista
-    if (revista !== 'reep' && revista !== 'ire') return error(404, 'Revista no encontrada')
-    const { firmaNombre, firmaCargo } = (await request.json()) as { firmaNombre: string; firmaCargo: string }
-    if (firmaNombre.length > 150 || firmaCargo.length > 150) return error(422, 'Máximo 150 caracteres')
-    configuracion().revistas[revista] = {
-      ...configuracion().revistas[revista],
-      firmaNombre: firmaNombre.trim(),
-      firmaCargo: firmaCargo.trim(),
-    }
-    return HttpResponse.json(configuracion().revistas[revista])
-  }),
-
   http.get('*/api/usuarios', ({ request }) => {
     const c = contextoGlobal(request, 'administrar')
     if (!c.ok) return c.respuesta
@@ -325,16 +310,17 @@ export const handlersAdmin = [
   http.post('*/api/plantillas/vista-correo', async ({ request }) => {
     const c = contextoGlobal(request, 'administrar')
     if (!c.ok) return c.respuesta
-    const { cuerpo, uso, revista } = (await request.json()) as {
+    const { cuerpo, uso, plantilla } = (await request.json()) as {
       cuerpo: string
       uso: 'invitacion' | 'agradecimiento'
-      revista: Revista
+      plantilla?: string
     }
-    // The title says which mail it is, and the signature closes it (name of whoever signs).
+    // The title says which mail it is, and the signature image of the template closes it.
     const titulo = uso === 'agradecimiento' ? 'Gracias por su evaluación' : 'Invitación a evaluar un artículo'
-    const firma = configuracion().revistas[revista]?.firmaNombre || 'La Administradora'
+    const conFirma = plantillas().find((p) => p.id === plantilla)?.imagenPie
+    const firma = conFirma ? `<img alt="Firma" src="data:image/png;base64,AAAA">` : ''
     return HttpResponse.json({
-      html: `<!doctype html><html lang="es"><body><h1>Universidad CESMAG</h1><h2>${titulo}</h2><p>${cuerpo}</p><p>${firma}</p></body></html>`,
+      html: `<!doctype html><html lang="es"><body><h1>Universidad CESMAG</h1><h2>${titulo}</h2><p>${cuerpo}</p><small>Aviso de datos personales</small>${firma}</body></html>`,
     })
   }),
 

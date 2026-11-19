@@ -10,7 +10,7 @@ import { enTransaccion, pool } from '../../db.js'
 import { ErrorHttp, siglaDe } from '../../lib/http.js'
 import { aHtml } from '../../lib/formato.js'
 import { escudoEmbebido, marcoInstitucional } from '../../lib/marcoCorreo.js'
-import { firmanteDeRevista } from '../../lib/firmaCorreo.js'
+import { firmaHtml } from '../../lib/imagenCorreo.js'
 import { botonesHtml, MARCA_BOTONES } from '../../lib/respuestas.js'
 import { vistaPrevia } from '../constanciaPdf.js'
 
@@ -228,13 +228,30 @@ export async function quitarImagen(id: number, parte: Parte) {
   return plantillaApi(await cargar(p.id_plantilla))
 }
 
+/** The signature image of a mail template as a data address (for the previews, no network needed). */
+async function firmaEmbebida(id: number): Promise<string | null> {
+  const { rows } = await pool.query<{ pie: Buffer | null }>(
+    "SELECT pie FROM plantilla WHERE id_plantilla = $1 AND clase = 'correo'",
+    [id],
+  )
+  const pie = rows[0]?.pie
+  if (!pie) return null
+  const png = pie[0] === 0x89 && pie[1] === 0x50
+  return firmaHtml(`data:image/${png ? 'png' : 'jpeg'};base64,${pie.toString('base64')}`)
+}
+
 /** The complete mail (institutional frame included) with sample data, for the text being edited. */
-export async function vistaCorreo(d: { revista: 'reep' | 'ire'; uso: 'invitacion' | 'agradecimiento'; cuerpo: string }) {
+export async function vistaCorreo(d: {
+  revista: 'reep' | 'ire'
+  uso: 'invitacion' | 'agradecimiento'
+  cuerpo: string
+  /** The template whose signature image closes the mail (the stored one, as a data address). */
+  plantilla?: number
+}) {
   const { rows } = await pool.query<{ nombre: string; correo_remitente: string }>(
     'SELECT nombre, correo_remitente FROM revista WHERE id_revista = $1',
     [numeroDeRevista(d.revista)],
   )
-  const firmante = await firmanteDeRevista(pool, numeroDeRevista(d.revista))
   const revista = rows[0]
   if (!revista) throw new ErrorHttp(404, 'Revista no encontrada')
   const ejemplo: Record<string, string> = {
@@ -246,6 +263,7 @@ export async function vistaCorreo(d: { revista: 'reep' | 'ire'; uso: 'invitacion
     articulo: 'Alfabetización mediática en la formación de maestros',
     botones: MARCA_BOTONES,
   }
+  const firma = d.plantilla === undefined ? null : await firmaEmbebida(d.plantilla)
   const texto = d.cuerpo.replace(/\{\{(\w+)\}\}/g, (m, k: string) => ejemplo[k] ?? m)
   const botones = d.uso === 'invitacion' ? botonesHtml(0, true) : ''
   return {
@@ -254,7 +272,7 @@ export async function vistaCorreo(d: { revista: 'reep' | 'ire'; uso: 'invitacion
       revista: revista.nombre,
       contacto: revista.correo_remitente,
       contenido: aHtml(texto, { marca: MARCA_BOTONES, html: botones }),
-      firmante,
+      firma: firma ?? undefined,
       escudo: escudoEmbebido(),
     }),
   }

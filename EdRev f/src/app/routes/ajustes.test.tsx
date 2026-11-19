@@ -5,6 +5,7 @@
 import { screen, waitFor, within } from '@testing-library/react'
 import { vi } from 'vitest'
 import { descargarArchivo } from '@/lib/descarga'
+import { plantillas } from '@/mocks/db'
 import { EncabezadoFicha } from '@/modules/articulos/components/EncabezadoFicha'
 import { elegirOpcion, montarRuta } from '@/test/montarRuta'
 import { render } from '@testing-library/react'
@@ -155,19 +156,27 @@ describe('plantillas: cada una conserva el fin para el que se creó', () => {
 })
 
 describe('firma de los correos', () => {
-  it('la Administradora escribe el nombre y el cargo de quien firma cada revista', async () => {
-    const { user } = montarRuta('/administracion/configuracion')
-    expect(await screen.findByRole('heading', { level: 3, name: 'Firma de los correos' })).toBeInTheDocument()
-    const forma = screen.getByRole('form', { name: 'Firma de los correos de Educación y Pedagogía' })
-    expect(within(forma).getByText(/firma la Administradora de la dependencia/)).toBeInTheDocument()
-    await user.type(within(forma).getByLabelText('Nombre de quien firma'), 'Dra. Ana Lucía Pérez')
-    await user.type(within(forma).getByLabelText('Cargo'), 'Editora de la revista')
-    await user.click(within(forma).getByRole('button', { name: 'Guardar firma' }))
-    expect(await within(forma).findByText('Firma guardada.')).toBeInTheDocument()
-    // the preview of the mail of that journal closes with the signature
-    const { user: otro } = montarRuta('/administracion/plantillas')
+  it('ya no se escribe en Configuración: la firma es la imagen de cada plantilla', async () => {
+    montarRuta('/administracion/configuracion')
+    expect(await screen.findByRole('heading', { level: 3, name: 'Plantillas de los correos' })).toBeInTheDocument()
+    expect(screen.queryByRole('heading', { name: 'Firma de los correos' })).toBeNull()
+    expect(screen.queryByLabelText('Nombre de quien firma')).toBeNull()
+  })
+
+  it('la imagen de la plantilla cierra la vista previa del correo, después del aviso de datos', async () => {
+    // A mail template that already has its signature image
+    for (const p of plantillas()) if (p.clase === 'correo') p.imagenPie = { nombre: 'firma.png', tamano: 4096 }
+    montarRuta('/administracion/plantillas')
     const marco = await screen.findByTitle('Vista previa del correo')
-    await waitFor(() => expect(marco).toHaveAttribute('srcdoc', expect.stringContaining('Dra. Ana Lucía Pérez')))
-    void otro
+    await waitFor(() => expect(marco.getAttribute('srcdoc')).toContain('alt="Firma"'))
+    const html = marco.getAttribute('srcdoc') ?? ''
+    expect(html.indexOf('alt="Firma"')).toBeGreaterThan(html.indexOf('Aviso de datos personales'))
+  })
+
+  it('sin imagen de firma la vista previa termina en el aviso de datos', async () => {
+    montarRuta('/administracion/plantillas')
+    const marco = await screen.findByTitle('Vista previa del correo')
+    await waitFor(() => expect(marco.getAttribute('srcdoc')).toContain('Aviso de datos personales'))
+    expect(marco.getAttribute('srcdoc')).not.toContain('alt="Firma"')
   })
 })

@@ -1,5 +1,5 @@
 /*
- * imagenCorreo — the footer image of a mail template (the signature block of whoever sends it) is
+ * imagenCorreo — the signature image of a mail template (the block of whoever sends it) is
  * shown in the mail through a public address of the API: mail clients cannot read images from the
  * database. The address carries a signature of the template, so only the images of templates that
  * go out in mails can be requested. For the image to show, API_PUBLICA_URL must be reachable from
@@ -22,7 +22,12 @@ export function firmaValida(idPlantilla: number, recibida: unknown): boolean {
   return esperada.length === dada.length && timingSafeEqual(esperada, dada)
 }
 
-/** The footer of a mail as HTML: the image of the template, below the text. */
+/** The signature of a mail as HTML (the image closes the mail, below the data notice). */
+export function firmaHtml(origen: string): string {
+  return `<img src="${origen}" alt="Firma" width="608" style="display:block;width:100%;max-width:608px;height:auto;border:0">`
+}
+
+/** The signature of a real mail: through the public address of the API. */
 export function pieHtml(idPlantilla: number): string {
-  return `<div style="margin-top:20px"><img src="${enlaceImagenPie(idPlantilla)}" alt="Firma" style="display:block;max-width:100%;height:auto;border:0"></div>`
+  return firmaHtml(enlaceImagenPie(idPlantilla))
 }

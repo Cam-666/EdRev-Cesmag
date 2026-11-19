@@ -5,11 +5,11 @@
  * notice of confidentiality and the personal data notice. Built as tables with inline styles,
  * which is what mail clients read. The shield is an image of the API: it only goes in when the API
  * university publishes on its own site (LOGO_CORREO_URL), so it shows in any mail client; without it
- * the header is the name of the university in letters. Covers: RF-24, RF-25, RF-31, RF-45.
+ * the header is the name of the university in letters. The signature of the template is an image
+ * that closes the mail, below the personal data notice. Covers: RF-24, RF-25, RF-31, RF-45.
  */
 import { readFileSync } from 'node:fs'
 import { config } from '../config.js'
-import type { Firmante } from './firmaCorreo.js'
 
 const AZUL = '#0f4a8a'
 const ROJO = '#c00000'
@@ -61,25 +61,11 @@ export interface DatosMarco {
   contacto: string
   /** The text of the template already as HTML (with the buttons, if it has them). */
   contenido: string
-  /** Who signs the mail: name and position, as text (it shows in every mail client). */
-  firmante?: Firmante
-  /** The footer image of the template, if it has one and can be shown. */
+  /** The signature image of the template (an <img> already built), if it has one and can be shown. */
   firma?: string
   fecha?: Date
   /** Source of the shield; by default the address of a real mail. The previews pass the embedded one. */
   escudo?: string | null
-}
-
-/** The signature as text: who sends the mail, their position and the dependency. */
-function bloqueDeFirma(d: DatosMarco): string {
-  if (!d.firmante?.nombre) return ''
-  const celda = 'font-family:Arial,Helvetica,sans-serif'
-  return `<div style="${celda};margin-top:22px;font-size:14px;line-height:21px;color:#222222">
-        <div style="font-size:16px;font-weight:bold;color:${AZUL}">${esc(d.firmante.nombre)}</div>
-        ${d.firmante.cargo ? `<div>${esc(d.firmante.cargo)}</div>` : ''}
-        <div style="color:${GRIS}">Dependencia de Editorial · ${esc(d.revista)}</div>
-        <div style="color:${GRIS}">Universidad CESMAG</div>
-      </div>`
 }
 
 export function marcoInstitucional(d: DatosMarco): string {
@@ -116,8 +102,6 @@ export function marcoInstitucional(d: DatosMarco): string {
     </td></tr>
     <tr><td style="${celda};font-size:15px;line-height:23px;color:#222222;padding:18px 36px 10px">
       ${d.contenido}
-      ${bloqueDeFirma(d)}
-      ${d.firma ?? ''}
     </td></tr>
     <tr><td style="padding:10px 36px 0"><div style="border-top:1px solid #dddddd"></div></td></tr>
     <tr><td style="${celda};font-size:14px;line-height:21px;color:#222222;padding:18px 36px 6px">
@@ -139,7 +123,9 @@ export function marcoInstitucional(d: DatosMarco): string {
   </td></tr>
   <tr><td style="${celda};font-size:10px;line-height:16px;color:#444444;padding:16px 16px 24px;border-top:1px dotted #999999">
     En la Universidad CESMAG, tratamos sus datos personales conforme a la Ley 1581 de 2012 y el Decreto 1074 de 2015. El tratamiento de sus datos incluye la recolección, almacenamiento, uso, circulación y supresión de la información. La finalidad de este tratamiento comprende, pero no se limita a gestión de procesos académicos, financieros, administrativos, de investigación, proyección social y de recursos humanos, desarrollo de programas de bienestar y desarrollo estudiantil, seguridad y control de acceso, cumplimiento de obligaciones legales. En algunos casos, podríamos solicitar datos personales sensibles. Usted tiene derecho a conocer, actualizar, rectificar y suprimir sus datos personales, así como a revocar la autorización otorgada para su tratamiento en los términos de la normativa vigente. Para más información sobre nuestras políticas de tratamiento de datos personales y sus cambios sustanciales, visite el siguiente link: <a href="https://www.unicesmag.edu.co/documentos/DATOS-UNICESMAG.pdf" style="color:#1155cc">https://www.unicesmag.edu.co/documentos/DATOS-UNICESMAG.pdf</a>. Para ejercer estos derechos o si tiene alguna pregunta sobre este aviso de privacidad o sobre el tratamiento de sus datos personales, por favor contáctenos a través del correo <a href="mailto:correspondencia@unicesmag.edu.co" style="color:#1155cc">correspondencia@unicesmag.edu.co</a>, o presencialmente en las instalaciones de la UNIVERSIDAD CESMAG (Campus Centro) ubicada en la Carrera 20 A No. 14-54 de la ciudad de Pasto.
-  </td></tr></table>
+  </td></tr>
+  ${d.firma ? `<tr><td align="left" style="padding:0 16px 24px">${d.firma}</td></tr>` : ''}
+  </table>
 </td></tr></table>
 </body></html>`
 }

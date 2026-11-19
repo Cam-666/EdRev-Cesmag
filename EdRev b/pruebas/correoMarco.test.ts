@@ -102,47 +102,54 @@ describe('vista previa del PDF de la constancia', () => {
   })
 })
 
-describe('firma de quien envía los correos', () => {
-  it('el marco la muestra como texto: nombre, cargo y dependencia', () => {
-    const html = marcoInstitucional({
-      tipo: 'agradecimiento',
-      revista: 'Revista Electrónica en Educación y Pedagogía',
-      contacto: 'reep@unicesmag.edu.co',
-      contenido: 'Gracias.',
-      firmante: { nombre: 'María Camila Mendoza', cargo: 'Editora de la revista' },
-    })
-    expect(html).toContain('María Camila Mendoza')
-    expect(html).toContain('Editora de la revista')
-    expect(html).toContain('Dependencia de Editorial · Revista Electrónica en Educación y Pedagogía')
-    expect(html).toContain('Gracias por su evaluación')
-    // sin firmante no hay bloque
-    expect(marcoInstitucional({ tipo: 'invitacion', revista: 'R', contacto: 'a@b.co', contenido: 'x' })).not.toContain('Universidad CESMAG</div>')
+describe('firma como imagen al final del correo', () => {
+  const PNG = Buffer.from(
+    'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==',
+    'base64',
+  )
+  const marco = (tipo: 'invitacion' | 'agradecimiento') =>
+    marcoInstitucional({ tipo, revista: 'R', contacto: 'a@b.co', contenido: 'Texto', firma: '<img src="https://x/firma.png" alt="Firma">' })
+
+  it('va después del aviso de datos personales, al final de todo, en la invitación y en el agradecimiento', () => {
+    for (const tipo of ['invitacion', 'agradecimiento'] as const) {
+      const html = marco(tipo)
+      expect(html).toContain('<img src="https://x/firma.png"')
+      expect(html.indexOf('firma.png')).toBeGreaterThan(html.indexOf('correspondencia@unicesmag.edu.co'))
+      expect(html.indexOf('firma.png')).toBeGreaterThan(html.indexOf('VIGILADA MINEDUCACIÓN'))
+    }
+    // sin imagen no queda nada
+    expect(marcoInstitucional({ tipo: 'invitacion', revista: 'R', contacto: 'a@b.co', contenido: 'x' })).not.toContain('alt="Firma"')
   })
 
-  it('sin configurar firma la Administradora; al configurarla, firma quien se indique', async () => {
+  it('ya no hay firma en texto: ni en el marco ni en Configuración', async () => {
     const api = await como()
-    const previa = (uso: 'invitacion' | 'agradecimiento') =>
-      api.post('/plantillas/vista-correo', { revista: 'reep', uso, cuerpo: 'Texto de prueba' })
-    const sin = await previa('agradecimiento')
-    expect(sin.body.html).toContain('Gracias por su evaluación')
-    expect(sin.body.html).toContain('Dependencia de Editorial ·')
-    // la Administradora de los datos iniciales firma por defecto
-    expect(sin.body.html).toContain('Mendoza')
+    const previa = await api.post('/plantillas/vista-correo', { revista: 'reep', uso: 'agradecimiento', cuerpo: 'Texto de prueba' })
+    expect(previa.body.html).toContain('Gracias por su evaluación')
+    expect(previa.body.html).not.toContain('alt="Firma"')
+    expect(previa.body.html).not.toContain('Mendoza')
+    expect((await api.get('/configuracion')).body.revistas.reep).not.toHaveProperty('firmaNombre')
+    expect((await api.put('/configuracion/revistas/reep/firma', { firmaNombre: 'x', firmaCargo: '' })).status).toBe(404)
+  })
 
-    const cambio = await api.put('/configuracion/revistas/reep/firma', { firmaNombre: 'Dra. Ana Lucía Pérez', firmaCargo: 'Editora de la revista' })
-    expect(cambio.status).toBe(200)
-    expect(cambio.body).toMatchObject({ firmaNombre: 'Dra. Ana Lucía Pérez', firmaCargo: 'Editora de la revista' })
-    const con = await previa('invitacion')
-    expect(con.body.html).toContain('Dra. Ana Lucía Pérez')
-    expect(con.body.html).toContain('Editora de la revista')
-    // la otra revista no cambia
-    expect((await api.post('/plantillas/vista-correo', { revista: 'ire', uso: 'invitacion', cuerpo: 'x' })).body.html).not.toContain('Dra. Ana Lucía Pérez')
-    // vuelve a la Administradora
-    await api.put('/configuracion/revistas/reep/firma', { firmaNombre: '', firmaCargo: '' })
-    expect((await previa('invitacion')).body.html).not.toContain('Dra. Ana Lucía Pérez')
-    // solo la Administradora lo cambia
-    const { AUXILIAR } = await import('./api.js')
-    const aux = await como(AUXILIAR)
-    expect((await aux.put('/configuracion/revistas/reep/firma', { firmaNombre: 'x', firmaCargo: '' })).status).toBe(403)
+  it('la vista previa de la plantilla muestra la imagen que se subió, incrustada y al final', async () => {
+    const api = await como()
+    const lista = (await api.get('/plantillas')).body.plantillas as Array<{ id: string; clase: string; revista: string; fin: string }>
+    const agradecimiento = lista.find((p) => p.revista === 'reep' && p.fin === 'agradecimiento')
+    expect(agradecimiento).toBeDefined()
+    const id = agradecimiento?.id
+    const consulta = (plantilla?: string) =>
+      api.post('/plantillas/vista-correo', { revista: 'reep', uso: 'agradecimiento', cuerpo: 'Texto', plantilla: plantilla === undefined ? undefined : Number(plantilla) })
+    try {
+      expect((await api.subir(`/plantillas/${id}/imagen/pie`, PNG, 'firma.png')).status).toBe(200)
+      const con = (await consulta(id)).body.html as string
+      expect(con).toContain('alt="Firma"')
+      expect(con).toContain('data:image/png;base64,')
+      expect(con.indexOf('alt="Firma"')).toBeGreaterThan(con.indexOf('correspondencia@unicesmag.edu.co'))
+      // sin indicar la plantilla (o con otra sin imagen) no hay firma
+      expect((await consulta()).body.html).not.toContain('alt="Firma"')
+    } finally {
+      await api.delete(`/plantillas/${id}/imagen/pie`)
+    }
+    expect((await consulta(id)).body.html).not.toContain('alt="Firma"')
   })
 })

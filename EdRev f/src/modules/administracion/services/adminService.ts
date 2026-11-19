@@ -4,7 +4,7 @@
  */
 import { solicitar, solicitarArchivo } from '@/lib/api/cliente'
 import type { RespuestaEnvioEnlace } from '@/types/acceso'
-import type { Configuracion, DatosRevista, FirmaRevista } from '@/types/configuracion'
+import type { Configuracion, DatosRevista } from '@/types/configuracion'
 import type { EntradaAuditoria, TipoAuditoria } from '@/types/historial'
 import type {
   DatosNuevaPlantilla,
@@ -102,6 +102,8 @@ export function vistaCorreoPlantilla(datos: {
   revista: Revista
   uso: 'invitacion' | 'agradecimiento'
   cuerpo: string
+  /** The template whose signature image closes the mail. */
+  plantilla?: string
 }): Promise<{ html: string }> {
   return solicitar<{ html: string }>('/plantillas/vista-correo', { method: 'POST', ...json(datos) })
 }
@@ -151,11 +153,6 @@ export function obtenerConfiguracion(): Promise<Configuracion> {
 
 export function guardarConfiguracion(datos: Pick<Configuracion, 'diasEspera'>): Promise<Configuracion> {
   return solicitar<Configuracion>('/configuracion', { method: 'PUT', ...json(datos) })
-}
-
-/** Who signs the mails of a journal (name and position); an empty name means the Administradora. */
-export function guardarFirmaRevista(revista: Revista, datos: FirmaRevista): Promise<FirmaRevista> {
-  return solicitar<FirmaRevista>(`/configuracion/revistas/${revista}/firma`, { method: 'PUT', ...json(datos) })
 }
 
 export function guardarDatosRevista(revista: Revista, datos: DatosRevista): Promise<DatosRevista> {

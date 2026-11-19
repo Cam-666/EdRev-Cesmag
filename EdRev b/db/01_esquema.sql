@@ -17,9 +17,7 @@ CREATE TABLE revista (
   nombre           VARCHAR(150) NOT NULL UNIQUE,
   correo_remitente VARCHAR(150) NOT NULL CHECK (correo_remitente = lower(correo_remitente)),
   issn             VARCHAR(20),     -- extensión: va en la constancia como {{issn}}
-  indexaciones     VARCHAR(1500),   -- extensión: texto con las indexaciones; va en la constancia como {{indexaciones}}
-  firma_nombre     VARCHAR(150),    -- extensión: quién firma los correos de la revista (nulo: la Administradora activa)
-  firma_cargo      VARCHAR(150)     -- extensión: su cargo, que aparece bajo el nombre en la firma de los correos
+  indexaciones     VARCHAR(1500)    -- extensión: texto con las indexaciones; va en la constancia como {{indexaciones}}
 );
  
 CREATE TABLE configuracion (          -- extensión: valores que la Administradora ajusta desde la página
