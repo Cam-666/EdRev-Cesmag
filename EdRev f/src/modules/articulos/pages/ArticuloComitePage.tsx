@@ -1,11 +1,9 @@
 /*
  * ArticuloComitePage — «Revisión del comité» tab (/:revista/articulos/:id/comite): the rounds of
  * the initial committee review and the form to register a new one with the anti-plagiarism report.
- * The result is decided by the system from the report and the observations: Aprobado (publicable)
- * takes the user straight to the assignment of peers; Rechazado (no publicable, matches above the
- * limit) does not close the process: the article stays in review and waits for another round (no
- * limit), like Requiere ajustes (publicable con observaciones); the committee can also approve a
- * round that is not publishable and move on to the peers.
+ * The committee chooses the result (the form suggests one): Aprobado takes the user straight to the
+ * assignment of peers; Rechazado and Requiere ajustes do not close the process: the article stays in
+ * review and waits for another round (no limit).
  * After registering an article the user lands here with the form open (?registrar=1).
  * Covers: RF-05, RF-06, RF-07, HU-01 (criterion 5), HU-02, HU-03, HU-04.
  */
@@ -74,8 +72,8 @@ export function ArticuloComitePage() {
         {aviso && (
           <Alerta tipo="advertencia">
             {aviso === 'rechazado'
-              ? 'Ronda registrada: no publicable. El artículo sigue en revisión: registre otra ronda cuando el autor corrija, o apruebe una ronda si el comité decide continuar.'
-              : 'Ronda registrada: publicable con observaciones (Requiere ajustes). Cuando el autor corrija, registre otra ronda.'}
+              ? 'Ronda registrada: Rechazado. El artículo sigue en revisión y no recibirá pares hasta que una ronda quede Aprobada: registre otra cuando el autor corrija.'
+              : 'Ronda registrada: Requiere ajustes. Cuando el autor corrija, registre otra ronda.'}
           </Alerta>
         )}
       </div>

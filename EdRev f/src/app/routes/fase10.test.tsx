@@ -67,6 +67,7 @@ describe('the whole flow of an article (HU-01, HU-03, HU-13, HU-14, HU-17, HU-22
     await screen.findByRole('heading', { name: 'Ronda 1 de la revisión del comité' })
     await user.type(screen.getByLabelText('Coincidencias (%)'), '9')
     await user.type(screen.getByLabelText('Atribuido a IA (%)'), '2')
+    await elegirOpcion(user, 'Resultado del comité', 'Aprobado')
     await user.click(screen.getByRole('button', { name: 'Guardar ronda' }))
     await waitFor(() => expect(router.state.location.pathname).toMatch(/\/pares$/))
 

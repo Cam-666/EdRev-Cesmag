@@ -6,6 +6,7 @@ import { z } from 'zod'
 import { aNumero } from './reglas'
 
 const TIPOS = ['investigacion', 'reflexion', 'revision']
+const RESULTADOS = ['aprobado', 'rechazado', 'ajustes']
 
 const porcentaje = z
   .string()
@@ -56,6 +57,9 @@ export type EdicionArticuloForm = z.infer<typeof esquemaEdicionArticulo>
 export const esquemaRonda = z.object({
   coincidencias: porcentaje,
   atribuidoIa: porcentaje,
+  resultado: z
+    .string()
+    .refine((v) => RESULTADOS.includes(v), 'Seleccione el resultado del comité.'),
   observacion: z.string().trim(),
 })
 export type RondaForm = z.infer<typeof esquemaRonda>

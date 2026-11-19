@@ -11,8 +11,7 @@ import { ultimoCorreo } from './asignaciones'
 import type { SeedRevista } from '../seed/fabrica'
 import { ahoraIso, contexto, error, sinTildes } from './util'
 import { anioDeGestion } from '@/lib/dominio/anios'
-import { puedeRegistrarRonda, resultadoDeRonda } from '@/lib/dominio/comite'
-import { UMBRAL_COINCIDENCIAS } from '@/modules/articulos/config/listas'
+import { puedeRegistrarRonda } from '@/lib/dominio/comite'
 import { resultadoDePares } from '@/lib/dominio/resultadoPares'
 import {
   clavePublicacion,
@@ -47,6 +46,8 @@ const ETIQUETA_CIERRE: Record<CierreArticulo['estado'], string> = {
 function publicacionValida(p: Publicacion): boolean {
   return Number.isInteger(p.volumen) && Number.isInteger(p.numero) && p.volumen > 0 && p.numero > 0
 }
+
+const RESULTADOS: readonly ResultadoRonda[] = ['aprobado', 'rechazado', 'ajustes']
 
 const ETIQUETA_RONDA: Record<ResultadoRonda, string> = {
   aprobado: 'Aprobado',
@@ -295,9 +296,9 @@ export const handlersArticulos = [
     if (ronda.coincidencias === null) {
       return error(422, 'Registre el porcentaje de coincidencias del reporte antiplagio')
     }
-    // The system proposes the result (RF-06); the committee may approve the round anyway.
-    const propuesto = resultadoDeRonda(ronda.coincidencias, ronda.observacion, UMBRAL_COINCIDENCIAS)
-    const resultado = ronda.aprobar ? 'aprobado' : propuesto
+    // The committee chooses the result (RF-06).
+    if (!RESULTADOS.includes(ronda.resultado)) return error(422, 'Seleccione el resultado')
+    const resultado = ronda.resultado
 
     articulo.coincidencias = ronda.coincidencias
     articulo.atribuidoIa = ronda.atribuidoIa
@@ -310,16 +311,14 @@ export const handlersArticulos = [
       fecha: ahoraIso(),
       usuario: c.usuario.nombre,
     })
-    // A round «no publicable» does not close the process: the article stays in review.
+    // No result closes the process: the article stays in review.
     articulo.estado = 'en-revision'
     auditar(
       c.base,
       c.revista,
       articulo.id,
       'revision',
-      ronda.aprobar && propuesto !== 'aprobado'
-        ? `Registró la ronda ${numero} de la revisión del comité: ${ETIQUETA_RONDA[resultado]} por decisión del comité`
-        : `Registró la ronda ${numero} de la revisión del comité: ${ETIQUETA_RONDA[resultado]}`,
+      `Registró la ronda ${numero} de la revisión del comité: ${ETIQUETA_RONDA[resultado]}`,
       c.usuario.nombre,
     )
     return HttpResponse.json(detalle(c.base, articulo), { status: 201 })

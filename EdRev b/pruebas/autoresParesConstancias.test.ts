@@ -132,7 +132,7 @@ describe('un par de la misma institución de los autores', () => {
       fechaPostulacion: '2026-10-01',
       autores: [{ nuevo: { nombre: `Autor ${unico()}`, correo: '', orcid: '', filiacion: 'Universidad Cesmag', pais: 'Colombia' } }],
     })
-    await api.post(`/reep/articulos/${art.body.id}/rondas`, { coincidencias: 5, atribuidoIa: 1, observacion: '' })
+    await api.post(`/reep/articulos/${art.body.id}/rondas`, { coincidencias: 5, atribuidoIa: 1, resultado: 'aprobado', observacion: '' })
     const r = await api.post(`/reep/articulos/${art.body.id}/asignaciones`, {
       nuevo: { nombre: `Par ${unico()}`, correo: `p${unico()}@x.co`, universidad: 'Cesmag', area: 'A' },
     })
@@ -255,6 +255,7 @@ describe('el resultado del artículo según los conceptos de los pares', () => {
     const ronda = await api.post(`/reep/articulos/${art.id}/rondas`, {
       coincidencias: 4,
       atribuidoIa: 1,
+      resultado: 'aprobado',
       observacion: 'Con los ajustes pedidos por los pares',
     })
     expect(ronda.status).toBe(201)

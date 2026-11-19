@@ -32,47 +32,29 @@ describe('artículos (RF-01 a RF-08, RF-35, RF-36)', () => {
     expect((await api.get(`/ire/articulos/${body.id}`)).status).toBe(200)
   })
 
-  it('sobre el umbral la ronda es no publicable pero el proceso sigue: otra ronda, y la profesora puede aprobar', async () => {
+  it('la profesora elige el resultado de cada ronda; ninguna cierra el proceso y solo una aprobada deja asignar pares', async () => {
     const { body } = await registrar()
     const api = await como(AUXILIAR)
-    const ronda = (coincidencias: number, observacion: string, aprobar?: boolean) =>
-      api.post(`/reep/articulos/${body.id}/rondas`, { coincidencias, atribuidoIa: 3, observacion, aprobar })
-    // dentro del límite y con observaciones: publicable con observaciones (requiere ajustes)
-    expect((await ronda(10, 'Corregir la introducción')).body.rondasComite.at(-1).resultado).toBe('ajustes')
-    // sobre el límite: no publicable, pero el artículo NO se rechaza ni se cierra
-    const alta = await ronda(70, 'Demasiadas coincidencias')
+    const ronda = (resultado: string, coincidencias = 10, observacion = '') =>
+      api.post(`/reep/articulos/${body.id}/rondas`, { coincidencias, atribuidoIa: 3, resultado, observacion })
+    const par = () => ({ nuevo: { nombre: `Par ${Date.now()}`, correo: `par${Date.now()}@x.co`, universidad: 'Otra', area: 'A' } })
+    // el porcentaje de coincidencias es obligatorio
+    expect((await api.post(`/reep/articulos/${body.id}/rondas`, { coincidencias: null, atribuidoIa: null, resultado: 'aprobado', observacion: '' })).status).toBe(422)
+    // sin resultado no se registra
+    expect((await api.post(`/reep/articulos/${body.id}/rondas`, { coincidencias: 10, atribuidoIa: 3, observacion: '' })).status).toBe(422)
+    // requiere ajustes y rechazado: el artículo sigue en revisión y se puede registrar otra ronda
+    expect((await ronda('ajustes', 10, 'Corregir la introducción')).body.rondasComite.at(-1).resultado).toBe('ajustes')
+    const alta = await ronda('rechazado', 70, 'Demasiadas coincidencias')
     expect(alta.status).toBe(201)
     expect(alta.body.rondasComite.at(-1).resultado).toBe('rechazado')
     expect(alta.body.estado).toBe('en-revision')
-    // no se pueden asignar pares mientras la ronda más reciente no esté aprobada
-    const sinAprobar = await api.post(`/reep/articulos/${body.id}/asignaciones`, {
-      nuevo: { nombre: `Par ${Date.now()}`, correo: `par${Date.now()}@x.co`, universidad: 'Otra', area: 'A' },
-    })
-    expect(sinAprobar.status).toBe(409)
-    // otra ronda con el porcentaje todavía alto
-    expect((await ronda(40, '')).body.rondasComite.at(-1).resultado).toBe('rechazado')
-    // la profesora la aprueba aunque pase del límite: queda en el historial
-    const aprobada = await ronda(40, 'El comité continúa el proceso', true)
+    // sin ronda aprobada no se asignan pares
+    expect((await api.post(`/reep/articulos/${body.id}/asignaciones`, par())).status).toBe(409)
+    // la profesora puede aprobar aunque pase del límite de coincidencias
+    const aprobada = await ronda('aprobado', 70, 'El comité continúa el proceso')
     expect(aprobada.body.rondasComite.at(-1).resultado).toBe('aprobado')
     expect(aprobada.body.estado).toBe('en-revision')
-    const historial = (await api.get(`/reep/articulos/${body.id}/historial`)).body.auditoria as Array<{ accion: string }>
-    expect(historial.some((h) => h.accion.includes('por decisión del comité'))).toBe(true)
-    // ahora sí se asignan pares
-    const asignado = await api.post(`/reep/articulos/${body.id}/asignaciones`, {
-      nuevo: { nombre: `Par ${Date.now()}`, correo: `par${Date.now()}@x.co`, universidad: 'Otra', area: 'A' },
-    })
-    expect(asignado.status).toBe(201)
-  })
-
-  it('dentro del límite y sin observaciones el artículo queda aprobado; el porcentaje es obligatorio', async () => {
-    const { body } = await registrar()
-    const api = await como(AUXILIAR)
-    const sin = await api.post(`/reep/articulos/${body.id}/rondas`, { coincidencias: null, atribuidoIa: null, observacion: '' })
-    expect(sin.status).toBe(422)
-    const r = await api.post(`/reep/articulos/${body.id}/rondas`, { coincidencias: 15, atribuidoIa: 90, observacion: '   ' })
-    expect(r.status).toBe(201)
-    expect(r.body.rondasComite.at(-1).resultado).toBe('aprobado')
-    expect(r.body.estado).toBe('en-revision')
+    expect((await api.post(`/reep/articulos/${body.id}/asignaciones`, par())).status).toBe(201)
   })
 
   it('cambia de revista en cualquier etapa, con sus pares, y quita la publicación (RF-07)', async () => {

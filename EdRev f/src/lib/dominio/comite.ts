@@ -7,8 +7,8 @@
  *   while the article is «En revisión» or «En evaluación». An article taken up again after being
  *   archived comes back as «Postulado»: it must go through the committee again, so it can register
  *   a new round even though it had peers, and cannot be assigned peers until that round approves it.
- * - The result of a round is not chosen: it follows from the anti-plagiarism report and the
- *   observations (see resultadoDeRonda).
+ * - The committee chooses the result of a round; the page only suggests one from the
+ *   anti-plagiarism report and the observations (see resultadoSugerido). No result closes the process.
  * - The article can change journal at any stage, as many times as needed (RF-02, RF-07).
  * Covers: RF-02, RF-06, RF-07, RF-19, HU-03, HU-04, HU-13.
  */
@@ -22,14 +22,14 @@ interface ArticuloEnComite {
 const EN_COMITE: readonly EstadoArticulo[] = ['postulado', 'en-revision']
 
 /**
- * The result the system proposes for a round of the initial committee review (RF-06):
- * matches above the limit → Rechazado (not publishable, but the article stays in review and the
- * committee may approve the round anyway); within the limit and no observations →
+ * The result the page suggests for a round of the initial committee review (RF-06); the decision is
+ * the committee's. Matches above the limit → Rechazado (not publishable; the article still stays in
+ * review); within the limit and no observations →
  * Aprobado (publishable); within the limit with observations → Requiere ajustes (publishable with
  * observations: the author corrects and another round is registered). The AI percentage never
  * decides.
  */
-export function resultadoDeRonda(
+export function resultadoSugerido(
   coincidencias: number,
   observacion: string,
   umbral: number,

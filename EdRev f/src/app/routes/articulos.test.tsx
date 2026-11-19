@@ -361,28 +361,34 @@ describe('committee review (/comite)', () => {
     await user.type(coincidencias, '150')
     await user.click(screen.getByRole('button', { name: 'Guardar ronda' }))
     expect(await screen.findByText('Escriba un número entre 0 y 100.')).toBeInTheDocument()
-    // The result is not chosen: above the limit the system marks the article as not publishable
+    expect(screen.getByText('Seleccione el resultado del comité.')).toBeInTheDocument()
+
+    // The page only suggests a result; the committee chooses it
     await user.clear(coincidencias)
     await user.type(coincidencias, '21')
-    expect(await screen.findByText('Resultado: no publicable')).toBeInTheDocument()
+    expect(
+      await screen.findByText('Sugerencia: Rechazado (no publicable)'),
+    ).toBeInTheDocument()
     expect(screen.getByText(/superan el 15 % aceptado/)).toBeInTheDocument()
-    // within the limit and with observations: publishable with observations
+    // within the limit and with observations the suggestion changes
     await user.clear(coincidencias)
     await user.type(coincidencias, '11')
     await user.type(screen.getByLabelText('Observaciones del comité'), 'Ajustar el método.')
-    expect(await screen.findByText('Resultado: publicable con observaciones')).toBeInTheDocument()
-    await user.click(screen.getByRole('button', { name: 'Guardar ronda' }))
     expect(
-      await screen.findByText(/Ronda registrada: publicable con observaciones/),
+      await screen.findByText('Sugerencia: Requiere ajustes (publicable con observaciones)'),
     ).toBeInTheDocument()
+    // nothing is chosen for the committee: the choice stays empty until it picks one
+    await elegirOpcion(user, 'Resultado del comité', 'Requiere ajustes')
+    await user.click(screen.getByRole('button', { name: 'Guardar ronda' }))
+    expect(await screen.findByText(/Ronda registrada: Requiere ajustes/)).toBeInTheDocument()
     const lista = screen.getByRole('list', { name: 'Rondas de la revisión del comité' })
     expect(within(lista).getByText('Ajustar el método.')).toBeInTheDocument()
 
     // Second round: approved, so it goes straight to the assignment of peers
     await user.click(await screen.findByRole('button', { name: 'Registrar ronda' }))
     await screen.findByRole('heading', { name: 'Ronda 2 de la revisión del comité' })
-    // no observations and within the limit: publishable, the article is approved
-    expect(await screen.findByText('Resultado: publicable')).toBeInTheDocument()
+    expect(await screen.findByText('Sugerencia: Aprobado (publicable)')).toBeInTheDocument()
+    await elegirOpcion(user, 'Resultado del comité', 'Aprobado')
     await user.click(screen.getByRole('button', { name: 'Guardar ronda' }))
     await waitFor(() =>
       expect(router.state.location.pathname).toBe('/reep/articulos/2026-023/pares'),
@@ -390,7 +396,7 @@ describe('committee review (/comite)', () => {
     expect(router.state.location.search).toBe('?asignar=1')
   })
 
-  it('a round above the limit is not publishable but the process goes on; the committee can approve it', async () => {
+  it('a Rechazado round does not close the process; the committee can approve a later one even above the limit', async () => {
     const { user, router } = montarRuta('/reep/articulos/2026-026/comite')
     await user.click(await screen.findByRole('button', { name: 'Registrar ronda' }))
     const coincidencias = await screen.findByLabelText('Coincidencias (%)')
@@ -399,8 +405,9 @@ describe('committee review (/comite)', () => {
     const ia = screen.getByLabelText('Atribuido a IA (%)')
     await user.clear(ia)
     await user.type(ia, '1')
+    await elegirOpcion(user, 'Resultado del comité', 'Rechazado')
     await user.click(screen.getByRole('button', { name: 'Guardar ronda' }))
-    expect(await screen.findByText(/Ronda registrada: no publicable/)).toBeInTheDocument()
+    expect(await screen.findByText(/Ronda registrada: Rechazado/)).toBeInTheDocument()
     expect(screen.getByText(/El artículo sigue en revisión/)).toBeInTheDocument()
     // the process is not closed: another round can be registered
     expect(await screen.findByRole('button', { name: 'Registrar ronda' })).toBeInTheDocument()
@@ -410,8 +417,8 @@ describe('committee review (/comite)', () => {
     const otra = await screen.findByLabelText('Coincidencias (%)')
     await user.clear(otra)
     await user.type(otra, '70')
-    await user.click(await screen.findByRole('checkbox', { name: 'Aprobar esta ronda por decisión del comité' }))
-    expect(await screen.findByText('Resultado: aprobado por decisión del comité')).toBeInTheDocument()
+    expect(await screen.findByText('Sugerencia: Rechazado (no publicable)')).toBeInTheDocument()
+    await elegirOpcion(user, 'Resultado del comité', 'Aprobado')
     await user.click(screen.getByRole('button', { name: 'Guardar ronda' }))
     await waitFor(() => expect(router.state.location.search).toBe('?asignar=1'))
   })

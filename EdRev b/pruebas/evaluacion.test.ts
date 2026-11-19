@@ -17,7 +17,7 @@ describe('asignación, evaluación, constancias y correos (RF-19 a RF-34)', () =
     const nuevo = { nuevo: { nombre: 'Otro', profesion: '', correo: `o${Date.now()}@x.co`, universidad: 'U', area: 'A' } }
     expect((await api.post(`/reep/articulos/${art.id}/asignaciones`, nuevo)).status).toBe(409)
     // it already had a peer, and still the committee can register a new round
-    const ronda = await api.post(`/reep/articulos/${art.id}/rondas`, { coincidencias: 5, atribuidoIa: 1, observacion: '' })
+    const ronda = await api.post(`/reep/articulos/${art.id}/rondas`, { coincidencias: 5, atribuidoIa: 1, resultado: 'aprobado', observacion: '' })
     expect(ronda.status).toBe(201)
     expect((await api.post(`/reep/articulos/${art.id}/asignaciones`, nuevo)).status).toBe(201)
   })
@@ -91,7 +91,7 @@ describe('asignación, evaluación, constancias y correos (RF-19 a RF-34)', () =
       fechaPostulacion: '2026-10-01',
       autores: [{ nuevo: { nombre: 'Autor N', correo: '', orcid: '', filiacion: 'Universidad de Nariño', pais: 'Colombia' } }],
     })
-    await api.post(`/reep/articulos/${art.body.id}/rondas`, { coincidencias: 5, atribuidoIa: 1, observacion: '' })
+    await api.post(`/reep/articulos/${art.body.id}/rondas`, { coincidencias: 5, atribuidoIa: 1, resultado: 'aprobado', observacion: '' })
     const mismo = await api.post(`/reep/articulos/${art.body.id}/asignaciones`, {
       nuevo: { nombre: 'Par N', profesion: '', correo: `parn.${Date.now()}@udenar.edu.co`, universidad: 'universidad de nariño', area: 'A' },
     })

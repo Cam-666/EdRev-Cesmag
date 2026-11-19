@@ -1,16 +1,16 @@
 /*
  * FormularioRonda — registers a round of the initial committee review: the anti-plagiarism
- * report (matches % and AI %, reported separately) and the committee's observations. The system
- * proposes the result (matches above 15 % → no publicable; within the limit and no observations →
- * publicable; within the limit with observations → publicable con observaciones) and shows it before
- * saving. A round «no publicable» does not close the article: it stays in review and another round
- * is registered, or the committee approves the round anyway. The AI percentage never decides.
+ * report (matches % and AI %, reported separately), the result (Aprobado, Requiere ajustes or
+ * Rechazado) and the committee's observations. The committee chooses the result. The page only
+ * suggests one from the report and the observations (matches above 15 % → no publicable; within the
+ * limit and no observations → publicable; within the limit with observations → publicable con
+ * observaciones), and the decision stays with the committee. No result closes the process: the
+ * article stays in review and another round can be registered. The AI percentage never decides.
  * Covers: RF-05, RF-06, HU-02, HU-03.
  */
 import { zodResolver } from '@hookform/resolvers/zod'
-import { useState } from 'react'
-import { useForm, useWatch } from 'react-hook-form'
-import { UMBRAL_COINCIDENCIAS } from '../config/listas'
+import { Controller, useForm, useWatch } from 'react-hook-form'
+import { RESULTADOS_RONDA, UMBRAL_COINCIDENCIAS } from '../config/listas'
 import { aNumero, superaUmbral } from '../config/reglas'
 import { esquemaRonda } from '../config/esquemas'
 import type { RondaForm } from '../config/esquemas'
@@ -19,15 +19,16 @@ import { Alerta } from '@/components/common/Alerta'
 import { AreaTexto } from '@/components/common/AreaTexto'
 import { Boton } from '@/components/common/Boton'
 import { CampoTexto } from '@/components/common/CampoTexto'
-import { Casilla } from '@/components/common/Casilla'
+import { ListaDesplegable } from '@/components/common/ListaDesplegable'
 import { mensajeDeApi } from '@/lib/api/errores'
-import { resultadoDeRonda } from '@/lib/dominio/comite'
+import { resultadoSugerido } from '@/lib/dominio/comite'
 import type { ArticuloDetalle, ResultadoRonda } from '@/types/articulo'
 
-const TITULO_RESULTADO: Record<ResultadoRonda, string> = {
-  aprobado: 'publicable',
-  ajustes: 'publicable con observaciones',
-  rechazado: 'no publicable',
+/** How the suggestion names each result. */
+const NOMBRE_SUGERIDO: Record<ResultadoRonda, string> = {
+  aprobado: 'Aprobado (publicable)',
+  ajustes: 'Requiere ajustes (publicable con observaciones)',
+  rechazado: 'Rechazado (no publicable)',
 }
 
 export interface FormularioRondaProps {
@@ -38,8 +39,6 @@ export interface FormularioRondaProps {
 
 export function FormularioRonda({ articulo, onGuardada, onCancelar }: FormularioRondaProps) {
   const mutacion = useRegistrarRonda(articulo.id)
-  // The committee may approve a round that the report does not approve (RF-06).
-  const [aprobarIgual, setAprobarIgual] = useState(false)
   const numero = articulo.rondasComite.length + 1
   const {
     register,
@@ -51,6 +50,7 @@ export function FormularioRonda({ articulo, onGuardada, onCancelar }: Formulario
     defaultValues: {
       coincidencias: articulo.coincidencias === null ? '' : String(articulo.coincidencias),
       atribuidoIa: articulo.atribuidoIa === null ? '' : String(articulo.atribuidoIa),
+      resultado: '',
       observacion: '',
     },
   })
@@ -60,20 +60,16 @@ export function FormularioRonda({ articulo, onGuardada, onCancelar }: Formulario
   const observacion = useWatch({ control, name: 'observacion' })
   const conocidas = texto.trim() !== '' && Number.isFinite(coincidencias)
   const supera = conocidas && superaUmbral(coincidencias)
-  const resultadoAutomatico = conocidas
-    ? resultadoDeRonda(coincidencias, observacion, UMBRAL_COINCIDENCIAS)
-    : null
-  const aprobar = aprobarIgual && resultadoAutomatico !== null && resultadoAutomatico !== 'aprobado'
+  const sugerido = conocidas ? resultadoSugerido(coincidencias, observacion, UMBRAL_COINCIDENCIAS) : null
 
   function enviar(v: RondaForm) {
-    const propuesto = resultadoDeRonda(aNumero(v.coincidencias), v.observacion, UMBRAL_COINCIDENCIAS)
-    const resultado: ResultadoRonda = aprobar ? 'aprobado' : propuesto
+    const resultado = v.resultado as ResultadoRonda
     mutacion.mutate(
       {
         coincidencias: aNumero(v.coincidencias),
         atribuidoIa: aNumero(v.atribuidoIa),
+        resultado,
         observacion: v.observacion,
-        ...(aprobar ? { aprobar: true } : {}),
       },
       { onSuccess: () => onGuardada(resultado) },
     )
@@ -108,40 +104,36 @@ export function FormularioRonda({ articulo, onGuardada, onCancelar }: Formulario
           {...register('atribuidoIa')}
         />
       </div>
+      <div role="status" aria-live="polite">
+        {sugerido && (
+          <Alerta tipo="informacion" titulo={`Sugerencia: ${NOMBRE_SUGERIDO[sugerido]}`}>
+            {supera
+              ? `Las coincidencias (${coincidencias} %) superan el ${UMBRAL_COINCIDENCIAS} % aceptado. La decisión es del comité: ninguna opción cierra el proceso, el artículo sigue en revisión y se puede registrar otra ronda cuando el autor corrija.`
+              : sugerido === 'ajustes'
+                ? 'Las coincidencias están dentro del límite y hay observaciones. La decisión es del comité.'
+                : 'Las coincidencias están dentro del límite y no hay observaciones. La decisión es del comité.'}
+          </Alerta>
+        )}
+      </div>
+      <Controller
+        control={control}
+        name="resultado"
+        render={({ field }) => (
+          <ListaDesplegable
+            etiqueta="Resultado del comité"
+            opciones={RESULTADOS_RONDA}
+            valor={field.value || undefined}
+            onCambio={field.onChange}
+            error={errors.resultado?.message}
+          />
+        )}
+      />
       <AreaTexto
         etiqueta="Observaciones del comité"
-        ayuda="Opcional. Si escribe observaciones y las coincidencias están dentro del límite, el artículo queda como publicable con observaciones."
         rows={4}
         error={errors.observacion?.message}
         {...register('observacion')}
       />
-      <div role="status" aria-live="polite">
-        {resultadoAutomatico && (
-          <Alerta
-            tipo={aprobar || resultadoAutomatico === 'aprobado' ? 'exito' : 'advertencia'}
-            titulo={
-              aprobar
-                ? 'Resultado: aprobado por decisión del comité'
-                : `Resultado: ${TITULO_RESULTADO[resultadoAutomatico]}`
-            }
-          >
-            {aprobar
-              ? `El comité aprueba esta ronda aunque el reporte indicaba «${TITULO_RESULTADO[resultadoAutomatico]}». Queda registrado en el historial y se pasa a la asignación de pares.`
-              : supera
-                ? `Las coincidencias (${coincidencias} %) superan el ${UMBRAL_COINCIDENCIAS} % aceptado: la ronda queda como no publicable. El proceso no se cierra: el artículo sigue en revisión y se registra otra ronda cuando el autor corrija, o el comité aprueba esta ronda si decide continuar.`
-                : resultadoAutomatico === 'ajustes'
-                  ? 'Las coincidencias están dentro del límite y hay observaciones: la ronda queda como publicable con observaciones (Requiere ajustes). El autor corrige y se registra otra ronda, o el comité aprueba esta si decide continuar.'
-                  : 'Las coincidencias están dentro del límite y no hay observaciones: la ronda queda como publicable (Aprobado) y se pasa a la asignación de pares.'}
-          </Alerta>
-        )}
-      </div>
-      {resultadoAutomatico !== null && resultadoAutomatico !== 'aprobado' && (
-        <Casilla
-          etiqueta="Aprobar esta ronda por decisión del comité"
-          marcada={aprobarIgual}
-          onCambio={setAprobarIgual}
-        />
-      )}
       <div className="flex flex-wrap gap-2">
         <Boton type="submit" cargando={mutacion.isPending}>
           Guardar ronda

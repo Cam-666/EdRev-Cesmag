@@ -43,16 +43,15 @@ const edicion = z.object({
   publicacion: publicacion.nullable().optional(),
 })
 
-// The result follows from the report and the observations (RF-06); `aprobar` is the committee's decision.
+// The committee chooses the result of the round (RF-06).
 const ronda = z.object({
   coincidencias: z
     .number({ error: 'Registre el porcentaje de coincidencias del reporte antiplagio' })
     .min(0)
     .max(100),
   atribuidoIa: z.number().min(0).max(100).nullable(),
+  resultado: z.enum(['aprobado', 'rechazado', 'ajustes'], { error: 'Seleccione el resultado del comité' }),
   observacion: z.string(),
-  // The committee approves although the report would not (RF-06).
-  aprobar: z.boolean().optional(),
 })
 
 const cierre = z.object({

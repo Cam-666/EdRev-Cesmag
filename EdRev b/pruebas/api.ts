@@ -51,6 +51,7 @@ export async function articuloAprobado(revista: 'reep' | 'ire' = 'reep') {
   await api.post(`/${revista}/articulos/${art.body.id}/rondas`, {
     coincidencias: 5,
     atribuidoIa: 1,
+    resultado: 'aprobado',
     observacion: '',
   })
   return art.body as { id: string }

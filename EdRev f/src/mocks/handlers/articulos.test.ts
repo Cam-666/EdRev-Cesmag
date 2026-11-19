@@ -138,12 +138,13 @@ describe('articles API (mock)', () => {
   it('registers committee rounds with the anti-plagiarism report, without a limit of rounds', async () => {
     const ronda = (cuerpo: Record<string, unknown>, usuario?: typeof AUXILIAR) =>
       llamar('/reep/articulos/2026-032/rondas', { metodo: 'POST', cuerpo, usuario })
-    const base = { coincidencias: 10, atribuidoIa: 5, observacion: 'Ajustar el resumen.' }
+    const base = { coincidencias: 10, atribuidoIa: 5, resultado: 'ajustes', observacion: 'Ajustar el resumen.' }
 
     expect((await ronda({ ...base, coincidencias: 120 })).status).toBe(422)
     expect((await ronda({ ...base, coincidencias: null })).status).toBe(422)
+    expect((await ronda({ ...base, resultado: 'otro' })).status).toBe(422)
 
-    // The result is decided by the system: with observations and within the limit, ajustes
+    // The committee chooses the result of each round
     const primera = await ronda({ ...base }, AUXILIAR)
     expect(primera.status).toBe(201)
     const tras1 = (await primera.json()) as ArticuloDetalle
@@ -153,7 +154,7 @@ describe('articles API (mock)', () => {
 
     await ronda({ ...base })
     const tercera = (await (
-      await ronda({ ...base, coincidencias: 9, observacion: '' })
+      await ronda({ ...base, coincidencias: 9, resultado: 'aprobado', observacion: '' })
     ).json()) as ArticuloDetalle
     expect(tercera.rondasComite.map((r) => [r.numero, r.resultado])).toEqual([
       [1, 'ajustes'],
@@ -164,17 +165,17 @@ describe('articles API (mock)', () => {
     expect(tercera.rondasComite[0]?.usuario).toBe('Andrea Villota')
   })
 
-  it('a round above the limit is not publishable but the article stays in review; the committee may approve it', async () => {
+  it('a Rechazado round does not close the article, which stays in review; the committee may approve a later one', async () => {
     const alta = await llamar('/reep/articulos/2026-032/rondas', {
       metodo: 'POST',
-      cuerpo: { coincidencias: 40, atribuidoIa: 10, observacion: 'x' },
+      cuerpo: { coincidencias: 40, atribuidoIa: 10, resultado: 'rechazado', observacion: 'x' },
     })
     const tras = (await alta.json()) as ArticuloDetalle
     expect(tras.estado).toBe('en-revision')
     expect(tras.rondasComite.at(-1)?.resultado).toBe('rechazado')
     const aprobada = await llamar('/reep/articulos/2026-032/rondas', {
       metodo: 'POST',
-      cuerpo: { coincidencias: 40, atribuidoIa: 10, observacion: 'Continúa el proceso', aprobar: true },
+      cuerpo: { coincidencias: 40, atribuidoIa: 10, resultado: 'aprobado', observacion: 'Continúa el proceso' },
     })
     const final = (await aprobada.json()) as ArticuloDetalle
     expect(final.rondasComite.at(-1)?.resultado).toBe('aprobado')
