@@ -14,7 +14,6 @@ import { EstadoConsulta } from '@/components/common/EstadoConsulta'
 import { Tabla } from '@/components/common/Tabla'
 import type { ColumnaTabla } from '@/components/common/Tabla'
 import { useRetardo } from '@/lib/useRetardo'
-import { useRevista } from '@/lib/revista/useRevista'
 import type { ParListado } from '@/types/par'
 
 export interface ListaParesDisponiblesProps {
@@ -29,7 +28,6 @@ export function ListaParesDisponibles({
   asignando,
   onAsignar,
 }: ListaParesDisponiblesProps) {
-  const { revista } = useRevista()
   const [texto, setTexto] = useState('')
   const q = useRetardo(texto.trim(), 250)
   const lista = usePares({
@@ -59,7 +57,7 @@ export function ListaParesDisponibles({
             variante="neutro"
             tamano="sm"
             className="relative z-10"
-            to={`/${revista}/pares/${encodeURIComponent(p.id)}`}
+            to={`/pares/${encodeURIComponent(p.id)}`}
           >
             Registrar correo <span className="sr-only">de {p.nombre}</span>
           </EnlaceBoton>

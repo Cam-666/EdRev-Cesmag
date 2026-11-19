@@ -7,6 +7,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { Controller, useForm } from 'react-hook-form'
 import { ESTADOS_REAPERTURA } from '../config/listas'
 import { esquemaReapertura } from '../config/esquemas'
+import { paresVigentes } from '../config/reglas'
 import type { ReaperturaForm } from '../config/esquemas'
 import { useReabrirArticulo } from '../hooks/useMutacionesArticulo'
 import { Alerta } from '@/components/common/Alerta'
@@ -47,9 +48,9 @@ export function ReabrirArticuloModal({
     ['Autores', String(articulo.autores.length)],
     [
       'Pares',
-      articulo.asignaciones.length === 0
+      paresVigentes(articulo.asignaciones).length === 0
         ? 'Ninguno asignado'
-        : `${articulo.asignaciones.length} asignados`,
+        : `${paresVigentes(articulo.asignaciones).length} asignados`,
     ],
     [
       'Antiplagio',

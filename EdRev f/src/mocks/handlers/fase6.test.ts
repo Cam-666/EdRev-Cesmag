@@ -51,7 +51,9 @@ function aprobar(id: string) {
 async function asuntoDeLaInvitacion(n = 1): Promise<string> {
   await llamar('/reep/articulos/2026-033/asignaciones', {
     metodo: 'POST',
-    cuerpo: { nuevo: { ...CANDIDATO, correo: `candidato${n}@udenar.edu.co` } },
+    cuerpo: {
+      nuevo: { ...CANDIDATO, nombre: `${CANDIDATO.nombre} ${n}`, correo: `candidato${n}@udenar.edu.co` },
+    },
   })
   const h = await json<{ correos: Array<{ tipo: string; asunto: string }> }>(
     await llamar('/reep/articulos/2026-033/historial'),
@@ -261,15 +263,15 @@ describe('templates API (mock, RF-45)', () => {
     expect(ire.fondo).toContain('Encabezado, pie y firma')
   })
 
-  it('refuses unknown or missing markers (the constancia must replace peer and title)', async () => {
+  it('refuses unknown markers; no marker is mandatory (a template is written freely)', async () => {
     const put = (id: string, cuerpo: string, asunto: string | null = null) =>
       llamar(`/plantillas/${id}`, { metodo: 'PUT', cuerpo: { asunto, cuerpo } })
     expect(
       (await put('reep-constancia', 'HACE CONSTAR QUE {{par}} {{articulo}} {{numeroConstancia}}'))
         .status,
     ).toBe(422)
-    expect((await put('reep-constancia', 'HACE CONSTAR QUE {{par}}')).status).toBe(422)
-    expect((await put('reep-invitacion', 'Hola {{par}}', 'Asunto')).status).toBe(422)
+    expect((await put('reep-constancia', 'HACE CONSTAR QUE {{par}}')).status).toBe(200)
+    expect((await put('reep-invitacion', 'Hola, un texto sin marcadores', 'Asunto')).status).toBe(200)
     expect((await put('reep-constancia', '   ')).status).toBe(422)
   })
 
@@ -286,8 +288,8 @@ describe('templates API (mock, RF-45)', () => {
     )
   })
 
-  it('a new template starts from the one in use of its journal and is sent only once in use', async () => {
-    const datos = { revista: 'reep', nombre: 'Invitación breve', clase: 'correo', uso: 'invitacion' }
+  it('a new mail template has no use until it is chosen, and only then is it sent', async () => {
+    const datos = { revista: 'reep', nombre: 'Invitación breve', clase: 'correo' }
     expect(
       (await llamar('/plantillas', { metodo: 'POST', usuario: AUXILIAR, cuerpo: datos })).status,
     ).toBe(403)
@@ -297,8 +299,8 @@ describe('templates API (mock, RF-45)', () => {
     const r = await llamar('/plantillas', { metodo: 'POST', cuerpo: datos })
     expect(r.status).toBe(201)
     const nueva = await json<Plantilla>(r)
-    expect(nueva).toMatchObject({ revista: 'reep', uso: 'invitacion', enUso: false })
-    expect(nueva.cuerpo).toContain('{{par}}')
+    expect(nueva).toMatchObject({ revista: 'reep', uso: null, enUso: false })
+    expect(nueva.cuerpo).toBe('') // a new template is blank
     expect((await llamar('/plantillas', { metodo: 'POST', cuerpo: datos })).status).toBe(409)
     // The same name is fine in the other journal
     const enIre = await llamar('/plantillas', {
@@ -318,7 +320,14 @@ describe('templates API (mock, RF-45)', () => {
       'Invitación a evaluar un artículo · Revista Electrónica en Educación y Pedagogía',
     )
 
-    expect((await llamar(`/plantillas/${nueva.id}/usar`, { metodo: 'POST' })).status).toBe(200)
+    expect(
+      (await llamar(`/plantillas/${nueva.id}/asignar`, { metodo: 'POST', cuerpo: { uso: 'constancia' } }))
+        .status,
+    ).toBe(409)
+    expect(
+      (await llamar(`/plantillas/${nueva.id}/asignar`, { metodo: 'POST', cuerpo: { uso: 'invitacion' } }))
+        .status,
+    ).toBe(200)
     expect(await asuntoDeLaInvitacion(2)).toBe(
       'Invitación · Revista Electrónica en Educación y Pedagogía',
     )
@@ -328,19 +337,27 @@ describe('templates API (mock, RF-45)', () => {
     expect(enUso).toEqual(['ire-invitacion', nueva.id])
   })
 
-  it('a new file template keeps the images of the one in use; a mail one asks which mail it is', async () => {
+  it('a template in use cannot be deleted; one without use can', async () => {
+    const creada = await json<Plantilla>(
+      await llamar('/plantillas', {
+        metodo: 'POST',
+        cuerpo: { revista: 'ire', nombre: 'Para eliminar', clase: 'correo' },
+      }),
+    )
+    expect((await llamar('/plantillas/ire-invitacion', { metodo: 'DELETE' })).status).toBe(409)
+    expect((await llamar(`/plantillas/${creada.id}`, { metodo: 'DELETE' })).status).toBe(204)
+    expect((await llamar(`/plantillas/${creada.id}`, { metodo: 'DELETE' })).status).toBe(404)
+  })
+
+  it('a new file template is blank and has no images', async () => {
     const r = await llamar('/plantillas', {
       metodo: 'POST',
       cuerpo: { revista: 'ire', nombre: 'Constancia 2027', clase: 'archivo' },
     })
     const nueva = await json<Plantilla>(r)
-    expect(nueva).toMatchObject({ clase: 'archivo', uso: 'constancia' })
-    expect(nueva.imagenes?.encabezado).not.toBeNull()
-    const sinUso = await llamar('/plantillas', {
-      metodo: 'POST',
-      cuerpo: { revista: 'ire', nombre: 'Otro correo', clase: 'correo' },
-    })
-    expect(sinUso.status).toBe(422)
+    expect(nueva).toMatchObject({ clase: 'archivo', uso: null })
+    expect(nueva.imagenes?.encabezado).toBeNull()
+    expect(nueva.cuerpo).toBe('')
   })
 })
 

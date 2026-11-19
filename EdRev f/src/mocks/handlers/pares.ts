@@ -9,6 +9,12 @@ import type { SeedRevista } from '../seed/fabrica'
 import { ahoraIso, contexto, error, sinTildes } from './util'
 import { mismaInstitucion } from '@/lib/dominio/conflicto'
 import { enCurso } from '@/lib/dominio/pares'
+import {
+  avisoParExistente,
+  buscarParExistente,
+  claveTexto,
+  formaExistente,
+} from '@/lib/dominio/parExistente'
 import type {
   EstadoDisponibilidad,
   MotivoBloqueo,
@@ -119,7 +125,7 @@ export const handlersPares = [
     const filtrados = todos
       .filter((p) => !q || sinTildes(p.nombre).includes(q) || sinTildes(p.correo).includes(q))
       .filter((p) => !area || sinTildes(p.area).includes(area))
-      .filter((p) => !universidad || p.universidad === universidad)
+      .filter((p) => !universidad || claveTexto(p.universidad) === claveTexto(universidad))
       .filter((p) =>
         estado === 'bloqueados'
           ? p.estado === 'bloqueado'
@@ -148,9 +154,10 @@ export const handlersPares = [
   http.get('*/api/:revista/pares/universidades', ({ params, request }) => {
     const c = contexto(params, request)
     if (!c.ok) return c.respuesta
-    const lista = [...new Set(c.base.pares.map((p) => p.universidad))].sort((a, b) =>
-      a.localeCompare(b),
-    )
+    // "CESMAG" and "Cesmag" are the same university: one entry per comparison key
+    const lista = [
+      ...new Map(c.base.pares.map((p) => [claveTexto(p.universidad), p.universidad])).values(),
+    ].sort((a, b) => a.localeCompare(b))
     return HttpResponse.json(lista)
   }),
 
@@ -174,16 +181,15 @@ export const handlersPares = [
     ) {
       return error(422, 'Complete nombre, correo, universidad y área temática')
     }
-    if (c.base.pares.some((p) => p.correo.toLowerCase() === datos.correo.trim().toLowerCase())) {
-      return error(409, 'Ya existe un par con ese correo en la base de pares')
-    }
+    const existente = buscarParExistente(c.base.pares, datos.nombre, datos.correo)
+    if (existente) return error(409, avisoParExistente(existente))
     const par: ParEvaluador = {
       id: `${c.revista}-par-n${c.base.pares.length + 1}`,
       revista: c.revista,
       nombre: datos.nombre.trim(),
       profesion: (datos.profesion ?? '').trim(),
       correo: datos.correo.trim(),
-      universidad: datos.universidad.trim(),
+      universidad: formaExistente(c.base.pares, 'universidad', datos.universidad),
       area: datos.area.trim(),
       bloqueo: null,
     }

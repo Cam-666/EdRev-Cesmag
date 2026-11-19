@@ -144,7 +144,7 @@ export function AuditoriaPage() {
           filas={datos?.items ?? []}
           obtenerClave={(e) => `${e.revista}-${e.id}`}
           cargando={consulta.isPending}
-          vacio="Ninguna acción coincide con los filtros."
+          vacio="No se encontraron acciones con los filtros seleccionados."
         />
         {datos && datos.total > 0 && (
           <Paginacion

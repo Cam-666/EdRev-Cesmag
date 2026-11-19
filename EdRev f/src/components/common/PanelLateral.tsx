@@ -1,6 +1,7 @@
 /*
- * PanelLateral — 240 px side navigation. Common modules, then the two journals as collapsible
- * groups with six submodules. A click on a journal opens its group and another click closes it
+ * PanelLateral — 240 px side navigation. Common modules (Inicio, Informes, Autores, Pares
+ * evaluadores, Administración: authors and peers are one directory for both journals), then the two
+ * journals as collapsible groups with their own submodules. A click on a journal opens its group and another click closes it
  * (no navigation); the group of the active journal opens by itself and its name is emphasised.
  * The current item is highlighted and does not navigate.
  * Covers: RF-02, RF-36 (entry points), RNF-11 (nav landmark, keyboard, focus ring on dark).
@@ -32,17 +33,18 @@ export interface PanelLateralProps {
   className?: string
 }
 
+/** Prefix that keeps a common module highlighted on its inner screens (a record, the blocked list). */
 const MODULOS_COMUNES = [
-  { etiqueta: 'Inicio', ruta: '/inicio' },
-  { etiqueta: 'Informes', ruta: '/informes' },
-  { etiqueta: 'Administración', ruta: '/administracion/usuarios' },
+  { etiqueta: 'Inicio', ruta: '/inicio', prefijo: undefined },
+  { etiqueta: 'Informes', ruta: '/informes', prefijo: undefined },
+  { etiqueta: 'Autores', ruta: '/autores', prefijo: '/autores' },
+  { etiqueta: 'Pares evaluadores', ruta: '/pares', prefijo: '/pares' },
+  { etiqueta: 'Administración', ruta: '/administracion/usuarios', prefijo: '/administracion' },
 ]
 
 const SUBMODULOS = [
   { etiqueta: 'Tablero', ruta: 'tablero' },
   { etiqueta: 'Artículos', ruta: 'articulos' },
-  { etiqueta: 'Autores', ruta: 'autores' },
-  { etiqueta: 'Pares evaluadores', ruta: 'pares' },
   { etiqueta: 'Constancias', ruta: 'constancias' },
   { etiqueta: 'Correos enviados', ruta: 'correos' },
 ]
@@ -129,7 +131,7 @@ export function PanelLateral({
         </div>
       </div>
 
-      <nav aria-label="Principal" className="flex flex-1 flex-col gap-1 overflow-y-auto px-2">
+      <nav aria-label="Principal" className="flex flex-1 flex-col gap-1 overflow-y-auto px-2 [scrollbar-color:var(--velo-panel)_transparent] [scrollbar-width:thin]">
         <ul className="flex flex-col gap-1">
           {comunes.map((m) => (
             <li key={m.ruta}>
@@ -137,7 +139,7 @@ export function PanelLateral({
                 etiqueta={m.etiqueta}
                 ruta={m.ruta}
                 rutaActual={rutaActual}
-                prefijo={m.ruta.startsWith('/administracion') ? '/administracion' : undefined}
+                prefijo={m.prefijo}
               />
             </li>
           ))}

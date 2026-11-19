@@ -15,6 +15,8 @@ import { rellenar } from '@/lib/plantillas'
 import { puedeAsignarPares } from '@/lib/dominio/comite'
 import { mismaInstitucion } from '@/lib/dominio/conflicto'
 import { enCurso, MAX_PARES_ACTIVOS, ocupaCupo, reglaPares } from '@/lib/dominio/pares'
+import { avisoParExistente, buscarParExistente, formaExistente } from '@/lib/dominio/parExistente'
+import { resultadoDePares } from '@/lib/dominio/resultadoPares'
 import type { Articulo } from '@/types/articulo'
 import type { CorreoEnviado, EstadoCorreo, TipoAuditoria, TipoCorreo } from '@/types/historial'
 import type {
@@ -101,16 +103,15 @@ function registrarCandidato(
   if (!datos.nombre.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(correo)) {
     return { estado: 422, mensaje: 'Escriba el nombre y un correo válido del candidato' }
   }
-  if (base.pares.some((p) => p.correo.toLowerCase() === correo)) {
-    return { estado: 409, mensaje: 'Ya existe un par con ese correo en la base de pares' }
-  }
+  const existente = buscarParExistente(base.pares, datos.nombre, correo)
+  if (existente) return { estado: 409, mensaje: avisoParExistente(existente) }
   const par: ParEvaluador = {
     id: `${revista}-par-n${base.pares.length + 1}`,
     revista,
     nombre: datos.nombre.trim(),
     profesion: (datos.profesion ?? '').trim(),
     correo,
-    universidad: datos.universidad.trim(),
+    universidad: formaExistente(base.pares, 'universidad', datos.universidad),
     area: datos.area.trim(),
     bloqueo: null,
   }
@@ -162,6 +163,23 @@ function auditar(
     fecha: ahoraIso(),
     usuario,
   })
+}
+
+/** The concepts of the peers decide the article (RF-20): close it, send it back to the committee or approve it. */
+function aplicarResultado(base: SeedRevista, revista: Revista, articuloId: string, usuario: string): void {
+  const articulo = base.articulos.find((a) => a.id === articuloId)
+  if (!articulo || (articulo.estado !== 'en-revision' && articulo.estado !== 'en-evaluacion')) return
+  const resultado = resultadoDePares(base.asignaciones.filter((a) => a.articuloId === articuloId))
+  if (resultado === 'no-publicable') {
+    articulo.estado = 'rechazado'
+    auditar(base, revista, articuloId, 'cierre', 'Cerró el proceso como rechazado: los pares calificaron el artículo como no publicable', usuario)
+  } else if (resultado === 'publicable-con-modificaciones') {
+    articulo.estado = 'postulado'
+    auditar(base, revista, articuloId, 'revision', 'Devolvió el artículo al comité para una nueva ronda de revisión: los pares lo calificaron como publicable con modificaciones', usuario)
+  } else if (resultado === 'publicable' && articulo.publicacion) {
+    articulo.estado = 'aprobado'
+    auditar(base, revista, articuloId, 'cierre', 'Cerró el proceso como aprobado: los pares lo calificaron como publicable', usuario)
+  }
 }
 
 /** The last invitation mail of an evaluation (invitation, 2nd attempt or resend). */
@@ -401,7 +419,7 @@ export const handlersAsignaciones = [
     if (!c.ok) return c.respuesta
     const asignacion = c.base.asignaciones.find((a) => a.id === params.id)
     if (!asignacion) return error(404, 'Asignación no encontrada')
-    const { fecha } = (await request.json()) as { fecha: string }
+    const { fecha, concepto } = (await request.json()) as { fecha: string; concepto?: ConceptoPar }
     if (asignacion.estado !== 'acepto') {
       return error(409, 'Solo se marca la entrega de un par que aceptó la invitación')
     }
@@ -413,6 +431,7 @@ export const handlersAsignaciones = [
     }
     asignacion.estado = 'entrego'
     asignacion.fechaEntrega = `${fecha}T12:00:00`
+    if (concepto) asignacion.concepto = concepto
     // Delivered evaluation => its constancia is now pending (RF-34).
     if (!c.base.constancias.some((k) => k.asignacionId === asignacion.id)) {
       c.base.constancias.push({
@@ -431,6 +450,7 @@ export const handlersAsignaciones = [
       `Marcó la entrega del par ${asignacion.orden}`,
       c.usuario.nombre,
     )
+    if (concepto) aplicarResultado(c.base, c.revista, asignacion.articuloId, c.usuario.nombre)
     // RF-23: the sheet offers to issue the constancia right away.
     const constancia = c.base.constancias.find((k) => k.asignacionId === asignacion.id)
     return HttpResponse.json({ ...asignacion, constanciaId: constancia?.id ?? null })
@@ -454,6 +474,7 @@ export const handlersAsignaciones = [
       `Registró el concepto del par ${asignacion.orden}`,
       c.usuario.nombre,
     )
+    aplicarResultado(c.base, c.revista, asignacion.articuloId, c.usuario.nombre)
     return HttpResponse.json(asignacion)
   }),
 ]

@@ -104,6 +104,7 @@ export const tema: NonNullable<Config['theme']> = {
       pastilla: v('revista-pastilla'),
       acento: v('revista-acento'),
     },
+    serie: { reep: v('serie-reep'), ire: v('serie-ire'), unica: v('serie-unica') },
     velo: { modal: v('velo-modal'), panel: v('velo-panel') },
   },
   extend: {

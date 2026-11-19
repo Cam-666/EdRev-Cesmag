@@ -6,9 +6,12 @@ export function formatearFecha(iso: string): string {
   return format(parseISO(iso), 'dd MMM yyyy', { locale: es }).replace('.', '')
 }
 
-/** Visible date + time, e.g. "26 oct · 16:02". */
+/** Visible date + time on a 12-hour clock, e.g. "26 oct · 4:02 p. m.". */
 export function formatearFechaHora(iso: string): string {
-  return format(parseISO(iso), 'dd MMM · HH:mm', { locale: es }).replace('.', '')
+  const fecha = parseISO(iso)
+  const dia = format(fecha, 'dd MMM', { locale: es }).replace('.', '')
+  const hora = format(fecha, 'h:mm')
+  return `${dia} · ${hora} ${fecha.getHours() < 12 ? 'a. m.' : 'p. m.'}`
 }
 
 /** Hides most of the local part of an email: "maria.lopez@x.co" -> "m·····z@x.co". */

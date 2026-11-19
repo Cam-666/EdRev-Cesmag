@@ -1,5 +1,5 @@
 /*
- * TablaArticulos — article list: OJS number, title, type, peers answered/assigned, postulation
+ * TablaArticulos — article list: OJS number, title, type, evaluations delivered over peers assigned (those who accepted), postulation
  * date and status. The whole row is a link to the sheet; an archived article opens the
  * "Retomar el proceso" dialog over its sheet (as the Figma prototype does).
  * Covers: RF-35, RF-36, RF-08, HU-26, RNF-11.
@@ -32,8 +32,8 @@ export function TablaArticulos({ revista, articulos, cargando, vacio }: TablaArt
     { clave: 'tipo', encabezado: 'Tipo', render: (a) => ETIQUETA_TIPO[a.tipo] },
     {
       clave: 'pares',
-      encabezado: 'Pares',
-      render: (a) => `${a.paresRespondieron}/${a.paresAsignados}`,
+      encabezado: 'Pares (entregas)',
+      render: (a) => `${a.paresEntregaron}/${a.paresAsignados}`,
     },
     {
       clave: 'postulado',

@@ -1,12 +1,13 @@
 /*
  * FormularioRonda — registers a round of the initial committee review: the anti-plagiarism
- * report (matches % and AI %, reported separately), the result (Aprobado, Requiere ajustes or
- * Rechazado) and the committee's observations. The warning above 15 % appears next to the field
- * and never blocks; the AI percentage never triggers it. Covers: RF-05, RF-06, HU-02, HU-03.
+ * report (matches % and AI %, reported separately) and the committee's observations. The result is
+ * not chosen: the system decides it (matches above 15 % → Rechazado; within the limit and no
+ * observations → Aprobado; within the limit with observations → Requiere ajustes) and shows it
+ * before saving. The AI percentage never decides. Covers: RF-05, RF-06, HU-02, HU-03.
  */
 import { zodResolver } from '@hookform/resolvers/zod'
-import { Controller, useForm, useWatch } from 'react-hook-form'
-import { RESULTADOS_RONDA, UMBRAL_COINCIDENCIAS } from '../config/listas'
+import { useForm, useWatch } from 'react-hook-form'
+import { UMBRAL_COINCIDENCIAS } from '../config/listas'
 import { aNumero, superaUmbral } from '../config/reglas'
 import { esquemaRonda } from '../config/esquemas'
 import type { RondaForm } from '../config/esquemas'
@@ -15,9 +16,15 @@ import { Alerta } from '@/components/common/Alerta'
 import { AreaTexto } from '@/components/common/AreaTexto'
 import { Boton } from '@/components/common/Boton'
 import { CampoTexto } from '@/components/common/CampoTexto'
-import { ListaDesplegable } from '@/components/common/ListaDesplegable'
 import { mensajeDeApi } from '@/lib/api/errores'
+import { resultadoDeRonda } from '@/lib/dominio/comite'
 import type { ArticuloDetalle, ResultadoRonda } from '@/types/articulo'
+
+const TITULO_RESULTADO: Record<ResultadoRonda, string> = {
+  aprobado: 'publicable',
+  ajustes: 'publicable con observaciones',
+  rechazado: 'no publicable',
+}
 
 export interface FormularioRondaProps {
   articulo: ArticuloDetalle
@@ -38,23 +45,25 @@ export function FormularioRonda({ articulo, onGuardada, onCancelar }: Formulario
     defaultValues: {
       coincidencias: articulo.coincidencias === null ? '' : String(articulo.coincidencias),
       atribuidoIa: articulo.atribuidoIa === null ? '' : String(articulo.atribuidoIa),
-      resultado: '',
       observacion: '',
     },
   })
 
   const texto = useWatch({ control, name: 'coincidencias' })
   const coincidencias = aNumero(texto)
-  const supera =
-    texto.trim() !== '' && Number.isFinite(coincidencias) && superaUmbral(coincidencias)
+  const observacion = useWatch({ control, name: 'observacion' })
+  const conocidas = texto.trim() !== '' && Number.isFinite(coincidencias)
+  const supera = conocidas && superaUmbral(coincidencias)
+  const resultadoAutomatico = conocidas
+    ? resultadoDeRonda(coincidencias, observacion, UMBRAL_COINCIDENCIAS)
+    : null
 
   function enviar(v: RondaForm) {
-    const resultado = v.resultado as ResultadoRonda
+    const resultado = resultadoDeRonda(aNumero(v.coincidencias), v.observacion, UMBRAL_COINCIDENCIAS)
     mutacion.mutate(
       {
         coincidencias: aNumero(v.coincidencias),
         atribuidoIa: aNumero(v.atribuidoIa),
-        resultado,
         observacion: v.observacion,
       },
       { onSuccess: () => onGuardada(resultado) },
@@ -90,31 +99,33 @@ export function FormularioRonda({ articulo, onGuardada, onCancelar }: Formulario
           {...register('atribuidoIa')}
         />
       </div>
-      {supera && (
-        <Alerta tipo="advertencia">
-          Las coincidencias ({coincidencias} %) superan el {UMBRAL_COINCIDENCIAS} % aceptado. No
-          bloquea el proceso.
-        </Alerta>
-      )}
-      <Controller
-        control={control}
-        name="resultado"
-        render={({ field }) => (
-          <ListaDesplegable
-            etiqueta="Resultado del comité"
-            opciones={RESULTADOS_RONDA}
-            valor={field.value || undefined}
-            onCambio={field.onChange}
-            error={errors.resultado?.message}
-          />
-        )}
-      />
       <AreaTexto
         etiqueta="Observaciones del comité"
+        ayuda="Opcional. Si escribe observaciones y las coincidencias están dentro del límite, el artículo queda como publicable con observaciones."
         rows={4}
         error={errors.observacion?.message}
         {...register('observacion')}
       />
+      <div role="status" aria-live="polite">
+        {resultadoAutomatico && (
+          <Alerta
+            tipo={
+              resultadoAutomatico === 'rechazado'
+                ? 'error'
+                : resultadoAutomatico === 'ajustes'
+                  ? 'advertencia'
+                  : 'exito'
+            }
+            titulo={`Resultado: ${TITULO_RESULTADO[resultadoAutomatico]}`}
+          >
+            {supera
+              ? `Las coincidencias (${coincidencias} %) superan el ${UMBRAL_COINCIDENCIAS} % aceptado: el sistema marca el artículo como no publicable y lo deja Rechazado, sin pares.`
+              : resultadoAutomatico === 'ajustes'
+                ? 'Las coincidencias están dentro del límite y hay observaciones: el sistema marca el artículo como publicable con observaciones (Requiere ajustes). El autor corrige y se registra otra ronda.'
+                : 'Las coincidencias están dentro del límite y no hay observaciones: el sistema marca el artículo como publicable (Aprobado) y se pasa a la asignación de pares.'}
+          </Alerta>
+        )}
+      </div>
       <div className="flex flex-wrap gap-2">
         <Boton type="submit" cargando={mutacion.isPending}>
           Guardar ronda

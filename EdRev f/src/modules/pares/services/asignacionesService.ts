@@ -56,10 +56,11 @@ export function marcarEntrega(
   revista: Revista,
   asignacionId: string,
   fecha: string,
+  concepto: ConceptoPar,
 ): Promise<EntregaRegistrada> {
   return solicitar<EntregaRegistrada>(`/${revista}/asignaciones/${art(asignacionId)}/entrega`, {
     method: 'POST',
-    ...json({ fecha }),
+    ...json({ fecha, concepto }),
   })
 }
 

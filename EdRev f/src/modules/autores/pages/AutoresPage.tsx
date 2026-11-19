@@ -1,13 +1,15 @@
 /*
  * AutoresPage — Autores (/:revista/autores): the common author directory of both journals,
- * searchable by name or ORCID and filterable by journal, with the number of articles of each.
+ * searchable by name or ORCID and filterable by journal, country, institution, ORCID and number of
+ * articles, with the number of articles of each.
  * A click on an author opens its own screen (AutorDetallePage).
  * Covers: RF-09, RF-10, RF-11, HU-06, HU-07.
  */
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { RegistrarAutorModal } from '../components/RegistrarAutorModal'
-import { useBuscarAutores } from '../hooks/useBuscarAutores'
+import { useBuscarAutores, useOpcionesFiltrosAutores } from '../hooks/useBuscarAutores'
+import type { FiltrosAutores } from '../services/autoresService'
 import type { AutorConTotal } from '../services/autoresService'
 import { usePermiso } from '@/modules/acceso/hooks/usePermiso'
 import { Boton } from '@/components/common/Boton'
@@ -17,26 +19,51 @@ import { EstadoConsulta } from '@/components/common/EstadoConsulta'
 import { ListaDesplegable } from '@/components/common/ListaDesplegable'
 import { Tabla } from '@/components/common/Tabla'
 import type { ColumnaTabla } from '@/components/common/Tabla'
-import { useRevista } from '@/lib/revista/useRevista'
 import { REVISTAS } from '@/types/revista'
 import type { Revista } from '@/types/revista'
 
+const TODOS = 'todos'
+
 const FILTRO_REVISTA = [
-  { valor: 'ambas', etiqueta: 'Ambas' },
+  { valor: TODOS, etiqueta: 'Todos' },
   { valor: 'reep', etiqueta: REVISTAS.reep.nombreCorto },
   { valor: 'ire', etiqueta: REVISTAS.ire.nombreCorto },
 ]
 
+const FILTRO_ORCID = [
+  { valor: TODOS, etiqueta: 'Todos' },
+  { valor: 'con', etiqueta: 'Con ORCID' },
+  { valor: 'sin', etiqueta: 'Sin ORCID' },
+]
+
+const FILTRO_ARTICULOS = [
+  { valor: TODOS, etiqueta: 'Todos' },
+  { valor: 'uno', etiqueta: 'Un artículo' },
+  { valor: 'varios', etiqueta: 'Dos o más artículos' },
+]
+
 export function AutoresPage() {
-  const { revista } = useRevista()
   const navigate = useNavigate()
   const [texto, setTexto] = useState('')
-  const [filtro, setFiltro] = useState('ambas')
+  const [filtro, setFiltro] = useState(TODOS)
+  const [pais, setPais] = useState(TODOS)
+  const [filiacion, setFiliacion] = useState(TODOS)
+  const [orcid, setOrcid] = useState(TODOS)
+  const [articulos, setArticulos] = useState(TODOS)
+  const opciones = useOpcionesFiltrosAutores()
   const [registrando, setRegistrando] = useState(false)
   const puedeRegistrar = usePermiso('registrar-datos')
-  const en = filtro === 'ambas' ? undefined : (filtro as Revista)
-  const lista = useBuscarAutores(texto, 100, true, en)
-  const ficha = (id: string) => `/${revista}/autores/${encodeURIComponent(id)}`
+  const en = filtro === TODOS ? undefined : (filtro as Revista)
+  const filtros: FiltrosAutores = {
+    ...(en ? { en } : {}),
+    ...(pais !== TODOS ? { pais } : {}),
+    ...(filiacion !== TODOS ? { filiacion } : {}),
+    ...(orcid !== TODOS ? { orcid: orcid as 'con' | 'sin' } : {}),
+    ...(articulos !== TODOS ? { articulos: articulos as 'uno' | 'varios' } : {}),
+  }
+  const hayFiltros = Object.keys(filtros).length > 0
+  const lista = useBuscarAutores(texto, 100, true, filtros)
+  const ficha = (id: string) => `/autores/${encodeURIComponent(id)}`
 
   const columnas: Array<ColumnaTabla<AutorConTotal>> = [
     { clave: 'autor', encabezado: 'Autor', render: (a) => a.nombre },
@@ -75,12 +102,38 @@ export function AutoresPage() {
           value={texto}
           onChange={(e) => setTexto(e.target.value)}
         />
+      </div>
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-5">
         <ListaDesplegable
-          className="w-60"
           etiqueta="Revista"
           opciones={FILTRO_REVISTA}
           valor={filtro}
           onCambio={setFiltro}
+        />
+        <ListaDesplegable
+          etiqueta="País"
+          opciones={[
+            { valor: TODOS, etiqueta: 'Todos' },
+            ...(opciones.data?.paises ?? []).map((p) => ({ valor: p, etiqueta: p })),
+          ]}
+          valor={pais}
+          onCambio={setPais}
+        />
+        <ListaDesplegable
+          etiqueta="Institución"
+          opciones={[
+            { valor: TODOS, etiqueta: 'Todas' },
+            ...(opciones.data?.filiaciones ?? []).map((f) => ({ valor: f, etiqueta: f })),
+          ]}
+          valor={filiacion}
+          onCambio={setFiliacion}
+        />
+        <ListaDesplegable etiqueta="ORCID" opciones={FILTRO_ORCID} valor={orcid} onCambio={setOrcid} />
+        <ListaDesplegable
+          etiqueta="Número de artículos"
+          opciones={FILTRO_ARTICULOS}
+          valor={articulos}
+          onCambio={setArticulos}
         />
       </div>
 
@@ -99,8 +152,8 @@ export function AutoresPage() {
           hrefFila={(a) => ficha(a.id)}
           etiquetaEnlace={(a) => `Ver la ficha de ${a.nombre}`}
           vacio={
-            texto.trim() || en
-              ? 'Ningún autor coincide con la búsqueda.'
+            texto.trim() || hayFiltros
+              ? 'No se encontraron autores con la búsqueda realizada.'
               : 'Aún no hay autores registrados.'
           }
         />

@@ -72,7 +72,7 @@ export function AlertasTablero({
           obtenerClave={(c) => c.asignacionId}
           hrefFila={(c) => `/${revista}/articulos/${encodeURIComponent(c.articuloId)}/pares`}
           etiquetaEnlace={(c) => `Abrir el artículo ${c.numeroOjs}`}
-          vacio="Ningún par está pendiente de responder."
+          vacio="No hay pares pendientes de responder la invitación."
         />
         {sinResponder.length > 0 && (
           <div>

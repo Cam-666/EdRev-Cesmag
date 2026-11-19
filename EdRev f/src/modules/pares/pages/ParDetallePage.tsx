@@ -6,7 +6,7 @@
  */
 import { BotonVolver } from '@/components/common/BotonVolver'
 import { useState } from 'react'
-import { useParams, useSearchParams } from 'react-router-dom'
+import { useParams } from 'react-router-dom'
 import { BloquearParModal } from '../components/BloquearParModal'
 import { DesbloquearParModal } from '../components/DesbloquearParModal'
 import { ParModal } from '../components/ParModal'
@@ -22,16 +22,11 @@ import { EstadoConsulta } from '@/components/common/EstadoConsulta'
 import { EncabezadoPagina } from '@/components/common/EncabezadoPagina'
 import { ErrorApi } from '@/lib/api/cliente'
 import { formatearFecha } from '@/lib/format'
-import { useRevista } from '@/lib/revista/useRevista'
 
 export function ParDetallePage() {
-  const { revista } = useRevista()
   const { id = '' } = useParams()
-  const [params] = useSearchParams()
-  const articulo = params.get('articulo')
   const consulta = usePar(id)
   const puedeEditar = usePermiso('registrar-datos')
-  const puedeAsignar = usePermiso('asignar-pares')
   const puedeBloquear = usePermiso('bloquear-par')
   const puedeDesbloquear = usePermiso('desbloquear-par')
   const [editando, setEditando] = useState(false)
@@ -45,7 +40,7 @@ export function ParDetallePage() {
         <Alerta
           tipo="advertencia"
           accion={
-            <EnlaceBoton variante="secundario" tamano="sm" to={`/${revista}/pares`}>
+            <EnlaceBoton variante="secundario" tamano="sm" to="/pares">
               Volver a la base
             </EnlaceBoton>
           }
@@ -68,19 +63,11 @@ export function ParDetallePage() {
     >
       {par && (
         <section className="flex flex-col gap-6">
-          <BotonVolver to={`/${revista}/pares`}>Volver a pares evaluadores</BotonVolver>
+          <BotonVolver to="/pares">Volver a pares evaluadores</BotonVolver>
           <EncabezadoPagina
             titulo={par.nombre}
             acciones={
               <>
-                {articulo && puedeAsignar && !bloqueado && (
-                  <EnlaceBoton
-                    tamano="sm"
-                    to={`/${revista}/pares/asignar?articulo=${encodeURIComponent(articulo)}&par=${encodeURIComponent(par.id)}`}
-                  >
-                    Asignar
-                  </EnlaceBoton>
-                )}
                 {puedeEditar && (
                   <Boton variante="neutro" tamano="sm" onClick={() => setEditando(true)}>
                     Editar
@@ -180,7 +167,7 @@ export function ParDetallePage() {
             <h2 id="titulo-participaciones" className="text-titulo-16">
               Participaciones
             </h2>
-            <TablaParticipaciones revista={revista} participaciones={par.participaciones} />
+            <TablaParticipaciones participaciones={par.participaciones} />
           </section>
 
           <ParModal abierto={editando} onCerrar={() => setEditando(false)} par={par} />

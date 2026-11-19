@@ -18,11 +18,13 @@ import {
   listarUsuarios,
   obtenerPlantillas,
   subirImagen,
-  usarPlantilla,
+  asignarPlantilla,
+  eliminarPlantilla,
+  eliminarUsuario,
 } from '../services/adminService'
 import type { FiltrosAuditoria } from '../services/adminService'
 import type { Configuracion, DatosRevista } from '@/types/configuracion'
-import type { DatosNuevaPlantilla, ParteImagen } from '@/types/plantilla'
+import type { DatosNuevaPlantilla, ParteImagen, UsoPlantilla } from '@/types/plantilla'
 import type { Revista } from '@/types/revista'
 import type { DatosUsuario, Usuario } from '@/types/usuario'
 
@@ -56,6 +58,14 @@ export function useEditarUsuario() {
   })
 }
 
+export function useEliminarUsuario() {
+  const cliente = useQueryClient()
+  return useMutation({
+    mutationFn: (id: string) => eliminarUsuario(id),
+    onSuccess: () => cliente.invalidateQueries({ queryKey: ['admin', 'usuarios'] }),
+  })
+}
+
 export function usePlantillas() {
   return useQuery({ queryKey: ['admin', 'plantillas'], queryFn: obtenerPlantillas })
 }
@@ -63,8 +73,15 @@ export function usePlantillas() {
 export function useGuardarPlantilla() {
   const cliente = useQueryClient()
   return useMutation({
-    mutationFn: ({ id, asunto, cuerpo }: { id: string; asunto: string | null; cuerpo: string }) =>
-      guardarPlantilla(id, { asunto, cuerpo }),
+    mutationFn: ({
+      id,
+      ...datos
+    }: {
+      id: string
+      asunto: string | null
+      cuerpo: string
+      correoFirma?: string
+    }) => guardarPlantilla(id, datos),
     onSuccess: () => cliente.invalidateQueries({ queryKey: ['admin', 'plantillas'] }),
   })
 }
@@ -104,10 +121,18 @@ export function useVistaPreviaPlantilla() {
   })
 }
 
-export function useUsarPlantilla() {
+export function useAsignarPlantilla() {
   const cliente = useQueryClient()
   return useMutation({
-    mutationFn: (id: string) => usarPlantilla(id),
+    mutationFn: ({ id, uso }: { id: string; uso: UsoPlantilla }) => asignarPlantilla(id, uso),
+    onSuccess: () => cliente.invalidateQueries({ queryKey: ['admin', 'plantillas'] }),
+  })
+}
+
+export function useEliminarPlantilla() {
+  const cliente = useQueryClient()
+  return useMutation({
+    mutationFn: (id: string) => eliminarPlantilla(id),
     onSuccess: () => cliente.invalidateQueries({ queryKey: ['admin', 'plantillas'] }),
   })
 }

@@ -1,29 +1,31 @@
 /*
- * NuevaPlantillaModal — creates a new template of a journal: a free name and its class, mail
- * (invitation or thank-you) or file (the constancia). It starts from the text (and images) of that
- * journal's template in use for that purpose and is then edited like any other; it is not sent until it is chosen with «Usar en los
- * envíos». No Figma design for the dialog.
- * Covers: RNF-19, RF-25, RF-30.
+ * NuevaPlantillaModal — creates a new template of a journal: a free name and what it is for (the
+ * invitation, the thank-you mail or the constancia). It starts as a copy of the template in use
+ * for that purpose, so the person edits what already works instead of writing from scratch, and it
+ * can be put in use at once. No Figma design for the dialog. Covers: RNF-19, RF-25, RF-30, RF-45.
  */
 import { zodResolver } from '@hookform/resolvers/zod'
-import { Controller, useForm, useWatch } from 'react-hook-form'
+import { useState } from 'react'
+import { Controller, useForm } from 'react-hook-form'
 import { z } from 'zod'
-import { CLASES_PLANTILLA, USOS_CORREO } from '../config/plantillas'
+import { ETIQUETA_USO } from '../config/plantillas'
 import { useCrearPlantilla } from '../hooks/useAdmin'
 import { Alerta } from '@/components/common/Alerta'
 import { Boton } from '@/components/common/Boton'
 import { CampoTexto } from '@/components/common/CampoTexto'
+import { Casilla } from '@/components/common/Casilla'
 import { ListaDesplegable } from '@/components/common/ListaDesplegable'
 import { Modal } from '@/components/common/Modal'
 import { mensajeDeApi } from '@/lib/api/errores'
 import { REVISTAS } from '@/types/revista'
 import type { Revista } from '@/types/revista'
-import type { ClasePlantilla, Plantilla } from '@/types/plantilla'
+import type { Plantilla, UsoPlantilla } from '@/types/plantilla'
+
+const USOS: UsoPlantilla[] = ['invitacion', 'agradecimiento', 'constancia']
 
 const esquema = z.object({
   nombre: z.string().trim().min(1, 'Escriba el nombre de la plantilla.'),
-  clase: z.enum(['correo', 'archivo']),
-  uso: z.enum(['invitacion', 'agradecimiento']),
+  uso: z.enum(['invitacion', 'agradecimiento', 'constancia']),
 })
 type Datos = z.infer<typeof esquema>
 
@@ -44,6 +46,7 @@ export function NuevaPlantillaModal(props: NuevaPlantillaModalProps) {
 
 function Contenido({ revista, onCerrar, onCreada }: NuevaPlantillaModalProps) {
   const crear = useCrearPlantilla()
+  const [usarAhora, setUsarAhora] = useState(false)
   const {
     register,
     handleSubmit,
@@ -51,20 +54,11 @@ function Contenido({ revista, onCerrar, onCreada }: NuevaPlantillaModalProps) {
     formState: { errors },
   } = useForm<Datos>({
     resolver: zodResolver(esquema),
-    defaultValues: { nombre: '', clase: 'correo', uso: 'invitacion' },
+    defaultValues: { nombre: '', uso: 'invitacion' },
   })
-  const clase = useWatch({ control, name: 'clase' })
 
   function enviar(datos: Datos) {
-    crear.mutate(
-      {
-        revista,
-        nombre: datos.nombre,
-        clase: datos.clase,
-        ...(datos.clase === 'correo' ? { uso: datos.uso } : {}),
-      },
-      { onSuccess: onCreada },
-    )
+    crear.mutate({ revista, nombre: datos.nombre, uso: datos.uso, usarAhora }, { onSuccess: onCreada })
   }
 
   return (
@@ -72,7 +66,7 @@ function Contenido({ revista, onCerrar, onCreada }: NuevaPlantillaModalProps) {
       abierto
       onCerrar={onCerrar}
       titulo="Nueva plantilla"
-      descripcion={`${REVISTAS[revista].nombreCorto}: parte del texto de la plantilla en uso.`}
+      descripcion={`Nueva plantilla de ${REVISTAS[revista].nombreCorto}. Se crea con el texto de la plantilla que se usa hoy para ese fin, para que usted solo cambie lo que necesite.`}
       acciones={
         <>
           <Boton variante="neutro" onClick={onCerrar}>
@@ -103,30 +97,21 @@ function Contenido({ revista, onCerrar, onCreada }: NuevaPlantillaModalProps) {
         />
         <Controller
           control={control}
-          name="clase"
+          name="uso"
           render={({ field }) => (
             <ListaDesplegable
-              etiqueta="Tipo de plantilla"
-              opciones={CLASES_PLANTILLA}
+              etiqueta="¿Para qué se usará?"
+              opciones={USOS.map((u) => ({ valor: u, etiqueta: ETIQUETA_USO[u] }))}
               valor={field.value}
-              onCambio={(v) => field.onChange(v as ClasePlantilla)}
+              onCambio={(v) => field.onChange(v as UsoPlantilla)}
             />
           )}
         />
-        {clase === 'correo' && (
-          <Controller
-            control={control}
-            name="uso"
-            render={({ field }) => (
-              <ListaDesplegable
-                etiqueta="Es el correo de"
-                opciones={USOS_CORREO}
-                valor={field.value}
-                onCambio={(v) => field.onChange(v as Datos['uso'])}
-              />
-            )}
-          />
-        )}
+        <Casilla
+          etiqueta="Usarla desde ahora en lugar de la actual"
+          marcada={usarAhora}
+          onCambio={setUsarAhora}
+        />
       </form>
     </Modal>
   )

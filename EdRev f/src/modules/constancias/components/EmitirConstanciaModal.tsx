@@ -59,7 +59,7 @@ export function EmitirConstanciaModal({
       abierto={constanciaId !== null}
       onCerrar={onCerrar}
       titulo={`Emitir la constancia de ${nombrePar}`}
-      descripcion={aviso ?? 'Se envía al par evaluador por correo.'}
+      descripcion={aviso ?? 'La constancia se enviará por correo al par evaluador.'}
       acciones={
         <>
           <Boton variante="neutro" onClick={onCerrar}>

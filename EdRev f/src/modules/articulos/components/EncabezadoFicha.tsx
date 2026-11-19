@@ -5,7 +5,7 @@
  */
 import type { ReactNode } from 'react'
 import { ETIQUETA_TIPO } from '../config/listas'
-import { superaUmbral } from '../config/reglas'
+import { paresVigentes, superaUmbral } from '../config/reglas'
 import { DistintivoEstado } from '@/components/common/DistintivoEstado'
 import { etiquetaPublicacion } from '@/lib/dominio/publicacion'
 import type { ArticuloDetalle } from '@/types/articulo'
@@ -18,6 +18,11 @@ export interface EncabezadoFichaProps {
 
 export function EncabezadoFicha({ articulo, acciones }: EncabezadoFichaProps) {
   const { coincidencias, asignaciones } = articulo
+  // Only those who accepted (or already delivered) are assigned; a peer who declined does not count.
+  const asignados = paresVigentes(asignaciones).length
+  const sinResponder = asignaciones.filter(
+    (a) => a.estado === 'invitado' || a.estado === 'segundo-intento',
+  ).length
   return (
     <header className="flex flex-col gap-2">
       <div className="flex flex-wrap items-start justify-between gap-4">
@@ -52,8 +57,13 @@ export function EncabezadoFicha({ articulo, acciones }: EncabezadoFichaProps) {
           </li>
         )}
         <li className="rounded-full bg-superficie-sutil px-3 py-1 text-etiqueta-13 text-neutro-800">
-          {asignaciones.length === 1 ? '1 par asignado' : `${asignaciones.length} pares asignados`}
+          {asignados === 1 ? '1 par asignado' : `${asignados} pares asignados`}
         </li>
+        {sinResponder > 0 && (
+          <li className="rounded-full bg-superficie-sutil px-3 py-1 text-etiqueta-13 text-neutro-800">
+            {sinResponder === 1 ? '1 invitación sin responder' : `${sinResponder} invitaciones sin responder`}
+          </li>
+        )}
       </ul>
     </header>
   )

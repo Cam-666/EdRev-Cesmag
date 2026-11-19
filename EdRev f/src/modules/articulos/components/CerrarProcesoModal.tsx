@@ -72,7 +72,7 @@ function Contenido({ articulo, onCerrar }: CerrarProcesoModalProps) {
       abierto
       onCerrar={onCerrar}
       titulo="Cerrar el proceso"
-      descripcion={`Artículo ${articulo.numeroOjs}. Lo registrado hasta ahora se conserva.`}
+      descripcion={`Artículo ${articulo.numeroOjs}. La información registrada hasta el momento se conservará.`}
       acciones={
         <>
           <Boton variante="neutro" onClick={onCerrar}>

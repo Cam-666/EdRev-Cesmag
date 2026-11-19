@@ -13,11 +13,6 @@ export function EncabezadoComun() {
           Universidad CESMAG · Dependencia de Editorial
         </p>
       </div>
-      <div className="flex items-center gap-4">
-        <span className="rounded-full bg-superficie-sutil px-3 py-1 text-etiqueta-13 text-neutro-800">
-          Ambas revistas
-        </span>
-      </div>
     </header>
   )
 }

@@ -14,6 +14,8 @@ export interface CampoTextoProps extends Omit<ComponentPropsWithRef<'input'>, 'i
   error?: string
   /** Control aligned to the right of the label (e.g. the "Mostrar" password toggle). */
   accionEtiqueta?: ReactNode
+  /** Control placed inside the box, at its right end (e.g. the eye of a password). */
+  accionInterna?: ReactNode
   /** Keeps the label for assistive technology only (e.g. a field inside a table row). */
   etiquetaOculta?: boolean
 }
@@ -24,6 +26,7 @@ export function CampoTexto({
   ayuda,
   error,
   accionEtiqueta,
+  accionInterna,
   etiquetaOculta = false,
   className,
   required,
@@ -52,21 +55,27 @@ export function CampoTexto({
         </label>
         {accionEtiqueta}
       </div>
-      <input
-        {...resto}
-        id={idCampo}
-        required={required}
-        aria-invalid={error ? true : undefined}
-        aria-describedby={describedBy || undefined}
-        className={cn(
-          'min-h-control rounded-md border bg-superficie-tarjeta px-3 text-cuerpo-15 text-texto-principal',
-          'placeholder:text-texto-placeholder',
-          'focus-visible:border-borde-foco',
-          'disabled:cursor-not-allowed disabled:bg-superficie-sutil disabled:text-texto-secundario',
-          error ? 'border-estado-error' : 'border-borde-control',
-          className,
+      <div className="relative flex flex-col">
+        <input
+          {...resto}
+          id={idCampo}
+          required={required}
+          aria-invalid={error ? true : undefined}
+          aria-describedby={describedBy || undefined}
+          className={cn(
+            'min-h-control rounded-md border bg-superficie-tarjeta px-3 text-cuerpo-15 text-texto-principal',
+            'placeholder:text-texto-placeholder',
+            'focus-visible:border-borde-foco',
+            'disabled:cursor-not-allowed disabled:bg-superficie-sutil disabled:text-texto-secundario',
+            error ? 'border-estado-error' : 'border-borde-control',
+            accionInterna ? 'pr-11' : null,
+            className,
+          )}
+        />
+        {accionInterna && (
+          <span className="absolute inset-y-0 right-2 flex items-center">{accionInterna}</span>
         )}
-      />
+      </div>
       {ayuda && (
         <p id={idAyuda} className="text-cuerpo-13 text-texto-secundario">
           {ayuda}

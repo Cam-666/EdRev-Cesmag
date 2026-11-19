@@ -15,10 +15,10 @@ export function ListaAutoresBorrador({ autores, onQuitar }: ListaAutoresBorrador
   return (
     <section
       aria-labelledby="titulo-autores-borrador"
-      className="flex flex-col gap-3 rounded-lg border border-borde-base bg-superficie-tarjeta p-5 shadow-tarjeta"
+      className="flex flex-col gap-2 rounded-lg border border-borde-base bg-superficie-sutil p-4"
     >
       <div className="flex items-center justify-between">
-        <h2 id="titulo-autores-borrador" className="text-titulo-16">
+        <h2 id="titulo-autores-borrador" className="text-cuerpo-15-enfasis">
           Autores del artículo
         </h2>
         <p className="text-etiqueta-13 text-texto-secundario">
@@ -30,20 +30,20 @@ export function ListaAutoresBorrador({ autores, onQuitar }: ListaAutoresBorrador
           Aún no hay autores. Busque una ficha existente o registre uno nuevo.
         </p>
       ) : (
-        <ol className="flex flex-col gap-2">
+        <ol className="flex flex-col gap-1.5">
           {autores.map((a, i) => (
             <li
               key={`${a.autorId ?? a.datos.orcid}-${i}`}
-              className="flex items-center gap-3 rounded-md border border-borde-base px-3 py-2"
+              className="flex items-center gap-2 rounded-md bg-superficie-tarjeta px-2 py-1.5"
             >
               <span
                 aria-hidden="true"
-                className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-superficie-sutil text-etiqueta-13"
+                className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-superficie-sutil text-etiqueta-13"
               >
                 {i + 1}
               </span>
               <div className="min-w-0 flex-1">
-                <p className="flex items-center gap-2 text-cuerpo-15-enfasis text-texto-principal">
+                <p className="flex items-center gap-2 text-cuerpo-13 font-medium text-texto-principal">
                   {a.datos.nombre}
                   {i === 0 && (
                     <span className="rounded-full bg-estado-info-fondo px-2 text-etiqueta-13 text-estado-info">
@@ -51,7 +51,7 @@ export function ListaAutoresBorrador({ autores, onQuitar }: ListaAutoresBorrador
                     </span>
                   )}
                 </p>
-                <p className="text-cuerpo-13 text-texto-secundario">
+                <p className="truncate text-micro-11 text-texto-secundario">
                   {[a.datos.orcid, a.datos.filiacion].filter(Boolean).join(' · ')}
                 </p>
               </div>
@@ -62,7 +62,7 @@ export function ListaAutoresBorrador({ autores, onQuitar }: ListaAutoresBorrador
           ))}
         </ol>
       )}
-      <p className="text-cuerpo-13 text-texto-secundario">
+      <p className="text-micro-11 text-texto-secundario">
         El orden identifica al autor principal y se conserva tal como se registró.
       </p>
     </section>

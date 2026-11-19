@@ -17,16 +17,32 @@ export interface RespuestaAutores {
   total: number
 }
 
-/** `en` narrows the directory to the authors with articles in that journal. */
+/** Filters of the author list; each one that is omitted does not narrow the directory. */
+export interface FiltrosAutores {
+  /** Authors with articles in that journal. */
+  en?: Revista
+  pais?: string
+  /** Institution (the last known affiliation). */
+  filiacion?: string
+  orcid?: 'con' | 'sin'
+  /** «uno»: a single article; «varios»: two or more. */
+  articulos?: 'uno' | 'varios'
+}
+
 export function buscarAutores(
   revista: Revista,
   q: string,
   limite = 50,
-  en?: Revista,
+  filtros: FiltrosAutores = {},
 ): Promise<RespuestaAutores> {
   const params = new URLSearchParams({ q, limite: String(limite) })
-  if (en) params.set('en', en)
+  for (const [clave, valor] of Object.entries(filtros)) if (valor) params.set(clave, valor)
   return solicitar<RespuestaAutores>(`/${revista}/autores?${params.toString()}`)
+}
+
+/** The countries and institutions present in the directory, to fill the filters. */
+export function opcionesDeFiltros(revista: Revista): Promise<{ paises: string[]; filiaciones: string[] }> {
+  return solicitar(`/${revista}/autores/filtros`)
 }
 
 export function obtenerAutor(revista: Revista, id: string): Promise<Autor> {

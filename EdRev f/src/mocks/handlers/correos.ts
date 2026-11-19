@@ -7,7 +7,13 @@
 import { http, HttpResponse } from 'msw'
 import type { SeedRevista } from '../seed/fabrica'
 import { ahoraIso, contexto, error } from './util'
-import type { CorreoEnviado, EstadoCorreo, TipoAuditoria } from '@/types/historial'
+import type {
+  CorreoEnviado,
+  EstadoCorreo,
+  RespuestaAlCorreo,
+  RespuestaDelPar,
+  TipoAuditoria,
+} from '@/types/historial'
 import type { Revista } from '@/types/revista'
 
 const DOMINIO_QUE_REBOTA = '@invalido.test'
@@ -16,9 +22,27 @@ function rebota(correo: string): boolean {
   return correo.toLowerCase().endsWith(DOMINIO_QUE_REBOTA)
 }
 
+function respuestaDe(base: SeedRevista, c: CorreoEnviado): RespuestaAlCorreo | null {
+  if (c.tipo === 'agradecimiento' || c.tipo === 'constancia') return null
+  const asignacion = base.asignaciones.find((a) => a.id === c.asignacionId)
+  if (!asignacion) return null
+  const par = base.pares.find((p) => p.id === asignacion.parId)
+  const respuesta: RespuestaDelPar =
+    asignacion.estado === 'invitado' || asignacion.estado === 'segundo-intento'
+      ? 'sin-respuesta-aun'
+      : asignacion.estado === 'sin-respuesta'
+        ? 'sin-respuesta'
+        : asignacion.estado === 'no-acepto'
+          ? par?.bloqueo?.motivo === 'no-desea'
+            ? 'no-desea'
+            : 'no-acepto'
+          : 'acepto'
+  return { respuesta, fecha: respuesta === 'sin-respuesta-aun' ? null : (asignacion.fechaRespuesta ?? null), medio: null }
+}
+
 function conArticulo(base: SeedRevista, c: CorreoEnviado) {
   const articulo = base.articulos.find((a) => a.id === c.articuloId)
-  return { ...c, numeroOjs: articulo?.numeroOjs ?? c.articuloId }
+  return { ...c, numeroOjs: articulo?.numeroOjs ?? c.articuloId, respuestaPar: respuestaDe(base, c) }
 }
 
 function auditar(

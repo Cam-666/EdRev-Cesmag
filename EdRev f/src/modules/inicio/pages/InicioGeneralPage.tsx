@@ -1,8 +1,9 @@
 /*
  * InicioGeneralPage — Inicio (/inicio): summary of both journals and what is pending in each.
  * It is one of the few cross-journal screens (with Informes and Auditoría): it shows both
- * journals side by side, never mixed, each card softly tinted with its journal's colours
- * (data-revista), and every case opens inside its own journal.
+ * journals side by side, never mixed. Each card is white with a band in its journal's own gradient
+ * (data-revista) and its figures in soft neutral blocks, so both cards weigh the same and the colour
+ * only marks which journal is which. Every case opens inside its own journal.
  * Covers: RF-37, HU-25.
  */
 import { useResumen } from '../hooks/usePanel'
@@ -10,7 +11,6 @@ import { EnlaceBoton } from '@/components/common/EnlaceBoton'
 import { EstadoConsulta } from '@/components/common/EstadoConsulta'
 import { Tabla } from '@/components/common/Tabla'
 import type { ColumnaTabla } from '@/components/common/Tabla'
-import { formatearFechaLarga } from '@/lib/format'
 import { REVISTAS } from '@/types/revista'
 import type { ResumenRevista } from '@/types/panel'
 import type { Revista } from '@/types/revista'
@@ -75,11 +75,6 @@ export function InicioGeneralPage() {
     <section className="flex flex-col gap-6">
       <header>
         <h1 className="text-titulo-24">Inicio</h1>
-        <p className="text-cuerpo-13 text-texto-secundario">
-          {resumen
-            ? `Resumen de ambas revistas al ${formatearFechaLarga(resumen.fecha)}`
-            : 'Resumen de ambas revistas'}
-        </p>
       </header>
 
       <EstadoConsulta
@@ -96,42 +91,38 @@ export function InicioGeneralPage() {
                   key={r.revista}
                   data-revista={r.revista}
                   aria-labelledby={`titulo-modulo-${r.revista}`}
-                  className="flex flex-col gap-4 rounded-lg border border-t-4 border-borde-base border-t-revista-primario bg-revista-suave p-5 shadow-tarjeta"
+                  className="flex flex-col overflow-hidden rounded-lg border border-borde-base bg-superficie-tarjeta shadow-tarjeta"
                 >
-                  <div>
-                    <p className="text-micro-11 uppercase text-texto-secundario">
-                      Módulo {REVISTAS[r.revista].modulo}
-                    </p>
+                  <div
+                    aria-hidden="true"
+                    className="h-2 bg-[image:var(--revista-barra)]"
+                  />
+                  <div className="flex flex-col gap-5 p-5">
                     <h2
                       id={`titulo-modulo-${r.revista}`}
                       className="text-titulo-20 text-revista-profundo"
                     >
                       {REVISTAS[r.revista].nombreCorto}
                     </h2>
-                  </div>
-                  <dl className="grid grid-cols-4 gap-4">
+                    <dl className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+                      {[
+                        ['Artículos', r.articulos],
+                        ['Pares', r.pares],
+                        ['Sin responder', r.sinResponder],
+                        ['Constancias', r.constanciasPendientes],
+                      ].map(([etiqueta, valor]) => (
+                        <div key={etiqueta} className="rounded-md bg-superficie-sutil px-3 py-2">
+                          <dt className="text-cuerpo-13 text-texto-secundario">{etiqueta}</dt>
+                          <dd className="text-titulo-24 text-revista-profundo">{valor}</dd>
+                        </div>
+                      ))}
+                    </dl>
                     <div>
-                      <dt className="text-cuerpo-13 text-texto-secundario">Artículos</dt>
-                      <dd className="text-titulo-24">{r.articulos}</dd>
+                      <EnlaceBoton variante="secundario" tamano="sm" to={`/${r.revista}/tablero`}>
+                        Abrir revista{' '}
+                        <span className="sr-only">{REVISTAS[r.revista].nombreCorto}</span>
+                      </EnlaceBoton>
                     </div>
-                    <div>
-                      <dt className="text-cuerpo-13 text-texto-secundario">Pares</dt>
-                      <dd className="text-titulo-24">{r.pares}</dd>
-                    </div>
-                    <div>
-                      <dt className="text-cuerpo-13 text-texto-secundario">Sin responder</dt>
-                      <dd className="text-titulo-24">{r.sinResponder}</dd>
-                    </div>
-                    <div>
-                      <dt className="text-cuerpo-13 text-texto-secundario">Constancias</dt>
-                      <dd className="text-titulo-24">{r.constanciasPendientes}</dd>
-                    </div>
-                  </dl>
-                  <div>
-                    <EnlaceBoton variante="secundario" tamano="sm" to={`/${r.revista}/tablero`}>
-                      Abrir el módulo{' '}
-                      <span className="sr-only">{REVISTAS[r.revista].nombreCorto}</span>
-                    </EnlaceBoton>
                   </div>
                 </section>
               ))}

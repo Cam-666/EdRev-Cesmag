@@ -147,7 +147,7 @@ function ContenidoParModal({ abierto, onCerrar, par, onGuardado }: ParModalProps
           etiqueta="Área temática"
           list="areas-sugeridas"
           autoComplete="off"
-          ayuda="Texto libre: al escribir se sugieren las áreas ya registradas."
+          ayuda="Escriba el área libremente; al hacerlo se sugerirán las áreas ya registradas."
           error={errors.area?.message}
           {...register('area')}
         />

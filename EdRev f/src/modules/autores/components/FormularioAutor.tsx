@@ -105,7 +105,7 @@ export function FormularioAutor({
             etiqueta="Buscar ficha existente"
             type="search"
             placeholder="Nombre u ORCID"
-            ayuda="Si ya postuló antes, sus datos se llenan solos."
+            ayuda="Si el autor ya postuló un artículo, sus datos se completan automáticamente."
             value={busqueda}
             onChange={(e) => setBusqueda(e.target.value)}
             disabled={soloLectura}

@@ -8,7 +8,7 @@ import type { Usuario } from '@/types/usuario'
 import { REVISTAS } from '@/types/revista'
 import type { Revista } from '@/types/revista'
 
-/** The 16 views each journal has, identical for reep and ire. */
+/** The 11 views each journal has, identical for reep and ire. */
 const VISTAS = [
   'tablero',
   'articulos',
@@ -19,11 +19,6 @@ const VISTAS = [
   'articulos/{id}/historial',
   'articulos/{id}/comite',
   'articulos/{archivado}/reabrir',
-  'autores',
-  'autores/{autor}',
-  'pares',
-  'pares/bloqueados',
-  'pares/p-1',
   'constancias',
   'correos',
 ]
@@ -47,9 +42,17 @@ const ARTICULOS: Record<Revista, { id: string; archivado: string; autor: string 
 }
 
 describe('route table', () => {
-  it('defines 16 views per journal', () => {
-    expect(VISTAS).toHaveLength(16)
+  it('defines 11 views per journal', () => {
+    expect(VISTAS).toHaveLength(11)
   })
+
+  it.each(['/autores', '/autores/reep-au-3', '/pares', '/pares/bloqueados', '/pares/reep-par-1'])(
+    'renders the common screen %s, without a journal top bar',
+    async (ruta) => {
+      montar(ruta)
+      expect((await screen.findAllByRole('heading', { level: 1 })).length).toBeGreaterThan(0)
+    },
+  )
 
   describe.each(REVISTAS_IDS)('journal %s', (revista) => {
     const otra: Revista = revista === 'reep' ? 'ire' : 'reep'
@@ -101,7 +104,7 @@ describe('route table', () => {
   ])('cross-journal module %s has no journal palette and no open journal group', (ruta) => {
     const { container } = montar(ruta)
     expect(container.querySelector('[data-revista]')).toBeNull()
-    expect(screen.getByText('Ambas revistas')).toBeInTheDocument()
+    expect(screen.queryByText('Ambas revistas')).toBeNull()
     const nav = screen.getByRole('navigation', { name: 'Principal', hidden: true })
     expect(within(nav).queryByRole('link', { name: 'Tablero' })).toBeNull()
   })

@@ -21,7 +21,8 @@ export interface Plantilla {
   id: string
   /** Each journal has its own templates (RF-45). */
   revista: Revista
-  uso: UsoPlantilla
+  /** What it is used for in its journal; null while the Administradora has not chosen one. */
+  uso: UsoPlantilla | null
   clase: ClasePlantilla
   nombre: string
   /** Mail subject; the constancia has none. */
@@ -29,19 +30,27 @@ export interface Plantilla {
   cuerpo: string
   /** Markers that may appear, e.g. {{revista}}, {{par}}, {{articulo}}. */
   variables: string[]
-  /** True for the template the system uses for this use in its journal. */
+  /** True when it is the template its journal sends for its use (it has one). */
   enUso: boolean
   /** Header, footer and signature images; only the file template (constancia) has them. */
   imagenes: ImagenesPlantilla | null
+  /** Footer image (signature) of a mail template; null for a file template. */
+  imagenPie: ImagenPlantilla | null
+  /** Email a click on the signature opens in the PDF ('' for none); null for a mail template. */
+  correoFirma: string | null
 }
 
-/** A new template: a free name and its class; a mail also says which mail it is for (RNF-19). */
+/**
+ * A new template: a free name and what it is for. It starts as a copy of the one in use for that
+ * purpose; `usarAhora` makes it the one in use at once. Without a purpose it is blank and its class
+ * is given.
+ */
 export interface DatosNuevaPlantilla {
   revista: Revista
   nombre: string
-  clase: ClasePlantilla
-  /** Only for a mail template. */
-  uso?: Exclude<UsoPlantilla, 'constancia'>
+  uso?: UsoPlantilla
+  clase?: ClasePlantilla
+  usarAhora?: boolean
 }
 
 /** Address the mails of a journal leave from: configured in the mail service, not on screen. */

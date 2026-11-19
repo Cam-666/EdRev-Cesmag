@@ -16,10 +16,8 @@ import { EnlaceBoton } from '@/components/common/EnlaceBoton'
 import { EstadoConsulta } from '@/components/common/EstadoConsulta'
 import { Paginacion } from '@/components/common/Paginacion'
 import { EncabezadoPagina } from '@/components/common/EncabezadoPagina'
-import { useRevista } from '@/lib/revista/useRevista'
 
 export function ParesPage() {
-  const { revista } = useRevista()
   const { filtros, cambiar, hayFiltros } = useFiltrosPares()
   const lista = usePares(filtros)
   const puedeRegistrar = usePermiso('registrar-datos')
@@ -38,7 +36,7 @@ export function ParesPage() {
                 Registrar par
               </Boton>
             )}
-            <EnlaceBoton variante="neutro" tamano="sm" to={`/${revista}/pares/bloqueados`}>
+            <EnlaceBoton variante="neutro" tamano="sm" to="/pares/bloqueados">
               Bloqueados
             </EnlaceBoton>
           </>
@@ -62,13 +60,12 @@ export function ParesPage() {
             : ' '}
         </p>
         <TablaPares
-          revista={revista}
           pares={lista.data?.items ?? []}
           cargando={lista.isPending}
           vacio={
             hayFiltros || filtros.estado !== 'disponibles'
-              ? 'Ningún par coincide con los filtros.'
-              : 'Aún no hay pares registrados en esta revista.'
+              ? 'No se encontraron pares evaluadores con los filtros seleccionados.'
+              : 'Aún no hay pares evaluadores registrados.'
           }
         />
         {lista.data && total > 0 && (

@@ -24,6 +24,9 @@ export type EstadoAsignacion =
 export type ConceptoPar =
   'publicable' | 'publicable-con-modificaciones' | 'no-publicable' | 'pendiente-formato'
 
+/** What the concepts of the peers decide for the article: a concept that is a real judgment. */
+export type ResultadoPares = Exclude<ConceptoPar, 'pendiente-formato'>
+
 /**
  * A peer assigned to an article, in order. At most three peers who accepted or delivered; those
  * who decline or do not answer take no place. The tiebreaker is flagged (RF-19, RF-21).

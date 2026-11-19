@@ -140,10 +140,11 @@ describe('reports', () => {
     expect(screen.queryByRole('heading', { name: 'Acceso restringido' })).toBeNull()
   })
 
-  it('the journal filter says "Ambas" and the format is plain .csv', async () => {
+  it('the journal filter says "Ambas" and the report is shown without a «Generar» button', async () => {
     montarRuta('/informes')
     expect(await screen.findByRole('combobox', { name: 'Revista' })).toHaveTextContent('Ambas')
-    expect(screen.getByLabelText('Formato')).toHaveValue('.csv')
+    expect(screen.queryByRole('button', { name: 'Generar' })).toBeNull()
+    expect(await screen.findByRole('button', { name: 'Exportar' })).toBeInTheDocument()
   })
 })
 
@@ -167,16 +168,16 @@ describe('administration', () => {
     expect(campo).toHaveValue(7)
   })
 
-  it('rejects a constancia template without the required markers and shows the error', async () => {
+  it('rejects a constancia template with an unknown marker and shows the error', async () => {
     const { user } = montarRuta('/administracion/plantillas')
     await screen.findByRole('heading', { level: 2, name: 'Plantillas' })
     await user.click(await screen.findByRole('combobox', { name: 'Plantilla' }))
     await user.click(await screen.findByRole('option', { name: /^Constancia de participación/ }))
     const texto = await screen.findByLabelText('Texto')
     await user.clear(texto)
-    await user.type(texto, 'HACE CONSTAR QUE alguien evaluó.')
+    await user.type(texto, 'HACE CONSTAR QUE [[Número de la solicitud] evaluó.')
     await user.click(screen.getByRole('button', { name: 'Guardar plantilla' }))
-    expect(await screen.findByText(/Falta el marcador obligatorio/)).toBeInTheDocument()
+    expect(await screen.findByText(/no se puede usar en esta plantilla/)).toBeInTheDocument()
     expect(screen.queryByText(/Plantilla guardada/)).toBeNull()
   })
 
@@ -189,17 +190,28 @@ describe('administration', () => {
       'accept',
       'image/png,image/jpeg,.png,.jpg,.jpeg',
     )
-    expect(screen.getByRole('button', { name: 'Ver constancia en PDF' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Ver archivo en PDF' })).toBeInTheDocument()
 
     await user.click(screen.getByRole('combobox', { name: 'Revista' }))
     await user.click(await screen.findByRole('option', { name: 'Investigium IRE' }))
     await user.click(screen.getByRole('combobox', { name: 'Plantilla' }))
     await user.click(await screen.findByRole('option', { name: /^Constancia de participación/ }))
     expect(await screen.findByRole('heading', { name: 'Encabezado, pie de página y firma' })).toBeInTheDocument()
-    // The preview uses the journal of the template
-    expect(
-      screen.getAllByText(/Revista Investigium IRE Ciencias Sociales y Humanas/).length,
-    ).toBeGreaterThan(0)
+    // The preview is the PDF itself, in a viewer inside the page
+    expect(await screen.findByRole('heading', { name: 'Vista previa de la constancia' })).toBeInTheDocument()
+  })
+
+  it('the preview of a mail template is the mail itself, with its header, not a plain text', async () => {
+    const { user } = montarRuta('/administracion/plantillas')
+    expect(await screen.findByRole('heading', { name: 'Vista previa del correo' })).toBeInTheDocument()
+    const marco = await screen.findByTitle('Vista previa del correo')
+    expect(marco.tagName).toBe('IFRAME')
+    expect(marco).toHaveAttribute('srcdoc', expect.stringContaining('Universidad CESMAG'))
+    // it follows the text being edited
+    const texto = screen.getByLabelText('Texto')
+    await user.clear(texto)
+    await user.type(texto, 'Un texto nuevo para la invitación.')
+    await waitFor(() => expect(screen.getByTitle('Vista previa del correo')).toHaveAttribute('srcdoc', expect.stringContaining('Un texto nuevo')))
   })
 
   it('shows only the templates: no sender account box and no credentials', async () => {
@@ -210,7 +222,7 @@ describe('administration', () => {
     expect(screen.queryByLabelText(/contraseña/i)).toBeNull()
   })
 
-  it('creates a new template from the one in use and puts it in use', async () => {
+  it('creates a new template without a use, and the Administradora can delete it', async () => {
     const { user } = montarRuta('/administracion/plantillas')
     await user.click(await screen.findByRole('button', { name: 'Nueva plantilla' }))
     const dialogo = await screen.findByRole('dialog', { name: 'Nueva plantilla' })
@@ -224,10 +236,43 @@ describe('administration', () => {
 
     const lista = await screen.findByRole('combobox', { name: 'Plantilla' })
     await waitFor(() => expect(lista).toHaveTextContent('Invitación en inglés'))
-    expect((screen.getByLabelText('Texto') as HTMLTextAreaElement).value).toContain('{{par}}')
-    await user.click(screen.getByRole('button', { name: 'Usar en los envíos' }))
-    await waitFor(() => expect(lista).toHaveTextContent('Invitación en inglés (en uso)'))
-    expect(screen.getByText('En uso')).toBeInTheDocument()
+    // it starts as a copy of the invitation in use, with the data shown by plain names
+    const copia = (screen.getByLabelText('Texto') as HTMLTextAreaElement).value
+    expect(copia).toContain('[Nombre del par]')
+    expect(copia).not.toContain('{{')
+    expect(screen.getByText(/Sin uso asignado/)).toBeInTheDocument()
+    expect(screen.queryByText('Invitación en inglés (en uso', { exact: false })).toBeNull()
+
+    await user.click(screen.getByRole('button', { name: 'Eliminar plantilla' }))
+    const confirmar = await screen.findByRole('dialog', { name: 'Eliminar plantilla' })
+    await user.click(within(confirmar).getByRole('button', { name: 'Eliminar plantilla' }))
+    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull())
+    await waitFor(() => expect(screen.getByRole('combobox', { name: 'Plantilla' })).not.toHaveTextContent('Invitación en inglés'))
+  })
+
+  it('a new template can take the place of the one in use at once, and the data are inserted with a button', async () => {
+    const { user } = montarRuta('/administracion/plantillas')
+    await user.click(await screen.findByRole('button', { name: 'Nueva plantilla' }))
+    const dialogo = await screen.findByRole('dialog', { name: 'Nueva plantilla' })
+    await user.type(within(dialogo).getByLabelText('Nombre'), 'Invitación renovada')
+    await user.click(within(dialogo).getByRole('checkbox', { name: /Usarla desde ahora/ }))
+    await user.click(within(dialogo).getByRole('button', { name: 'Crear plantilla' }))
+    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull())
+    expect(await screen.findByText(/En uso como: Invitación a evaluar/)).toBeInTheDocument()
+
+    const texto = screen.getByLabelText('Texto') as HTMLTextAreaElement
+    await user.clear(texto)
+    await user.click(screen.getByRole('button', { name: 'Universidad del par' }))
+    expect(texto.value).toBe('[Universidad del par]')
+  })
+
+  it('Configuración lets the Administradora choose which template each use takes', async () => {
+    const { user } = montarRuta('/administracion/configuracion')
+    await user.click(await screen.findByRole('tab', { name: 'Constancias' }))
+    expect(
+      await screen.findByRole('combobox', { name: /Constancia de participación de Educación/ }),
+    ).toBeInTheDocument()
+    expect(screen.getAllByLabelText(/ISSN de/)).toHaveLength(2)
   })
 
   it('a new account receives the link to define its password (RF-40)', async () => {
@@ -246,9 +291,8 @@ describe('administration', () => {
         'Se envió a laura.pena@unicesmag.edu.co el enlace para definir la contraseña.',
       ),
     ).toBeInTheDocument()
-    expect(
-      screen.getByRole('link', { name: 'Demostración: abrir el enlace' }).getAttribute('href'),
-    ).toMatch(/^\/acceso\/contrasena\?token=/)
+    // The link goes in the mail to the new user, never on this screen
+    expect(screen.queryByRole('link', { name: /Demostración/ })).toBeNull()
 
     // While the account has not entered, the link can be sent again
     await user.click(await screen.findByRole('button', { name: 'Editar a Laura Peña' }))

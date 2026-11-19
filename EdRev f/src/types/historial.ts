@@ -12,6 +12,18 @@ export type TipoCorreo = 'invitacion' | 'segundo-intento' | 'reenvio' | 'agradec
  */
 export type EstadoCorreo = 'en-cola' | 'enviado' | 'rebotado' | 'fallido'
 
+/** What the peer answered to an invitation: «sin-respuesta-aun» while it has not answered. */
+export type RespuestaDelPar =
+  'sin-respuesta-aun' | 'acepto' | 'no-acepto' | 'no-desea' | 'sin-respuesta'
+
+export interface RespuestaAlCorreo {
+  respuesta: RespuestaDelPar
+  /** When it answered (or was blocked for not answering); null while it has not answered. */
+  fecha: string | null
+  /** «correo»: the peer pressed a button of the mail; «manual»: a user registered the answer. */
+  medio: 'correo' | 'manual' | null
+}
+
 export interface CorreoEnviado {
   id: string
   revista: Revista
@@ -25,6 +37,8 @@ export interface CorreoEnviado {
   estado: EstadoCorreo
   /** A bounced or failed mail that was already corrected and resent (it no longer needs action). */
   atendido: boolean
+  /** The answer of the peer; only for the invitation mails (the others have none). */
+  respuestaPar?: RespuestaAlCorreo | null
 }
 
 /** Audit action types (RF-41, D13): the same list as the «Tipo de acción» filter. */

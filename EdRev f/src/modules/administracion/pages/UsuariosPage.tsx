@@ -1,18 +1,20 @@
 /*
  * UsuariosPage — Usuarios (/administracion/usuarios): the accounts of the dependency with profile,
  * last access and status; create (the user receives a link to define the password), edit,
- * disable, and send the link again to an account that has not entered.
+ * disable, delete (only an account without activity in the history), and send the link again to an
+ * account that has not entered.
  * Administradora only. Covers: RF-40, HU-29, RNF-05.
  */
 import { useState } from 'react'
 import { UsuarioModal } from '../components/UsuarioModal'
 import { PERFILES } from '../config/perfiles'
-import { useUsuarios } from '../hooks/useAdmin'
+import { useEliminarUsuario, useUsuarios } from '../hooks/useAdmin'
 import { Alerta } from '@/components/common/Alerta'
 import { Boton } from '@/components/common/Boton'
-import { EnlaceBoton } from '@/components/common/EnlaceBoton'
 import { DistintivoEstado } from '@/components/common/DistintivoEstado'
 import { EstadoConsulta } from '@/components/common/EstadoConsulta'
+import { ModalConfirmacion } from '@/components/common/ModalConfirmacion'
+import { mensajeDeApi } from '@/lib/api/errores'
 import { Tabla } from '@/components/common/Tabla'
 import type { ColumnaTabla } from '@/components/common/Tabla'
 import { EncabezadoPagina } from '@/components/common/EncabezadoPagina'
@@ -23,8 +25,10 @@ export function UsuariosPage() {
   const consulta = useUsuarios()
   const [creando, setCreando] = useState(false)
   const [editando, setEditando] = useState<Usuario | null>(null)
-  const [enviado, setEnviado] = useState<{ correo: string; enlaceDemo?: string } | null>(null)
-  const avisar = (correo: string, enlaceDemo?: string) => setEnviado({ correo, enlaceDemo })
+  const [eliminando, setEliminando] = useState<Usuario | null>(null)
+  const eliminar = useEliminarUsuario()
+  const [enviado, setEnviado] = useState<{ correo: string } | null>(null)
+  const avisar = (correo: string) => setEnviado({ correo })
   const total = consulta.data?.length ?? 0
 
   const columnas: Array<ColumnaTabla<Usuario>> = [
@@ -60,9 +64,22 @@ export function UsuariosPage() {
       clave: 'acciones',
       encabezado: 'Acciones',
       render: (u) => (
-        <Boton variante="texto" tamano="sm" onClick={() => setEditando(u)}>
-          Editar <span className="sr-only">a {u.nombre}</span>
-        </Boton>
+        <span className="flex gap-1">
+          <Boton variante="texto" tamano="sm" onClick={() => setEditando(u)}>
+            Editar <span className="sr-only">a {u.nombre}</span>
+          </Boton>
+          <Boton
+            variante="texto"
+            tamano="sm"
+            className="text-cesmag-rojo"
+            onClick={() => {
+              eliminar.reset()
+              setEliminando(u)
+            }}
+          >
+            Eliminar <span className="sr-only">a {u.nombre}</span>
+          </Boton>
+        </span>
       ),
     },
   ]
@@ -87,16 +104,7 @@ export function UsuariosPage() {
         </EncabezadoPagina>
         <div role="status" aria-live="polite">
           {enviado && (
-            <Alerta
-              tipo="exito"
-              accion={
-                enviado.enlaceDemo && (
-                  <EnlaceBoton variante="secundario" tamano="sm" to={enviado.enlaceDemo}>
-                    Demostración: abrir el enlace
-                  </EnlaceBoton>
-                )
-              }
-            >
+            <Alerta tipo="exito">
               Se envió a {enviado.correo} el enlace para definir la contraseña.
             </Alerta>
           )}
@@ -116,6 +124,21 @@ export function UsuariosPage() {
           />
         </EstadoConsulta>
       </section>
+
+      <ModalConfirmacion
+        abierto={eliminando !== null}
+        onCerrar={() => setEliminando(null)}
+        titulo="Eliminar cuenta"
+        descripcion={`¿Desea eliminar la cuenta de ${eliminando?.nombre ?? ''}? Esta acción no se puede deshacer. Si la persona ya realizó acciones en el sistema, inhabilite la cuenta en lugar de eliminarla.`}
+        etiquetaConfirmar="Eliminar cuenta"
+        cargando={eliminar.isPending}
+        error={
+          eliminar.isError ? mensajeDeApi(eliminar.error, 'No fue posible eliminar la cuenta.') : null
+        }
+        onConfirmar={() => {
+          if (eliminando) eliminar.mutate(eliminando.id, { onSuccess: () => setEliminando(null) })
+        }}
+      />
 
       <UsuarioModal abierto={creando} onCerrar={() => setCreando(false)} onEnlaceEnviado={avisar} />
       <UsuarioModal

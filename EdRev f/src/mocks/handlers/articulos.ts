@@ -11,7 +11,9 @@ import { ultimoCorreo } from './asignaciones'
 import type { SeedRevista } from '../seed/fabrica'
 import { ahoraIso, contexto, error, sinTildes } from './util'
 import { anioDeGestion } from '@/lib/dominio/anios'
-import { puedeRegistrarRonda } from '@/lib/dominio/comite'
+import { puedeRegistrarRonda, resultadoDeRonda } from '@/lib/dominio/comite'
+import { UMBRAL_COINCIDENCIAS } from '@/modules/articulos/config/listas'
+import { resultadoDePares } from '@/lib/dominio/resultadoPares'
 import {
   clavePublicacion,
   compararPublicaciones,
@@ -46,7 +48,6 @@ function publicacionValida(p: Publicacion): boolean {
   return Number.isInteger(p.volumen) && Number.isInteger(p.numero) && p.volumen > 0 && p.numero > 0
 }
 
-const RESULTADOS: readonly ResultadoRonda[] = ['aprobado', 'rechazado', 'ajustes']
 const ETIQUETA_RONDA: Record<ResultadoRonda, string> = {
   aprobado: 'Aprobado',
   rechazado: 'Rechazado',
@@ -83,6 +84,7 @@ function detalle(base: SeedRevista, a: Articulo): ArticuloDetalle {
     ...resto,
     autores,
     asignaciones,
+    resultadoPares: resultadoDePares(asignaciones),
     migrado: base.auditoria.some((x) => x.articuloId === a.id && x.tipo === 'migracion'),
   }
 }
@@ -97,10 +99,8 @@ function listado(base: SeedRevista, a: Articulo): ArticuloListado {
     estado: a.estado,
     fechaPostulacion: a.fechaPostulacion,
     publicacion: a.publicacion,
-    paresRespondieron: asignadas.filter(
-      (x) => x.estado !== 'invitado' && x.estado !== 'segundo-intento',
-    ).length,
-    paresAsignados: asignadas.length,
+    paresEntregaron: asignadas.filter((x) => x.estado === 'entrego').length,
+    paresAsignados: asignadas.filter((x) => x.estado === 'acepto' || x.estado === 'entrego').length,
   }
 }
 
@@ -292,7 +292,11 @@ export const handlersArticulos = [
     if (!valido(ronda.coincidencias) || !valido(ronda.atribuidoIa)) {
       return error(422, 'Los porcentajes deben estar entre 0 y 100')
     }
-    if (!RESULTADOS.includes(ronda.resultado)) return error(422, 'Seleccione el resultado')
+    if (ronda.coincidencias === null) {
+      return error(422, 'Registre el porcentaje de coincidencias del reporte antiplagio')
+    }
+    // The result is decided by the system, not chosen (RF-06).
+    const resultado = resultadoDeRonda(ronda.coincidencias, ronda.observacion, UMBRAL_COINCIDENCIAS)
 
     articulo.coincidencias = ronda.coincidencias
     articulo.atribuidoIa = ronda.atribuidoIa
@@ -300,19 +304,19 @@ export const handlersArticulos = [
     articulo.rondasComite.push({
       id: `${articulo.id}-r${numero}`,
       numero,
-      resultado: ronda.resultado,
+      resultado,
       observacion: ronda.observacion.trim(),
       fecha: ahoraIso(),
       usuario: c.usuario.nombre,
     })
     // Rechazado closes the article without peers; otherwise it stays in review until a peer accepts.
-    articulo.estado = ronda.resultado === 'rechazado' ? 'rechazado' : 'en-revision'
+    articulo.estado = resultado === 'rechazado' ? 'rechazado' : 'en-revision'
     auditar(
       c.base,
       c.revista,
       articulo.id,
       'revision',
-      `Registró la ronda ${numero} de la revisión del comité: ${ETIQUETA_RONDA[ronda.resultado]}`,
+      `Registró la ronda ${numero} de la revisión del comité: ${ETIQUETA_RONDA[resultado]}`,
       c.usuario.nombre,
     )
     return HttpResponse.json(detalle(c.base, articulo), { status: 201 })

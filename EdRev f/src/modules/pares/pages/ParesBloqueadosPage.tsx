@@ -11,17 +11,14 @@ import { ETIQUETA_MOTIVO } from '../config/listas'
 import { usePares } from '../hooks/usePares'
 import { usePermiso } from '@/modules/acceso/hooks/usePermiso'
 import { Boton } from '@/components/common/Boton'
-import { EnlaceBoton } from '@/components/common/EnlaceBoton'
 import { EstadoConsulta } from '@/components/common/EstadoConsulta'
 import { Tabla } from '@/components/common/Tabla'
 import type { ColumnaTabla } from '@/components/common/Tabla'
 import { EncabezadoPagina } from '@/components/common/EncabezadoPagina'
 import { formatearFecha } from '@/lib/format'
-import { useRevista } from '@/lib/revista/useRevista'
 import type { ParListado } from '@/types/par'
 
 export function ParesBloqueadosPage() {
-  const { revista } = useRevista()
   const lista = usePares({ estado: 'bloqueados', pagina: 1, porPagina: 100 })
   const puedeDesbloquear = usePermiso('desbloquear-par')
   const [elegido, setElegido] = useState<ParListado | null>(null)
@@ -56,15 +53,8 @@ export function ParesBloqueadosPage() {
 
   return (
     <section className="flex flex-col gap-4">
-      <BotonVolver to={`/${revista}/pares`}>Volver a pares evaluadores</BotonVolver>
-      <EncabezadoPagina
-        titulo="Pares bloqueados"
-        acciones={
-          <EnlaceBoton variante="neutro" tamano="sm" to={`/${revista}/pares`}>
-            Volver a la base
-          </EnlaceBoton>
-        }
-      >
+      <BotonVolver to="/pares">Volver a pares evaluadores</BotonVolver>
+      <EncabezadoPagina titulo="Pares bloqueados">
         <p role="status" className="text-cuerpo-13 text-texto-secundario">
           {lista.data
             ? `${total} ${total === 1 ? 'par no recibe' : 'pares no reciben'} nuevas invitaciones`
@@ -78,12 +68,12 @@ export function ParesBloqueadosPage() {
         descripcion="los pares bloqueados"
       >
         <Tabla
-          etiqueta="Pares bloqueados de la revista"
+          etiqueta="Pares bloqueados"
           columnas={columnas}
           filas={lista.data?.items ?? []}
           obtenerClave={(p) => p.id}
           cargando={lista.isPending}
-          vacio="No hay pares bloqueados en esta revista."
+          vacio="No hay pares evaluadores bloqueados."
         />
       </EstadoConsulta>
       <DesbloquearParModal par={elegido} onCerrar={() => setElegido(null)} />

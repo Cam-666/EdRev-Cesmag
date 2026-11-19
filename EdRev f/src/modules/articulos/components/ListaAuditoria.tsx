@@ -1,5 +1,5 @@
 /*
- * ListaAuditoria — "Quién cambió qué": every state change, edit, mail and constancia of the
+ * ListaAuditoria — "Cambios": every state change, edit, mail and constancia of the
  * article with its user and date. Covers: RF-41, HU-30 (criterion 2).
  */
 import { abreviarNombre, formatearFechaHora } from '@/lib/format'
@@ -16,7 +16,7 @@ export function ListaAuditoria({ entradas }: ListaAuditoriaProps) {
       className="h-fit rounded-lg border border-borde-base bg-superficie-tarjeta p-5 shadow-tarjeta"
     >
       <h2 id="titulo-auditoria" className="mb-3 text-titulo-16">
-        Quién cambió qué
+        Cambios
       </h2>
       {entradas.length === 0 ? (
         <p className="text-cuerpo-13 text-texto-secundario">Aún no hay cambios registrados.</p>

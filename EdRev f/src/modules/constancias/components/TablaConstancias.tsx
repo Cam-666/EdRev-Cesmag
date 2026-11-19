@@ -80,7 +80,7 @@ export function TablaPendientes({
       filas={filas}
       obtenerClave={(f) => f.id}
       cargando={cargando}
-      vacio="No hay constancias pendientes: todas las evaluaciones entregadas ya tienen la suya."
+      vacio="No hay constancias pendientes: todas las evaluaciones entregadas ya cuentan con su constancia."
     />
   )
 }

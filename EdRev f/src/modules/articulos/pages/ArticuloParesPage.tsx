@@ -1,7 +1,9 @@
 /*
  * ArticuloParesPage — Pares y evaluación tab (/:revista/articulos/:id/pares): assigned peers in
- * order with status, concept, delivery date and their actions. Once the committee approved the
- * article, «Asignar par» opens the assignment panel (choose an available peer or register a new
+ * order with status, concept, delivery date and their actions. «Asignar par» is always on the page
+ * for those who may assign; it is blocked, with the reason beside it, while the committee has not
+ * approved the article or when the article already has its two peers. Once the committee approved
+ * the article it opens the assignment panel (choose an available peer or register a new
  * candidate); the committee review lands here with it open (?asignar=1). An article has two
  * peers: with two (invited, accepted or delivered) no more are searched, and a third is allowed only
  * when their concepts do not coincide. Each assignment reports the invitation, a bounce or a warning.
@@ -17,13 +19,11 @@ import { Alerta } from '@/components/common/Alerta'
 import { Boton } from '@/components/common/Boton'
 import { EncabezadoPagina } from '@/components/common/EncabezadoPagina'
 import { EnlaceBoton } from '@/components/common/EnlaceBoton'
-import { puedeAsignarPares } from '@/lib/dominio/comite'
+import { puedeAsignarPares, requiereNuevaRevision } from '@/lib/dominio/comite'
 import { PARES_BASE, reglaPares } from '@/lib/dominio/pares'
-import { useRevista } from '@/lib/revista/useRevista'
 import type { ResultadoAsignacion } from '@/types/par'
 
 export function ArticuloParesPage() {
-  const { revista } = useRevista()
   const articulo = useArticuloActual()
   const [params, setParams] = useSearchParams()
   const [envio, setEnvio] = useState<ResultadoAsignacion | null>(null)
@@ -34,6 +34,17 @@ export function ArticuloParesPage() {
   const aprobado = puedeAsignarPares(articulo)
   const puedeAsignar = permiso && aprobado && regla.puede
   const abierto = puedeAsignar && params.get('asignar') === '1'
+  // Why the button is blocked, shown beside it (a blocked button alone does not explain itself).
+  const motivoBloqueo =
+    requiereNuevaRevision(articulo) && articulo.resultadoPares === 'publicable-con-modificaciones'
+      ? 'Los pares ya evaluaron el artículo; el comité editorial debe revisar si los autores lo corrigieron.'
+      : requiereNuevaRevision(articulo)
+        ? 'El proceso fue retomado y el comité editorial debe revisar de nuevo el artículo.'
+        : !aprobado
+          ? 'El comité editorial aún no ha aprobado el artículo.'
+          : !regla.puede
+            ? regla.motivo
+            : null
 
   function abrir(valor: boolean) {
     const siguiente = new URLSearchParams(params)
@@ -48,10 +59,12 @@ export function ArticuloParesPage() {
         nivel="h2"
         titulo="Pares y evaluación"
         acciones={
-          puedeAsignar &&
+          permiso &&
           !abierto && (
             <Boton
               tamano="sm"
+              disabled={!puedeAsignar}
+              aria-describedby={motivoBloqueo ? 'motivo-asignar-par' : undefined}
               onClick={() => {
                 setEnvio(null)
                 abrir(true)
@@ -65,8 +78,13 @@ export function ArticuloParesPage() {
         <p className="text-cuerpo-13 text-texto-secundario">
           {puedeAsignarPares(articulo) || articulo.asignaciones.length > 0
             ? `${Math.min(regla.lugares, PARES_BASE)} de ${PARES_BASE} pares evaluadores`
-            : 'El comité aún no aprueba el artículo.'}
+            : 'El comité editorial aún no ha aprobado el artículo.'}
         </p>
+        {permiso && !abierto && motivoBloqueo && (
+          <p id="motivo-asignar-par" className="text-cuerpo-13 text-texto-secundario">
+            Asignar par no está disponible: {motivoBloqueo}
+          </p>
+        )}
       </EncabezadoPagina>
 
       <div role="status" aria-live="polite" className="flex flex-col gap-3">
@@ -88,7 +106,7 @@ export function ArticuloParesPage() {
               <EnlaceBoton
                 variante="secundario"
                 tamano="sm"
-                to={`/${revista}/pares/${encodeURIComponent(envio.par.id)}`}
+                to={`/pares/${encodeURIComponent(envio.par.id)}`}
               >
                 Corregir correo
               </EnlaceBoton>

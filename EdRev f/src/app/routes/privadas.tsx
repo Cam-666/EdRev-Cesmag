@@ -46,6 +46,12 @@ export const rutasPrivadas: RouteObject[] = [
         children: [
           { path: '/inicio', element: <InicioGeneralPage /> },
           { path: '/informes', element: <InformesPage /> },
+          // Authors and peers are one directory shared by both journals.
+          { path: '/autores', element: <AutoresPage /> },
+          { path: '/autores/:id', element: <AutorDetallePage /> },
+          { path: '/pares', element: <ParesPage /> },
+          { path: '/pares/bloqueados', element: <ParesBloqueadosPage /> },
+          { path: '/pares/:id', element: <ParDetallePage /> },
           { path: '/administracion', element: <Navigate to="/administracion/usuarios" replace /> },
           {
             element: <RutaPorPermiso accion="administrar" />,
@@ -93,11 +99,6 @@ export const rutasPrivadas: RouteObject[] = [
                   },
                 ],
               },
-              { path: 'autores', element: <AutoresPage /> },
-              { path: 'autores/:id', element: <AutorDetallePage /> },
-              { path: 'pares', element: <ParesPage /> },
-              { path: 'pares/bloqueados', element: <ParesBloqueadosPage /> },
-              { path: 'pares/:id', element: <ParDetallePage /> },
               { path: 'constancias', element: <ConstanciasPage /> },
               { path: 'correos', element: <CorreosPage /> },
               { path: 'por-corregir', element: <PorCorregirPage /> },

@@ -1,7 +1,7 @@
 /*
  * AppLayout — shell for every screen except access: side panel, top bar, main landmark and
  * skip link. On small screens the side panel opens from «Menú» (RNF-10). data-revista on the root rewrites the journal CSS variables; only the top bar and
- * ISSN pill consume them. Covers: RF-02, RNF-11 (skip link, landmarks).
+ * ISSN pill consume them. When printed (for example the report saved as PDF) only the content shows. Covers: RF-02, RNF-11 (skip link, landmarks).
  */
 import { Outlet, useLocation } from 'react-router-dom'
 import { useRevistaOpcional } from '@/lib/revista/useRevista'
@@ -42,19 +42,23 @@ export function AppLayout() {
       >
         Saltar al contenido
       </a>
-      <PanelLateral {...panel} className="hidden lg:flex" />
+      <PanelLateral {...panel} className="hidden lg:flex print:hidden" />
       <div className="flex min-w-0 flex-1 flex-col">
-        <div className="flex items-center border-b border-borde-base bg-superficie-tarjeta px-2 py-1 lg:hidden">
+        <div className="flex items-center border-b border-borde-base bg-superficie-tarjeta px-2 py-1 lg:hidden print:hidden">
           <MenuMovil ruta={pathname}>
             <PanelLateral {...panel} className="h-full" />
           </MenuMovil>
         </div>
-        {revista ? <EncabezadoRevista revista={revista} /> : <EncabezadoComun />}
-        <main id="contenido" tabIndex={-1} className="flex-1 p-4 sm:p-6">
+        <div className="print:hidden">
+          {revista ? <EncabezadoRevista revista={revista} /> : <EncabezadoComun />}
+        </div>
+        <main id="contenido" tabIndex={-1} className="flex-1 p-4 sm:p-6 print:p-0">
           <Outlet />
         </main>
       </div>
-      <SelectorUsuarioDemo />
+      <div className="print:hidden">
+        <SelectorUsuarioDemo />
+      </div>
     </div>
   )
 }

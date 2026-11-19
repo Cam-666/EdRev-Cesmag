@@ -55,8 +55,11 @@ async function abrirPanel(user: { click: (e: Element) => Promise<void> }) {
 describe('assigning a peer from the article sheet', () => {
   it('offers «Asignar par» only once the committee approved the article', async () => {
     montarRuta('/reep/articulos/2026-032/pares')
-    expect(await screen.findByText('El comité aún no aprueba el artículo.')).toBeInTheDocument()
-    expect(screen.queryByRole('button', { name: 'Asignar par' })).toBeNull()
+    expect(
+      (await screen.findAllByText('El comité editorial aún no ha aprobado el artículo.')).length,
+    ).toBeGreaterThan(0)
+    // The button is always there, blocked, with the reason beside it
+    expect(screen.getByRole('button', { name: 'Asignar par' })).toBeDisabled()
   })
 
   it('assigns an available peer: the invitation goes out and the peer joins the article', async () => {
@@ -150,7 +153,7 @@ describe('bounced invitation (RF-27)', () => {
 
     await user.click(screen.getByRole('link', { name: 'Corregir correo' }))
     await waitFor(() =>
-      expect(router.state.location.pathname).toMatch(/^\/reep\/pares\/reep-par-n/),
+      expect(router.state.location.pathname).toMatch(/^\/pares\/reep-par-n/),
     )
     await user.click(await screen.findByRole('button', { name: 'Editar' }))
     const dialogo = await screen.findByRole('dialog', { name: 'Editar par evaluador' })
@@ -208,13 +211,17 @@ describe('actions on an assigned peer', () => {
     expect(par.bloqueo?.motivo).toBe('sin-respuesta')
   })
 
-  it('accepted → mark delivery → «Emitir constancia» offered right away → register concept', async () => {
+  it('accepted → mark delivery with concept and date → «Emitir constancia» offered right away', async () => {
     const { user } = montarRuta('/reep/articulos/2026-009/pares')
     await user.click(
       await screen.findByRole('button', { name: /Marcar entrega de Sandra Liliana Cuasapud/ }),
     )
     const dialogo = await screen.findByRole('dialog', { name: 'Marcar entrega' })
-    expect(within(dialogo).getByLabelText('Fecha de entrega')).toHaveValue(hoy())
+    expect(within(dialogo).getByLabelText('Fecha de evaluación')).toHaveValue(hoy())
+    // The concept is registered together with the date: the constancia comes after the evaluation
+    await user.click(within(dialogo).getByRole('button', { name: 'Marcar entrega' }))
+    expect(await within(dialogo).findByText('Seleccione el concepto del par.')).toBeInTheDocument()
+    await elegirOpcion(user, 'Concepto', 'Publicable')
     await user.click(within(dialogo).getByRole('button', { name: 'Marcar entrega' }))
 
     // RF-23: the constancia is offered right away, with the journal's template and PDF background
@@ -232,16 +239,9 @@ describe('actions on an assigned peer', () => {
     ).toBeInTheDocument()
     await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull())
 
-    await user.click(
-      await screen.findByRole('button', { name: /Registrar concepto de Sandra Liliana Cuasapud/ }),
-    )
-    await screen.findByRole('dialog', { name: 'Registrar concepto' })
-    await user.click(screen.getByRole('button', { name: 'Registrar concepto' }))
-    expect(await screen.findByText('Seleccione el concepto del par.')).toBeInTheDocument()
-    await elegirOpcion(user, 'Concepto', 'Publicable')
-    await user.click(screen.getByRole('button', { name: 'Registrar concepto' }))
+    // The concept can still be changed afterwards
     expect(
-      await screen.findByText('Concepto de Sandra Liliana Cuasapud registrado.'),
+      await screen.findByRole('button', { name: /Cambiar concepto de Sandra Liliana Cuasapud/ }),
     ).toBeInTheDocument()
 
     const lista = await screen.findByRole('list', { name: 'Pares asignados' })
@@ -256,6 +256,7 @@ describe('actions on an assigned peer', () => {
       await screen.findByRole('button', { name: /Marcar entrega de Sandra Liliana Cuasapud/ }),
     )
     const dialogo = await screen.findByRole('dialog', { name: 'Marcar entrega' })
+    await elegirOpcion(user, 'Concepto', 'Publicable')
     await user.click(within(dialogo).getByRole('button', { name: 'Marcar entrega' }))
     const constancia = await screen.findByRole('dialog', {
       name: 'Emitir la constancia de Sandra Liliana Cuasapud',
@@ -314,6 +315,6 @@ describe('actions on an assigned peer', () => {
   it('an archived article offers no assignment', async () => {
     montarRuta('/reep/articulos/2026-007/pares')
     await screen.findByText('Aún no hay pares asignados a este artículo.')
-    expect(screen.queryByRole('button', { name: 'Asignar par' })).toBeNull()
+    expect(screen.getByRole('button', { name: 'Asignar par' })).toBeDisabled()
   })
 })

@@ -1,10 +1,10 @@
 import { validarPlantilla } from './plantillas'
 
-const INVITACION = { uso: 'invitacion' as const, variables: ['revista', 'par', 'articulo'] }
-const CONSTANCIA = { uso: 'constancia' as const, variables: ['revista', 'par', 'articulo'] }
+const INVITACION = { variables: ['revista', 'par', 'articulo'] }
+const CONSTANCIA = { variables: ['revista', 'par', 'articulo'] }
 
 describe('validarPlantilla (RNF-19)', () => {
-  it('accepts a template that keeps its required markers', () => {
+  it('accepts a template that uses its own markers', () => {
     expect(
       validarPlantilla(
         INVITACION,
@@ -16,27 +16,26 @@ describe('validarPlantilla (RNF-19)', () => {
 
   it('refuses a marker the template does not have', () => {
     expect(validarPlantilla(INVITACION, null, '{{par}} {{articulo}} {{fecha}}')).toBe(
-      'El marcador {{fecha}} no existe en esta plantilla.',
+      'El dato «Fecha de emisión» no se puede usar en esta plantilla.',
     )
     expect(validarPlantilla(INVITACION, 'Hola {{numero}}', '{{par}} {{articulo}}')).toContain(
-      '{{numero}}',
+      'Número de la solicitud',
     )
   })
 
-  it('refuses a template that loses the peer or the article', () => {
-    expect(validarPlantilla(INVITACION, null, 'Hola {{par}}')).toBe(
-      'Falta el marcador obligatorio {{articulo}}.',
-    )
+  it('no marker is mandatory: a new template can be written freely', () => {
+    expect(validarPlantilla(INVITACION, null, 'Hola {{par}}')).toBeNull()
+    expect(validarPlantilla(INVITACION, null, 'Un texto sin marcadores.')).toBeNull()
+    expect(validarPlantilla(INVITACION, null, '   ')).toBe('El texto no puede estar vacío.')
   })
 
-  it('the constancia must replace the peer name and the article title (RF-30)', () => {
+  it('the constancia accepts its markers and refuses the unknown ones (RF-30)', () => {
     expect(
       validarPlantilla(CONSTANCIA, null, 'HACE CONSTAR QUE {{par}} participó en «{{articulo}}».'),
     ).toBeNull()
-    expect(validarPlantilla(CONSTANCIA, null, 'HACE CONSTAR QUE {{par}}')).toContain('{{articulo}}')
     expect(
       validarPlantilla(CONSTANCIA, null, '{{par}} {{articulo}} {{numeroConstancia}}'),
-    ).toContain('{{numeroConstancia}}')
+    ).toContain('numeroConstancia')
   })
 
   it('refuses an empty text', () => {

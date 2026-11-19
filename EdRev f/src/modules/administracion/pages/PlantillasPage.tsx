@@ -1,8 +1,8 @@
 /*
- * PlantillasPage — Plantillas (/administracion/plantillas): each journal's templates of the
- * invitation, the thank-you mail and the constancia (with its PDF background), edited without
- * touching code. New templates can be created for any use, and one per use and journal is chosen
- * as the one in use. Administradora only.
+ * PlantillasPage — Plantillas (/administracion/plantillas): each journal's mail and file templates,
+ * edited without touching code. New templates are created with a free name and a class (mail or
+ * file) and can be deleted while they are not in use; what each one is used for is chosen in
+ * Configuración. Administradora only.
  * Covers: RF-25, RF-30, RF-31, RF-45, RNF-12, HU-30.
  */
 import { useState } from 'react'
@@ -13,6 +13,7 @@ import { Boton } from '@/components/common/Boton'
 import { EncabezadoPagina } from '@/components/common/EncabezadoPagina'
 import { EstadoConsulta } from '@/components/common/EstadoConsulta'
 import { ListaDesplegable } from '@/components/common/ListaDesplegable'
+import { ETIQUETA_USO } from '../config/plantillas'
 import { REVISTAS } from '@/types/revista'
 import type { Revista } from '@/types/revista'
 
@@ -63,13 +64,19 @@ export function PlantillasPage() {
                 etiqueta="Plantilla"
                 opciones={plantillas.map((p) => ({
                   valor: p.id,
-                  etiqueta: p.enUso ? `${p.nombre} (en uso)` : p.nombre,
+                  etiqueta: p.uso ? `${p.nombre} (en uso como ${ETIQUETA_USO[p.uso].toLowerCase()})` : p.nombre,
                 }))}
                 valor={plantilla?.id}
                 onCambio={setElegida}
               />
             </div>
-            {plantilla && <FormularioPlantilla key={plantilla.id} plantilla={plantilla} />}
+            {plantilla && (
+              <FormularioPlantilla
+                key={plantilla.id}
+                plantilla={plantilla}
+                onEliminada={() => setElegida(null)}
+              />
+            )}
           </div>
         )}
       </EstadoConsulta>

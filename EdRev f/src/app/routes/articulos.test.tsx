@@ -265,7 +265,7 @@ describe('article sheet', () => {
     expect(within(tabla).getByText('Rebotado')).toBeInTheDocument()
     expect(within(tabla).getAllByText('Enviado').length).toBeGreaterThan(0)
     expect(within(tabla).getAllByText('Agradecimiento').length).toBeGreaterThan(0)
-    expect(screen.getByText('Quién cambió qué')).toBeInTheDocument()
+    expect(screen.getByText('Cambios')).toBeInTheDocument()
     expect(screen.getByText('Asignó el par 3 como desempate')).toBeInTheDocument()
   })
 
@@ -361,24 +361,28 @@ describe('committee review (/comite)', () => {
     await user.type(coincidencias, '150')
     await user.click(screen.getByRole('button', { name: 'Guardar ronda' }))
     expect(await screen.findByText('Escriba un número entre 0 y 100.')).toBeInTheDocument()
-    expect(screen.getByText('Seleccione el resultado del comité.')).toBeInTheDocument()
-
+    // The result is not chosen: above the limit the system marks the article as not publishable
     await user.clear(coincidencias)
     await user.type(coincidencias, '21')
-    expect(
-      screen.getByText(/superan el 15 % aceptado\. No bloquea el proceso\./),
-    ).toBeInTheDocument()
-    await elegirOpcion(user, 'Resultado del comité', 'Requiere ajustes')
+    expect(await screen.findByText('Resultado: no publicable')).toBeInTheDocument()
+    expect(screen.getByText(/superan el 15 % aceptado/)).toBeInTheDocument()
+    // within the limit and with observations: publishable with observations
+    await user.clear(coincidencias)
+    await user.type(coincidencias, '11')
     await user.type(screen.getByLabelText('Observaciones del comité'), 'Ajustar el método.')
+    expect(await screen.findByText('Resultado: publicable con observaciones')).toBeInTheDocument()
     await user.click(screen.getByRole('button', { name: 'Guardar ronda' }))
-    expect(await screen.findByText('Ronda registrada: Requiere ajustes.')).toBeInTheDocument()
+    expect(
+      await screen.findByText(/Ronda registrada: publicable con observaciones/),
+    ).toBeInTheDocument()
     const lista = screen.getByRole('list', { name: 'Rondas de la revisión del comité' })
     expect(within(lista).getByText('Ajustar el método.')).toBeInTheDocument()
 
     // Second round: approved, so it goes straight to the assignment of peers
     await user.click(await screen.findByRole('button', { name: 'Registrar ronda' }))
     await screen.findByRole('heading', { name: 'Ronda 2 de la revisión del comité' })
-    await elegirOpcion(user, 'Resultado del comité', 'Aprobado')
+    // no observations and within the limit: publishable, the article is approved
+    expect(await screen.findByText('Resultado: publicable')).toBeInTheDocument()
     await user.click(screen.getByRole('button', { name: 'Guardar ronda' }))
     await waitFor(() =>
       expect(router.state.location.pathname).toBe('/reep/articulos/2026-023/pares'),
@@ -389,7 +393,12 @@ describe('committee review (/comite)', () => {
   it('a rejected round leaves the article Rechazado and closes the review', async () => {
     const { user } = montarRuta('/reep/articulos/2026-026/comite')
     await user.click(await screen.findByRole('button', { name: 'Registrar ronda' }))
-    await elegirOpcion(user, 'Resultado del comité', 'Rechazado')
+    const coincidencias = await screen.findByLabelText('Coincidencias (%)')
+    await user.clear(coincidencias)
+    await user.type(coincidencias, '40')
+    const ia = screen.getByLabelText('Atribuido a IA (%)')
+    await user.clear(ia)
+    await user.type(ia, '1')
     await user.click(screen.getByRole('button', { name: 'Guardar ronda' }))
     expect(
       await screen.findByText(/El artículo quedó Rechazado y no recibirá pares/),

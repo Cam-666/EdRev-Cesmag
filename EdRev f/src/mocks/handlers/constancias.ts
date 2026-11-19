@@ -185,15 +185,20 @@ export const handlersConstancias = [
     if (!c.ok) return c.respuesta
     const { conAgradecimiento } = await opcionesDe(request)
     asegurarConstancias(c.base)
-    const resultados = c.base.constancias
-      .filter((k) => k.estado === 'pendiente')
+    const evaluada = (k: Constancia) =>
+      Boolean(c.base.asignaciones.find((a) => a.id === k.asignacionId)?.concepto)
+    const pendientes = c.base.constancias.filter((k) => k.estado === 'pendiente')
+    const resultados = pendientes
+      .filter(evaluada)
       .flatMap((k) => {
         const r = emitir(c.base, c.revista, k, c.usuario.nombre, false, conAgradecimiento)
         return r ? [r] : []
       })
     return HttpResponse.json({
       emitidas: resultados.length,
-      fallidos: resultados.filter((r) => r.correo.estado === 'rebotado').length,
+      fallidos:
+        resultados.filter((r) => r.correo.estado === 'rebotado').length +
+        pendientes.filter((k) => !evaluada(k)).length,
       resultados,
     })
   }),
@@ -206,6 +211,14 @@ export const handlersConstancias = [
     const constancia = c.base.constancias.find((k) => k.id === params.id)
     if (!constancia) return error(404, 'Constancia no encontrada')
     if (constancia.estado === 'emitida') return error(409, 'La constancia ya fue emitida')
+    // The constancia is issued once the evaluation is complete: concept and date registered.
+    const evaluacion = c.base.asignaciones.find((a) => a.id === constancia.asignacionId)
+    if (evaluacion && !evaluacion.concepto) {
+      return error(
+        409,
+        `Registre primero el concepto y la fecha de evaluación de ${evaluacion.parId ? (c.base.pares.find((p) => p.id === evaluacion.parId)?.nombre ?? 'el par') : 'el par'}; después podrá emitir su constancia`,
+      )
+    }
     const resultado = emitir(c.base, c.revista, constancia, c.usuario.nombre, false, conAgradecimiento)
     if (!resultado) return error(404, 'Evaluación no encontrada')
     return HttpResponse.json(resultado)

@@ -98,15 +98,19 @@ export function ArticuloNuevoPage() {
         onContinuar={guardar}
       />
 
-      <div className="grid grid-cols-1 gap-6 xl:grid-cols-[1fr_380px]">
-        <ListaAutoresBorrador autores={borrador.autores} onQuitar={quitarAutor} />
+      <div className="grid grid-cols-1 items-start gap-6 xl:grid-cols-[1fr_320px]">
         <section
           aria-labelledby="titulo-nuevo-autor"
-          className="flex h-fit flex-col gap-3 rounded-lg border border-borde-base bg-superficie-tarjeta p-5 shadow-tarjeta"
+          className="flex h-fit flex-col gap-4 rounded-lg border-2 border-texto-enlace bg-superficie-tarjeta p-6 shadow-tarjeta"
         >
-          <h2 id="titulo-nuevo-autor" className="text-titulo-16">
-            Agregar autor
-          </h2>
+          <div className="flex flex-col gap-1">
+            <h2 id="titulo-nuevo-autor" className="text-titulo-20">
+              Agregar autor
+            </h2>
+            <p className="text-cuerpo-13 text-texto-secundario">
+              Busque un autor del directorio o registre uno nuevo; se agregará al final de la lista.
+            </p>
+          </div>
           {completo ? (
             <Alerta tipo="advertencia">Se alcanzó el máximo de {MAX_AUTORES} autores.</Alerta>
           ) : (
@@ -121,6 +125,7 @@ export function ArticuloNuevoPage() {
             />
           )}
         </section>
+        <ListaAutoresBorrador autores={borrador.autores} onQuitar={quitarAutor} />
       </div>
     </section>
   )

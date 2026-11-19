@@ -47,8 +47,15 @@ export function useMarcarEntrega() {
   const { revista } = useRevista()
   const invalidar = useInvalidarPares()
   return useMutation({
-    mutationFn: ({ asignacionId, fecha }: { asignacionId: string; fecha: string }) =>
-      marcarEntrega(revista, asignacionId, fecha),
+    mutationFn: ({
+      asignacionId,
+      fecha,
+      concepto,
+    }: {
+      asignacionId: string
+      fecha: string
+      concepto: ConceptoPar
+    }) => marcarEntrega(revista, asignacionId, fecha, concepto),
     onSuccess: invalidar,
   })
 }

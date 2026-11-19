@@ -56,14 +56,14 @@ export function DatosRevistaForm({ revista, datos }: DatosRevistaFormProps) {
       <h3 className="text-titulo-16">{nombre}</h3>
       <CampoTexto
         etiqueta={`ISSN de ${nombre}`}
-        ayuda="Va en la constancia como {{issn}}."
+        ayuda="Se incluye en la constancia mediante el marcador {{issn}}."
         autoComplete="off"
         error={errors.issn?.message}
         {...register('issn')}
       />
       <AreaTexto
         etiqueta={`Indexaciones de ${nombre}`}
-        ayuda="Escríbalas como deben leerse en la constancia, separadas por comas (por ejemplo: Publindex (categoría B), Redalyc y DOAJ). Va como {{indexaciones}}."
+        ayuda="Escríbalas tal como deben leerse en la constancia, separadas por comas (por ejemplo: Publindex (categoría B), Redalyc y DOAJ). Se incluyen mediante el marcador {{indexaciones}}."
         rows={4}
         error={errors.indexaciones?.message}
         {...register('indexaciones')}

@@ -112,14 +112,14 @@ function informe(periodo: string, filtro: FiltroRevistaInforme): Informe {
   const conceptos = REVISTAS.filter((r) => filtro === 'ambas' || filtro === r).flatMap(
     (r) => entregas[r],
   )
-  const promedio = (r: Revista) => {
-    const lista = entregas[r]
+  const promedioDe = (lista: typeof conceptos) => {
     if (lista.length === 0) return 0
     return Math.round(
       lista.reduce((s, a) => s + dias(a.fechaInvitacion, a.fechaEntrega ?? a.fechaInvitacion), 0) /
         lista.length,
     )
   }
+  const promedio = (r: Revista) => promedioDe(entregas[r])
 
   return {
     periodo,
@@ -163,10 +163,8 @@ function informe(periodo: string, filtro: FiltroRevistaInforme): Informe {
     diasPromedioEvaluacion: {
       reep: filtro === 'ire' ? 0 : promedio('reep'),
       ire: filtro === 'reep' ? 0 : promedio('ire'),
-      total:
-        Math.round(
-          (filtro === 'ire' ? 0 : promedio('reep')) + (filtro === 'reep' ? 0 : promedio('ire')),
-        ) / (filtro === 'ambas' ? 2 : 1),
+      // The total weighs each journal by its evaluations, it is not the mean of two means.
+      total: promedioDe(REVISTAS.filter((r) => filtro === 'ambas' || filtro === r).flatMap((r) => entregas[r])),
     },
     conceptos: {
       publicable: conceptos.filter((a) => a.concepto === 'publicable').length,
@@ -217,6 +215,14 @@ export const handlersPanel = [
     const c = contextoGlobal(request)
     if (!c.ok) return c.respuesta
     return HttpResponse.json(periodos())
+  }),
+
+  http.get('*/api/informes/pdf', ({ request }) => {
+    const c = contextoGlobal(request)
+    if (!c.ok) return c.respuesta
+    return new HttpResponse('%PDF-1.4 informe de ejemplo', {
+      headers: { 'Content-Type': 'application/pdf' },
+    })
   }),
 
   http.get('*/api/informes', ({ request }) => {

@@ -1,4 +1,4 @@
-import type { AsignacionDetalle } from './par'
+import type { AsignacionDetalle, ResultadoPares } from './par'
 import type { AutorDeArticulo, DatosAutor } from './autor'
 import type { Revista } from './revista'
 
@@ -71,8 +71,8 @@ export interface ArticuloListado {
   estado: EstadoArticulo
   fechaPostulacion: string
   publicacion: Publicacion | null
-  /** Peers that already answered (accepted, declined or delivered) over peers assigned. */
-  paresRespondieron: number
+  /** Peers that delivered their evaluation, over the peers assigned (those who accepted). */
+  paresEntregaron: number
   paresAsignados: number
 }
 
@@ -100,6 +100,8 @@ export interface FiltrosArticulos {
 export interface ArticuloDetalle extends Omit<Articulo, 'autoresIds'> {
   autores: AutorDeArticulo[]
   asignaciones: AsignacionDetalle[]
+  /** What the concepts of the peers decide (RF-20); null while they have not all delivered. */
+  resultadoPares: ResultadoPares | null
   /** Loaded from the Excel by the migration (RF-42). */
   migrado: boolean
 }
@@ -123,6 +125,6 @@ export interface EdicionArticulo {
 export interface NuevaRonda {
   coincidencias: number | null
   atribuidoIa: number | null
-  resultado: ResultadoRonda
+  /** The result is not sent: the system decides it from the percentages and the observations. */
   observacion: string
 }

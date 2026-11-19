@@ -1,8 +1,10 @@
 /*
  * ArticuloComitePage — «Revisión del comité» tab (/:revista/articulos/:id/comite): the rounds of
  * the initial committee review and the form to register a new one with the anti-plagiarism report.
- * Aprobado takes the user straight to the assignment of peers; Rechazado leaves the article
- * Rechazado, without peers; Requiere ajustes waits for another round (no limit).
+ * The result is decided by the system from the report and the observations: Aprobado (publicable)
+ * takes the user straight to the assignment of peers; Rechazado (no publicable, matches above the
+ * limit) leaves the article Rechazado, without peers; Requiere ajustes (publicable con
+ * observaciones) waits for another round (no limit).
  * After registering an article the user lands here with the form open (?registrar=1).
  * Covers: RF-05, RF-06, RF-07, HU-01 (criterion 5), HU-02, HU-03, HU-04.
  */
@@ -10,7 +12,6 @@ import { useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { FormularioRonda } from '../components/FormularioRonda'
 import { ListaRondas } from '../components/ListaRondas'
-import { ETIQUETA_RONDA } from '../config/listas'
 import { useArticuloActual } from '../hooks/useArticuloActual'
 import { usePermiso } from '@/modules/acceso/hooks/usePermiso'
 import { Alerta } from '@/components/common/Alerta'
@@ -72,8 +73,8 @@ export function ArticuloComitePage() {
         {aviso && (
           <Alerta tipo={aviso === 'rechazado' ? 'error' : 'advertencia'}>
             {aviso === 'rechazado'
-              ? 'Ronda registrada: Rechazado. El artículo quedó Rechazado y no recibirá pares.'
-              : `Ronda registrada: ${ETIQUETA_RONDA[aviso]}.`}
+              ? 'Ronda registrada: no publicable. El artículo quedó Rechazado y no recibirá pares.'
+              : 'Ronda registrada: publicable con observaciones (Requiere ajustes). Cuando el autor corrija, registre otra ronda.'}
           </Alerta>
         )}
       </div>

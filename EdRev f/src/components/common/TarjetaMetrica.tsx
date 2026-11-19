@@ -28,11 +28,11 @@ export function TarjetaMetrica({
   return (
     <div
       className={cn(
-        'flex flex-col gap-1 rounded-lg border bg-superficie-tarjeta p-5 shadow-tarjeta',
+        'flex flex-col gap-1 rounded-lg border bg-superficie-tarjeta p-5 shadow-tarjeta print:gap-2 print:p-7',
         alerta ? 'border-estado-alerta' : 'border-borde-base',
       )}
     >
-      <p className="flex items-baseline gap-2 text-display text-texto-principal">
+      <p className="flex items-baseline gap-2 text-display text-texto-principal print:text-[44px] print:leading-none">
         {alerta && (
           <span aria-hidden="true" className="text-titulo-20 text-estado-alerta">
             !
@@ -40,7 +40,7 @@ export function TarjetaMetrica({
         )}
         {valor}
       </p>
-      <p className="text-cuerpo-13 text-texto-secundario">{etiqueta}</p>
+      <p className="text-cuerpo-13 text-texto-secundario print:text-[14px]">{etiqueta}</p>
       {detalle}
       {href && (
         <Link to={href} className="mt-1 text-etiqueta-13 text-texto-enlace">

@@ -18,18 +18,16 @@ import { Tabla } from '@/components/common/Tabla'
 import type { ColumnaTabla } from '@/components/common/Tabla'
 import { ErrorApi } from '@/lib/api/cliente'
 import { formatearFechaLarga } from '@/lib/format'
-import { useRevista } from '@/lib/revista/useRevista'
 import type { ArticuloDeAutor, Autor } from '@/types/autor'
 import { REVISTAS } from '@/types/revista'
 
 export function AutorDetallePage() {
-  const { revista } = useRevista()
   const { id = '' } = useParams()
   const autor = useAutor(id)
   const articulos = useArticulosDeAutor(id)
   const puedeEditar = usePermiso('registrar-datos')
   const [editando, setEditando] = useState<Autor | null>(null)
-  const volver = <BotonVolver to={`/${revista}/autores`}>Volver a autores</BotonVolver>
+  const volver = <BotonVolver to="/autores">Volver a autores</BotonVolver>
 
   if (autor.error instanceof ErrorApi && autor.error.estado === 404) {
     return (

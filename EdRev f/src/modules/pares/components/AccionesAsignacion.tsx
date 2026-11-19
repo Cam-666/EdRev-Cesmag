@@ -4,8 +4,9 @@
  *                           address and resend the invitation (RF-28). The 2nd attempt itself is
  *                           automatic (RF-29, D7): there is no reminder;
  *   accepted              → mark the delivery (with date);
- *   delivered             → register the concept and issue the constancia (offered right after the
- *                           delivery, RF-23); once issued, download or resend it (HU-23).
+ *   delivered             → issue the constancia (offered right after the delivery, RF-23; only once
+ *                           the concept and the date are registered, which the delivery asks for);
+ *                           once issued, download or resend it (HU-23). The concept can be changed.
  * Both profiles can do all of it (RNF-05).
  * Covers: RF-20, RF-22, RF-23, RF-28, RF-30, RF-32, RF-33, HU-14, HU-17, HU-19, HU-23.
  */
@@ -97,7 +98,7 @@ export function AccionesAsignacion({ asignacion }: AccionesAsignacionProps) {
             <EnlaceBoton
               variante="neutro"
               tamano="sm"
-              to={`/${revista}/pares/${encodeURIComponent(asignacion.par.id)}`}
+              to={`/pares/${encodeURIComponent(asignacion.par.id)}`}
             >
               Corregir correo <span className="sr-only">de {nombre}</span>
             </EnlaceBoton>
@@ -120,6 +121,7 @@ export function AccionesAsignacion({ asignacion }: AccionesAsignacionProps) {
           {asignacion.estado === 'entrego' &&
             puedeEmitir &&
             !asignacion.constanciaEmitida &&
+            asignacion.concepto &&
             asignacion.constanciaId && (
               <Boton
                 tamano="sm"

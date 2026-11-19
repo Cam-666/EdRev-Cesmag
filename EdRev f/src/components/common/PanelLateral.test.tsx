@@ -17,7 +17,7 @@ function montar(revistaActiva: 'reep' | 'ire' | null, ruta: string) {
 }
 
 describe('PanelLateral', () => {
-  it('opens only the active journal group, with six submodules', () => {
+  it('opens only the active journal group, with its submodules', () => {
     montar('reep', '/reep/articulos')
     const nav = screen.getByRole('navigation', { name: 'Principal' })
     expect(within(nav).getByRole('link', { name: 'Tablero' })).toHaveAttribute(
@@ -30,7 +30,7 @@ describe('PanelLateral', () => {
     )
     // IRE group is closed: its submodules are not rendered
     expect(
-      within(nav).queryByText('Pares evaluadores', { selector: '[href="/ire/pares"]' }),
+      within(nav).queryByText('Correos enviados', { selector: '[href="/ire/correos"]' }),
     ).toBeNull()
   })
 
@@ -49,11 +49,11 @@ describe('PanelLateral', () => {
 
     await userEvent.click(ire)
     expect(ire).toHaveAttribute('aria-expanded', 'true')
-    expect(nav.querySelector('[href="/ire/pares"]')).not.toBeNull()
+    expect(nav.querySelector('[href="/ire/correos"]')).not.toBeNull()
 
     await userEvent.click(ire)
     expect(ire).toHaveAttribute('aria-expanded', 'false')
-    expect(nav.querySelector('[href="/ire/pares"]')).toBeNull()
+    expect(nav.querySelector('[href="/ire/correos"]')).toBeNull()
   })
 
   it('the active journal group can be closed and opened again', async () => {

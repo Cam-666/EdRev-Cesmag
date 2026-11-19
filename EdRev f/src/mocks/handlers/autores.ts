@@ -28,12 +28,27 @@ function articulosDe(id: string): ArticuloDeAutor[] {
 }
 
 export const handlersAutores = [
+  http.get('*/api/:revista/autores/filtros', ({ params, request }) => {
+    const c = contexto(params, request)
+    if (!c.ok) return c.respuesta
+    const unicos = (v: string[]) =>
+      [...new Set(v.map((x) => x.trim()).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'es'))
+    return HttpResponse.json({
+      paises: unicos(autores().map((a) => a.pais)),
+      filiaciones: unicos(autores().map((a) => a.filiacion)),
+    })
+  }),
+
   http.get('*/api/:revista/autores', ({ params, request }) => {
     const c = contexto(params, request)
     if (!c.ok) return c.respuesta
     const url = new URL(request.url)
     const q = sinTildes(url.searchParams.get('q') ?? '').trim()
     const en = url.searchParams.get('en')
+    const pais = url.searchParams.get('pais') ?? ''
+    const filiacion = url.searchParams.get('filiacion') ?? ''
+    const orcid = url.searchParams.get('orcid') ?? ''
+    const articulos = url.searchParams.get('articulos') ?? ''
     const limite = Math.max(1, Number(url.searchParams.get('limite') ?? 50))
 
     const conArticulos = autores().map((a) => {
@@ -47,6 +62,15 @@ export const handlersAutores = [
     const coincidencias = conArticulos
       .filter((a) => !q || sinTildes(a.nombre).includes(q) || a.orcid.includes(q))
       .filter((a) => !en || a.revistas.includes(en as Revista))
+      .filter((a) => !pais || a.pais === pais)
+      .filter((a) => !filiacion || a.filiacion === filiacion)
+      .filter((a) => !orcid || (orcid === 'con') === Boolean(a.orcid))
+      .filter(
+        (a) =>
+          !articulos ||
+          (articulos === 'uno' && a.totalArticulos === 1) ||
+          (articulos === 'varios' && a.totalArticulos > 1),
+      )
       .sort((x, y) => x.nombre.localeCompare(y.nombre, 'es'))
     return HttpResponse.json({ items: coincidencias.slice(0, limite), total: coincidencias.length })
   }),

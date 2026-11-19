@@ -6,7 +6,13 @@ import { solicitar, solicitarArchivo } from '@/lib/api/cliente'
 import type { RespuestaEnvioEnlace } from '@/types/acceso'
 import type { Configuracion, DatosRevista } from '@/types/configuracion'
 import type { EntradaAuditoria, TipoAuditoria } from '@/types/historial'
-import type { DatosNuevaPlantilla, DatosPlantillas, ParteImagen, Plantilla } from '@/types/plantilla'
+import type {
+  DatosNuevaPlantilla,
+  DatosPlantillas,
+  ParteImagen,
+  Plantilla,
+  UsoPlantilla,
+} from '@/types/plantilla'
 import type { Revista } from '@/types/revista'
 import type { DatosUsuario, Usuario } from '@/types/usuario'
 
@@ -57,6 +63,11 @@ export function editarUsuario(
   })
 }
 
+/** Deletes an account; it fails when the account already has activity in the history. */
+export function eliminarUsuario(id: string): Promise<void> {
+  return solicitar<undefined>(`/usuarios/${encodeURIComponent(id)}`, { method: 'DELETE' })
+}
+
 export function obtenerPlantillas(): Promise<DatosPlantillas> {
   return solicitar<DatosPlantillas>('/plantillas')
 }
@@ -86,14 +97,39 @@ export function vistaPreviaPlantilla(id: string): Promise<Blob> {
   return solicitarArchivo(`/plantillas/${encodeURIComponent(id)}/vista-previa`)
 }
 
-/** Makes this template the one its journal sends for its use. */
-export function usarPlantilla(id: string): Promise<Plantilla> {
-  return solicitar<Plantilla>(`/plantillas/${encodeURIComponent(id)}/usar`, { method: 'POST' })
+/** The complete mail (institutional frame included) with sample data, for the text being edited. */
+export function vistaCorreoPlantilla(datos: {
+  revista: Revista
+  uso: 'invitacion' | 'agradecimiento'
+  cuerpo: string
+}): Promise<{ html: string }> {
+  return solicitar<{ html: string }>('/plantillas/vista-correo', { method: 'POST', ...json(datos) })
+}
+
+/** The constancia as a PDF with sample data, built from the text being edited. */
+export function vistaPdfConstancia(id: string, cuerpo: string): Promise<Blob> {
+  return solicitarArchivo(`/plantillas/${encodeURIComponent(id)}/vista-previa`, {
+    method: 'POST',
+    ...json({ cuerpo }),
+  })
+}
+
+/** Makes this template the one its journal sends for a use; the one that had that use is released. */
+export function asignarPlantilla(id: string, uso: UsoPlantilla): Promise<Plantilla> {
+  return solicitar<Plantilla>(`/plantillas/${encodeURIComponent(id)}/asignar`, {
+    method: 'POST',
+    ...json({ uso }),
+  })
+}
+
+/** Deletes a template that is not in use. */
+export function eliminarPlantilla(id: string): Promise<void> {
+  return solicitar<undefined>(`/plantillas/${encodeURIComponent(id)}`, { method: 'DELETE' })
 }
 
 export function guardarPlantilla(
   id: string,
-  datos: { asunto: string | null; cuerpo: string },
+  datos: { asunto: string | null; cuerpo: string; correoFirma?: string },
 ): Promise<Plantilla> {
   return solicitar<Plantilla>(`/plantillas/${encodeURIComponent(id)}`, {
     method: 'PUT',

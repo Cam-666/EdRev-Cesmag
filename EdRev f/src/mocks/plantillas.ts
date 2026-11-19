@@ -15,7 +15,7 @@
 import type { CuentaRemitente, ImagenesPlantilla, Plantilla } from '@/types/plantilla'
 import type { Revista } from '@/types/revista'
 
-const BASE: Array<Omit<Plantilla, 'id' | 'revista' | 'imagenes'>> = [
+const BASE: Array<Omit<Plantilla, 'id' | 'revista' | 'imagenes' | 'imagenPie' | 'correoFirma'>> = [
   {
     uso: 'invitacion',
     clase: 'correo',
@@ -83,6 +83,8 @@ export const PLANTILLAS_INICIALES: Plantilla[] = (['reep', 'ire'] as const).flat
     id: `${revista}-${p.uso}`,
     revista,
     imagenes: p.uso === 'constancia' ? { ...IMAGENES[revista] } : null,
+    imagenPie: null,
+    correoFirma: p.uso === 'constancia' ? '' : null,
   })),
 )
 

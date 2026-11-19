@@ -17,10 +17,10 @@ const PANTALLAS = [
   '/reep/articulos/2026-034/autores',
   '/reep/articulos/2026-034/pares',
   '/reep/articulos/2026-034/historial',
-  '/reep/autores',
-  '/reep/pares',
-  '/reep/pares/bloqueados',
-  '/reep/pares/reep-par-1',
+  '/autores',
+  '/pares',
+  '/pares/bloqueados',
+  '/pares/reep-par-1',
   '/reep/constancias',
   '/reep/correos',
   '/reep/por-corregir',
@@ -34,7 +34,8 @@ describe('accessibility of every main screen (RNF-11)', () => {
     const { container } = montarRuta(ruta)
     await screen.findAllByRole('heading', { level: 1 })
     await new Promise((r) => setTimeout(r, 400))
-    expect(await axe(container)).toHaveNoViolations()
+    // The previews are frames (the mail, the PDF): axe cannot enter them in jsdom, and they are not the page.
+    expect(await axe(container, { iframes: false })).toHaveNoViolations()
   })
 })
 
@@ -66,7 +67,6 @@ describe('the whole flow of an article (HU-01, HU-03, HU-13, HU-14, HU-17, HU-22
     await screen.findByRole('heading', { name: 'Ronda 1 de la revisión del comité' })
     await user.type(screen.getByLabelText('Coincidencias (%)'), '9')
     await user.type(screen.getByLabelText('Atribuido a IA (%)'), '2')
-    await elegirOpcion(user, 'Resultado del comité', 'Aprobado')
     await user.click(screen.getByRole('button', { name: 'Guardar ronda' }))
     await waitFor(() => expect(router.state.location.pathname).toMatch(/\/pares$/))
 
@@ -94,6 +94,7 @@ describe('the whole flow of an article (HU-01, HU-03, HU-13, HU-14, HU-17, HU-22
       await screen.findByRole('button', { name: /Marcar entrega de Marta Lucía Gómez/ }),
     )
     const entrega = await screen.findByRole('dialog', { name: 'Marcar entrega' })
+    await elegirOpcion(user, 'Concepto', 'Publicable')
     await user.click(within(entrega).getByRole('button', { name: 'Marcar entrega' }))
     const constancia = await screen.findByRole('dialog', {
       name: 'Emitir la constancia de Marta Lucía Gómez',

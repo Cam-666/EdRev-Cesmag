@@ -1,10 +1,10 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { editarAutor } from '../services/autoresService'
-import { useRevista } from '@/lib/revista/useRevista'
+import { useRevistaDatos } from '@/lib/revista/useRevista'
 import type { DatosAutor } from '@/types/autor'
 
 export function useEditarAutor() {
-  const { revista } = useRevista()
+  const revista = useRevistaDatos()
   const cliente = useQueryClient()
   return useMutation({
     mutationFn: ({ id, datos }: { id: string; datos: Partial<DatosAutor> }) =>

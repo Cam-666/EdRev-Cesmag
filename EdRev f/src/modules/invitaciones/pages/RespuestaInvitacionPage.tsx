@@ -75,7 +75,7 @@ export function RespuestaInvitacionPage() {
   const texto = TEXTOS[datos.accion]
 
   if (confirmar.isSuccess) {
-    return <TarjetaAcceso titulo="Gracias, ya registramos su respuesta" subtitulo={texto.gracias} />
+    return <TarjetaAcceso titulo="Gracias. Su respuesta fue registrada" subtitulo={texto.gracias} />
   }
   if (datos.respondida) {
     return (

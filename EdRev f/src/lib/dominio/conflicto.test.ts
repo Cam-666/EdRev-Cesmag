@@ -16,6 +16,12 @@ describe('mismaInstitucion (RF-17): the assignment is refused', () => {
     expect(mismaInstitucion({ universidad: 'UNIVERSIDAD DE NARINO' }, AUTORES)).toContain('Sandra Milena Córdoba')
   })
 
+  it('treats «Cesmag» and «Universidad Cesmag» as the same institution', () => {
+    expect(mismaInstitucion({ universidad: 'Cesmag' }, AUTORES)).toContain('Diego Fernando Erazo')
+    expect(mismaInstitucion({ universidad: 'U. de Nariño' }, AUTORES)).toContain('Sandra Milena Córdoba')
+    expect(mismaInstitucion({ universidad: 'Universidad Mariana' }, AUTORES)).toBeNull()
+  })
+
   it('is null for an unrelated university, an empty one or no authors', () => {
     expect(mismaInstitucion({ universidad: 'Universidad del Valle' }, AUTORES)).toBeNull()
     expect(mismaInstitucion({ universidad: '' }, AUTORES)).toBeNull()

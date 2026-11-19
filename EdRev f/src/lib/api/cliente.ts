@@ -19,6 +19,18 @@ export class ErrorApi extends Error {
 
 let token: string | null = null
 
+let alExpirar: (() => void) | null = null
+
+/** Registers what to do when the backend rejects the session token (expired or invalid). */
+export function alExpirarSesion(manejador: (() => void) | null): void {
+  alExpirar = manejador
+}
+
+/** A 401 with a token in use means the session is over; without a token it is just a wrong login. */
+function revisarExpiracion(estado: number): void {
+  if (estado === 401 && token) alExpirar?.()
+}
+
 /** Sets the bearer token sent with every request (null = signed out). Called only by the session layer. */
 export function establecerToken(nuevo: string | null): void {
   token = nuevo
@@ -38,11 +50,13 @@ async function leerJson(respuesta: Response): Promise<unknown> {
 }
 
 /** A file of the API (e.g. a constancia in PDF), with the same session header. */
-export async function solicitarArchivo(ruta: string): Promise<Blob> {
-  const headers = new Headers()
+export async function solicitarArchivo(ruta: string, init: RequestInit = {}): Promise<Blob> {
+  const headers = new Headers(init.headers)
   if (token) headers.set('Authorization', `Bearer ${token}`)
-  const respuesta = await fetch(`${baseApi()}${ruta}`, { headers })
+  if (init.body !== undefined) headers.set('Content-Type', 'application/json')
+  const respuesta = await fetch(`${baseApi()}${ruta}`, { ...init, headers })
   if (!respuesta.ok) {
+    revisarExpiracion(respuesta.status)
     throw new ErrorApi(respuesta.status, respuesta.statusText, await leerJson(respuesta))
   }
   return respuesta.blob()
@@ -59,6 +73,7 @@ export async function solicitar<T>(ruta: string, init: RequestInit = {}): Promis
 
   const respuesta = await fetch(`${baseApi()}${ruta}`, { ...init, headers })
   if (!respuesta.ok) {
+    revisarExpiracion(respuesta.status)
     throw new ErrorApi(respuesta.status, respuesta.statusText, await leerJson(respuesta))
   }
   if (respuesta.status === 204) return undefined as T

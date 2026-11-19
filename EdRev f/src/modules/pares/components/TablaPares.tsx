@@ -7,16 +7,14 @@ import { DistintivoEstado } from '@/components/common/DistintivoEstado'
 import { Tabla } from '@/components/common/Tabla'
 import type { ColumnaTabla } from '@/components/common/Tabla'
 import type { ParListado } from '@/types/par'
-import type { Revista } from '@/types/revista'
 
 export interface TablaParesProps {
-  revista: Revista
   pares: ParListado[]
   cargando: boolean
   vacio: string
 }
 
-export function TablaPares({ revista, pares, cargando, vacio }: TablaParesProps) {
+export function TablaPares({ pares, cargando, vacio }: TablaParesProps) {
   const columnas: Array<ColumnaTabla<ParListado>> = [
     { clave: 'nombre', encabezado: 'Par evaluador', render: (p) => p.nombre },
     { clave: 'universidad', encabezado: 'Universidad', render: (p) => p.universidad },
@@ -30,11 +28,11 @@ export function TablaPares({ revista, pares, cargando, vacio }: TablaParesProps)
   ]
   return (
     <Tabla
-      etiqueta="Pares evaluadores de la revista"
+      etiqueta="Pares evaluadores"
       columnas={columnas}
       filas={pares}
       obtenerClave={(p) => p.id}
-      hrefFila={(p) => `/${revista}/pares/${encodeURIComponent(p.id)}`}
+      hrefFila={(p) => `/pares/${encodeURIComponent(p.id)}`}
       etiquetaEnlace={(p) => `Abrir la ficha de ${p.nombre}`}
       cargando={cargando}
       vacio={vacio}

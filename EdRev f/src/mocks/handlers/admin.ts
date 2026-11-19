@@ -13,33 +13,35 @@ import { marcadores } from '@/lib/plantillas'
 import type { RespuestaEnvioEnlace } from '@/types/acceso'
 import type { EntradaAuditoria } from '@/types/historial'
 import type { DatosNuevaPlantilla, ParteImagen, Plantilla, UsoPlantilla } from '@/types/plantilla'
+
+const USOS: Record<Plantilla['clase'], UsoPlantilla[]> = {
+  correo: ['invitacion', 'agradecimiento'],
+  archivo: ['constancia'],
+}
 import type { Revista } from '@/types/revista'
 import type { DatosUsuario, Usuario } from '@/types/usuario'
 
 /** Markers every template must keep, or its mail / constancia loses the data it exists for. */
-const OBLIGATORIOS: Record<UsoPlantilla, string[]> = {
-  invitacion: ['par', 'articulo'],
-  agradecimiento: ['par', 'articulo'],
-  constancia: ['par', 'articulo'],
+
+/** Markers each use accepts; a template without a use accepts those of its class. */
+const VARIABLES: Record<UsoPlantilla, string[]> = {
+  invitacion: ['revista', 'numero', 'par', 'profesion', 'universidad', 'articulo', 'botones'],
+  agradecimiento: ['revista', 'par', 'articulo'],
+  constancia: ['revista', 'REVISTA', 'par', 'PAR', 'articulo', 'issn', 'indexaciones', 'fecha', 'anio', 'firma'],
 }
+const VARIABLES_CORREO = VARIABLES.invitacion
 
 const PARTES: readonly ParteImagen[] = ['encabezado', 'pie', 'firma']
 const MAX_IMAGEN = 2 * 1024 * 1024
 
 function validarPlantilla(
-  p: Pick<Plantilla, 'uso' | 'variables'>,
+  permitidos: string[],
   asunto: string | null,
   cuerpo: string,
 ): string | null {
   const usados = [...marcadores(cuerpo), ...marcadores(asunto ?? '')]
-  const desconocido = usados.find((m) => !p.variables.includes(m))
+  const desconocido = usados.find((m) => !permitidos.includes(m))
   if (desconocido) return `El marcador {{${desconocido}}} no existe en esta plantilla`
-  const falta = OBLIGATORIOS[p.uso].find(
-    (m) =>
-      !marcadores(cuerpo).includes(m) &&
-      !(p.uso === 'constancia' && marcadores(cuerpo).includes(m.toUpperCase())),
-  )
-  if (falta) return `Falta el marcador obligatorio {{${falta}}}`
   if (!cuerpo.trim()) return 'El texto no puede estar vacío'
   return null
 }
@@ -110,6 +112,30 @@ export const handlersAdmin = [
     return HttpResponse.json({ ...nuevo, enlaceDemo }, { status: 201 })
   }),
 
+  http.delete('*/api/usuarios/:id', ({ params, request }) => {
+    const c = contextoGlobal(request, 'administrar')
+    if (!c.ok) return c.respuesta
+    const usuario = usuarios().find((u) => u.id === params.id)
+    if (!usuario) return error(404, 'Usuario no encontrado')
+    if (usuario.id === c.usuario.id) return error(409, 'No puede eliminar su propia cuenta')
+    if (
+      usuario.perfil === 'administrador' &&
+      usuario.estado === 'activo' &&
+      usuarios().filter((u) => u.perfil === 'administrador' && u.estado === 'activo').length <= 1
+    ) {
+      return error(409, 'Debe quedar al menos una administradora activa')
+    }
+    // An account that already entered has activity in the history and cannot disappear from it.
+    if (usuario.ultimoIngreso) {
+      return error(
+        409,
+        'La cuenta tiene actividad registrada y no se puede eliminar; inhabilítela en su lugar',
+      )
+    }
+    usuarios().splice(usuarios().indexOf(usuario), 1)
+    return new HttpResponse(null, { status: 204 })
+  }),
+
   http.post('*/api/usuarios/:id/enlace', ({ params, request }) => {
     const c = contextoGlobal(request, 'administrar')
     if (!c.ok) return c.respuesta
@@ -150,41 +176,98 @@ export const handlersAdmin = [
   http.post('*/api/plantillas', async ({ request }) => {
     const c = contextoGlobal(request, 'administrar')
     if (!c.ok) return c.respuesta
-    const { revista, nombre, clase, uso: usoCorreo } = (await request.json()) as DatosNuevaPlantilla
+    const datos = (await request.json()) as DatosNuevaPlantilla
+    const { revista, nombre, uso, usarAhora } = datos
+    const clase = uso ? (uso === 'constancia' ? 'archivo' : 'correo') : datos.clase
     if (revista !== 'reep' && revista !== 'ire') return error(422, 'Revista no válida')
-    if (clase !== 'correo' && clase !== 'archivo') return error(422, 'Clase no válida')
-    const uso: UsoPlantilla | undefined = clase === 'archivo' ? 'constancia' : usoCorreo
-    if (!uso) return error(422, 'Elija para qué correo es la plantilla')
+    if (clase !== 'correo' && clase !== 'archivo') return error(422, 'Elija para qué se usará la plantilla')
     if (!nombre.trim()) return error(422, 'Escriba el nombre de la plantilla')
     const repetido = plantillas().some(
       (p) => p.revista === revista && p.nombre.trim().toLowerCase() === nombre.trim().toLowerCase(),
     )
     if (repetido) return error(409, 'Ya existe una plantilla con ese nombre en esta revista')
-    // Starts from the text (and images) of the journal's template in use.
-    const modelo = plantillas().find((p) => p.revista === revista && p.uso === uso && p.enUso)
-    if (!modelo) return error(409, 'No hay una plantilla en uso para copiar')
-    const nueva: Plantilla = {
-      ...modelo,
-      variables: [...modelo.variables],
-      imagenes: modelo.imagenes ? { ...modelo.imagenes } : null,
-      id: `${revista}-pl-n${plantillas().length + 1}`,
+    // With a use it starts as a copy of the one in use for it; without one it is blank.
+    const id = `${revista}-pl-n${plantillas().length + 1}`
+    const origen = uso ? plantillas().find((p) => p.revista === revista && p.uso === uso) : undefined
+    const nueva: Plantilla = origen
+      ? {
+          ...origen,
+          id,
+          nombre: nombre.trim(),
+          uso: null,
+          enUso: false,
+          variables: clase === 'correo' ? [...VARIABLES_CORREO] : [...VARIABLES.constancia],
+          imagenes: origen.imagenes ? { ...origen.imagenes } : null,
+          imagenPie: origen.imagenPie ? { ...origen.imagenPie } : null,
+        }
+      : {
+      id,
+      revista,
+      uso: null,
+      clase,
       nombre: nombre.trim(),
+      asunto: clase === 'correo' ? '' : null,
+      cuerpo: '',
+      variables: clase === 'correo' ? [...VARIABLES_CORREO] : [...VARIABLES.constancia],
       enUso: false,
+      imagenes: clase === 'archivo' ? { encabezado: null, pie: null, firma: null } : null,
+      imagenPie: null,
+      correoFirma: clase === 'archivo' ? '' : null,
     }
     plantillas().push(nueva)
+    if (usarAhora && uso && origen) {
+      origen.uso = null
+      origen.enUso = false
+      if (origen.clase === 'correo') origen.variables = [...VARIABLES_CORREO]
+      nueva.uso = uso
+      nueva.enUso = true
+      nueva.variables = [...VARIABLES[uso]]
+    }
     return HttpResponse.json(nueva, { status: 201 })
   }),
 
-  http.post('*/api/plantillas/:id/usar', ({ params, request }) => {
+  http.post('*/api/plantillas/:id/asignar', async ({ params, request }) => {
     const c = contextoGlobal(request, 'administrar')
     if (!c.ok) return c.respuesta
     const plantilla = plantillas().find((p) => p.id === params.id)
     if (!plantilla) return error(404, 'Plantilla no encontrada')
-    for (const p of plantillas()) {
-      if (p.revista === plantilla.revista && p.uso === plantilla.uso)
-        p.enUso = p.id === plantilla.id
+    const { uso } = (await request.json()) as { uso: UsoPlantilla }
+    if (!USOS[plantilla.clase].includes(uso)) {
+      return error(
+        409,
+        plantilla.clase === 'archivo'
+          ? 'Una plantilla de archivo solo sirve como constancia'
+          : 'Una plantilla de correo solo sirve como invitación o agradecimiento',
+      )
     }
+    if (!plantilla.cuerpo.trim()) {
+      return error(422, 'La plantilla aún no tiene texto: redáctela en Plantillas antes de elegirla')
+    }
+    const fallo = validarPlantilla(VARIABLES[uso], plantilla.asunto, plantilla.cuerpo)
+    if (fallo) return error(422, fallo)
+    for (const p of plantillas()) {
+      if (p.revista === plantilla.revista && p.uso === uso) {
+        p.uso = null
+        p.enUso = false
+        if (p.clase === 'correo') p.variables = [...VARIABLES_CORREO]
+      }
+    }
+    plantilla.uso = uso
+    plantilla.enUso = true
+    plantilla.variables = [...VARIABLES[uso]]
     return HttpResponse.json(plantilla)
+  }),
+
+  http.delete('*/api/plantillas/:id', ({ params, request }) => {
+    const c = contextoGlobal(request, 'administrar')
+    if (!c.ok) return c.respuesta
+    const plantilla = plantillas().find((p) => p.id === params.id)
+    if (!plantilla) return error(404, 'Plantilla no encontrada')
+    if (plantilla.uso) {
+      return error(409, 'La plantilla está en uso; elija otra en Configuración antes de eliminarla')
+    }
+    plantillas().splice(plantillas().indexOf(plantilla), 1)
+    return new HttpResponse(null, { status: 204 })
   }),
 
   // RF-45: the constancia template carries a header, a footer and a signature image.
@@ -195,14 +278,18 @@ export const handlersAdmin = [
     if (!plantilla) return error(404, 'Plantilla no encontrada')
     const parte = PARTES.find((x) => x === params.parte)
     if (!parte) return error(404, 'Parte de la plantilla no válida')
-    if (!plantilla.imagenes)
-      return error(409, 'Solo la plantilla de archivo lleva encabezado, pie y firma')
+    // A file template has header, footer and signature; a mail template only a footer.
+    if (!plantilla.imagenes && parte !== 'pie') {
+      return error(409, 'Solo la plantilla de archivo lleva encabezado y firma; la de correo lleva un pie')
+    }
     const archivo = (await request.formData()).get('archivo')
     if (archivo === null || typeof archivo === 'string') return error(422, 'Adjunte la imagen')
     const esImagen = /\.(png|jpe?g)$/i.test(archivo.name) || /^image\/(png|jpeg)$/.test(archivo.type)
     if (!esImagen) return error(422, 'La imagen debe ser PNG o JPG')
     if (archivo.size > MAX_IMAGEN) return error(422, 'La imagen no puede pasar de 2 MB')
-    plantilla.imagenes[parte] = { nombre: archivo.name, tamano: archivo.size }
+    const imagen = { nombre: archivo.name, tamano: archivo.size }
+    if (plantilla.imagenes) plantilla.imagenes[parte] = imagen
+    else plantilla.imagenPie = imagen
     return HttpResponse.json(plantilla)
   }),
 
@@ -212,9 +299,32 @@ export const handlersAdmin = [
     const plantilla = plantillas().find((p) => p.id === params.id)
     if (!plantilla) return error(404, 'Plantilla no encontrada')
     const parte = PARTES.find((x) => x === params.parte)
-    if (!parte || !plantilla.imagenes) return error(404, 'Parte de la plantilla no válida')
-    plantilla.imagenes[parte] = null
+    if (!parte || (!plantilla.imagenes && parte !== 'pie')) {
+      return error(404, 'Parte de la plantilla no válida')
+    }
+    if (plantilla.imagenes) plantilla.imagenes[parte] = null
+    else plantilla.imagenPie = null
     return HttpResponse.json(plantilla)
+  }),
+
+  http.post('*/api/plantillas/vista-correo', async ({ request }) => {
+    const c = contextoGlobal(request, 'administrar')
+    if (!c.ok) return c.respuesta
+    const { cuerpo } = (await request.json()) as { cuerpo: string }
+    return HttpResponse.json({
+      html: `<!doctype html><html lang="es"><body><h1>Universidad CESMAG</h1><p>${cuerpo}</p></body></html>`,
+    })
+  }),
+
+  http.post('*/api/plantillas/:id/vista-previa', ({ params, request }) => {
+    const c = contextoGlobal(request, 'administrar')
+    if (!c.ok) return c.respuesta
+    const plantilla = plantillas().find((p) => p.id === params.id)
+    if (!plantilla) return error(404, 'Plantilla no encontrada')
+    if (!plantilla.imagenes) return error(409, 'Solo la plantilla de archivo tiene vista previa en PDF')
+    return new HttpResponse('%PDF-1.4 vista previa de ejemplo', {
+      headers: { 'Content-Type': 'application/pdf' },
+    })
   }),
 
   http.get('*/api/plantillas/:id/vista-previa', ({ params, request }) => {
@@ -233,11 +343,25 @@ export const handlersAdmin = [
     if (!c.ok) return c.respuesta
     const plantilla = plantillas().find((p) => p.id === params.id)
     if (!plantilla) return error(404, 'Plantilla no encontrada')
-    const { asunto, cuerpo } = (await request.json()) as { asunto: string | null; cuerpo: string }
-    const fallo = validarPlantilla(plantilla, plantilla.asunto === null ? null : asunto, cuerpo)
+    const { asunto, cuerpo, correoFirma } = (await request.json()) as {
+      asunto: string | null
+      cuerpo: string
+      correoFirma?: string
+    }
+    if (correoFirma !== undefined && !/^([^\s@]+@[^\s@]+\.[^\s@]+)?$/.test(correoFirma.trim())) {
+      return error(422, 'Escriba un correo válido')
+    }
+    const fallo = validarPlantilla(
+      plantilla.variables,
+      plantilla.asunto === null ? null : asunto,
+      cuerpo,
+    )
     if (fallo) return error(422, fallo)
     if (plantilla.asunto !== null) plantilla.asunto = asunto ?? plantilla.asunto
     plantilla.cuerpo = cuerpo
+    if (plantilla.clase === 'archivo' && correoFirma !== undefined) {
+      plantilla.correoFirma = correoFirma.trim().toLowerCase()
+    }
     return HttpResponse.json(plantilla)
   }),
 

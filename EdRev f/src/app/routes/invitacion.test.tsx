@@ -26,7 +26,7 @@ describe('answer from the invitation mail (/invitacion)', () => {
     expect(antes.asignaciones.find((a) => a.id === invitada.id)?.estado).not.toBe('acepto')
 
     await user.click(screen.getByRole('button', { name: 'Sí, acepto evaluar este artículo' }))
-    expect(await screen.findByText('Gracias, ya registramos su respuesta')).toBeInTheDocument()
+    expect(await screen.findByText('Gracias. Su respuesta fue registrada')).toBeInTheDocument()
     const despues = await json<ArticuloDetalle>(await llamar('/reep/articulos/2026-012'))
     expect(despues.asignaciones.find((a) => a.id === invitada.id)?.estado).toBe('acepto')
   })
@@ -36,7 +36,7 @@ describe('answer from the invitation mail (/invitacion)', () => {
     const { user } = montarRuta(`/invitacion?token=${tokenInvitacion(invitada.id, 'no-desea')}`)
     expect(await screen.findByText(/No recibirá nuevas invitaciones/)).toBeInTheDocument()
     await user.click(screen.getByRole('button', { name: 'Confirmar: no deseo participar más' }))
-    expect(await screen.findByText('Gracias, ya registramos su respuesta')).toBeInTheDocument()
+    expect(await screen.findByText('Gracias. Su respuesta fue registrada')).toBeInTheDocument()
     const par = await json<ParDetalle>(await llamar(`/reep/pares/${invitada.par.id}`))
     expect(par.bloqueo?.motivo).toBe('no-desea')
   })

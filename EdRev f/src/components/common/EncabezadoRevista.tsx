@@ -25,8 +25,6 @@ export function EncabezadoRevista({ revista }: EncabezadoRevistaProps) {
       <div aria-hidden="true" className="pointer-events-none absolute inset-0 bg-revista-velo" />
       <div className="relative flex shrink-0 items-center gap-3">
         <Escudo tamano="md" />
-        <span aria-hidden="true" className="h-8 w-px shrink-0 bg-texto-inverso opacity-60" />
-        <p className="text-micro-11 uppercase">Módulo {datos.modulo}</p>
       </div>
 
       {revista === 'reep' ? <MarcaReep /> : <MarcaIre />}

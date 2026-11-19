@@ -1,16 +1,21 @@
 /*
- * plantillas — uses of a template and validation before saving it. A template may only use its
- * own markers and must keep the ones its use needs: the invitation and the thank-you mail need the
- * peer and the article; the constancia must replace the peer name and the article title and nothing
- * else (RF-30). Covers: RNF-19, RF-25, RF-30.
+ * plantillas — classes and uses of a template and validation before saving it. A template may only
+ * use the data of its own use; none is mandatory. Covers: RNF-19, RF-25, RF-30, RF-45.
  */
+import { ETIQUETA_DATO } from '@/lib/datosPlantilla'
 import { marcadores } from '@/lib/plantillas'
 import type { ClasePlantilla, Plantilla, UsoPlantilla } from '@/types/plantilla'
 
 export const CLASES_PLANTILLA: Array<{ valor: ClasePlantilla; etiqueta: string }> = [
-  { valor: 'correo', etiqueta: 'Correo (asunto y texto)' },
-  { valor: 'archivo', etiqueta: 'Archivo (constancia con encabezado, pie y firma)' },
+  { valor: 'correo', etiqueta: 'Correo' },
+  { valor: 'archivo', etiqueta: 'Archivo' },
 ]
+
+export const ETIQUETA_USO: Record<UsoPlantilla, string> = {
+  invitacion: 'Invitación a evaluar',
+  agradecimiento: 'Agradecimiento',
+  constancia: 'Constancia de participación',
+}
 
 /** The mails a correo template can be for; the file template is the constancia. */
 export const USOS_CORREO: Array<{ valor: Exclude<UsoPlantilla, 'constancia'>; etiqueta: string }> = [
@@ -18,15 +23,9 @@ export const USOS_CORREO: Array<{ valor: Exclude<UsoPlantilla, 'constancia'>; et
   { valor: 'agradecimiento', etiqueta: 'Agradecimiento' },
 ]
 
-export const OBLIGATORIOS: Record<UsoPlantilla, string[]> = {
-  invitacion: ['par', 'articulo'],
-  agradecimiento: ['par', 'articulo'],
-  constancia: ['par', 'articulo'],
-}
-
 /** Returns the first problem found as a sentence, or null when the template is valid. */
 export function validarPlantilla(
-  plantilla: Pick<Plantilla, 'uso' | 'variables'>,
+  plantilla: Pick<Plantilla, 'variables'>,
   asunto: string | null,
   cuerpo: string,
 ): string | null {
@@ -34,13 +33,7 @@ export function validarPlantilla(
   const enCuerpo = marcadores(cuerpo)
   const usados = [...enCuerpo, ...marcadores(asunto ?? '')]
   const desconocido = usados.find((m) => !plantilla.variables.includes(m))
-  if (desconocido) return `El marcador {{${desconocido}}} no existe en esta plantilla.`
-  // In the constancia the capitals version of the marker (PAR) also counts.
-  const falta = OBLIGATORIOS[plantilla.uso].find(
-    (m) =>
-      !enCuerpo.includes(m) && !(plantilla.uso === 'constancia' && enCuerpo.includes(m.toUpperCase())),
-  )
-  if (falta) return `Falta el marcador obligatorio {{${falta}}}.`
+  if (desconocido) return `El dato «${ETIQUETA_DATO[desconocido] ?? desconocido}» no se puede usar en esta plantilla.`
   return null
 }
 

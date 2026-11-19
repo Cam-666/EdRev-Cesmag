@@ -36,14 +36,15 @@ async function articuloNuevo(
   })
   expect(r.status).toBe(201)
   const articulo = await json<ArticuloDetalle>(r)
-  if (aprobado) await ronda(revista, articulo.id, 'aprobado')
+  if (aprobado) await ronda(revista, articulo.id)
   return articulo
 }
 
-function ronda(revista: 'reep' | 'ire', id: string, resultado: string) {
+/** With observations the round is «ajustes»; without them, and within the limit, «aprobado». */
+function ronda(revista: 'reep' | 'ire', id: string, observacion = '') {
   return llamar(`/${revista}/articulos/${id}/rondas`, {
     metodo: 'POST',
-    cuerpo: { coincidencias: 6, atribuidoIa: 2, resultado, observacion: '' },
+    cuerpo: { coincidencias: 6, atribuidoIa: 2, observacion },
   })
 }
 
@@ -59,7 +60,7 @@ async function candidato(articuloId: string, n: number): Promise<ResultadoAsigna
     metodo: 'POST',
     cuerpo: {
       nuevo: {
-        nombre: `Candidato ${n}`,
+        nombre: `Candidato ${n} del artículo ${articuloId}`,
         profesion: 'Magíster en Educación',
         correo: `candidato${n}.${articuloId}@udenar.edu.co`,
         universidad: 'Universidad de Nariño',
@@ -218,9 +219,9 @@ describe('assignment and invitation (mock)', () => {
     const [par] = await disponibles('reep', articulo.id)
     if (!par) throw new Error('no available peer')
     expect((await asignar('reep', articulo.id, par.id)).status).toBe(409)
-    await ronda('reep', articulo.id, 'ajustes')
+    await ronda('reep', articulo.id, 'Ajustar el método.')
     expect((await asignar('reep', articulo.id, par.id)).status).toBe(409)
-    await ronda('reep', articulo.id, 'aprobado')
+    await ronda('reep', articulo.id)
     expect((await asignar('reep', articulo.id, par.id)).status).toBe(201)
   })
 

@@ -6,6 +6,7 @@
 import { Tabla } from '@/components/common/Tabla'
 import type { ColumnaTabla } from '@/components/common/Tabla'
 import type { IndicadorRevista, Informe } from '@/types/panel'
+import { REVISTAS } from '@/types/revista'
 
 interface FilaIndicador {
   nombre: string
@@ -27,8 +28,8 @@ export function ComparativoRevistas({ informe }: ComparativoRevistasProps) {
   ]
   const columnas: Array<ColumnaTabla<FilaIndicador>> = [
     { clave: 'indicador', encabezado: 'Indicador', render: (f) => f.nombre },
-    { clave: 'm1', encabezado: 'Módulo 1', render: (f) => f.valores.reep },
-    { clave: 'm2', encabezado: 'Módulo 2', render: (f) => f.valores.ire },
+    { clave: 'm1', encabezado: REVISTAS.reep.nombreCorto, render: (f) => f.valores.reep },
+    { clave: 'm2', encabezado: REVISTAS.ire.nombreCorto, render: (f) => f.valores.ire },
     { clave: 'total', encabezado: 'Total', render: (f) => f.valores.total },
   ]
   return (

@@ -20,11 +20,21 @@ import { EnlaceBoton } from '@/components/common/EnlaceBoton'
 import { EstadoConsulta } from '@/components/common/EstadoConsulta'
 import { Pestanas } from '@/components/common/Pestanas'
 import { ErrorApi } from '@/lib/api/cliente'
+import { requiereNuevaRevision } from '@/lib/dominio/comite'
+import { TEXTO_RESULTADO } from '@/lib/dominio/resultadoPares'
 import { useRevista } from '@/lib/revista/useRevista'
 import type { EstadoArticulo } from '@/types/articulo'
+import type { ResultadoPares } from '@/types/par'
 
 /** States whose process is still open (RF-08). */
 const ABIERTOS: readonly EstadoArticulo[] = ['postulado', 'en-revision', 'en-evaluacion']
+
+/** The result of the peers is news only while the article is in the state it led to. */
+function muestraResultado(resultado: ResultadoPares, estado: EstadoArticulo): boolean {
+  if (resultado === 'no-publicable') return estado === 'rechazado'
+  if (resultado === 'publicable-con-modificaciones') return estado === 'postulado'
+  return estado === 'en-evaluacion' || estado === 'en-revision' || estado === 'aprobado'
+}
 
 const SEGMENTOS = ['comite', 'autores', 'pares', 'historial'] as const
 
@@ -100,6 +110,54 @@ export function FichaArticuloLayout() {
               </>
             }
           />
+          {articulo.resultadoPares &&
+            muestraResultado(articulo.resultadoPares, articulo.estado) && (
+              <Alerta
+                tipo={articulo.resultadoPares === 'publicable' ? 'exito' : 'informacion'}
+                titulo="Resultado de la evaluación por pares"
+                accion={
+                  articulo.resultadoPares === 'publicable' &&
+                  ABIERTOS.includes(articulo.estado) &&
+                  puedeCerrar ? (
+                    <Boton variante="secundario" tamano="sm" onClick={() => setCerrando(true)}>
+                      Asignar volumen y número
+                    </Boton>
+                  ) : articulo.resultadoPares === 'publicable-con-modificaciones' ? (
+                    <EnlaceBoton
+                      variante="secundario"
+                      tamano="sm"
+                      to={`/${revista}/articulos/${encodeURIComponent(articulo.id)}/comite`}
+                    >
+                      Ir a la revisión del comité
+                    </EnlaceBoton>
+                  ) : undefined
+                }
+              >
+                {TEXTO_RESULTADO[articulo.resultadoPares]}
+                {articulo.resultadoPares !== 'publicable' || articulo.estado === 'aprobado'
+                  ? ' Emita la constancia de cada par desde la pestaña «Pares y evaluación».'
+                  : ''}
+              </Alerta>
+            )}
+          {requiereNuevaRevision(articulo) &&
+            articulo.resultadoPares !== 'publicable-con-modificaciones' && (
+              <Alerta
+                tipo="advertencia"
+                titulo="Este artículo debe revisarse de nuevo"
+                accion={
+                  <EnlaceBoton
+                    variante="secundario"
+                    tamano="sm"
+                    to={`/${revista}/articulos/${encodeURIComponent(articulo.id)}/comite`}
+                  >
+                    Ir a la revisión del comité
+                  </EnlaceBoton>
+                }
+              >
+                El proceso fue retomado. El comité editorial debe registrar una nueva ronda de
+                revisión antes de asignar pares evaluadores.
+              </Alerta>
+            )}
           <Pestanas
             etiqueta="Secciones del artículo"
             valor={pestanaActiva(pathname, base)}

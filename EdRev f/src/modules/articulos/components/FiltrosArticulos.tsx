@@ -33,9 +33,9 @@ export function FiltrosArticulos({ filtros, onCambio }: FiltrosArticulosProps) {
   }, [textoRetardado])
 
   return (
-    <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-6">
+    <div className="grid grid-cols-1 items-end gap-4 md:grid-cols-2 xl:grid-cols-[minmax(0,2.9fr)_repeat(3,minmax(0,1fr))_minmax(0,2.4fr)]">
       <Buscador
-        className="xl:col-span-2 xl:self-end"
+        className="md:col-span-2 xl:col-span-1"
         etiqueta="Buscar por título o número de OJS"
         placeholder="Buscar por título o número de OJS"
         value={texto}
@@ -65,7 +65,7 @@ export function FiltrosArticulos({ filtros, onCambio }: FiltrosArticulosProps) {
         onCambio={(v) => onCambio({ publicacion: v === TODOS ? undefined : v })}
         opciones={[{ valor: TODOS, etiqueta: 'Todas' }, ...(publicaciones.data ?? [])]}
       />
-      <div className="grid grid-cols-2 gap-2">
+      <div className="grid grid-cols-2 items-end gap-2">
         <CampoTexto
           etiqueta="Postulado desde"
           type="date"
