@@ -218,7 +218,6 @@ export const handlersAdmin = [
       variables: [...VARIABLES[fin]],
       enUso: false,
       imagenes: clase === 'archivo' ? { encabezado: null, pie: null, firma: null } : null,
-      correoFirma: clase === 'archivo' ? '' : null,
     }
     plantillas().push(nueva)
     if (usarAhora && uso && origen) {
@@ -340,13 +339,9 @@ export const handlersAdmin = [
     if (!c.ok) return c.respuesta
     const plantilla = plantillas().find((p) => p.id === params.id)
     if (!plantilla) return error(404, 'Plantilla no encontrada')
-    const { asunto, cuerpo, correoFirma } = (await request.json()) as {
+    const { asunto, cuerpo } = (await request.json()) as {
       asunto: string | null
       cuerpo: string
-      correoFirma?: string
-    }
-    if (correoFirma !== undefined && !/^([^\s@]+@[^\s@]+\.[^\s@]+)?$/.test(correoFirma.trim())) {
-      return error(422, 'Escriba un correo válido')
     }
     const fallo = validarPlantilla(
       plantilla.variables,
@@ -356,9 +351,6 @@ export const handlersAdmin = [
     if (fallo) return error(422, fallo)
     if (plantilla.asunto !== null) plantilla.asunto = asunto ?? plantilla.asunto
     plantilla.cuerpo = cuerpo
-    if (plantilla.clase === 'archivo' && correoFirma !== undefined) {
-      plantilla.correoFirma = correoFirma.trim().toLowerCase()
-    }
     return HttpResponse.json(plantilla)
   }),
 

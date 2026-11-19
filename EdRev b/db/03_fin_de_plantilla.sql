@@ -1,7 +1,7 @@
 -- =============================================================================
 -- EdRev Cesmag · Migración para bases ya creadas (ejecutar UNA vez sobre «edrev»)
 --   · plantilla.fin: para qué sirve cada plantilla (no cambia aunque no esté en uso)
---   · quita revista.firma_nombre y revista.firma_cargo y las imágenes de las plantillas de correo (el correo no lleva firma)
+--   · quita revista.firma_nombre y revista.firma_cargo las imágenes de las plantillas de correo y plantilla.correo_firma (el correo no lleva firma)
 -- Una base nueva ya trae todo esto en 01_esquema.sql; no necesita este archivo.
 -- =============================================================================
 BEGIN;
@@ -27,7 +27,8 @@ ALTER TABLE revista DROP COLUMN IF EXISTS firma_cargo;
 
 UPDATE plantilla SET pie = NULL WHERE clase = 'correo';
 ALTER TABLE plantilla DROP CONSTRAINT IF EXISTS ck_imagenes_solo_archivo;
+ALTER TABLE plantilla DROP COLUMN IF EXISTS correo_firma;
 ALTER TABLE plantilla ADD CONSTRAINT ck_imagenes_solo_archivo
-  CHECK (clase = 'archivo' OR (encabezado IS NULL AND pie IS NULL AND firma IS NULL AND correo_firma IS NULL));
+  CHECK (clase = 'archivo' OR (encabezado IS NULL AND pie IS NULL AND firma IS NULL));
 
 COMMIT;

@@ -7,7 +7,7 @@
  * number. Regenerated every time it is sent or downloaded, so it always carries the current
  * indexations (RF-32).
  */
-import { PDFDocument, PDFString, StandardFonts, rgb, type PDFFont, type PDFImage, type PDFPage } from 'pdf-lib'
+import { PDFDocument, StandardFonts, rgb, type PDFFont, type PDFImage, type PDFPage } from 'pdf-lib'
 import type { Cliente } from '../db.js'
 import { analizar, type Alineacion } from '../lib/formato.js'
 
@@ -23,7 +23,6 @@ export interface PlantillaArchivo {
   pie: Buffer | null
   firma: Buffer | null
   /** Email the signature links to; null leaves the signature without a link. */
-  correoFirma?: string | null
 }
 
 const MESES = [
@@ -55,18 +54,6 @@ const MARGEN_LATERAL = 70
 const TAMANO = 11.5
 const INTERLINEADO = 1.4
 const ENTRE_PARRAFOS = 12
-
-/** A clickable area of the page that opens an address (a link annotation). */
-function enlazar(doc: PDFDocument, pagina: PDFPage, rect: [number, number, number, number], uri: string): void {
-  const anotacion = doc.context.obj({
-    Type: 'Annot',
-    Subtype: 'Link',
-    Rect: rect,
-    Border: [0, 0, 0],
-    A: { Type: 'Action', S: 'URI', URI: PDFString.of(uri) },
-  })
-  pagina.node.addAnnot(doc.context.register(anotacion))
-}
 
 async function incrustar(doc: PDFDocument, datos: Buffer | null): Promise<PDFImage | null> {
   if (!datos || datos.length < 8) return null
@@ -157,7 +144,6 @@ export async function dibujarConstancia(p: PlantillaArchivo, valores: Record<str
           : parrafo.alineacion === 'derecha' ? ancho - MARGEN_LATERAL - m.w
           : MARGEN_LATERAL
         pagina.drawImage(firma, { x, y: y - m.h, width: m.w, height: m.h })
-        if (p.correoFirma) enlazar(doc, pagina, [x, y - m.h, x + m.w, y], `mailto:${p.correoFirma}`)
         y -= m.h + 2
       }
       continue
@@ -217,8 +203,7 @@ interface FilaPlantilla extends PlantillaArchivo {
   indexaciones: string | null
 }
 
-const CARGA = `SELECT r.nombre AS revista, r.issn, r.indexaciones, p.cuerpo, p.encabezado, p.pie, p.firma,
-                      p.correo_firma AS "correoFirma"
+const CARGA = `SELECT r.nombre AS revista, r.issn, r.indexaciones, p.cuerpo, p.encabezado, p.pie, p.firma
                  FROM plantilla p JOIN revista r ON r.id_revista = p.id_revista`
 
 export async function generarConstancia(c: Cliente, d: DatosConstancia): Promise<Uint8Array> {

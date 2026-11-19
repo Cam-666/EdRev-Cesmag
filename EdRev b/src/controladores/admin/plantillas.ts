@@ -23,12 +23,6 @@ const nueva = z
 const edicion = z.object({
   asunto: z.string().nullable(),
   cuerpo: z.string(),
-  correoFirma: z
-    .string()
-    .trim()
-    .toLowerCase()
-    .regex(/^([^\s@]+@[^\s@]+\.[^\s@]+)?$/, 'Escriba un correo válido')
-    .optional(),
 })
 
 const idDe = (req: Request) => idNumerico(req.params.id, 'Plantilla')

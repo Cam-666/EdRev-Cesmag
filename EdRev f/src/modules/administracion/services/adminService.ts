@@ -129,7 +129,7 @@ export function eliminarPlantilla(id: string): Promise<void> {
 
 export function guardarPlantilla(
   id: string,
-  datos: { asunto: string | null; cuerpo: string; correoFirma?: string },
+  datos: { asunto: string | null; cuerpo: string },
 ): Promise<Plantilla> {
   return solicitar<Plantilla>(`/plantillas/${encodeURIComponent(id)}`, {
     method: 'PUT',

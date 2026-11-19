@@ -32,7 +32,6 @@ export interface FormularioPlantillaProps {
 export function FormularioPlantilla({ plantilla, onEliminada }: FormularioPlantillaProps) {
   const [asunto, setAsunto] = useState(plantilla.asunto ?? '')
   const [cuerpo, setCuerpo] = useState(plantilla.cuerpo)
-  const [correoFirma, setCorreoFirma] = useState(plantilla.correoFirma ?? '')
   const [error, setError] = useState<string | null>(null)
   const [guardada, setGuardada] = useState(false)
   const mutacion = useGuardarPlantilla()
@@ -51,7 +50,6 @@ export function FormularioPlantilla({ plantilla, onEliminada }: FormularioPlanti
         id: plantilla.id,
         asunto: tieneAsunto ? asunto : null,
         cuerpo,
-        ...(plantilla.clase === 'archivo' ? { correoFirma } : {}),
       },
       { onSuccess: () => setGuardada(true) },
     )
@@ -87,16 +85,6 @@ export function FormularioPlantilla({ plantilla, onEliminada }: FormularioPlanti
       />
 
       {plantilla.clase === 'archivo' && <ImagenesConstancia plantilla={plantilla} />}
-      {plantilla.clase === 'archivo' && (
-        <CampoTexto
-          etiqueta="Correo de la firma"
-          ayuda="Al hacer clic sobre la firma en el PDF se abrirá un mensaje dirigido a este correo. Déjelo vacío si no desea el enlace."
-          type="email"
-          autoComplete="off"
-          value={correoFirma}
-          onChange={(e) => setCorreoFirma(e.target.value)}
-        />
-      )}
 
       <section
         aria-labelledby="titulo-previa-plantilla"

@@ -80,7 +80,6 @@ export function useGuardarPlantilla() {
       id: string
       asunto: string | null
       cuerpo: string
-      correoFirma?: string
     }) => guardarPlantilla(id, datos),
     onSuccess: () => cliente.invalidateQueries({ queryKey: ['admin', 'plantillas'] }),
   })

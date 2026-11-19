@@ -123,28 +123,23 @@ describe('plantillas de archivo (constancia)', () => {
     expect((await request((await import('./api.js')).app).get(`/api/plantillas/${id}/vista-previa`)).status).toBe(401)
   })
 
-  it('una plantilla nueva queda en blanco y la firma puede llevar un correo', async () => {
+  it('una plantilla nueva queda en blanco', async () => {
     const api = await como()
     const a = (await api.post('/plantillas', { revista: 'ire', nombre: 'Archivo en blanco', clase: 'archivo' })).body
-    expect(a).toMatchObject({ cuerpo: '', correoFirma: '', imagenes: { encabezado: null, pie: null, firma: null } })
+    expect(a).toMatchObject({ cuerpo: '', imagenes: { encabezado: null, pie: null, firma: null } })
     const c = (await api.post('/plantillas', { revista: 'ire', nombre: 'Correo en blanco', clase: 'correo' })).body
-    expect(c).toMatchObject({ cuerpo: '', asunto: '', correoFirma: null })
-    expect((await api.put(`/plantillas/${a.id}`, { asunto: null, cuerpo: '{{par}} {{articulo}}', correoFirma: 'no es un correo' })).status).toBe(422)
-    const ok = await api.put(`/plantillas/${a.id}`, { asunto: null, cuerpo: '{{par}} {{articulo}}', correoFirma: 'Editora@Ejemplo.co' })
-    expect(ok.body.correoFirma).toBe('editora@ejemplo.co')
+    expect(c).toMatchObject({ cuerpo: '', asunto: '' })
+    expect(a).not.toHaveProperty('correoFirma')
+    const ok = await api.put(`/plantillas/${a.id}`, { asunto: null, cuerpo: '{{par}} {{articulo}}' })
+    expect(ok.status).toBe(200)
   })
 
-  it('el PDF lleva un enlace de correo sobre la firma cuando la plantilla tiene uno', async () => {
-    const { PDFDocument, PDFName, PDFDict, PDFArray } = await import('pdf-lib')
+  it('la firma de la constancia es solo la imagen: el PDF no lleva enlaces', async () => {
+    const { PDFDocument, PDFName } = await import('pdf-lib')
     const v = valoresDe({ revista: 'R', par: 'P', articulo: 'A', issn: '', indexaciones: '' })
-    const enlaces = async (correoFirma: string | null) => {
-      const pdf = await dibujarConstancia({ cuerpo: '{{par}} {{articulo}}\n\n[centro]{{firma}}', encabezado: null, pie: null, firma: PNG, correoFirma }, v)
-      const pagina = (await PDFDocument.load(pdf)).getPage(0)
-      const anot = pagina.node.lookup(PDFName.of('Annots'), PDFArray)
-      return anot ? anot.asArray().map((r) => pagina.doc.context.lookup(r, PDFDict).lookup(PDFName.of('A'), PDFDict).get(PDFName.of('URI'))?.toString()) : []
-    }
-    expect(await enlaces('editora@ejemplo.co')).toEqual(['(mailto:editora@ejemplo.co)'])
-    expect(await enlaces(null)).toEqual([])
+    const pdf = await dibujarConstancia({ cuerpo: '{{par}} {{articulo}}\n\n[centro]{{firma}}', encabezado: null, pie: null, firma: PNG }, v)
+    const anotaciones = (await PDFDocument.load(pdf)).getPage(0).node.get(PDFName.of('Annots')) as { size?: () => number } | undefined
+    expect(anotaciones?.size?.() ?? 0).toBe(0)
   })
 
   it('el PDF reparte un texto largo en varias páginas y escribe lo que el alfabeto no tiene', async () => {

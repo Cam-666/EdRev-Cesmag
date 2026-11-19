@@ -57,10 +57,9 @@ CREATE TABLE plantilla (            -- cada revista tiene las suyas
   encabezado   BYTEA,       -- imagen del encabezado de la constancia (solo tipo constancia)
   pie          BYTEA,       -- imagen del pie de página de la constancia (solo clase archivo)
   firma        BYTEA,       -- imagen de la firma, donde el texto pone {{firma}}
-  correo_firma VARCHAR(150), -- correo al que lleva un clic sobre la firma en el PDF (solo clase archivo)
   CONSTRAINT uq_plantilla_nombre UNIQUE (id_revista, nombre),
   CONSTRAINT ck_asunto_solo_correos CHECK ((clase = 'correo') = (asunto IS NOT NULL)),
-  CONSTRAINT ck_imagenes_solo_archivo CHECK (clase = 'archivo' OR (encabezado IS NULL AND pie IS NULL AND firma IS NULL AND correo_firma IS NULL)),  -- el correo no lleva imágenes
+  CONSTRAINT ck_imagenes_solo_archivo CHECK (clase = 'archivo' OR (encabezado IS NULL AND pie IS NULL AND firma IS NULL)),  -- el correo no lleva imágenes
   CONSTRAINT ck_fin_de_su_clase CHECK ((fin = 'constancia') = (clase = 'archivo')),
   CONSTRAINT ck_en_uso_es_su_fin CHECK (tipo IS NULL OR tipo = fin)
 );

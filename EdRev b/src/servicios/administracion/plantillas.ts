@@ -43,12 +43,11 @@ interface FilaPlantilla {
   t_encabezado: number | null
   t_pie: number | null
   t_firma: number | null
-  correo_firma: string | null
 }
 
 const SELECCION_PLANTILLA = `SELECT id_plantilla, id_revista, nombre, clase, fin, tipo, asunto, cuerpo,
                                     octet_length(encabezado) AS t_encabezado, octet_length(pie) AS t_pie,
-                                    octet_length(firma) AS t_firma, correo_firma FROM plantilla`
+                                    octet_length(firma) AS t_firma FROM plantilla`
 
 /** The data a template accepts: those of the purpose it was created for. */
 function variablesDe(p: FilaPlantilla): string[] {
@@ -68,7 +67,6 @@ function plantillaApi(p: FilaPlantilla) {
     cuerpo: p.cuerpo,
     variables: variablesDe(p),
     enUso: p.tipo !== null,
-    correoFirma: p.clase === 'archivo' ? (p.correo_firma ?? '') : null,
     imagenes:
       p.clase === 'archivo'
         ? {
@@ -133,8 +131,8 @@ export async function crearPlantilla(d: DatosNuevaPlantilla) {
     const { rows } = origen
       ? await c
           .query<{ id_plantilla: number }>(
-            `INSERT INTO plantilla (id_revista, nombre, clase, fin, asunto, cuerpo, encabezado, pie, firma, correo_firma)
-             SELECT id_revista, $2, clase, fin, asunto, cuerpo, encabezado, pie, firma, correo_firma
+            `INSERT INTO plantilla (id_revista, nombre, clase, fin, asunto, cuerpo, encabezado, pie, firma)
+             SELECT id_revista, $2, clase, fin, asunto, cuerpo, encabezado, pie, firma
                FROM plantilla WHERE id_plantilla = $1 RETURNING id_plantilla`,
             [origen.id_plantilla, d.nombre],
           )
@@ -183,18 +181,15 @@ export async function eliminarPlantilla(id: number): Promise<void> {
 
 export async function guardarPlantilla(
   id: number,
-  d: { asunto: string | null; cuerpo: string; correoFirma?: string },
+  d: { asunto: string | null; cuerpo: string },
 ) {
   const p = await cargar(id)
   const asunto = p.clase === 'archivo' ? null : (d.asunto ?? p.asunto)
   validar(variablesDe(p), asunto, d.cuerpo)
-  const correoFirma =
-    p.clase === 'archivo' ? (d.correoFirma === undefined ? p.correo_firma : d.correoFirma || null) : null
-  await pool.query('UPDATE plantilla SET asunto = $1, cuerpo = $2, correo_firma = $4 WHERE id_plantilla = $3', [
+  await pool.query('UPDATE plantilla SET asunto = $1, cuerpo = $2 WHERE id_plantilla = $3', [
     asunto,
     d.cuerpo,
     p.id_plantilla,
-    correoFirma,
   ])
   return plantillaApi(await cargar(p.id_plantilla))
 }
