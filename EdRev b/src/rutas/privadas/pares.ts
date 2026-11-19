@@ -6,12 +6,12 @@
  */
 import { Router } from 'express'
 import { z } from 'zod'
-import { enTransaccion, pool } from '../db.js'
-import { auditar } from '../lib/auditoria.js'
-import { usuarioDe } from '../lib/auth.js'
-import { CORREO_VALIDO, ErrorHttp, idNumerico, idRevista, siglaDe, sinTildes } from '../lib/http.js'
-import { conceptoApi, iso, mismaInstitucion, motivoApi, motivoDb } from '../lib/mapeo.js'
-import { autoresDe } from '../servicios/articulos.js'
+import { enTransaccion, pool, type Cliente } from '../../db.js'
+import { auditar } from '../../lib/auditoria.js'
+import { usuarioDe } from '../../middlewares/autenticacion.js'
+import { CORREO_VALIDO, ErrorHttp, idNumerico, idRevista, siglaDe, sinTildes } from '../../lib/http.js'
+import { conceptoApi, iso, mismaInstitucion, motivoApi, motivoDb } from '../../lib/mapeo.js'
+import { autoresDe } from '../../servicios/articulos.js'
 
 export const rutasPares = Router()
 
@@ -81,7 +81,7 @@ rutasPares.get('/:revista/pares', async (req, res) => {
   const filtrados = todos
     .filter(({ api }) => !q || sinTildes(api.nombre).includes(q) || api.correo.includes(q))
     .filter(({ api }) => !area || sinTildes(api.area).includes(area))
-    .filter(({ api }) => !universidad || api.universidad === universidad)
+    .filter(({ api }) => !universidad || claveTexto(api.universidad) === claveTexto(universidad))
     .filter(({ api, fila }) =>
       estado === 'bloqueados'
         ? api.estado === 'bloqueado'
@@ -101,18 +101,12 @@ rutasPares.get('/:revista/pares', async (req, res) => {
 
 rutasPares.get('/:revista/pares/areas', async (req, res) => {
   idRevista(req.params.revista)
-  const { rows } = await pool.query<{ area: string }>(
-    `SELECT DISTINCT area FROM par_evaluador WHERE area IS NOT NULL ORDER BY area`,
-  )
-  res.json(rows.map((r) => r.area))
+  res.json(await formasUnicas(pool, 'area'))
 })
 
 rutasPares.get('/:revista/pares/universidades', async (req, res) => {
   idRevista(req.params.revista)
-  const { rows } = await pool.query<{ universidad: string }>(
-    `SELECT DISTINCT universidad FROM par_evaluador WHERE universidad IS NOT NULL ORDER BY universidad`,
-  )
-  res.json(rows.map((r) => r.universidad))
+  res.json(await formasUnicas(pool, 'universidad'))
 })
 
 rutasPares.get('/:revista/pares/:id', async (req, res) => {
@@ -144,6 +138,77 @@ rutasPares.get('/:revista/pares/:id', async (req, res) => {
   })
 })
 
+/** Comparison key of a free text: without accents, case or repeated spaces ("CESMAG" = "Cesmag"). */
+export function claveTexto(texto: string): string {
+  return sinTildes(texto).replace(/\s+/g, ' ').trim()
+}
+
+interface FormaEscrita {
+  valor: string
+  n: number
+}
+
+/** Among the spellings of the same text, the most used one; on a tie, the one that has capitals. */
+export function mejorForma(formas: FormaEscrita[]): string {
+  const conMayuscula = (t: string) => (/[A-ZÁÉÍÓÚÑ]/.test(t) ? 1 : 0)
+  return [...formas].sort(
+    (a, b) => b.n - a.n || conMayuscula(b.valor) - conMayuscula(a.valor) || a.valor.localeCompare(b.valor, 'es'),
+  )[0]?.valor ?? ''
+}
+
+async function formasDe(c: Cliente, columna: 'universidad' | 'area'): Promise<FormaEscrita[]> {
+  const { rows } = await c.query<FormaEscrita>(
+    `SELECT ${columna} AS valor, count(*)::int AS n FROM par_evaluador WHERE ${columna} IS NOT NULL GROUP BY ${columna}`,
+  )
+  return rows
+}
+
+/** The text as the base already spells it: "cesmag" is stored as the existing "Cesmag". */
+async function formaCanonica(c: Cliente, columna: 'universidad' | 'area', texto: string): Promise<string> {
+  const limpio = texto.trim().replace(/\s+/g, ' ')
+  const iguales = (await formasDe(c, columna)).filter((f) => claveTexto(f.valor) === claveTexto(limpio))
+  return iguales.length > 0 ? mejorForma(iguales) : limpio
+}
+
+/** The values of a column without duplicates that differ only in case or accents. */
+async function formasUnicas(c: Cliente, columna: 'universidad' | 'area'): Promise<string[]> {
+  const grupos = new Map<string, FormaEscrita[]>()
+  for (const f of await formasDe(c, columna)) {
+    const clave = claveTexto(f.valor)
+    grupos.set(clave, [...(grupos.get(clave) ?? []), f])
+  }
+  return [...grupos.values()].map(mejorForma).sort((a, b) => a.localeCompare(b, 'es'))
+}
+
+interface ExistentePar {
+  id_par: number
+  nombre: string
+  correo: string | null
+  motivo_bloqueo: string | null
+  fecha_bloqueo: Date | string | null
+}
+
+const MOTIVO_BLOQUEO: Record<string, string> = {
+  'sin-respuesta': 'no respondió a las invitaciones',
+  'no-participa': 'manifestó que no desea participar',
+}
+
+/** The sentence shown when the person being registered is already in the common base. */
+function avisoDeParExistente(p: ExistentePar): string {
+  if (p.motivo_bloqueo) {
+    const desde = p.fecha_bloqueo ? ` desde el ${iso(p.fecha_bloqueo)?.slice(0, 10)}` : ''
+    return (
+      `«${p.nombre}» ya se encuentra en el sistema y está bloqueado${desde} ` +
+      `(${MOTIVO_BLOQUEO[p.motivo_bloqueo] ?? p.motivo_bloqueo}). No se registra de nuevo; ` +
+      'si desea invitarlo otra vez, desbloquéelo desde su ficha.'
+    )
+  }
+  return (
+    `«${p.nombre}» ya se encuentra registrado en el sistema${p.correo ? ` (${p.correo})` : ''}. ` +
+    'Búsquelo en la lista de pares y asígnelo desde allí.'
+  )
+}
+
 const datosPar = z.object({
   nombre: z.string().trim().min(1, 'Escriba el nombre'),
   profesion: z.string().trim().optional(),
@@ -160,19 +225,24 @@ export async function registrarPar(
   cuerpo: unknown,
 ): Promise<FilaPar> {
   const d = datosPar.parse(cuerpo)
-  const repetido = await cliente.query<{ id_par: number; nombre: string }>(
-    'SELECT id_par, nombre FROM par_evaluador WHERE correo = $1',
-    [d.correo],
+  // The same person must not be registered twice: the e-mail is unique, and the name counts too
+  // (the other data may vary). A blocked peer is reported as such.
+  const nombres = await cliente.query<ExistentePar>(
+    'SELECT id_par, nombre, correo, motivo_bloqueo, fecha_bloqueo FROM par_evaluador',
   )
-  if (repetido.rows[0]) {
-    throw new ErrorHttp(409, `Ya existe un par con ese correo en la base de pares (${repetido.rows[0].nombre})`, {
-      parId: String(repetido.rows[0].id_par),
+  const normal = (t: string) => sinTildes(t).replace(/\s+/g, ' ').trim()
+  const repetido =
+    nombres.rows.find((p) => p.correo === d.correo) ?? nombres.rows.find((p) => normal(p.nombre) === normal(d.nombre))
+  if (repetido) {
+    throw new ErrorHttp(409, avisoDeParExistente(repetido), {
+      parId: String(repetido.id_par),
+      bloqueado: repetido.motivo_bloqueo !== null,
     })
   }
   const { rows } = await cliente.query<FilaPar>(
     `INSERT INTO par_evaluador (id_revista, nombre, profesion, correo, universidad, area)
      VALUES ($1, $2, NULLIF($3, ''), $4, $5, $6) RETURNING *`,
-    [revista, d.nombre, d.profesion ?? '', d.correo, d.universidad, d.area],
+    [revista, d.nombre, d.profesion ?? '', d.correo, await formaCanonica(cliente, 'universidad', d.universidad), await formaCanonica(cliente, 'area', d.area)],
   )
   const par = rows[0] as FilaPar
   await auditar(cliente, {
@@ -201,7 +271,14 @@ rutasPares.patch('/:revista/pares/:id', async (req, res) => {
     `UPDATE par_evaluador SET nombre = COALESCE($1, nombre), profesion = COALESCE($2, profesion),
             correo = COALESCE($3, correo), universidad = COALESCE($4, universidad), area = COALESCE($5, area)
       WHERE id_par = $6`,
-    [d.nombre ?? null, d.profesion ?? null, d.correo ?? null, d.universidad ?? null, d.area ?? null, id],
+    [
+      d.nombre ?? null,
+      d.profesion ?? null,
+      d.correo ?? null,
+      d.universidad ? await formaCanonica(pool, 'universidad', d.universidad) : null,
+      d.area ? await formaCanonica(pool, 'area', d.area) : null,
+      id,
+    ],
   )
   await auditar(pool, {
     usuario: usuarioDe(req).id,

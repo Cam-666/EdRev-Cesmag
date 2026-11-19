@@ -3,8 +3,8 @@
  * have not answered, evaluations delivered without constancia, articles in evaluation and approved.
  */
 import { Router } from 'express'
-import { pool } from '../db.js'
-import { idRevista, siglaDe } from '../lib/http.js'
+import { pool } from '../../db.js'
+import { idRevista, siglaDe } from '../../lib/http.js'
 
 export const rutasPanel = Router()
 

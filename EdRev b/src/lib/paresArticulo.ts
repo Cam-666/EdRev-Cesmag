@@ -28,6 +28,29 @@ export function difieren(a: FilaPar | undefined, b: FilaPar | undefined): boolea
   )
 }
 
+export type ResultadoPares = 'publicable' | 'con-modificaciones' | 'no-publicable'
+
+/**
+ * What the concepts of the peers decide for the article (RF-20, RF-21): once every peer that holds
+ * a place has delivered a real concept and most of them coincide, that concept is the result.
+ * With two peers both must coincide; a third (tiebreaker) settles a disagreement by majority.
+ * `null` while someone has not delivered yet, while the two peers disagree (a third is awaited) or
+ * when no concept has a majority (the committee decides).
+ */
+export function resultadoDePares(filas: FilaPar[]): ResultadoPares | null {
+  const vigentes = filas.filter((f) => ['invitado', 'acepto', 'entrego'].includes(f.estado_par))
+  if (vigentes.length < PARES_BASE) return null
+  const conceptos: string[] = []
+  for (const f of vigentes) {
+    if (f.estado_par !== 'entrego' || !f.concepto || !CONCEPTOS_REALES.includes(f.concepto)) return null
+    conceptos.push(f.concepto)
+  }
+  for (const c of CONCEPTOS_REALES) {
+    if (conceptos.filter((x) => x === c).length * 2 > conceptos.length) return c as ResultadoPares
+  }
+  return null
+}
+
 /** `activos`: the evaluations in progress or delivered (invited, accepted, delivered), in order. */
 export function reglaPares(activos: FilaPar[]): { lugares: number; puede: boolean; desempate: boolean; motivo: string | null } {
   const lugares = activos.length

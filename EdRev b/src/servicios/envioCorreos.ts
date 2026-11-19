@@ -15,6 +15,8 @@ import { config } from '../config.js'
 import { pool, type Cliente } from '../db.js'
 import { auditar } from '../lib/auditoria.js'
 import { aHtml } from '../lib/formato.js'
+import { pieHtml } from '../lib/imagenCorreo.js'
+import { apiPublica, marcoInstitucional } from '../lib/marcoCorreo.js'
 import { ACCIONES_CORREO, botonesHtml, enlaceRespuesta, MARCA_BOTONES } from '../lib/respuestas.js'
 import { generarConstancia } from './constanciaPdf.js'
 
@@ -44,6 +46,8 @@ interface Pendiente {
   universidad: string | null
   asunto: string | null
   cuerpo: string | null
+  id_plantilla: number | null
+  tiene_pie: boolean | null
 }
 
 function rellenar(texto: string, v: Record<string, string>): string {
@@ -80,13 +84,13 @@ async function procesar(): Promise<void> {
   const { rows } = await pool.query<Pendiente>(
     `SELECT c.id_correo, c.id_evaluacion, c.tipo, c.destinatario, a.id_revista, a.id_articulo, r.nombre AS revista,
             r.correo_remitente AS remitente, a.numero_ojs, a.titulo, p.nombre AS par, p.profesion,
-            p.universidad, pl.asunto, pl.cuerpo
+            p.universidad, pl.asunto, pl.cuerpo, pl.id_plantilla, (pl.pie IS NOT NULL) AS tiene_pie
        FROM correo c
        JOIN evaluacion e ON e.id_evaluacion = c.id_evaluacion
        JOIN articulo a ON a.id_articulo = e.id_articulo
        JOIN revista r ON r.id_revista = a.id_revista
        JOIN par_evaluador p ON p.id_par = e.id_par
-       LEFT JOIN plantilla pl ON pl.id_revista = a.id_revista AND pl.tipo = c.tipo AND c.tipo <> 'constancia' AND pl.en_uso
+       LEFT JOIN plantilla pl ON pl.id_revista = a.id_revista AND pl.tipo = c.tipo AND c.tipo <> 'constancia'
       WHERE c.resultado = 'en-cola' ORDER BY c.fecha_envio LIMIT 20`,
   )
   for (const p of rows) {
@@ -104,7 +108,16 @@ async function procesar(): Promise<void> {
     const texto = rellenar(p.cuerpo ?? (solo ? TEXTO_SOLO_CONSTANCIA : ''), v)
     // The buttons of the invitation (acepto / no acepto / no desea) replace the {{botones}} marker.
     const botones = p.tipo === 'invitacion' ? botonesHtml(p.id_evaluacion) : ''
-    const html = `<div style="font-family:Arial,sans-serif;font-size:15px">${aHtml(texto, { marca: MARCA_BOTONES, html: botones })}</div>`
+    // The footer image (signature of whoever sends the mail) goes below the text, but only when the
+    // API can be reached from the Internet: a mail client cannot load an image from this computer.
+    const pie = p.tiene_pie && p.id_plantilla && apiPublica() ? pieHtml(p.id_plantilla) : ''
+    const html = marcoInstitucional({
+      tipo: p.tipo,
+      revista: p.revista,
+      contacto: p.remitente,
+      contenido: aHtml(texto, { marca: MARCA_BOTONES, html: botones }),
+      firma: pie,
+    })
     let resultado: 'enviado' | 'rebotado' | 'fallido'
     try {
       if (modo() === 'simulado') {

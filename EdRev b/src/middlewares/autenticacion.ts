@@ -7,7 +7,7 @@ import type { NextFunction, Request, Response } from 'express'
 import jwt from 'jsonwebtoken'
 import { config } from '../config.js'
 import { pool } from '../db.js'
-import { ErrorHttp } from './http.js'
+import { ErrorHttp } from '../lib/http.js'
 
 export interface UsuarioSesion {
   id: number
@@ -23,6 +23,7 @@ declare module 'express-serve-static-core' {
 
 export function firmarToken(idUsuario: number): string {
   return jwt.sign({ sub: String(idUsuario) }, config.jwtSecreto, {
+    algorithm: 'HS256',
     expiresIn: `${config.jwtHoras}h`,
   })
 }
@@ -32,8 +33,10 @@ export async function requiereSesion(req: Request, _res: Response, next: NextFun
   const token = cabecera.startsWith('Bearer ') ? cabecera.slice(7) : ''
   let id: number
   try {
-    const datos = jwt.verify(token, config.jwtSecreto) as { sub?: string }
+    // Signature, expiry and algorithm are checked; a token signed another way is refused.
+    const datos = jwt.verify(token, config.jwtSecreto, { algorithms: ['HS256'] }) as { sub?: string }
     id = Number(datos.sub)
+    if (!Number.isInteger(id)) throw new Error('sub')
   } catch {
     throw new ErrorHttp(401, 'No autenticado')
   }

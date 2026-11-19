@@ -5,11 +5,11 @@
  */
 import { Router } from 'express'
 import { z } from 'zod'
-import { enTransaccion, pool } from '../db.js'
-import { auditar } from '../lib/auditoria.js'
-import { usuarioDe } from '../lib/auth.js'
-import { CORREO_VALIDO, ErrorHttp, idNumerico, idRevista } from '../lib/http.js'
-import { correosApi, encolar, SELECCION_CORREOS, type FilaCorreo } from '../servicios/correos.js'
+import { enTransaccion, pool } from '../../db.js'
+import { auditar } from '../../lib/auditoria.js'
+import { usuarioDe } from '../../middlewares/autenticacion.js'
+import { CORREO_VALIDO, ErrorHttp, idNumerico, idRevista } from '../../lib/http.js'
+import { correosApi, encolar, SELECCION_CORREOS, type FilaCorreo } from '../../servicios/correos.js'
 
 export const rutasCorreos = Router()
 

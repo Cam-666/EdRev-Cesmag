@@ -5,6 +5,7 @@
 import type { Cliente } from '../db.js'
 import { ErrorHttp, siglaDe } from '../lib/http.js'
 import { conceptoApi, iso, publicacionApi } from '../lib/mapeo.js'
+import { resultadoDeLosPares } from './resultadoPares.js'
 
 interface FilaArticulo {
   id_articulo: number
@@ -168,6 +169,8 @@ export async function detalleArticulo(c: Cliente, idRevista: number, idArticulo:
       orden: x.orden,
     })),
     asignaciones,
+    /** What the concepts of the peers decide, once they all delivered (RF-20); null while open. */
+    resultadoPares: conceptoApi(await resultadoDeLosPares(c, idArticulo)),
     migrado: migrado.rows[0]?.migrado ?? false,
   }
 }

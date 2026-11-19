@@ -6,8 +6,8 @@
  */
 import { Router } from 'express'
 import { z } from 'zod'
-import { pool } from '../db.js'
-import { ErrorHttp, idNumerico, idRevista, siglaDe, sinTildes } from '../lib/http.js'
+import { pool } from '../../db.js'
+import { ErrorHttp, idNumerico, idRevista, siglaDe, sinTildes } from '../../lib/http.js'
 
 export const rutasAutores = Router()
 
@@ -48,18 +48,35 @@ function autorApi(a: FilaAutor, revista: number) {
   }
 }
 
+/** The countries and institutions that exist in the directory, for the filters of the list. */
+rutasAutores.get('/:revista/autores/filtros', async (req, res) => {
+  idRevista(req.params.revista)
+  const { rows } = await pool.query<{ filiacion: string | null; pais: string | null }>(`SELECT filiacion, pais FROM (${SELECCION}) t`)
+  const unicos = (valores: Array<string | null>) =>
+    [...new Set(valores.map((v) => (v ?? '').trim()).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'es'))
+  res.json({ paises: unicos(rows.map((r) => r.pais)), filiaciones: unicos(rows.map((r) => r.filiacion)) })
+})
+
 rutasAutores.get('/:revista/autores', async (req, res) => {
   const revista = idRevista(req.params.revista)
   const q = sinTildes(String(req.query.q ?? '').trim())
   const limite = Math.min(200, Math.max(1, Number(req.query.limite ?? 50)))
   const en = req.query.en === 'reep' ? 1 : req.query.en === 'ire' ? 2 : null
+  const pais = String(req.query.pais ?? '')
+  const filiacion = String(req.query.filiacion ?? '')
+  const orcid = req.query.orcid === 'con' || req.query.orcid === 'sin' ? String(req.query.orcid) : ''
+  const articulos = req.query.articulos === 'uno' || req.query.articulos === 'varios' ? String(req.query.articulos) : ''
   const { rows } = await pool.query<FilaAutor>(
     `SELECT * FROM (${SELECCION}) t
       WHERE ($1 = '' OR translate(lower(t.nombre), 'áéíóúüñ', 'aeiouun') LIKE '%' || $1 || '%'
                      OR t.orcid LIKE '%' || $1 || '%')
         AND ($2::smallint IS NULL OR $2 = ANY (t.revistas))
+        AND ($3 = '' OR t.pais = $3)
+        AND ($4 = '' OR t.filiacion = $4)
+        AND ($5 = '' OR ($5 = 'con') = (t.orcid IS NOT NULL))
+        AND ($6 = '' OR ($6 = 'uno' AND t.total = 1) OR ($6 = 'varios' AND t.total > 1))
       ORDER BY t.nombre`,
-    [q, en],
+    [q, en, pais, filiacion, orcid, articulos],
   )
   res.json({ items: rows.slice(0, limite).map((a) => autorApi(a, revista)), total: rows.length })
 })

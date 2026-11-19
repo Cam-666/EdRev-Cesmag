@@ -15,12 +15,12 @@ export const ACCIONES_CORREO: readonly AccionCorreo[] = ['acepto', 'no-acepto', 
 const SECRETO = () => `${config.jwtSecreto}:respuestas`
 
 export function firmarRespuesta(idEvaluacion: number, accion: AccionCorreo): string {
-  return jwt.sign({ ev: idEvaluacion, acc: accion }, SECRETO(), { expiresIn: '45d' })
+  return jwt.sign({ ev: idEvaluacion, acc: accion }, SECRETO(), { algorithm: 'HS256', expiresIn: '45d' })
 }
 
 export function leerRespuesta(token: string): { idEvaluacion: number; accion: AccionCorreo } {
   try {
-    const d = jwt.verify(token, SECRETO()) as { ev?: number; acc?: string }
+    const d = jwt.verify(token, SECRETO(), { algorithms: ['HS256'] }) as { ev?: number; acc?: string }
     if (typeof d.ev !== 'number' || !ACCIONES_CORREO.includes(d.acc as AccionCorreo)) throw new Error('forma')
     return { idEvaluacion: d.ev, accion: d.acc as AccionCorreo }
   } catch (e) {
@@ -35,18 +35,20 @@ export function enlaceRespuesta(idEvaluacion: number, accion: AccionCorreo): str
 }
 
 const BOTONES: Array<{ accion: AccionCorreo; texto: string; color: string }> = [
-  { accion: 'acepto', texto: 'Acepto la invitación', color: '#1b7f4b' },
-  { accion: 'no-acepto', texto: 'No acepto esta invitación', color: '#475569' },
-  { accion: 'no-desea', texto: 'No deseo participar más', color: '#b42318' },
+  // Institutional blue, another blue, and red for the one that blocks the peer.
+  { accion: 'acepto', texto: 'Acepto la invitación', color: '#0d47a1' },
+  { accion: 'no-acepto', texto: 'No acepto esta invitación', color: '#0277bd' },
+  { accion: 'no-desea', texto: 'No deseo participar más', color: '#c62828' },
 ]
 
 /** The three buttons as email HTML (inline styles: mail clients ignore style sheets). */
-export function botonesHtml(idEvaluacion: number): string {
-  const celdas = BOTONES.map(
+export function botonesHtml(idEvaluacion: number, ejemplo = false): string {
+  // Inline blocks, not a table: on a narrow screen they wrap onto the next line by themselves.
+  const enlaces = BOTONES.map(
     (b) =>
-      `<td style="padding:0 8px 8px 0"><a href="${enlaceRespuesta(idEvaluacion, b.accion)}" style="display:inline-block;background:${b.color};color:#ffffff;text-decoration:none;font-weight:bold;padding:10px 16px;border-radius:6px">${b.texto}</a></td>`,
+      `<a href="${ejemplo ? '#' : enlaceRespuesta(idEvaluacion, b.accion)}" style="display:inline-block;background:${b.color};color:#ffffff;text-decoration:none;font-family:Arial,sans-serif;font-size:13px;font-weight:bold;white-space:nowrap;padding:11px 14px;border-radius:6px;margin:0 8px 8px 0">${b.texto}</a>`,
   ).join('')
-  return `<table role="presentation" cellspacing="0" cellpadding="0" style="margin:12px 0"><tr>${celdas}</tr></table>`
+  return `<div style="margin:14px 0 6px">${enlaces}</div>`
 }
 
 /** Marker the template's {{botones}} becomes before the text is escaped; then it turns into the buttons. */

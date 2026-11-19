@@ -6,12 +6,12 @@
 import bcrypt from 'bcryptjs'
 import { Router } from 'express'
 import { z } from 'zod'
-import { config } from '../config.js'
-import { pool } from '../db.js'
-import { firmarToken } from '../lib/auth.js'
-import { crearEnlace, enlaceDemo, leerEnlace } from '../lib/enlaces.js'
-import { enviarEnlaceContrasena } from '../servicios/correoCuentas.js'
-import { usuarioApi, type FilaUsuario } from '../lib/mapeo.js'
+import { config } from '../../config.js'
+import { pool } from '../../db.js'
+import { firmarToken } from '../../middlewares/autenticacion.js'
+import { crearEnlace, enlaceDemo, leerEnlace } from '../../lib/enlaces.js'
+import { enviarEnlaceContrasena } from '../../servicios/correoCuentas.js'
+import { usuarioApi, type FilaUsuario } from '../../lib/mapeo.js'
 
 const intentos = new Map<string, number>()
 const bloqueos = new Map<string, number>()

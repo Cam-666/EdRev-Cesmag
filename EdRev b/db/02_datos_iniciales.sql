@@ -27,8 +27,8 @@ INSERT INTO usuario (nombre, correo, contrasena_hash, rol) VALUES
 
 -- Plantillas en uso de cada revista (RF-45). El encabezado, el pie y la firma de la constancia son
 -- imágenes que la Administradora sube desde Administración › Plantillas.
-INSERT INTO plantilla (id_revista, nombre, tipo, asunto, cuerpo, en_uso)
-SELECT r.id_revista, p.nombre, p.tipo, p.asunto, p.cuerpo, TRUE
+INSERT INTO plantilla (id_revista, nombre, clase, tipo, asunto, cuerpo)
+SELECT r.id_revista, p.nombre, CASE WHEN p.tipo = 'constancia' THEN 'archivo' ELSE 'correo' END, p.tipo, p.asunto, p.cuerpo
 FROM revista r
 CROSS JOIN (VALUES
   ('Invitación a evaluar', 'invitacion',

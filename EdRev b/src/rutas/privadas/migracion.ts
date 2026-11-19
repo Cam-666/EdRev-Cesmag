@@ -6,11 +6,11 @@
  */
 import { Router } from 'express'
 import { z } from 'zod'
-import { enTransaccion, pool } from '../db.js'
-import { auditar } from '../lib/auditoria.js'
-import { usuarioDe } from '../lib/auth.js'
-import { CORREO_VALIDO, ErrorHttp, idNumerico, idRevista, siglaDe } from '../lib/http.js'
-import { conceptoDb } from '../lib/mapeo.js'
+import { enTransaccion, pool } from '../../db.js'
+import { auditar } from '../../lib/auditoria.js'
+import { usuarioDe } from '../../middlewares/autenticacion.js'
+import { CORREO_VALIDO, ErrorHttp, idNumerico, idRevista, siglaDe } from '../../lib/http.js'
+import { conceptoDb } from '../../lib/mapeo.js'
 
 export const rutasMigracion = Router()
 

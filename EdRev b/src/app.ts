@@ -1,29 +1,20 @@
 /*
- * app — the Express application: CORS for the frontend, JSON, the public access routes, the
- * routes behind the session, and the error handler that answers { mensaje } like the simulated
- * API, so the frontend shows the same messages.
+ * app — the Express application. The order says what is public and what is private:
+ *   1. security headers, CORS for the frontend, JSON;
+ *   2. rutas/publicas — no session (login, the peer's answer from the mail, public images);
+ *   3. middlewares/autenticacion — validates the JWT (signature, expiry) and loads the user;
+ *   4. rutas/privadas — everything else, behind the session;
+ *   5. middlewares/errores — 404 and the error handler, which answers { mensaje }.
  */
 import cors from 'cors'
 import { rateLimit } from 'express-rate-limit'
 import helmet from 'helmet'
-import express, { type NextFunction, type Request, type Response } from 'express'
-import { ZodError } from 'zod'
+import express from 'express'
 import { config } from './config.js'
-import { requiereSesion } from './lib/auth.js'
-import { ErrorHttp } from './lib/http.js'
-import { rutasAcceso } from './rutas/acceso.js'
-import { rutasAdmin } from './rutas/admin.js'
-import { rutasInformes } from './rutas/informes.js'
-import { rutasInvitaciones } from './rutas/invitaciones.js'
-import { rutasArticulos } from './rutas/articulos.js'
-import { rutasAsignaciones } from './rutas/asignaciones.js'
-import { rutasAutores } from './rutas/autores.js'
-import { rutasConstancias } from './rutas/constancias.js'
-import { rutasCorreos } from './rutas/correos.js'
-import { rutasMigracion } from './rutas/migracion.js'
-import { rutasPanel } from './rutas/panel.js'
-import { rutasPares } from './rutas/pares.js'
-import { rutasWebhooks } from './rutas/webhooks.js'
+import { manejadorErrores, rutaNoEncontrada } from './middlewares/errores.js'
+import { requiereSesion } from './middlewares/autenticacion.js'
+import { rutasPrivadas } from './rutas/privadas/index.js'
+import { rutasPublicas } from './rutas/publicas/index.js'
 
 export function crearApp() {
   const app = express()
@@ -37,50 +28,11 @@ export function crearApp() {
   app.get('/api/salud', (_req, res) => {
     res.json({ estado: 'ok' })
   })
-  app.use('/api', rutasAcceso)
-  app.use('/api', rutasWebhooks)
-  // The peer answers from the mail without an account: public, with a limit of requests.
-  app.use('/api/invitaciones', rateLimit({ windowMs: 15 * 60_000, limit: 200, standardHeaders: true, legacyHeaders: false }))
-  app.use('/api', rutasInvitaciones)
 
-  const privadas = express.Router()
-  privadas.use(requiereSesion)
-  privadas.use(rutasAdmin)
-  privadas.use(rutasInformes)
-  privadas.use(rutasPanel)
-  privadas.use(rutasArticulos)
-  privadas.use(rutasAutores)
-  privadas.use(rutasPares)
-  privadas.use(rutasAsignaciones)
-  privadas.use(rutasConstancias)
-  privadas.use(rutasCorreos)
-  privadas.use(rutasMigracion)
-  app.use('/api', privadas)
+  app.use('/api', rutasPublicas)
+  app.use('/api', requiereSesion, rutasPrivadas)
 
-  app.use((_req, res) => {
-    res.status(404).json({ mensaje: 'Recurso no encontrado' })
-  })
-
-  app.use((error: unknown, _req: Request, res: Response, _next: NextFunction) => {
-    if (error instanceof ErrorHttp) {
-      res.status(error.estado).json({ mensaje: error.message, ...error.cuerpo })
-      return
-    }
-    if (error instanceof ZodError) {
-      res.status(422).json({ mensaje: error.issues[0]?.message ?? 'Datos no válidos' })
-      return
-    }
-    const pg = error as { code?: string; message?: string }
-    if (pg.code === '23505') {
-      res.status(409).json({ mensaje: 'Ya existe un registro con esos datos' })
-      return
-    }
-    if (pg.code === 'P0001' || pg.code === '23514') {
-      res.status(409).json({ mensaje: pg.message ?? 'La base de datos rechazó el cambio' })
-      return
-    }
-    console.error(error)
-    res.status(500).json({ mensaje: 'Error interno del servidor' })
-  })
+  app.use(rutaNoEncontrada)
+  app.use(manejadorErrores)
   return app
 }

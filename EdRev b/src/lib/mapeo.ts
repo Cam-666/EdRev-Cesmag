@@ -41,19 +41,40 @@ export function publicacionApi(volumen: number | null, numero: number | null) {
   return volumen !== null && numero !== null ? { volumen, numero } : null
 }
 
-const limpio = (t: string | null) =>
-  (t ?? '')
+/** Words that do not tell one institution from another: «Universidad Cesmag» and «Cesmag» are the same. */
+const GENERICAS = new Set([
+  'universidad', 'universitaria', 'universitario', 'univ', 'institucion', 'instituto', 'corporacion',
+  'fundacion', 'de', 'del', 'la', 'las', 'los', 'el', 'y', 'e', 'u', 'en', 'sede',
+])
+
+function palabras(texto: string | null): Set<string> {
+  const limpio = (texto ?? '')
     .normalize('NFD')
     .replace(/[̀-ͯ]/g, '')
-    .trim()
     .toLowerCase()
+    .replace(/[^a-z0-9]+/g, ' ')
+  return new Set(limpio.split(' ').filter((p) => p && !GENERICAS.has(p)))
+}
+
+/**
+ * Whether two names are the same institution: they coincide ignoring case, accents and the generic
+ * words (Universidad, de, la…), or all the distinctive words of one are in the other
+ * («Cesmag» in «Universidad CESMAG»).
+ */
+export function mismaUniversidad(a: string | null, b: string | null): boolean {
+  const x = palabras(a)
+  const y = palabras(b)
+  if (x.size === 0 || y.size === 0) return false
+  const [corto, largo] = x.size <= y.size ? [x, y] : [y, x]
+  return [...corto].every((p) => largo.has(p))
+}
 
 /** Authors whose institution is the peer's own (the assignment is refused, RF-17). */
 export function mismaInstitucion(
   universidad: string | null,
   autores: Array<{ nombre: string; filiacion: string | null }>,
 ): string | null {
-  const delMismo = autores.filter((a) => universidad && limpio(a.filiacion) === limpio(universidad))
+  const delMismo = autores.filter((a) => universidad && mismaUniversidad(a.filiacion, universidad))
   if (delMismo.length === 0) return null
   const quien = delMismo.length === 1 ? 'del autor' : 'de los autores'
   return `El par pertenece a ${universidad}, la misma institución ${quien} ${delMismo.map((a) => a.nombre).join(', ')}: no se puede asignar a este artículo.`

@@ -7,15 +7,16 @@
  */
 import { Router } from 'express'
 import { z } from 'zod'
-import { enTransaccion, pool, type Cliente } from '../db.js'
-import { auditar } from '../lib/auditoria.js'
-import { usuarioDe } from '../lib/auth.js'
-import { ErrorHttp, idNumerico, idRevista } from '../lib/http.js'
-import { conceptoDb, iso, mismaInstitucion } from '../lib/mapeo.js'
-import { reglaPares } from '../lib/paresArticulo.js'
-import { articuloDeRevista, autoresDe, evaluacionesDe, ultimaRonda } from '../servicios/articulos.js'
-import { encolar } from '../servicios/correos.js'
-import { aplicarRespuesta } from '../servicios/respuestas.js'
+import { enTransaccion, pool, type Cliente } from '../../db.js'
+import { auditar } from '../../lib/auditoria.js'
+import { usuarioDe } from '../../middlewares/autenticacion.js'
+import { ErrorHttp, idNumerico, idRevista } from '../../lib/http.js'
+import { conceptoDb, iso, mismaInstitucion } from '../../lib/mapeo.js'
+import { reglaPares } from '../../lib/paresArticulo.js'
+import { articuloDeRevista, autoresDe, evaluacionesDe, ultimaRonda } from '../../servicios/articulos.js'
+import { encolar } from '../../servicios/correos.js'
+import { aplicarRespuesta } from '../../servicios/respuestas.js'
+import { aplicarResultadoDePares } from '../../servicios/resultadoPares.js'
 import { registrarPar } from './pares.js'
 
 export const rutasAsignaciones = Router()
@@ -133,11 +134,15 @@ rutasAsignaciones.post('/:revista/asignaciones/:id/respuesta', async (req, res) 
   res.json(cuerpo)
 })
 
+const CONCEPTOS = ['publicable', 'publicable-con-modificaciones', 'no-publicable', 'pendiente-formato'] as const
+
 rutasAsignaciones.post('/:revista/asignaciones/:id/entrega', async (req, res) => {
   const revista = idRevista(req.params.revista)
   const id = idNumerico(req.params.id, 'Asignación')
   const usuario = usuarioDe(req)
-  const { fecha } = z.object({ fecha: z.string().regex(/^\d{4}-\d{2}-\d{2}$/) }).parse(req.body)
+  const { fecha, concepto } = z
+    .object({ fecha: z.string().regex(/^\d{4}-\d{2}-\d{2}$/), concepto: z.enum(CONCEPTOS).optional() })
+    .parse(req.body)
   const cuerpo = await enTransaccion(async (c) => {
     const e = await evaluacionDeRevista(c, revista, id)
     if (e.estado_par !== 'acepto') {
@@ -148,9 +153,10 @@ rutasAsignaciones.post('/:revista/asignaciones/:id/entrega', async (req, res) =>
     if (fecha < (iso(e.fecha_asignacion) ?? '').slice(0, 10)) {
       throw new ErrorHttp(422, 'La fecha de entrega no puede ser anterior a la invitación')
     }
+    // The evaluation is registered with its concept and date; only then can the constancia be issued.
     await c.query(
-      "UPDATE evaluacion SET estado_par = 'entrego', fecha_evaluacion = $1 WHERE id_evaluacion = $2",
-      [fecha, id],
+      "UPDATE evaluacion SET estado_par = 'entrego', fecha_evaluacion = $1, concepto = COALESCE($3, concepto) WHERE id_evaluacion = $2",
+      [fecha, id, concepto ? conceptoDb(concepto) : null],
     )
     await auditar(c, {
       usuario: usuario.id,
@@ -161,13 +167,13 @@ rutasAsignaciones.post('/:revista/asignaciones/:id/entrega', async (req, res) =>
       revista,
       articulo: e.id_articulo,
     })
+    // The concepts of the peers may decide the article (RF-20).
+    if (concepto) await aplicarResultadoDePares(c, revista, e.id_articulo, usuario.id)
     // RF-23: the page offers to issue the constancia right away.
     return { ...(await asignacionApi(c, e.id_articulo, id)), constanciaId: String(id) }
   })
   res.json(cuerpo)
 })
-
-const CONCEPTOS = ['publicable', 'publicable-con-modificaciones', 'no-publicable', 'pendiente-formato'] as const
 
 rutasAsignaciones.post('/:revista/asignaciones/:id/concepto', async (req, res) => {
   const revista = idRevista(req.params.revista)
@@ -185,6 +191,8 @@ rutasAsignaciones.post('/:revista/asignaciones/:id/concepto', async (req, res) =
     revista,
     articulo: e.id_articulo,
   })
+  // The concepts of the peers may decide the article (RF-20).
+  await aplicarResultadoDePares(pool, revista, e.id_articulo, usuarioDe(req).id)
   res.json(await asignacionApi(pool, e.id_articulo, id))
 })
 

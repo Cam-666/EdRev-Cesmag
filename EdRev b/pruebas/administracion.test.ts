@@ -10,13 +10,27 @@ describe('plantillas, auditoría, informes y pares por revista (RF-12, RF-38, RF
     const { plantillas } = (await api.get('/plantillas')).body
     expect(plantillas.filter((p: { enUso: boolean }) => p.enUso)).toHaveLength(6)
     const constancia = plantillas.find((p: { revista: string; uso: string }) => p.revista === 'ire' && p.uso === 'constancia')
-    expect((await api.put(`/plantillas/${constancia.id}`, { asunto: null, cuerpo: 'Sin marcadores' })).status).toBe(422)
+    expect((await api.put(`/plantillas/${constancia.id}`, { asunto: null, cuerpo: '   ' })).status).toBe(422) // vacío
     expect((await api.put(`/plantillas/${constancia.id}`, { asunto: null, cuerpo: '{{par}} {{articulo}} {{otro}}' })).status).toBe(422)
     const nueva = await api.post('/plantillas', { revista: 'ire', nombre: 'Constancia 2027', clase: 'archivo' })
-    expect(nueva.body).toMatchObject({ revista: 'ire', uso: 'constancia', clase: 'archivo', enUso: false })
-    expect((await api.post(`/plantillas/${nueva.body.id}/usar`)).body.enUso).toBe(true)
+    expect(nueva.body).toMatchObject({ revista: 'ire', uso: null, clase: 'archivo', enUso: false })
+    expect((await api.post(`/plantillas/${nueva.body.id}/asignar`, { uso: 'constancia' })).status).toBe(422) // aún en blanco
+    await api.put(`/plantillas/${nueva.body.id}`, { asunto: null, cuerpo: '{{PAR}} {{articulo}}' })
+    expect((await api.post(`/plantillas/${nueva.body.id}/asignar`, { uso: 'constancia' })).body.enUso).toBe(true)
     const despues = (await api.get('/plantillas')).body.plantillas
     expect(despues.filter((p: { revista: string; uso: string; enUso: boolean }) => p.revista === 'ire' && p.uso === 'constancia' && p.enUso)).toHaveLength(1)
+  })
+
+  it('se elimina una cuenta sin actividad; no la propia ni una con historial', async () => {
+    const api = await como()
+    const correo = `eliminar${Date.now()}@unicesmag.edu.co`
+    const creada = await api.post('/usuarios', { nombre: 'Cuenta temporal', correo, perfil: 'auxiliar' })
+    expect(creada.status).toBe(201)
+    expect((await api.delete(`/usuarios/${creada.body.id}`)).status).toBe(204)
+    expect((await api.get('/usuarios')).body.some((u: { id: string }) => u.id === creada.body.id)).toBe(false)
+    expect((await api.delete(`/usuarios/${creada.body.id}`)).status).toBe(404)
+    const yo = (await api.get('/usuarios')).body.find((u: { correo: string }) => u.correo === 'maria.mendoza@unicesmag.edu.co')
+    expect((await api.delete(`/usuarios/${yo.id}`)).status).toBe(409)
   })
 
   it('la auditoría filtra por tipo y el informe suma ambas revistas', async () => {

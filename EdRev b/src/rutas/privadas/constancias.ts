@@ -6,14 +6,14 @@
  */
 import { Router } from 'express'
 import { z } from 'zod'
-import { enTransaccion, pool, type Cliente } from '../db.js'
-import { auditar } from '../lib/auditoria.js'
-import { usuarioDe } from '../lib/auth.js'
-import { ErrorHttp, idNumerico, idRevista } from '../lib/http.js'
-import { iso } from '../lib/mapeo.js'
-import { textoPlano } from '../lib/formato.js'
-import { generarConstancia, valoresDe } from '../servicios/constanciaPdf.js'
-import { encolar } from '../servicios/correos.js'
+import { enTransaccion, pool, type Cliente } from '../../db.js'
+import { auditar } from '../../lib/auditoria.js'
+import { usuarioDe } from '../../middlewares/autenticacion.js'
+import { ErrorHttp, idNumerico, idRevista } from '../../lib/http.js'
+import { iso } from '../../lib/mapeo.js'
+import { textoPlano } from '../../lib/formato.js'
+import { generarConstancia, valoresDe } from '../../servicios/constanciaPdf.js'
+import { encolar } from '../../servicios/correos.js'
 
 export const rutasConstancias = Router()
 
@@ -75,6 +75,16 @@ async function emitir(
   conAgradecimiento: boolean,
 ) {
   if (!f.correo) throw new ErrorHttp(422, `${f.nombre} no tiene correo: regístrelo antes de enviar la constancia`)
+  // The constancia is issued once the evaluation is complete: concept and date registered.
+  if (!reemision) {
+    const evaluada = await c.query<{ concepto: string | null; fecha_evaluacion: string | null }>(
+      'SELECT concepto, fecha_evaluacion FROM evaluacion WHERE id_evaluacion = $1',
+      [f.id_evaluacion],
+    )
+    if (!evaluada.rows[0]?.concepto || !evaluada.rows[0]?.fecha_evaluacion) {
+      throw new ErrorHttp(409, `Registre primero el concepto y la fecha de evaluación de ${f.nombre}; después podrá emitir su constancia`)
+    }
+  }
   await c.query('UPDATE evaluacion SET constancia_emitida = TRUE WHERE id_evaluacion = $1', [f.id_evaluacion])
   const estado = await encolar(c, f.id_evaluacion, conAgradecimiento ? 'agradecimiento' : 'constancia', f.correo)
   await auditar(c, {
@@ -107,7 +117,7 @@ rutasConstancias.get('/:revista/constancias/:id/vista-previa', async (req, res) 
   const f = await entrega(pool, revista, idNumerico(req.params.id, 'Constancia'))
   const { rows } = await pool.query<{ revista: string; cuerpo: string; plantilla: string; issn: string | null; indexaciones: string | null }>(
     `SELECT r.nombre AS revista, r.issn, r.indexaciones, p.cuerpo, p.nombre AS plantilla
-       FROM revista r JOIN plantilla p ON p.id_revista = r.id_revista AND p.tipo = 'constancia' AND p.en_uso
+       FROM revista r JOIN plantilla p ON p.id_revista = r.id_revista AND p.tipo = 'constancia'
       WHERE r.id_revista = $1`,
     [revista],
   )

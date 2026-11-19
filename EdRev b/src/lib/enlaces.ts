@@ -30,6 +30,7 @@ export async function crearEnlace(c: Cliente, idUsuario: number, motivo: MotivoE
     await c.query('UPDATE usuario SET contrasena_hash = $1 WHERE id_usuario = $2', [hash, idUsuario])
   }
   const token = jwt.sign({ sub: String(idUsuario), motivo, h: huella(hash) }, SECRETO(), {
+    algorithm: 'HS256',
     expiresIn: '30m',
   })
   return `/acceso/contrasena?token=${encodeURIComponent(token)}`
@@ -39,7 +40,7 @@ export async function crearEnlace(c: Cliente, idUsuario: number, motivo: MotivoE
 export async function leerEnlace(c: Cliente, token: string) {
   let datos: { sub: string; motivo: MotivoEnlace; h: string }
   try {
-    datos = jwt.verify(token, SECRETO()) as typeof datos
+    datos = jwt.verify(token, SECRETO(), { algorithms: ['HS256'] }) as typeof datos
   } catch (e) {
     const vencido = (e as Error).name === 'TokenExpiredError'
     throw new ErrorHttp(vencido ? 410 : 404, 'Enlace no válido', { motivo: vencido ? 'vencido' : 'invalido' })

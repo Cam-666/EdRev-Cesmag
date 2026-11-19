@@ -7,6 +7,20 @@ import { articuloAprobado, candidato, como } from './api.js'
 const hoy = () => new Date().toISOString().slice(0, 10)
 
 describe('asignación, evaluación, constancias y correos (RF-19 a RF-34)', () => {
+  it('un artículo archivado y retomado como «Postulado» pasa de nuevo por el comité antes de tener pares', async () => {
+    const api = await como()
+    const art = await articuloAprobado()
+    await candidato(art.id, 1)
+    await api.post(`/reep/articulos/${art.id}/cerrar`, { estado: 'archivado', motivo: 'Sin respuesta', publicacion: null })
+    expect((await api.post(`/reep/articulos/${art.id}/reabrir`, { estado: 'postulado', motivo: 'Se retoma' })).status).toBe(200)
+    const nuevo = { nuevo: { nombre: 'Otro', profesion: '', correo: `o${Date.now()}@x.co`, universidad: 'U', area: 'A' } }
+    expect((await api.post(`/reep/articulos/${art.id}/asignaciones`, nuevo)).status).toBe(409)
+    // it already had a peer, and still the committee can register a new round
+    const ronda = await api.post(`/reep/articulos/${art.id}/rondas`, { coincidencias: 5, atribuidoIa: 1, observacion: '' })
+    expect(ronda.status).toBe(201)
+    expect((await api.post(`/reep/articulos/${art.id}/asignaciones`, nuevo)).status).toBe(201)
+  })
+
   it('no asigna pares antes de que el comité apruebe', async () => {
     const api = await como()
     const art = await api.post('/reep/articulos', {
@@ -76,7 +90,7 @@ describe('asignación, evaluación, constancias y correos (RF-19 a RF-34)', () =
       fechaPostulacion: '2026-10-01',
       autores: [{ nuevo: { nombre: 'Autor N', correo: '', orcid: '', filiacion: 'Universidad de Nariño', pais: 'Colombia' } }],
     })
-    await api.post(`/reep/articulos/${art.body.id}/rondas`, { coincidencias: 5, atribuidoIa: 1, resultado: 'aprobado', observacion: '' })
+    await api.post(`/reep/articulos/${art.body.id}/rondas`, { coincidencias: 5, atribuidoIa: 1, observacion: '' })
     const mismo = await api.post(`/reep/articulos/${art.body.id}/asignaciones`, {
       nuevo: { nombre: 'Par N', profesion: '', correo: `parn.${Date.now()}@udenar.edu.co`, universidad: 'universidad de nariño', area: 'A' },
     })
@@ -136,7 +150,7 @@ describe('asignación, evaluación, constancias y correos (RF-19 a RF-34)', () =
     const api = await como()
     const p = await candidato(id, 1)
     await api.post(`/reep/asignaciones/${p.asignacion.id}/respuesta`, { respuesta: 'acepto' })
-    await api.post(`/reep/asignaciones/${p.asignacion.id}/entrega`, { fecha: hoy() })
+    await api.post(`/reep/asignaciones/${p.asignacion.id}/entrega`, { fecha: hoy(), concepto: 'publicable' })
     const emision = await api.post(`/reep/constancias/${p.asignacion.id}/emitir`, { conAgradecimiento: false })
     expect(emision.status).toBe(200)
     const correos = (await api.get('/reep/correos?porPagina=100')).body

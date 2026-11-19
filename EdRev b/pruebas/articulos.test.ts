@@ -32,17 +32,30 @@ describe('artículos (RF-01 a RF-08, RF-35, RF-36)', () => {
     expect((await api.get(`/ire/articulos/${body.id}`)).status).toBe(200)
   })
 
-  it('rondas del comité sin límite; rechazado cierra la revisión', async () => {
+  it('el resultado de la ronda lo decide el sistema: sin límite de rondas; sobre el umbral rechaza', async () => {
     const { body } = await registrar()
     const api = await como(AUXILIAR)
-    const ronda = (resultado: string) =>
-      api.post(`/reep/articulos/${body.id}/rondas`, { coincidencias: 18, atribuidoIa: 3, resultado, observacion: 'x' })
-    expect((await ronda('ajustes')).status).toBe(201)
-    expect((await ronda('ajustes')).status).toBe(201)
-    const tercera = await ronda('rechazado')
+    const ronda = (coincidencias: number, observacion: string) =>
+      api.post(`/reep/articulos/${body.id}/rondas`, { coincidencias, atribuidoIa: 3, observacion })
+    // dentro del límite y con observaciones: publicable con observaciones (requiere ajustes)
+    expect((await ronda(10, 'Corregir la introducción')).status).toBe(201)
+    expect((await ronda(12, 'Falta la bibliografía')).status).toBe(201)
+    // sobre el límite: no publicable, el artículo queda rechazado
+    const tercera = await ronda(18, '')
     expect(tercera.body.estado).toBe('rechazado')
     expect(tercera.body.rondasComite.map((r: { resultado: string }) => r.resultado)).toEqual(['ajustes', 'ajustes', 'rechazado'])
-    expect((await ronda('aprobado')).status).toBe(409)
+    expect((await ronda(5, '')).status).toBe(409)
+  })
+
+  it('dentro del límite y sin observaciones el artículo queda aprobado; el porcentaje es obligatorio', async () => {
+    const { body } = await registrar()
+    const api = await como(AUXILIAR)
+    const sin = await api.post(`/reep/articulos/${body.id}/rondas`, { coincidencias: null, atribuidoIa: null, observacion: '' })
+    expect(sin.status).toBe(422)
+    const r = await api.post(`/reep/articulos/${body.id}/rondas`, { coincidencias: 15, atribuidoIa: 90, observacion: '   ' })
+    expect(r.status).toBe(201)
+    expect(r.body.rondasComite.at(-1).resultado).toBe('aprobado')
+    expect(r.body.estado).toBe('en-revision')
   })
 
   it('cambia de revista en cualquier etapa, con sus pares, y quita la publicación (RF-07)', async () => {

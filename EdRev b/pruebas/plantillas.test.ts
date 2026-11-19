@@ -16,7 +16,7 @@ const PNG = Buffer.from(
 async function archivo(api: Awaited<ReturnType<typeof como>>, nombre: string) {
   const r = await api.post('/plantillas', { revista: 'reep', nombre, clase: 'archivo' })
   expect(r.status).toBe(201)
-  return r.body as { id: string; clase: string; uso: string }
+  return r.body as { id: string; clase: string; uso: string | null }
 }
 
 describe('formato del texto', () => {
@@ -40,12 +40,44 @@ describe('plantillas de archivo (constancia)', () => {
   it('se crea de clase «archivo» o «correo» y el nombre es libre', async () => {
     const api = await como()
     const a = await archivo(api, 'Constancia con logo nuevo')
-    expect(a).toMatchObject({ clase: 'archivo', uso: 'constancia' })
-    const sinUso = await api.post('/plantillas', { revista: 'reep', nombre: 'Otro correo', clase: 'correo' })
-    expect(sinUso.status).toBe(422)
-    const correo = await api.post('/plantillas', { revista: 'reep', nombre: 'Otro correo', clase: 'correo', uso: 'invitacion' })
-    expect(correo.body).toMatchObject({ clase: 'correo', uso: 'invitacion', imagenes: null })
-    expect((await api.post('/plantillas', { revista: 'reep', nombre: 'Otro correo', clase: 'correo', uso: 'invitacion' })).status).toBe(409)
+    expect(a).toMatchObject({ clase: 'archivo', uso: null })
+    const correo = await api.post('/plantillas', { revista: 'reep', nombre: 'Otro correo', clase: 'correo' })
+    expect(correo.body).toMatchObject({ clase: 'correo', uso: null, enUso: false, imagenes: null })
+    expect((await api.post('/plantillas', { revista: 'reep', nombre: 'Otro correo', clase: 'correo' })).status).toBe(409)
+  })
+
+  it('el uso se elige después: reemplaza al anterior, respeta la clase y una plantilla en uso no se elimina', async () => {
+    const api = await como()
+    const correo = (await api.post('/plantillas', { revista: 'ire', nombre: 'Recordatorio amable', clase: 'correo' })).body
+    const antes = (await api.get('/plantillas')).body.plantillas.find(
+      (p: { revista: string; uso: string }) => p.revista === 'ire' && p.uso === 'agradecimiento',
+    )
+    await api.put(`/plantillas/${correo.id}`, { asunto: 'Hola', cuerpo: '{{par}} {{articulo}}' })
+    expect((await api.post(`/plantillas/${correo.id}/asignar`, { uso: 'constancia' })).status).toBe(409)
+    const ok = await api.post(`/plantillas/${correo.id}/asignar`, { uso: 'agradecimiento' })
+    expect(ok.body).toMatchObject({ uso: 'agradecimiento', enUso: true })
+    const lista = (await api.get('/plantillas')).body.plantillas as Array<{ id: string; revista: string; uso: string | null }>
+    expect(lista.filter((p) => p.revista === 'ire' && p.uso === 'agradecimiento')).toHaveLength(1)
+    expect(lista.find((p) => p.id === antes.id)?.uso).toBeNull()
+    expect((await api.delete(`/plantillas/${correo.id}`)).status).toBe(409)
+    // the previous one goes back and the other can be removed
+    await api.post(`/plantillas/${antes.id}/asignar`, { uso: 'agradecimiento' })
+    expect((await api.delete(`/plantillas/${correo.id}`)).status).toBe(204)
+    expect((await api.delete(`/plantillas/${correo.id}`)).status).toBe(404)
+  })
+
+  it('al elegir el uso se revisan los marcadores: {{botones}} solo sirve en la invitación', async () => {
+    const api = await como()
+    const c = (await api.post('/plantillas', { revista: 'reep', nombre: 'Con botones', clase: 'correo' })).body
+    await api.put(`/plantillas/${c.id}`, { asunto: 'Hola', cuerpo: '{{par}} {{articulo}}\n\n{{botones}}' })
+    expect((await api.post(`/plantillas/${c.id}/asignar`, { uso: 'agradecimiento' })).status).toBe(422)
+    expect((await api.post(`/plantillas/${c.id}/asignar`, { uso: 'invitacion' })).status).toBe(200)
+    // leave the journal as it was
+    const base = (await api.get('/plantillas')).body.plantillas.find(
+      (p: { revista: string; nombre: string }) => p.revista === 'reep' && p.nombre === 'Invitación a evaluar',
+    )
+    await api.post(`/plantillas/${base.id}/asignar`, { uso: 'invitacion' })
+    await api.delete(`/plantillas/${c.id}`)
   })
 
   it('sube el encabezado, el pie y la firma como imagen, y no acepta otra cosa', async () => {
@@ -61,7 +93,12 @@ describe('plantillas de archivo (constancia)', () => {
     const quitada = await api.delete(`/plantillas/${id}/imagen/firma`)
     expect(quitada.body.imagenes.firma).toBeNull()
     const correo = (await api.get('/plantillas')).body.plantillas.find((p: { clase: string }) => p.clase === 'correo')
-    expect((await api.subir(`/plantillas/${correo.id}/imagen/pie`, PNG, 'a.png')).status).toBe(409)
+    // A mail template carries only a footer (the signature below the text), not a header or a signature image
+    expect((await api.subir(`/plantillas/${correo.id}/imagen/encabezado`, PNG, 'a.png')).status).toBe(409)
+    expect((await api.subir(`/plantillas/${correo.id}/imagen/firma`, PNG, 'a.png')).status).toBe(409)
+    const conPie = await api.subir(`/plantillas/${correo.id}/imagen/pie`, PNG, 'firma.png')
+    expect(conPie.status).toBe(200)
+    expect(conPie.body).toMatchObject({ imagenPie: { nombre: 'Pie del correo' }, imagenes: null })
   })
 
   it('la vista previa es un PDF y el texto acepta los marcadores de la constancia', async () => {
@@ -79,6 +116,30 @@ describe('plantillas de archivo (constancia)', () => {
     expect(Number(vista.headers['content-length'])).toBeGreaterThan(500)
     expect((await api.put(`/plantillas/${id}`, { asunto: null, cuerpo: '{{PAR}} y {{articulo}} {{inventado}}' })).status).toBe(422)
     expect((await request((await import('./api.js')).app).get(`/api/plantillas/${id}/vista-previa`)).status).toBe(401)
+  })
+
+  it('una plantilla nueva queda en blanco y la firma puede llevar un correo', async () => {
+    const api = await como()
+    const a = (await api.post('/plantillas', { revista: 'ire', nombre: 'Archivo en blanco', clase: 'archivo' })).body
+    expect(a).toMatchObject({ cuerpo: '', correoFirma: '', imagenes: { encabezado: null, pie: null, firma: null } })
+    const c = (await api.post('/plantillas', { revista: 'ire', nombre: 'Correo en blanco', clase: 'correo' })).body
+    expect(c).toMatchObject({ cuerpo: '', asunto: '', correoFirma: null })
+    expect((await api.put(`/plantillas/${a.id}`, { asunto: null, cuerpo: '{{par}} {{articulo}}', correoFirma: 'no es un correo' })).status).toBe(422)
+    const ok = await api.put(`/plantillas/${a.id}`, { asunto: null, cuerpo: '{{par}} {{articulo}}', correoFirma: 'Editora@Ejemplo.co' })
+    expect(ok.body.correoFirma).toBe('editora@ejemplo.co')
+  })
+
+  it('el PDF lleva un enlace de correo sobre la firma cuando la plantilla tiene uno', async () => {
+    const { PDFDocument, PDFName, PDFDict, PDFArray } = await import('pdf-lib')
+    const v = valoresDe({ revista: 'R', par: 'P', articulo: 'A', issn: '', indexaciones: '' })
+    const enlaces = async (correoFirma: string | null) => {
+      const pdf = await dibujarConstancia({ cuerpo: '{{par}} {{articulo}}\n\n[centro]{{firma}}', encabezado: null, pie: null, firma: PNG, correoFirma }, v)
+      const pagina = (await PDFDocument.load(pdf)).getPage(0)
+      const anot = pagina.node.lookup(PDFName.of('Annots'), PDFArray)
+      return anot ? anot.asArray().map((r) => pagina.doc.context.lookup(r, PDFDict).lookup(PDFName.of('A'), PDFDict).get(PDFName.of('URI'))?.toString()) : []
+    }
+    expect(await enlaces('editora@ejemplo.co')).toEqual(['(mailto:editora@ejemplo.co)'])
+    expect(await enlaces(null)).toEqual([])
   })
 
   it('el PDF reparte un texto largo en varias páginas y escribe lo que el alfabeto no tiene', async () => {
@@ -106,5 +167,52 @@ describe('ISSN e indexaciones de cada revista (Configuración)', () => {
     const vacio = await api.put('/configuracion/revistas/ire', { issn: '', indexaciones: '' })
     expect(vacio.body).toEqual({ issn: '', indexaciones: '' })
     await api.put('/configuracion/revistas/ire', { issn: inicial.ire.issn, indexaciones: inicial.ire.indexaciones })
+  })
+})
+
+describe('crear una plantilla eligiendo para qué sirve', () => {
+  it('nace como copia de la que está en uso y aparece para elegirla en Configuración', async () => {
+    const api = await como()
+    const enUso = (await api.get('/plantillas')).body.plantillas.find(
+      (p: { revista: string; uso: string | null }) => p.revista === 'reep' && p.uso === 'invitacion',
+    )
+    const nombre = `Invitación de prueba ${Date.now()}`
+    const r = await api.post('/plantillas', { revista: 'reep', nombre, uso: 'invitacion' })
+    expect(r.status).toBe(201)
+    expect(r.body).toMatchObject({ clase: 'correo', uso: null, cuerpo: enUso.cuerpo, asunto: enUso.asunto })
+    // sigue sin uso hasta que se elija, y se puede elegir (tiene texto)
+    expect((await api.post(`/plantillas/${r.body.id}/asignar`, { uso: 'invitacion' })).status).toBe(200)
+    // la anterior queda libre
+    const lista = (await api.get('/plantillas')).body.plantillas
+    expect(lista.find((p: { id: string }) => p.id === enUso.id).uso).toBeNull()
+    await api.post(`/plantillas/${enUso.id}/asignar`, { uso: 'invitacion' })
+  })
+
+  it('«usar desde ahora» la deja en uso de una vez; una constancia copia también sus imágenes', async () => {
+    const api = await como()
+    const actual = (await api.get('/plantillas')).body.plantillas.find(
+      (p: { revista: string; uso: string | null }) => p.revista === 'reep' && p.uso === 'constancia',
+    )
+    await api.subir(`/plantillas/${actual.id}/imagen/encabezado`, PNG, 'encabezado.png')
+    const r = await api.post('/plantillas', {
+      revista: 'reep',
+      nombre: `Constancia de prueba ${Date.now()}`,
+      uso: 'constancia',
+      usarAhora: true,
+    })
+    expect(r.status).toBe(201)
+    expect(r.body).toMatchObject({ clase: 'archivo', uso: 'constancia', enUso: true })
+    expect(r.body.imagenes.encabezado).not.toBeNull()
+    // se devuelve la original al uso
+    await api.post(`/plantillas/${actual.id}/asignar`, { uso: 'constancia' })
+    await api.delete(`/plantillas/${actual.id}/imagen/encabezado`)
+  })
+
+  it('una plantilla en blanco no se puede elegir y el mensaje lo explica', async () => {
+    const api = await como()
+    const c = await api.post('/plantillas', { revista: 'ire', nombre: `En blanco ${Date.now()}`, clase: 'correo' })
+    const r = await api.post(`/plantillas/${c.body.id}/asignar`, { uso: 'agradecimiento' })
+    expect(r.status).toBe(422)
+    expect(r.body.mensaje).toContain('aún no tiene texto')
   })
 })

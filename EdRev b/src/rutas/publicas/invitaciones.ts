@@ -5,10 +5,10 @@
  * The link is signed and valid while the invitation has not been answered. RF-22, RF-15, RF-24.
  */
 import { Router } from 'express'
-import { enTransaccion, pool } from '../db.js'
-import { ErrorHttp, siglaDe } from '../lib/http.js'
-import { leerRespuesta } from '../lib/respuestas.js'
-import { aplicarRespuesta, type EvaluacionParaResponder } from '../servicios/respuestas.js'
+import { enTransaccion, pool } from '../../db.js'
+import { ErrorHttp, siglaDe } from '../../lib/http.js'
+import { leerRespuesta } from '../../lib/respuestas.js'
+import { aplicarRespuesta, type EvaluacionParaResponder } from '../../servicios/respuestas.js'
 
 export const rutasInvitaciones = Router()
 

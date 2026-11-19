@@ -5,9 +5,9 @@
  * recent «enviado» one. Brevo is configured to call /api/webhooks/brevo?token=BREVO_WEBHOOK_TOKEN.
  */
 import { Router } from 'express'
-import { pool } from '../db.js'
-import { auditar } from '../lib/auditoria.js'
-import { ErrorHttp } from '../lib/http.js'
+import { pool } from '../../db.js'
+import { auditar } from '../../lib/auditoria.js'
+import { ErrorHttp } from '../../lib/http.js'
 
 export const rutasWebhooks = Router()
 
