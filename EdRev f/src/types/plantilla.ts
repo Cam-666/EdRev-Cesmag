@@ -36,8 +36,6 @@ export interface Plantilla {
   enUso: boolean
   /** Header, footer and signature images; only the file template (constancia) has them. */
   imagenes: ImagenesPlantilla | null
-  /** Footer image (signature) of a mail template; null for a file template. */
-  imagenPie: ImagenPlantilla | null
   /** Email a click on the signature opens in the PDF ('' for none); null for a mail template. */
   correoFirma: string | null
 }

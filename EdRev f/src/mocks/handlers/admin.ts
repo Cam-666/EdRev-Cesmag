@@ -205,7 +205,6 @@ export const handlersAdmin = [
           enUso: false,
           variables: [...VARIABLES[origen.fin]],
           imagenes: origen.imagenes ? { ...origen.imagenes } : null,
-          imagenPie: origen.imagenPie ? { ...origen.imagenPie } : null,
         }
       : {
       id,
@@ -219,7 +218,6 @@ export const handlersAdmin = [
       variables: [...VARIABLES[fin]],
       enUso: false,
       imagenes: clase === 'archivo' ? { encabezado: null, pie: null, firma: null } : null,
-      imagenPie: null,
       correoFirma: clase === 'archivo' ? '' : null,
     }
     plantillas().push(nueva)
@@ -278,18 +276,15 @@ export const handlersAdmin = [
     if (!plantilla) return error(404, 'Plantilla no encontrada')
     const parte = PARTES.find((x) => x === params.parte)
     if (!parte) return error(404, 'Parte de la plantilla no válida')
-    // A file template has header, footer and signature; a mail template only a footer.
-    if (!plantilla.imagenes && parte !== 'pie') {
-      return error(409, 'Solo la plantilla de archivo lleva encabezado y firma; la de correo lleva un pie')
-    }
+    // Only the file template (the constancia) has images; a mail template has none.
+    if (!plantilla.imagenes) return error(409, 'Solo la plantilla de archivo (la constancia) lleva imágenes')
     const archivo = (await request.formData()).get('archivo')
     if (archivo === null || typeof archivo === 'string') return error(422, 'Adjunte la imagen')
     const esImagen = /\.(png|jpe?g)$/i.test(archivo.name) || /^image\/(png|jpeg)$/.test(archivo.type)
     if (!esImagen) return error(422, 'La imagen debe ser PNG o JPG')
     if (archivo.size > MAX_IMAGEN) return error(422, 'La imagen no puede pasar de 2 MB')
     const imagen = { nombre: archivo.name, tamano: archivo.size }
-    if (plantilla.imagenes) plantilla.imagenes[parte] = imagen
-    else plantilla.imagenPie = imagen
+    plantilla.imagenes[parte] = imagen
     return HttpResponse.json(plantilla)
   }),
 
@@ -299,28 +294,22 @@ export const handlersAdmin = [
     const plantilla = plantillas().find((p) => p.id === params.id)
     if (!plantilla) return error(404, 'Plantilla no encontrada')
     const parte = PARTES.find((x) => x === params.parte)
-    if (!parte || (!plantilla.imagenes && parte !== 'pie')) {
-      return error(404, 'Parte de la plantilla no válida')
-    }
-    if (plantilla.imagenes) plantilla.imagenes[parte] = null
-    else plantilla.imagenPie = null
+    if (!parte || !plantilla.imagenes) return error(404, 'Parte de la plantilla no válida')
+    plantilla.imagenes[parte] = null
     return HttpResponse.json(plantilla)
   }),
 
   http.post('*/api/plantillas/vista-correo', async ({ request }) => {
     const c = contextoGlobal(request, 'administrar')
     if (!c.ok) return c.respuesta
-    const { cuerpo, uso, plantilla } = (await request.json()) as {
+    const { cuerpo, uso } = (await request.json()) as {
       cuerpo: string
       uso: 'invitacion' | 'agradecimiento'
-      plantilla?: string
     }
-    // The title says which mail it is, and the signature image of the template closes it.
+    // The title says which mail it is.
     const titulo = uso === 'agradecimiento' ? 'Gracias por su evaluación' : 'Invitación a evaluar un artículo'
-    const conFirma = plantillas().find((p) => p.id === plantilla)?.imagenPie
-    const firma = conFirma ? `<img alt="Firma" src="data:image/png;base64,AAAA">` : ''
     return HttpResponse.json({
-      html: `<!doctype html><html lang="es"><body><h1>Universidad CESMAG</h1><h2>${titulo}</h2><p>${cuerpo}</p><small>Aviso de datos personales</small>${firma}</body></html>`,
+      html: `<!doctype html><html lang="es"><body><h1>Universidad CESMAG</h1><h2>${titulo}</h2><p>${cuerpo}</p><small>Aviso de datos personales</small></body></html>`,
     })
   }),
 

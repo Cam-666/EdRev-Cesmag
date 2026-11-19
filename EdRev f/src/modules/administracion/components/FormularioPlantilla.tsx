@@ -3,15 +3,13 @@
  * live preview filled with sample data, and validation before saving: it may only use its own
  * markers and must keep the required ones. The text can have alignment and bold. The constancia
  * (a file template) has no subject; it carries a header, a footer and a signature image (RF-30).
- * A mail template also takes the signature image that closes the mail. It says what the
- * template is used for (chosen in Configuración) and a template that is not in use can be deleted.
- * Covers: RF-25, RF-30, RF-45.
+ * It says what the template is used for (chosen in Configuración) and a template that is not
+ * in use can be deleted. Covers: RF-25, RF-30, RF-45.
  */
 import { useState } from 'react'
 import { DATOS_EJEMPLO, ETIQUETA_USO, validarPlantilla } from '../config/plantillas'
 import { EditorTexto } from './EditorTexto'
 import { ImagenesConstancia } from './ImagenesConstancia'
-import { PieDeCorreo } from './PieDeCorreo'
 import { VistaPreviaConstancia } from './VistaPreviaConstancia'
 import { VistaPreviaCorreo } from './VistaPreviaCorreo'
 import { useEliminarPlantilla, useGuardarPlantilla } from '../hooks/useAdmin'
@@ -89,7 +87,6 @@ export function FormularioPlantilla({ plantilla, onEliminada }: FormularioPlanti
       />
 
       {plantilla.clase === 'archivo' && <ImagenesConstancia plantilla={plantilla} />}
-      {plantilla.clase === 'correo' && <PieDeCorreo plantilla={plantilla} />}
       {plantilla.clase === 'archivo' && (
         <CampoTexto
           etiqueta="Correo de la firma"
@@ -121,8 +118,6 @@ export function FormularioPlantilla({ plantilla, onEliminada }: FormularioPlanti
             revista={plantilla.revista}
             uso={plantilla.fin === 'agradecimiento' ? 'agradecimiento' : 'invitacion'}
             cuerpo={cuerpo}
-            plantilla={plantilla.id}
-            firma={`${plantilla.imagenPie?.nombre ?? ''}:${plantilla.imagenPie?.tamano ?? 0}`}
           />
         ) : (
           <VistaPreviaConstancia plantilla={plantilla} cuerpo={cuerpo} />

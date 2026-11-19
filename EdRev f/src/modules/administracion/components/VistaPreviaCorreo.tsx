@@ -1,7 +1,6 @@
 /*
  * VistaPreviaCorreo — the mail of a template as the peer receives it: the institutional header with
- * the shield, the text with sample data, the buttons, the contact block, the legal notices and, at
- * the very end, the signature image of the template. It
+ * the shield, the text with sample data, the buttons, the contact block and the legal notices. It
  * is built by the server from the text being edited (a moment after the last key), so what is seen
  * here is the mail itself and not a plain text. Covers: RF-25, RF-45, RNF-11.
  */
@@ -17,10 +16,6 @@ export interface VistaPreviaCorreoProps {
   uso: 'invitacion' | 'agradecimiento'
   /** The stored text being edited (with its markers). */
   cuerpo: string
-  /** The template, so its signature image closes the preview. */
-  plantilla: string
-  /** Changes when the signature image is uploaded or removed, to build the preview again. */
-  firma: string
 }
 
 /** The value after it has stopped changing for `ms`; avoids a request on every key. */
@@ -33,11 +28,11 @@ function useRetrasado<T>(valor: T, ms = 500): T {
   return retrasado
 }
 
-export function VistaPreviaCorreo({ revista, uso, cuerpo, plantilla, firma }: VistaPreviaCorreoProps) {
+export function VistaPreviaCorreo({ revista, uso, cuerpo }: VistaPreviaCorreoProps) {
   const texto = useRetrasado(cuerpo)
   const consulta = useQuery({
-    queryKey: ['admin', 'vista-correo', revista, uso, plantilla, firma, texto],
-    queryFn: () => vistaCorreoPlantilla({ revista, uso, cuerpo: texto, plantilla }),
+    queryKey: ['admin', 'vista-correo', revista, uso, texto],
+    queryFn: () => vistaCorreoPlantilla({ revista, uso, cuerpo: texto }),
     placeholderData: (anterior) => anterior,
   })
   return (

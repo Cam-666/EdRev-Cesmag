@@ -100,12 +100,10 @@ describe('plantillas de archivo (constancia)', () => {
     const quitada = await api.delete(`/plantillas/${id}/imagen/firma`)
     expect(quitada.body.imagenes.firma).toBeNull()
     const correo = (await api.get('/plantillas')).body.plantillas.find((p: { clase: string }) => p.clase === 'correo')
-    // A mail template carries only a footer (the signature below the text), not a header or a signature image
-    expect((await api.subir(`/plantillas/${correo.id}/imagen/encabezado`, PNG, 'a.png')).status).toBe(409)
-    expect((await api.subir(`/plantillas/${correo.id}/imagen/firma`, PNG, 'a.png')).status).toBe(409)
-    const conPie = await api.subir(`/plantillas/${correo.id}/imagen/pie`, PNG, 'firma.png')
-    expect(conPie.status).toBe(200)
-    expect(conPie.body).toMatchObject({ imagenPie: { nombre: 'Pie del correo' }, imagenes: null })
+    // A mail template carries no images at all
+    for (const parte of ['encabezado', 'pie', 'firma']) {
+      expect((await api.subir(`/plantillas/${correo.id}/imagen/${parte}`, PNG, 'a.png')).status).toBe(409)
+    }
   })
 
   it('la vista previa es un PDF y el texto acepta los marcadores de la constancia', async () => {

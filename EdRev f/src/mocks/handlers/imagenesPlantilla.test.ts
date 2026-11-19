@@ -21,11 +21,10 @@ describe('images of the file template (mock, RF-45)', () => {
     expect((await json<Plantilla>(ok)).imagenes?.pie).toMatchObject({ nombre: 'pie-2027.png' })
     expect((await subir('ire-constancia', 'pie', 'pie.pdf', 'application/pdf')).status).toBe(422)
     expect((await subir('ire-constancia', 'lateral', 'a.png', 'image/png')).status).toBe(404)
-    // A mail template carries only a footer (the signature below the text)
-    expect((await subir('ire-invitacion', 'firma', 'firma.png', 'image/png')).status).toBe(409)
-    const correo = await subir('ire-invitacion', 'pie', 'pie.png', 'image/png')
-    expect(correo.status).toBe(200)
-    expect((await json<Plantilla>(correo)).imagenPie).toMatchObject({ nombre: 'pie.png' })
+    // A mail template carries no images at all
+    for (const parte of ['encabezado', 'pie', 'firma']) {
+      expect((await subir('ire-invitacion', parte, 'a.png', 'image/png')).status).toBe(409)
+    }
 
     const quitada = await llamar('/plantillas/ire-constancia/imagen/firma', { metodo: 'DELETE' })
     expect((await json<Plantilla>(quitada)).imagenes?.firma).toBeNull()

@@ -2,14 +2,13 @@
  * Pruebas de los ajustes de noviembre: agregar autores a un artículo (RF-09, RF-10), pares que ya
  * están en el sistema (RF-12, RF-15), el concepto antes de la constancia (RF-20, RF-30), las
  * universidades sin duplicados por mayúsculas (RF-14), la respuesta del par en el correo (RF-26)
- * el pie de las plantillas de correo (RF-45), los pares asignados que de verdad aceptaron y el
+ * las imágenes de las plantillas (RF-45), los pares asignados que de verdad aceptaron y el
  * resultado del artículo según los conceptos de los pares (RF-20, RF-21).
  */
 import request from 'supertest'
 import { describe, expect, it } from 'vitest'
 import { app, articuloAprobado, candidato, como } from './api.js'
 import { fechaLocal } from '../src/lib/fechas.js'
-import { enlaceImagenPie } from '../src/lib/imagenCorreo.js'
 
 const hoy = () => fechaLocal()
 const unico = () => `${Date.now()}${Math.floor(Math.random() * 1000)}`
@@ -210,20 +209,16 @@ describe('el correo de invitación muestra la respuesta del par', () => {
   })
 })
 
-describe('el pie de las plantillas de correo', () => {
-  it('la imagen del pie se sirve en una dirección firmada y no se entrega con una firma falsa', async () => {
+describe('las plantillas de correo no llevan imágenes', () => {
+  it('ni se suben ni se sirven en una dirección pública', async () => {
     const api = await como()
-    const creada = await api.post('/plantillas', { revista: 'reep', nombre: `Con pie ${unico()}`, clase: 'correo' })
-    const subida = await api.subir(`/plantillas/${creada.body.id}/imagen/pie`, PNG, 'firma.png')
-    expect(subida.status).toBe(200)
-    const enlace = new URL(enlaceImagenPie(Number(creada.body.id)))
-    const ok = await request(app).get(`${enlace.pathname}${enlace.search}`)
-    expect(ok.status).toBe(200)
-    expect(ok.headers['content-type']).toContain('image/png')
-    const falsa = await request(app).get(`${enlace.pathname}?f=000000000000000000000000`)
-    expect(falsa.status).toBe(404)
-    await api.delete(`/plantillas/${creada.body.id}/imagen/pie`)
-    expect((await request(app).get(`${enlace.pathname}${enlace.search}`)).status).toBe(404)
+    const creada = await api.post('/plantillas', { revista: 'reep', nombre: `Sin imagen ${unico()}`, clase: 'correo' })
+    for (const parte of ['encabezado', 'pie', 'firma']) {
+      expect((await api.subir(`/plantillas/${creada.body.id}/imagen/${parte}`, PNG, 'firma.png')).status).toBe(409)
+    }
+    expect(creada.body).not.toHaveProperty('imagenPie')
+    expect((await request(app).get(`/api/imagenes/plantillas/${creada.body.id}/pie?f=abc`)).status).not.toBe(200)
+    await api.delete(`/plantillas/${creada.body.id}`)
   })
 })
 

@@ -102,8 +102,6 @@ export function vistaCorreoPlantilla(datos: {
   revista: Revista
   uso: 'invitacion' | 'agradecimiento'
   cuerpo: string
-  /** The template whose signature image closes the mail. */
-  plantilla?: string
 }): Promise<{ html: string }> {
   return solicitar<{ html: string }>('/plantillas/vista-correo', { method: 'POST', ...json(datos) })
 }

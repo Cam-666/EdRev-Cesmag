@@ -10,7 +10,6 @@ import { enTransaccion, pool } from '../../db.js'
 import { ErrorHttp, siglaDe } from '../../lib/http.js'
 import { aHtml } from '../../lib/formato.js'
 import { escudoEmbebido, marcoInstitucional } from '../../lib/marcoCorreo.js'
-import { firmaHtml } from '../../lib/imagenCorreo.js'
 import { botonesHtml, MARCA_BOTONES } from '../../lib/respuestas.js'
 import { vistaPrevia } from '../constanciaPdf.js'
 
@@ -70,8 +69,6 @@ function plantillaApi(p: FilaPlantilla) {
     variables: variablesDe(p),
     enUso: p.tipo !== null,
     correoFirma: p.clase === 'archivo' ? (p.correo_firma ?? '') : null,
-    // The footer image of a mail template (the signature that goes below the text).
-    imagenPie: p.clase === 'correo' ? imagen('Pie del correo', p.t_pie) : null,
     imagenes:
       p.clase === 'archivo'
         ? {
@@ -208,12 +205,10 @@ export function parteDe(valor: unknown): Parte {
   return parte
 }
 
-/** The header, the footer or the signature of a constancia, or the footer of a mail: a PNG or JPG image. */
+/** The header, the footer or the signature of a constancia: a PNG or JPG image. */
 export async function subirImagen(id: number, parte: Parte, imagen: Buffer | undefined) {
   const p = await cargar(id)
-  if (p.clase !== 'archivo' && parte !== 'pie') {
-    throw new ErrorHttp(409, 'Solo la plantilla de archivo lleva encabezado y firma; la de correo lleva un pie')
-  }
+  if (p.clase !== 'archivo') throw new ErrorHttp(409, 'Solo la plantilla de archivo (la constancia) lleva imágenes')
   if (!imagen) throw new ErrorHttp(422, 'Adjunte la imagen')
   const png = imagen.length > 8 && imagen[0] === 0x89 && imagen[1] === 0x50 && imagen[2] === 0x4e && imagen[3] === 0x47
   const jpg = imagen.length > 3 && imagen[0] === 0xff && imagen[1] === 0xd8
@@ -228,25 +223,11 @@ export async function quitarImagen(id: number, parte: Parte) {
   return plantillaApi(await cargar(p.id_plantilla))
 }
 
-/** The signature image of a mail template as a data address (for the previews, no network needed). */
-async function firmaEmbebida(id: number): Promise<string | null> {
-  const { rows } = await pool.query<{ pie: Buffer | null }>(
-    "SELECT pie FROM plantilla WHERE id_plantilla = $1 AND clase = 'correo'",
-    [id],
-  )
-  const pie = rows[0]?.pie
-  if (!pie) return null
-  const png = pie[0] === 0x89 && pie[1] === 0x50
-  return firmaHtml(`data:image/${png ? 'png' : 'jpeg'};base64,${pie.toString('base64')}`)
-}
-
 /** The complete mail (institutional frame included) with sample data, for the text being edited. */
 export async function vistaCorreo(d: {
   revista: 'reep' | 'ire'
   uso: 'invitacion' | 'agradecimiento'
   cuerpo: string
-  /** The template whose signature image closes the mail (the stored one, as a data address). */
-  plantilla?: number
 }) {
   const { rows } = await pool.query<{ nombre: string; correo_remitente: string }>(
     'SELECT nombre, correo_remitente FROM revista WHERE id_revista = $1',
@@ -263,7 +244,6 @@ export async function vistaCorreo(d: {
     articulo: 'Alfabetización mediática en la formación de maestros',
     botones: MARCA_BOTONES,
   }
-  const firma = d.plantilla === undefined ? null : await firmaEmbebida(d.plantilla)
   const texto = d.cuerpo.replace(/\{\{(\w+)\}\}/g, (m, k: string) => ejemplo[k] ?? m)
   const botones = d.uso === 'invitacion' ? botonesHtml(0, true) : ''
   return {
@@ -272,7 +252,6 @@ export async function vistaCorreo(d: {
       revista: revista.nombre,
       contacto: revista.correo_remitente,
       contenido: aHtml(texto, { marca: MARCA_BOTONES, html: botones }),
-      firma: firma ?? undefined,
       escudo: escudoEmbebido(),
     }),
   }

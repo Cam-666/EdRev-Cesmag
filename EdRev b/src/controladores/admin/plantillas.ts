@@ -67,12 +67,7 @@ export async function quitarImagen(req: Request, res: Response): Promise<void> {
 
 export async function vistaCorreo(req: Request, res: Response): Promise<void> {
   const datos = z
-    .object({
-      revista,
-      uso: z.enum(['invitacion', 'agradecimiento']),
-      cuerpo: z.string(),
-      plantilla: z.coerce.number().int().positive().optional(),
-    })
+    .object({ revista, uso: z.enum(['invitacion', 'agradecimiento']), cuerpo: z.string() })
     .parse(req.body)
   res.json(await plantillas.vistaCorreo(datos))
 }
