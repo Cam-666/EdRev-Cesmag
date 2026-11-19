@@ -22,8 +22,9 @@ interface ArticuloEnComite {
 const EN_COMITE: readonly EstadoArticulo[] = ['postulado', 'en-revision']
 
 /**
- * The result of a round of the initial committee review, decided by the system (RF-06):
- * matches above the limit → Rechazado (not publishable); within the limit and no observations →
+ * The result the system proposes for a round of the initial committee review (RF-06):
+ * matches above the limit → Rechazado (not publishable, but the article stays in review and the
+ * committee may approve the round anyway); within the limit and no observations →
  * Aprobado (publishable); within the limit with observations → Requiere ajustes (publishable with
  * observations: the author corrects and another round is registered). The AI percentage never
  * decides.

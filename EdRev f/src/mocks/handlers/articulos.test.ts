@@ -164,17 +164,21 @@ describe('articles API (mock)', () => {
     expect(tercera.rondasComite[0]?.usuario).toBe('Andrea Villota')
   })
 
-  it('a rejected round leaves the article Rechazado, with no more rounds', async () => {
-    const r = await llamar('/reep/articulos/2026-032/rondas', {
+  it('a round above the limit is not publishable but the article stays in review; the committee may approve it', async () => {
+    const alta = await llamar('/reep/articulos/2026-032/rondas', {
       metodo: 'POST',
       cuerpo: { coincidencias: 40, atribuidoIa: 10, observacion: 'x' },
     })
-    expect(((await r.json()) as ArticuloDetalle).estado).toBe('rechazado')
-    const otra = await llamar('/reep/articulos/2026-032/rondas', {
+    const tras = (await alta.json()) as ArticuloDetalle
+    expect(tras.estado).toBe('en-revision')
+    expect(tras.rondasComite.at(-1)?.resultado).toBe('rechazado')
+    const aprobada = await llamar('/reep/articulos/2026-032/rondas', {
       metodo: 'POST',
-      cuerpo: { coincidencias: 5, atribuidoIa: 10, observacion: '' },
+      cuerpo: { coincidencias: 40, atribuidoIa: 10, observacion: 'Continúa el proceso', aprobar: true },
     })
-    expect(otra.status).toBe(409)
+    const final = (await aprobada.json()) as ArticuloDetalle
+    expect(final.rondasComite.at(-1)?.resultado).toBe('aprobado')
+    expect(final.estado).toBe('en-revision')
   })
 
   it('moves an article in committee review to the other journal, as many times as needed', async () => {

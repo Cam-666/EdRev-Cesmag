@@ -295,8 +295,9 @@ export const handlersArticulos = [
     if (ronda.coincidencias === null) {
       return error(422, 'Registre el porcentaje de coincidencias del reporte antiplagio')
     }
-    // The result is decided by the system, not chosen (RF-06).
-    const resultado = resultadoDeRonda(ronda.coincidencias, ronda.observacion, UMBRAL_COINCIDENCIAS)
+    // The system proposes the result (RF-06); the committee may approve the round anyway.
+    const propuesto = resultadoDeRonda(ronda.coincidencias, ronda.observacion, UMBRAL_COINCIDENCIAS)
+    const resultado = ronda.aprobar ? 'aprobado' : propuesto
 
     articulo.coincidencias = ronda.coincidencias
     articulo.atribuidoIa = ronda.atribuidoIa
@@ -309,14 +310,16 @@ export const handlersArticulos = [
       fecha: ahoraIso(),
       usuario: c.usuario.nombre,
     })
-    // Rechazado closes the article without peers; otherwise it stays in review until a peer accepts.
-    articulo.estado = resultado === 'rechazado' ? 'rechazado' : 'en-revision'
+    // A round «no publicable» does not close the process: the article stays in review.
+    articulo.estado = 'en-revision'
     auditar(
       c.base,
       c.revista,
       articulo.id,
       'revision',
-      `Registró la ronda ${numero} de la revisión del comité: ${ETIQUETA_RONDA[resultado]}`,
+      ronda.aprobar && propuesto !== 'aprobado'
+        ? `Registró la ronda ${numero} de la revisión del comité: ${ETIQUETA_RONDA[resultado]} por decisión del comité`
+        : `Registró la ronda ${numero} de la revisión del comité: ${ETIQUETA_RONDA[resultado]}`,
       c.usuario.nombre,
     )
     return HttpResponse.json(detalle(c.base, articulo), { status: 201 })

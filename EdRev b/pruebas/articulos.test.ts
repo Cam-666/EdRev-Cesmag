@@ -32,19 +32,36 @@ describe('artículos (RF-01 a RF-08, RF-35, RF-36)', () => {
     expect((await api.get(`/ire/articulos/${body.id}`)).status).toBe(200)
   })
 
-  it('el resultado de la ronda lo decide el sistema: sin límite de rondas; sobre el umbral rechaza', async () => {
+  it('sobre el umbral la ronda es no publicable pero el proceso sigue: otra ronda, y la profesora puede aprobar', async () => {
     const { body } = await registrar()
     const api = await como(AUXILIAR)
-    const ronda = (coincidencias: number, observacion: string) =>
-      api.post(`/reep/articulos/${body.id}/rondas`, { coincidencias, atribuidoIa: 3, observacion })
+    const ronda = (coincidencias: number, observacion: string, aprobar?: boolean) =>
+      api.post(`/reep/articulos/${body.id}/rondas`, { coincidencias, atribuidoIa: 3, observacion, aprobar })
     // dentro del límite y con observaciones: publicable con observaciones (requiere ajustes)
-    expect((await ronda(10, 'Corregir la introducción')).status).toBe(201)
-    expect((await ronda(12, 'Falta la bibliografía')).status).toBe(201)
-    // sobre el límite: no publicable, el artículo queda rechazado
-    const tercera = await ronda(18, '')
-    expect(tercera.body.estado).toBe('rechazado')
-    expect(tercera.body.rondasComite.map((r: { resultado: string }) => r.resultado)).toEqual(['ajustes', 'ajustes', 'rechazado'])
-    expect((await ronda(5, '')).status).toBe(409)
+    expect((await ronda(10, 'Corregir la introducción')).body.rondasComite.at(-1).resultado).toBe('ajustes')
+    // sobre el límite: no publicable, pero el artículo NO se rechaza ni se cierra
+    const alta = await ronda(70, 'Demasiadas coincidencias')
+    expect(alta.status).toBe(201)
+    expect(alta.body.rondasComite.at(-1).resultado).toBe('rechazado')
+    expect(alta.body.estado).toBe('en-revision')
+    // no se pueden asignar pares mientras la ronda más reciente no esté aprobada
+    const sinAprobar = await api.post(`/reep/articulos/${body.id}/asignaciones`, {
+      nuevo: { nombre: `Par ${Date.now()}`, correo: `par${Date.now()}@x.co`, universidad: 'Otra', area: 'A' },
+    })
+    expect(sinAprobar.status).toBe(409)
+    // otra ronda con el porcentaje todavía alto
+    expect((await ronda(40, '')).body.rondasComite.at(-1).resultado).toBe('rechazado')
+    // la profesora la aprueba aunque pase del límite: queda en el historial
+    const aprobada = await ronda(40, 'El comité continúa el proceso', true)
+    expect(aprobada.body.rondasComite.at(-1).resultado).toBe('aprobado')
+    expect(aprobada.body.estado).toBe('en-revision')
+    const historial = (await api.get(`/reep/articulos/${body.id}/historial`)).body.auditoria as Array<{ accion: string }>
+    expect(historial.some((h) => h.accion.includes('por decisión del comité'))).toBe(true)
+    // ahora sí se asignan pares
+    const asignado = await api.post(`/reep/articulos/${body.id}/asignaciones`, {
+      nuevo: { nombre: `Par ${Date.now()}`, correo: `par${Date.now()}@x.co`, universidad: 'Otra', area: 'A' },
+    })
+    expect(asignado.status).toBe(201)
   })
 
   it('dentro del límite y sin observaciones el artículo queda aprobado; el porcentaje es obligatorio', async () => {

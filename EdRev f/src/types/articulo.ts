@@ -125,6 +125,8 @@ export interface EdicionArticulo {
 export interface NuevaRonda {
   coincidencias: number | null
   atribuidoIa: number | null
-  /** The result is not sent: the system decides it from the percentages and the observations. */
+  /** The result is not sent: the system proposes it from the percentages and the observations. */
   observacion: string
+  /** The committee approves the round although the report would not (it stays in the history). */
+  aprobar?: boolean
 }

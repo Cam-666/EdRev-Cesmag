@@ -1,6 +1,9 @@
 /*
  * rondasComite (servicio) — a round of the initial committee review with the anti-plagiarism report
- * (RF-05, RF-06). The result is not chosen: it follows from the report and the observations.
+ * (RF-05, RF-06). The system proposes the result from the report and the observations: above the limit
+ * the round is «no publicable» but the process is NOT closed, the article stays in review and another
+ * round is registered when the author corrects. The committee may approve a round that is not
+ * publishable (it knows how to go on with high percentages); that is kept in the history.
  */
 import { config } from '../config.js'
 import { enTransaccion } from '../db.js'
@@ -26,10 +29,14 @@ export interface DatosRonda {
   coincidencias: number
   atribuidoIa: number | null
   observacion: string
+  /** The committee approves the round although the report does not (above the limit or with observations). */
+  aprobar?: boolean
 }
 
 export async function registrarRonda(revista: number, idArticulo: number, datos: DatosRonda, actor: number): Promise<void> {
-  const resultado = resultadoDeRonda(datos.coincidencias, datos.observacion)
+  const propuesto = resultadoDeRonda(datos.coincidencias, datos.observacion)
+  const resultado: ResultadoRonda = datos.aprobar ? 'aprobado' : propuesto
+  const conExcepcion = datos.aprobar && propuesto !== 'aprobado'
   await enTransaccion(async (c) => {
     const a = await articuloDeRevista(c, revista, idArticulo)
     const pares = await c.query('SELECT 1 FROM evaluacion WHERE id_articulo = $1 LIMIT 1', [idArticulo])
@@ -37,10 +44,11 @@ export async function registrarRonda(revista: number, idArticulo: number, datos:
     if (!['postulado', 'en-revision'].includes(a.estado) || (pares.rows.length > 0 && a.estado !== 'postulado')) {
       throw new ErrorHttp(409, 'La revisión del comité ya terminó para este artículo')
     }
+    // The article stays in review whatever the result: a round «no publicable» does not close the process.
     await c.query(
-      `UPDATE articulo SET porcentaje_coincidencias = $1, porcentaje_ia = $2, estado = $3
-        WHERE id_articulo = $4`,
-      [datos.coincidencias, datos.atribuidoIa, resultado === 'rechazado' ? 'rechazado' : 'en-revision', idArticulo],
+      `UPDATE articulo SET porcentaje_coincidencias = $1, porcentaje_ia = $2, estado = 'en-revision'
+        WHERE id_articulo = $3`,
+      [datos.coincidencias, datos.atribuidoIa, idArticulo],
     )
     await c.query(
       `INSERT INTO revision_inicial_comite (id_articulo, id_usuario, resultado, observacion)
@@ -52,7 +60,9 @@ export async function registrarRonda(revista: number, idArticulo: number, datos:
       tabla: 'articulo',
       idRegistro: idArticulo,
       accion: 'revision',
-      texto: `Registró una ronda de la revisión del comité: ${ETIQUETA_RONDA[resultado]}`,
+      texto: conExcepcion
+        ? `Registró una ronda de la revisión del comité: ${ETIQUETA_RONDA[resultado]} por decisión del comité, con ${datos.coincidencias} % de coincidencias (el reporte indicaba: ${ETIQUETA_RONDA[propuesto]})`
+        : `Registró una ronda de la revisión del comité: ${ETIQUETA_RONDA[resultado]}`,
       revista,
       articulo: idArticulo,
     })

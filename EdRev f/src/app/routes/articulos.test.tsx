@@ -390,8 +390,8 @@ describe('committee review (/comite)', () => {
     expect(router.state.location.search).toBe('?asignar=1')
   })
 
-  it('a rejected round leaves the article Rechazado and closes the review', async () => {
-    const { user } = montarRuta('/reep/articulos/2026-026/comite')
+  it('a round above the limit is not publishable but the process goes on; the committee can approve it', async () => {
+    const { user, router } = montarRuta('/reep/articulos/2026-026/comite')
     await user.click(await screen.findByRole('button', { name: 'Registrar ronda' }))
     const coincidencias = await screen.findByLabelText('Coincidencias (%)')
     await user.clear(coincidencias)
@@ -400,13 +400,20 @@ describe('committee review (/comite)', () => {
     await user.clear(ia)
     await user.type(ia, '1')
     await user.click(screen.getByRole('button', { name: 'Guardar ronda' }))
-    expect(
-      await screen.findByText(/El artículo quedó Rechazado y no recibirá pares/),
-    ).toBeInTheDocument()
-    await waitFor(() =>
-      expect(screen.queryByRole('button', { name: 'Registrar ronda' })).toBeNull(),
-    )
-    expect(screen.getAllByText('Rechazado').length).toBeGreaterThan(0)
+    expect(await screen.findByText(/Ronda registrada: no publicable/)).toBeInTheDocument()
+    expect(screen.getByText(/El artículo sigue en revisión/)).toBeInTheDocument()
+    // the process is not closed: another round can be registered
+    expect(await screen.findByRole('button', { name: 'Registrar ronda' })).toBeInTheDocument()
+
+    // the committee approves a round although the report does not: it goes on to the peers
+    await user.click(screen.getByRole('button', { name: 'Registrar ronda' }))
+    const otra = await screen.findByLabelText('Coincidencias (%)')
+    await user.clear(otra)
+    await user.type(otra, '70')
+    await user.click(await screen.findByRole('checkbox', { name: 'Aprobar esta ronda por decisión del comité' }))
+    expect(await screen.findByText('Resultado: aprobado por decisión del comité')).toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: 'Guardar ronda' }))
+    await waitFor(() => expect(router.state.location.search).toBe('?asignar=1'))
   })
 
   it('shows every round, most recent first; no new rounds once the article has peers, but it can still change journal', async () => {
