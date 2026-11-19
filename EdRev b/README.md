@@ -3,13 +3,20 @@
 API de EdRev Cesmag en **Node 24 + TypeScript + Express 5 + PostgreSQL**. Responde con el mismo contrato que la
 API simulada (MSW) del frontend: basta con apagar los mocks para que el frontend la use.
 
-La base de datos es la del **Modelo de datos v3.8** (anexo A, probado en PostgreSQL 16): 11 tablas, 2 disparadores,
-3 vistas. Única extensión: `par_evaluador.profesion` (la invitación nombra al par «con su profesión», RF-25).
+La base de datos es la del **Modelo de datos** (anexo A, probado en PostgreSQL 18): 13 tablas y 3 vistas. Extensiones
+sobre la v3.8, que recoge `Cambios_para_Modelo_de_datos_v3.9.md`: `par_evaluador.profesion`, la base de pares común a las
+dos revistas, las plantillas por uso con sus imágenes, `revista.issn` e `indexaciones`, y las tablas `configuracion` y
+`por_corregir`.
 
 ## Puesta en marcha (local, con pgAdmin)
 
-1. **Contraseña de PostgreSQL.** Abra `EdRev b/.env` y reemplace `CLAVE` (en `DATABASE_URL` y `DATABASE_ADMIN_URL`)
-   por la contraseña del usuario `postgres` que definió al instalar PostgreSQL.
+1. **Contraseña de PostgreSQL y secreto de la sesión.** Copie `.env.example` a `.env`. Reemplace `CLAVE` (en
+   `DATABASE_URL` y `DATABASE_ADMIN_URL`) por la contraseña del usuario `postgres` y ponga en `JWT_SECRET` una cadena
+   aleatoria de 32 caracteres o más (el servidor no arranca con una más corta ni con el texto de ejemplo). Genere una con:
+
+   ```bash
+   node -e "console.log(require('crypto').randomBytes(48).toString('hex'))"
+   ```
 2. **Crear la base y sus tablas** (desde la carpeta `EdRev b`):
 
    ```bash
@@ -40,20 +47,20 @@ Cuentas iniciales (contraseña `Editorial2026*`, cámbiela antes de la puesta en
 | Acceso: ingreso, intentos y bloqueo de 15 min, sesión con JWT | Listo |
 | Artículos: listado y filtros, ficha, registro con autores, edición, rondas del comité, cambio de revista, cierre y reapertura, historial | Listo |
 | Autores: directorio común, ficha y artículos, registro y edición | Listo |
-| Pares: base por revista, filtros, ficha, registro, correo en la otra revista, bloqueo y desbloqueo | Listo |
-| Asignación: par disponible o candidato nuevo, máximo tres aceptados, desempate, respuesta, entrega, concepto | Listo |
+| Pares: base común a las dos revistas, filtros, ficha, registro (avisa si ya existe), bloqueo y desbloqueo | Listo |
+| Asignación: par disponible o candidato nuevo, dos pares y un tercero de desempate, respuesta, entrega con concepto y fecha, resultado del artículo según los conceptos | Listo |
 | Tablero e Inicio | Listo |
 | Constancias: pendientes y emitidas, vista previa con la plantilla en uso, emitir una o todas, reenviar | Listo |
 | Correos enviados: registro con tipos derivados (2.º intento, reenvío por corrección), contadores, reintentar, corregir y reenviar | Listo |
-| Administración: usuarios (con enlace para definir la contraseña), plantillas por revista con PDF de fondo, auditoría | Listo |
+| Administración: usuarios (con enlace para definir la contraseña), plantillas por uso con vista previa del correo y del PDF, configuración, auditoría | Listo |
 | Enlaces de contraseña (cuenta nueva y recuperación): 30 minutos, un solo uso | Listo |
-| Informe de gestión por revista y semestre | Listo |
+| Informe de gestión por revista y semestre, como datos, CSV y documento PDF con gráficas | Listo |
 | Envío de correos en segundo plano (Brevo o simulado) con la constancia en PDF adjunta | Listo |
 | Segundo intento automático y bloqueo «Sin respuesta» tras los días de espera (RF-29) | Listo |
 | Descarga de la constancia en PDF (`/:revista/constancias/:id/pdf`) | Listo |
 | Rebotes reales: webhook de Brevo `/api/webhooks/brevo?token=BREVO_WEBHOOK_TOKEN` | Listo |
-| Seguridad: cabeceras (helmet) y límite de peticiones en `/api/auth` | Listo |
-| Registros migrados por corregir | Responde vacío hasta que se haga la migración del Excel |
+| Seguridad: cabeceras (helmet), límite de peticiones, JWT HS256 con secreto fuerte | Listo |
+| Registros migrados por corregir | Listo (queda vacío hasta que se haga la migración del Excel) |
 
 ## Correos
 
@@ -61,11 +68,31 @@ Cuentas iniciales (contraseña `Editorial2026*`, cámbiela antes de la puesta en
 
 - `simulado` (para demostrar): los correos se marcan «Enviado» a los pocos segundos y se escriben en la consola.
 - `brevo`: envío real. Ponga la clave en `BREVO_API_KEY` y verifique en Brevo los remitentes de cada revista
-  (`revista.correo_remitente`). La constancia va adjunta en PDF, escrita sobre el PDF de fondo de la revista.
+  (`revista.correo_remitente`). La constancia va adjunta en PDF, con el encabezado, el pie y la firma de su plantilla.
 - `apagado`: quedan «En cola».
 
 Mientras no haya correo real, `ENLACE_DEMO=true` hace que la API devuelva el enlace de contraseña para abrirlo en
 la demostración (botón «Demostración: abrir el enlace»). En producción ponga `ENLACE_DEMO=false`.
+
+Todos los correos llevan el marco institucional de la Universidad CESMAG (encabezado con el escudo, franja con la
+dependencia, contacto y avisos legales; ver `src/lib/marcoCorreo.ts`). El escudo sale de `LOGO_CORREO_URL` (por defecto,
+el que la universidad publica en su sitio). La firma como imagen de una plantilla solo se muestra cuando `API_PUBLICA_URL`
+es una dirección `https` alcanzable desde Internet; en local, escriba la firma como texto en la plantilla.
+
+## Arquitectura
+
+```
+src/
+  app.ts            el orden dice qué es público y qué privado
+  middlewares/      autenticacion (JWT: firma, expiración, usuario activo) y errores
+  rutas/publicas/   acceso, invitaciones (respuesta del par desde el correo), imágenes y webhooks
+  rutas/privadas/   todo lo demás, detrás de la sesión; solo declaran dirección y permiso
+  controladores/    validan la petición (zod) y responden
+  servicios/        reglas de negocio y SQL, sin req ni res
+  lib/              utilidades (errores HTTP, fechas, formato, auditoría)
+```
+
+Una ruta nueva sigue el mismo camino: ruta → controlador → servicio. Las pruebas (`pruebas/`) llaman a la API completa.
 
 ## Demostrar el segundo intento
 
@@ -77,7 +104,7 @@ Los días de espera (5 al inicio) se cambian en **Administración › Configurac
 npm test
 ```
 
-Corren contra una base aparte, `edrev_prueba`, que se borra y se vuelve a crear en cada corrida (necesita `DATABASE_ADMIN_URL` en `.env`). La base `edrev` no se toca. Cubren el acceso, los artículos y el comité, la asignación de pares, las constancias y los correos, las plantillas, la auditoría y los informes.
+Corren contra una base aparte, `edrev_prueba`, que se borra y se vuelve a crear en cada corrida (necesita `DATABASE_ADMIN_URL` en `.env`). La base `edrev` no se toca. Cubren el acceso y la validación del JWT, las rutas públicas y privadas, los artículos y el comité, la asignación de pares y el resultado según sus conceptos, las constancias, los correos y su marco institucional, las plantillas, la auditoría y los informes en PDF.
 
 ## Migración del Excel (RF-42 a RF-44)
 
@@ -116,5 +143,6 @@ docker compose up --build
 
 Frontend en `http://localhost:8080`, API en `http://localhost:3000/api`, PostgreSQL en el puerto `5433` (para no
 chocar con el local). La primera vez la base se crea sola con `db/01_esquema.sql` y `db/02_datos_iniciales.sql`.
-Claves por variables: `DB_PASSWORD`, `JWT_SECRET`, `CORREO_MODO`, `BREVO_API_KEY`, `ENLACE_DEMO` (en un `.env` junto
-al compose). Requiere Docker Desktop instalado.
+Claves por variables: `DB_PASSWORD`, `JWT_SECRET` (**obligatoria**: cadena aleatoria de 32 caracteres o más; sin ella
+el compose no arranca), `CORREO_MODO`, `BREVO_API_KEY`, `ENLACE_DEMO`, `FRONTEND_URL`, `API_PUBLICA_URL` y
+`ZONA_HORARIA` (en un `.env` junto al compose). Requiere Docker Desktop instalado.

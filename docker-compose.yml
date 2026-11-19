@@ -26,8 +26,12 @@ services:
     environment:
       PORT: 3000
       DATABASE_URL: postgres://edrev:${DB_PASSWORD:-cambie-esta-clave}@db:5432/edrev
-      JWT_SECRET: ${JWT_SECRET:-cambie-este-secreto}
+      # Cadena aleatoria de 32+ caracteres; el servidor no arranca con una más corta ni con un texto de ejemplo.
+      JWT_SECRET: ${JWT_SECRET:?Defina JWT_SECRET con una cadena aleatoria de 32 o más caracteres}
       CORS_ORIGIN: http://localhost:8080
+      FRONTEND_URL: ${FRONTEND_URL:-http://localhost:8080}
+      API_PUBLICA_URL: ${API_PUBLICA_URL:-http://localhost:3000}
+      ZONA_HORARIA: ${ZONA_HORARIA:-America/Bogota}
       CORREO_MODO: ${CORREO_MODO:-simulado}
       BREVO_API_KEY: ${BREVO_API_KEY:-}
       ENLACE_DEMO: ${ENLACE_DEMO:-true}

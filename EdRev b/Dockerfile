@@ -13,5 +13,7 @@ ENV NODE_ENV=production
 COPY package*.json ./
 RUN npm ci --omit=dev
 COPY --from=build /app/dist ./dist
+# El escudo de la universidad (encabezado de los correos y del informe en PDF)
+COPY assets ./assets
 EXPOSE 3000
 CMD ["node", "dist/server.js"]
