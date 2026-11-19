@@ -171,41 +171,43 @@ describe('ISSN e indexaciones de cada revista (Configuración)', () => {
 })
 
 describe('crear una plantilla eligiendo para qué sirve', () => {
-  it('nace como copia de la que está en uso y aparece para elegirla en Configuración', async () => {
+  it('nace en blanco, aunque ya haya una en uso, y no hereda su texto ni sus imágenes', async () => {
     const api = await como()
     const enUso = (await api.get('/plantillas')).body.plantillas.find(
       (p: { revista: string; uso: string | null }) => p.revista === 'reep' && p.uso === 'invitacion',
     )
+    expect(enUso.cuerpo).not.toBe('')
     const nombre = `Invitación de prueba ${Date.now()}`
     const r = await api.post('/plantillas', { revista: 'reep', nombre, uso: 'invitacion' })
     expect(r.status).toBe(201)
-    expect(r.body).toMatchObject({ clase: 'correo', uso: null, cuerpo: enUso.cuerpo, asunto: enUso.asunto })
-    // sigue sin uso hasta que se elija, y se puede elegir (tiene texto)
+    expect(r.body).toMatchObject({ clase: 'correo', fin: 'invitacion', uso: null, cuerpo: '', asunto: '' })
+    // en blanco no se puede elegir; con texto sí, y entonces la anterior queda libre
+    expect((await api.post(`/plantillas/${r.body.id}/asignar`, { uso: 'invitacion' })).status).toBe(422)
+    expect((await api.put(`/plantillas/${r.body.id}`, { asunto: 'Asunto', cuerpo: 'Texto {{par}}' })).status).toBe(200)
     expect((await api.post(`/plantillas/${r.body.id}/asignar`, { uso: 'invitacion' })).status).toBe(200)
-    // la anterior queda libre
     const lista = (await api.get('/plantillas')).body.plantillas
     expect(lista.find((p: { id: string }) => p.id === enUso.id).uso).toBeNull()
     await api.post(`/plantillas/${enUso.id}/asignar`, { uso: 'invitacion' })
+    await api.delete(`/plantillas/${r.body.id}`)
   })
 
-  it('«usar desde ahora» la deja en uso de una vez; una constancia copia también sus imágenes', async () => {
+  it('una constancia nueva nace sin texto ni imágenes, y su vista previa es el archivo en blanco con lo que se le agregue', async () => {
     const api = await como()
-    const actual = (await api.get('/plantillas')).body.plantillas.find(
-      (p: { revista: string; uso: string | null }) => p.revista === 'reep' && p.uso === 'constancia',
-    )
-    await api.subir(`/plantillas/${actual.id}/imagen/encabezado`, PNG, 'encabezado.png')
-    const r = await api.post('/plantillas', {
-      revista: 'reep',
-      nombre: `Constancia de prueba ${Date.now()}`,
-      uso: 'constancia',
-      usarAhora: true,
-    })
+    const r = await api.post('/plantillas', { revista: 'reep', nombre: `Constancia de prueba ${Date.now()}`, uso: 'constancia' })
     expect(r.status).toBe(201)
-    expect(r.body).toMatchObject({ clase: 'archivo', uso: 'constancia', enUso: true })
-    expect(r.body.imagenes.encabezado).not.toBeNull()
-    // se devuelve la original al uso
-    await api.post(`/plantillas/${actual.id}/asignar`, { uso: 'constancia' })
-    await api.delete(`/plantillas/${actual.id}/imagen/encabezado`)
+    expect(r.body).toMatchObject({ clase: 'archivo', uso: null, cuerpo: '', imagenes: { encabezado: null, pie: null, firma: null } })
+    // sin texto ni imágenes: un archivo en blanco; con la imagen de la firma, esta se ve aunque el texto no tenga el marcador
+    const vacia = await api.get(`/plantillas/${r.body.id}/vista-previa`)
+    expect(vacia.status).toBe(200)
+    expect(vacia.headers['content-type']).toContain('application/pdf')
+    const { PDFDocument } = await import('pdf-lib')
+    const { valoresDe, dibujarConstancia } = await import('../src/servicios/constanciaPdf.js')
+    const v = valoresDe({ revista: 'R', par: 'P', articulo: 'A', issn: '', indexaciones: '' })
+    const sola = await dibujarConstancia({ cuerpo: '', encabezado: null, pie: null, firma: null }, v)
+    const conFirma = await dibujarConstancia({ cuerpo: '', encabezado: null, pie: null, firma: PNG }, v)
+    expect((await PDFDocument.load(sola)).getPageCount()).toBe(1)
+    expect(conFirma.length).toBeGreaterThan(sola.length)
+    await api.delete(`/plantillas/${r.body.id}`)
   })
 
   it('una plantilla en blanco no se puede elegir y el mensaje lo explica', async () => {

@@ -39,16 +39,14 @@ export interface Plantilla {
 }
 
 /**
- * A new template: a free name and what it is for. It starts as a copy of the one in use for that
- * purpose; `usarAhora` makes it the one in use at once. Without a purpose it is blank and its class
- * is given.
+ * A new template: a free name and what it is for. It is always blank (the person writes it); it
+ * is chosen in Configuración once it has text. Without a purpose its class is given.
  */
 export interface DatosNuevaPlantilla {
   revista: Revista
   nombre: string
   uso?: UsoPlantilla
   clase?: ClasePlantilla
-  usarAhora?: boolean
 }
 
 /** Address the mails of a journal leave from: configured in the mail service, not on screen. */

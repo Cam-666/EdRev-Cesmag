@@ -1,11 +1,9 @@
 /*
  * NuevaPlantillaModal — creates a new template of a journal: a free name and what it is for (the
- * invitation, the thank-you mail or the constancia). It starts as a copy of the template in use
- * for that purpose, so the person edits what already works instead of writing from scratch, and it
- * can be put in use at once. No Figma design for the dialog. Covers: RNF-19, RF-25, RF-30, RF-45.
+ * invitation, the thank-you mail or the constancia). It is created blank: the person writes it and,
+ * once it has text, chooses it in Configuración. No Figma design for the dialog. Covers: RNF-19, RF-25, RF-30, RF-45.
  */
 import { zodResolver } from '@hookform/resolvers/zod'
-import { useState } from 'react'
 import { Controller, useForm } from 'react-hook-form'
 import { z } from 'zod'
 import { ETIQUETA_USO } from '../config/plantillas'
@@ -13,7 +11,6 @@ import { useCrearPlantilla } from '../hooks/useAdmin'
 import { Alerta } from '@/components/common/Alerta'
 import { Boton } from '@/components/common/Boton'
 import { CampoTexto } from '@/components/common/CampoTexto'
-import { Casilla } from '@/components/common/Casilla'
 import { ListaDesplegable } from '@/components/common/ListaDesplegable'
 import { Modal } from '@/components/common/Modal'
 import { mensajeDeApi } from '@/lib/api/errores'
@@ -46,7 +43,6 @@ export function NuevaPlantillaModal(props: NuevaPlantillaModalProps) {
 
 function Contenido({ revista, onCerrar, onCreada }: NuevaPlantillaModalProps) {
   const crear = useCrearPlantilla()
-  const [usarAhora, setUsarAhora] = useState(false)
   const {
     register,
     handleSubmit,
@@ -58,7 +54,7 @@ function Contenido({ revista, onCerrar, onCreada }: NuevaPlantillaModalProps) {
   })
 
   function enviar(datos: Datos) {
-    crear.mutate({ revista, nombre: datos.nombre, uso: datos.uso, usarAhora }, { onSuccess: onCreada })
+    crear.mutate({ revista, nombre: datos.nombre, uso: datos.uso }, { onSuccess: onCreada })
   }
 
   return (
@@ -66,7 +62,7 @@ function Contenido({ revista, onCerrar, onCreada }: NuevaPlantillaModalProps) {
       abierto
       onCerrar={onCerrar}
       titulo="Nueva plantilla"
-      descripcion={`Nueva plantilla de ${REVISTAS[revista].nombreCorto}. Se crea con el texto de la plantilla que se usa hoy para ese fin, para que usted solo cambie lo que necesite.`}
+      descripcion={`Nueva plantilla de ${REVISTAS[revista].nombreCorto}. Se crea en blanco: usted escribe el texto y, cuando lo tenga, la elige en Configuración.`}
       acciones={
         <>
           <Boton variante="neutro" onClick={onCerrar}>
@@ -106,11 +102,6 @@ function Contenido({ revista, onCerrar, onCreada }: NuevaPlantillaModalProps) {
               onCambio={(v) => field.onChange(v as UsoPlantilla)}
             />
           )}
-        />
-        <Casilla
-          etiqueta="Usarla desde ahora en lugar de la actual"
-          marcada={usarAhora}
-          onCambio={setUsarAhora}
         />
       </form>
     </Modal>

@@ -181,7 +181,7 @@ export const handlersAdmin = [
     const c = contextoGlobal(request, 'administrar')
     if (!c.ok) return c.respuesta
     const datos = (await request.json()) as DatosNuevaPlantilla
-    const { revista, nombre, uso, usarAhora } = datos
+    const { revista, nombre, uso } = datos
     const clase = uso ? (uso === 'constancia' ? 'archivo' : 'correo') : datos.clase
     if (revista !== 'reep' && revista !== 'ire') return error(422, 'Revista no válida')
     if (clase !== 'correo' && clase !== 'archivo') return error(422, 'Elija para qué se usará la plantilla')
@@ -190,23 +190,10 @@ export const handlersAdmin = [
       (p) => p.revista === revista && p.nombre.trim().toLowerCase() === nombre.trim().toLowerCase(),
     )
     if (repetido) return error(409, 'Ya existe una plantilla con ese nombre en esta revista')
-    // With a use it starts as a copy of the one in use for it; without one it is blank.
+    // A new template is always blank; what it is for does not change and the data it accepts depend on it.
     const id = `${revista}-pl-n${plantillas().length + 1}`
-    const origen = uso ? plantillas().find((p) => p.revista === revista && p.uso === uso) : undefined
-    // What it is for does not change; the data it accepts depend on it.
     const fin: UsoPlantilla = uso ?? (clase === 'archivo' ? 'constancia' : 'invitacion')
-    const nueva: Plantilla = origen
-      ? {
-          ...origen,
-          id,
-          nombre: nombre.trim(),
-          fin: origen.fin,
-          uso: null,
-          enUso: false,
-          variables: [...VARIABLES[origen.fin]],
-          imagenes: origen.imagenes ? { ...origen.imagenes } : null,
-        }
-      : {
+    const nueva: Plantilla = {
       id,
       revista,
       uso: null,
@@ -220,12 +207,6 @@ export const handlersAdmin = [
       imagenes: clase === 'archivo' ? { encabezado: null, pie: null, firma: null } : null,
     }
     plantillas().push(nueva)
-    if (usarAhora && uso && origen) {
-      origen.uso = null
-      origen.enUso = false
-      nueva.uso = uso
-      nueva.enUso = true
-    }
     return HttpResponse.json(nueva, { status: 201 })
   }),
 

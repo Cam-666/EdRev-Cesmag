@@ -236,10 +236,8 @@ describe('administration', () => {
 
     const lista = await screen.findByRole('combobox', { name: 'Plantilla' })
     await waitFor(() => expect(lista).toHaveTextContent('Invitación en inglés'))
-    // it starts as a copy of the invitation in use, with the data shown by plain names
-    const copia = (screen.getByLabelText('Texto') as HTMLTextAreaElement).value
-    expect(copia).toContain('[Nombre del par]')
-    expect(copia).not.toContain('{{')
+    // a new template is blank: the person writes it
+    expect(screen.getByLabelText('Texto').textContent).toBe('')
     expect(screen.getByText(/Sin uso asignado/)).toBeInTheDocument()
     expect(screen.queryByText('Invitación en inglés (en uso', { exact: false })).toBeNull()
 
@@ -250,20 +248,25 @@ describe('administration', () => {
     await waitFor(() => expect(screen.getByRole('combobox', { name: 'Plantilla' })).not.toHaveTextContent('Invitación en inglés'))
   })
 
-  it('a new template can take the place of the one in use at once, and the data are inserted with a button', async () => {
+  it('a new template is blank, has no «use now» option, and the data are inserted with a button', async () => {
     const { user } = montarRuta('/administracion/plantillas')
     await user.click(await screen.findByRole('button', { name: 'Nueva plantilla' }))
     const dialogo = await screen.findByRole('dialog', { name: 'Nueva plantilla' })
+    expect(within(dialogo).queryByRole('checkbox')).toBeNull()
     await user.type(within(dialogo).getByLabelText('Nombre'), 'Invitación renovada')
-    await user.click(within(dialogo).getByRole('checkbox', { name: /Usarla desde ahora/ }))
     await user.click(within(dialogo).getByRole('button', { name: 'Crear plantilla' }))
     await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull())
-    expect(await screen.findByText(/En uso como: Invitación a evaluar/)).toBeInTheDocument()
+    expect(await screen.findByText(/Sin uso asignado/)).toBeInTheDocument()
 
-    const texto = screen.getByLabelText('Texto') as HTMLTextAreaElement
-    await user.clear(texto)
+    const texto = screen.getByLabelText('Texto')
+    expect(texto.textContent).toBe('')
     await user.click(screen.getByRole('button', { name: 'Universidad del par' }))
-    expect(texto.value).toBe('[Universidad del par]')
+    expect(texto.textContent).toBe('[Universidad del par]')
+    await user.click(screen.getByRole('button', { name: 'Nombre del par' }))
+    expect(texto.textContent).toBe('[Universidad del par][Nombre del par]')
+    // the preview is the mail with its frame, still without text
+    const marco = await screen.findByTitle('Vista previa del correo')
+    expect(marco).toHaveAttribute('srcdoc', expect.stringContaining('Universidad CESMAG'))
   })
 
   it('Configuración lets the Administradora choose which template each use takes', async () => {

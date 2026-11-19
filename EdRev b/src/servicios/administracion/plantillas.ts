@@ -1,7 +1,7 @@
 /*
  * plantillas (servicio) — the templates of each journal (RF-45): a mail (subject and text) or a file
  * (the constancia: a text between a header and a footer image, with the signature image where
- * {{firma}} is). A new template starts as a copy of the one in use for its purpose; only one
+ * {{firma}} is). A new template is always blank (the person writes it); only one
  * template of each use is in use per journal; the data a template can bring in depend on its purpose.
  * A template keeps the purpose (`fin`) it was created for, in use or not: a thank-you template is
  * previewed, edited and chosen as a thank-you template.
@@ -102,10 +102,9 @@ export async function listarPlantillas() {
 export interface DatosNuevaPlantilla {
   revista: 'reep' | 'ire'
   nombre: string
-  /** What it is for: the class follows from it. Without it the class is given and the template is blank. */
+  /** What it is for: the class follows from it. Without it the class is given. The template is always blank. */
   uso?: Uso
   clase?: 'correo' | 'archivo'
-  usarAhora?: boolean
 }
 
 export async function crearPlantilla(d: DatosNuevaPlantilla) {
@@ -118,38 +117,14 @@ export async function crearPlantilla(d: DatosNuevaPlantilla) {
     throw e
   }
   const id = await enTransaccion(async (c) => {
-    // With a use, the new template starts as a copy of the one in use for it (text, subject, images):
-    // the person edits what already works instead of writing from scratch.
-    const origen = d.uso
-      ? (
-          await c.query<{ id_plantilla: number }>(
-            'SELECT id_plantilla FROM plantilla WHERE id_revista = $1 AND tipo = $2',
-            [revista, d.uso],
-          )
-        ).rows[0]
-      : undefined
-    const { rows } = origen
-      ? await c
-          .query<{ id_plantilla: number }>(
-            `INSERT INTO plantilla (id_revista, nombre, clase, fin, asunto, cuerpo, encabezado, pie, firma)
-             SELECT id_revista, $2, clase, fin, asunto, cuerpo, encabezado, pie, firma
-               FROM plantilla WHERE id_plantilla = $1 RETURNING id_plantilla`,
-            [origen.id_plantilla, d.nombre],
-          )
-          .catch(nombreRepetido)
-      : await c
-          .query<{ id_plantilla: number }>(
-            `INSERT INTO plantilla (id_revista, nombre, clase, fin, asunto, cuerpo)
-             VALUES ($1, $2, $3, $4, $5, '') RETURNING id_plantilla`,
-            [revista, d.nombre, clase, fin, clase === 'correo' ? '' : null],
-          )
-          .catch(nombreRepetido)
+    const { rows } = await c
+      .query<{ id_plantilla: number }>(
+        `INSERT INTO plantilla (id_revista, nombre, clase, fin, asunto, cuerpo)
+         VALUES ($1, $2, $3, $4, $5, '') RETURNING id_plantilla`,
+        [revista, d.nombre, clase, fin, clase === 'correo' ? '' : null],
+      )
+      .catch(nombreRepetido)
     const nueva = rows[0]?.id_plantilla ?? 0
-    // «Usar desde ahora»: it takes the place of the one in use (only possible when it has text).
-    if (d.usarAhora && d.uso && origen) {
-      await c.query('UPDATE plantilla SET tipo = NULL WHERE id_revista = $1 AND tipo = $2', [revista, d.uso])
-      await c.query('UPDATE plantilla SET tipo = $2 WHERE id_plantilla = $1', [nueva, d.uso])
-    }
     return nueva
   })
   return plantillaApi(await cargar(id))

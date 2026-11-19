@@ -16,7 +16,6 @@ const nueva = z
     nombre: z.string().trim().min(1, 'Escriba el nombre de la plantilla').max(80, 'Máximo 80 caracteres'),
     uso: uso.optional(),
     clase: z.enum(['correo', 'archivo']).optional(),
-    usarAhora: z.boolean().optional(),
   })
   .refine((x) => x.uso || x.clase, { message: 'Elija para qué se usará la plantilla' })
 

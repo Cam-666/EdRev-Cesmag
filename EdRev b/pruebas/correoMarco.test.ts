@@ -102,6 +102,18 @@ describe('vista previa del PDF de la constancia', () => {
   })
 })
 
+describe('la vista previa de una plantilla nueva (en blanco)', () => {
+  it('muestra el marco de la Universidad CESMAG sin contenido', async () => {
+    const api = await como()
+    for (const uso of ['invitacion', 'agradecimiento']) {
+      const previa = await api.post('/plantillas/vista-correo', { revista: 'reep', uso, cuerpo: '' })
+      expect(previa.status).toBe(200)
+      expect(previa.body.html).toContain('CESMAG')
+      expect(previa.body.html).toContain('VIGILADA MINEDUCACIÓN')
+    }
+  })
+})
+
 describe('el correo no lleva firma', () => {
   it('ni en el marco, ni en la vista previa, ni en Configuración', async () => {
     const api = await como()

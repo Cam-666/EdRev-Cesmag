@@ -134,9 +134,11 @@ export async function dibujarConstancia(p: PlantillaArchivo, valores: Record<str
     y -= TAMANO * INTERLINEADO
   }
 
+  let firmaPuesta = false
   for (const parrafo of analizar(rellenarTexto(p.cuerpo, valores))) {
     if (parrafo.firma) {
       if (firma) {
+        firmaPuesta = true
         const m = ajustar(firma, 170, 60)
         if (y - m.h < abajo) nuevaPagina()
         const x =
@@ -188,6 +190,12 @@ export async function dibujarConstancia(p: PlantillaArchivo, valores: Record<str
       dibujarLinea(actual, parrafo.alineacion, true)
     }
     y -= ENTRE_PARRAFOS
+  }
+  // Without the {{firma}} marker the signature image still shows: at the end of the text, centered.
+  if (firma && !firmaPuesta) {
+    const m = ajustar(firma, 170, 60)
+    if (y - m.h < abajo) nuevaPagina()
+    pagina.drawImage(firma, { x: (ancho - m.w) / 2, y: y - m.h, width: m.w, height: m.h })
   }
   return doc.save()
 }
