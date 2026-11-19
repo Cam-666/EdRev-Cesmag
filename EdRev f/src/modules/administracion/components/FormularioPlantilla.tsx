@@ -118,7 +118,7 @@ export function FormularioPlantilla({ plantilla, onEliminada }: FormularioPlanti
         {plantilla.clase === 'correo' ? (
           <VistaPreviaCorreo
             revista={plantilla.revista}
-            uso={plantilla.uso === 'agradecimiento' ? 'agradecimiento' : 'invitacion'}
+            uso={plantilla.fin === 'agradecimiento' ? 'agradecimiento' : 'invitacion'}
             cuerpo={cuerpo}
           />
         ) : (

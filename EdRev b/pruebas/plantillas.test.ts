@@ -46,14 +46,17 @@ describe('plantillas de archivo (constancia)', () => {
     expect((await api.post('/plantillas', { revista: 'reep', nombre: 'Otro correo', clase: 'correo' })).status).toBe(409)
   })
 
-  it('el uso se elige después: reemplaza al anterior, respeta la clase y una plantilla en uso no se elimina', async () => {
+  it('la plantilla se elige para su fin: reemplaza a la anterior, no sirve para otro fin y una plantilla en uso no se elimina', async () => {
     const api = await como()
-    const correo = (await api.post('/plantillas', { revista: 'ire', nombre: 'Recordatorio amable', clase: 'correo' })).body
+    const correo = (await api.post('/plantillas', { revista: 'ire', nombre: 'Recordatorio amable', uso: 'agradecimiento' })).body
+    expect(correo).toMatchObject({ fin: 'agradecimiento', uso: null })
     const antes = (await api.get('/plantillas')).body.plantillas.find(
       (p: { revista: string; uso: string }) => p.revista === 'ire' && p.uso === 'agradecimiento',
     )
     await api.put(`/plantillas/${correo.id}`, { asunto: 'Hola', cuerpo: '{{par}} {{articulo}}' })
+    // es de agradecimiento: no sirve como constancia ni como invitación
     expect((await api.post(`/plantillas/${correo.id}/asignar`, { uso: 'constancia' })).status).toBe(409)
+    expect((await api.post(`/plantillas/${correo.id}/asignar`, { uso: 'invitacion' })).status).toBe(409)
     const ok = await api.post(`/plantillas/${correo.id}/asignar`, { uso: 'agradecimiento' })
     expect(ok.body).toMatchObject({ uso: 'agradecimiento', enUso: true })
     const lista = (await api.get('/plantillas')).body.plantillas as Array<{ id: string; revista: string; uso: string | null }>
@@ -66,11 +69,15 @@ describe('plantillas de archivo (constancia)', () => {
     expect((await api.delete(`/plantillas/${correo.id}`)).status).toBe(404)
   })
 
-  it('al elegir el uso se revisan los marcadores: {{botones}} solo sirve en la invitación', async () => {
+  it('los datos que acepta una plantilla dependen de su fin: {{botones}} solo sirve en la invitación', async () => {
     const api = await como()
-    const c = (await api.post('/plantillas', { revista: 'reep', nombre: 'Con botones', clase: 'correo' })).body
+    const gracias = (await api.post('/plantillas', { revista: 'reep', nombre: 'Gracias con botones', uso: 'agradecimiento' })).body
+    expect(gracias.variables).not.toContain('botones')
+    expect((await api.put(`/plantillas/${gracias.id}`, { asunto: 'Hola', cuerpo: '{{par}}\n\n{{botones}}' })).status).toBe(422)
+    await api.delete(`/plantillas/${gracias.id}`)
+    const c = (await api.post('/plantillas', { revista: 'reep', nombre: 'Con botones', uso: 'invitacion' })).body
+    expect(c.variables).toContain('botones')
     await api.put(`/plantillas/${c.id}`, { asunto: 'Hola', cuerpo: '{{par}} {{articulo}}\n\n{{botones}}' })
-    expect((await api.post(`/plantillas/${c.id}/asignar`, { uso: 'agradecimiento' })).status).toBe(422)
     expect((await api.post(`/plantillas/${c.id}/asignar`, { uso: 'invitacion' })).status).toBe(200)
     // leave the journal as it was
     const base = (await api.get('/plantillas')).body.plantillas.find(
@@ -158,14 +165,15 @@ describe('ISSN e indexaciones de cada revista (Configuración)', () => {
     const api = await como()
     const inicial = (await api.get('/configuracion')).body.revistas
     expect(inicial.reep.indexaciones).toContain('Publindex')
+    expect(inicial.reep).toHaveProperty('firmaNombre')
     expect(inicial.ire.issn).toBe('2357-5239')
     expect((await api.put('/configuracion/revistas/reep', { issn: '12', indexaciones: 'X' })).status).toBe(422)
     const r = await api.put('/configuracion/revistas/reep', { issn: '2590-7476', indexaciones: 'Publindex (categoría B), Scopus' })
-    expect(r.body).toEqual({ issn: '2590-7476', indexaciones: 'Publindex (categoría B), Scopus' })
+    expect(r.body).toMatchObject({ issn: '2590-7476', indexaciones: 'Publindex (categoría B), Scopus' })
     expect((await api.get('/configuracion')).body.revistas.reep.indexaciones).toContain('Scopus')
     await api.put('/configuracion/revistas/reep', { issn: inicial.reep.issn, indexaciones: inicial.reep.indexaciones })
     const vacio = await api.put('/configuracion/revistas/ire', { issn: '', indexaciones: '' })
-    expect(vacio.body).toEqual({ issn: '', indexaciones: '' })
+    expect(vacio.body).toMatchObject({ issn: '', indexaciones: '' })
     await api.put('/configuracion/revistas/ire', { issn: inicial.ire.issn, indexaciones: inicial.ire.indexaciones })
   })
 })
@@ -211,7 +219,8 @@ describe('crear una plantilla eligiendo para qué sirve', () => {
   it('una plantilla en blanco no se puede elegir y el mensaje lo explica', async () => {
     const api = await como()
     const c = await api.post('/plantillas', { revista: 'ire', nombre: `En blanco ${Date.now()}`, clase: 'correo' })
-    const r = await api.post(`/plantillas/${c.body.id}/asignar`, { uso: 'agradecimiento' })
+    expect(c.body.fin).toBe('invitacion')
+    const r = await api.post(`/plantillas/${c.body.id}/asignar`, { uso: 'invitacion' })
     expect(r.status).toBe(422)
     expect(r.body.mensaje).toContain('aún no tiene texto')
   })

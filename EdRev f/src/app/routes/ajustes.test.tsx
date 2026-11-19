@@ -6,7 +6,7 @@ import { screen, waitFor, within } from '@testing-library/react'
 import { vi } from 'vitest'
 import { descargarArchivo } from '@/lib/descarga'
 import { EncabezadoFicha } from '@/modules/articulos/components/EncabezadoFicha'
-import { montarRuta } from '@/test/montarRuta'
+import { elegirOpcion, montarRuta } from '@/test/montarRuta'
 import { render } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import type { ArticuloDetalle } from '@/types/articulo'
@@ -114,5 +114,60 @@ describe('pares asignados en la ficha del artículo', () => {
     )
     expect(screen.getByText('1 par asignado')).toBeInTheDocument()
     expect(screen.getByText('1 invitación sin responder')).toBeInTheDocument()
+  })
+})
+
+describe('plantillas: cada una conserva el fin para el que se creó', () => {
+  it('la vista previa de una plantilla de agradecimiento nueva es la de agradecimiento, no la de invitación', async () => {
+    const { user } = montarRuta('/administracion/plantillas')
+    await user.click(await screen.findByRole('button', { name: 'Nueva plantilla' }))
+    const dialogo = await screen.findByRole('dialog', { name: 'Nueva plantilla' })
+    await user.type(within(dialogo).getByLabelText('Nombre'), 'Gracias de fin de año')
+    await elegirOpcion(user, '¿Para qué se usará?', 'Agradecimiento')
+    await user.click(within(dialogo).getByRole('button', { name: 'Crear plantilla' }))
+    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull())
+    const marco = await screen.findByTitle('Vista previa del correo')
+    await waitFor(() => expect(marco).toHaveAttribute('srcdoc', expect.stringContaining('Gracias por su evaluación')))
+    expect(marco.getAttribute('srcdoc')).not.toContain('Invitación a evaluar un artículo')
+    // the list says what it is for
+    expect(screen.getByRole('combobox', { name: 'Plantilla' })).toHaveTextContent('Gracias de fin de año · Agradecimiento')
+  })
+
+  it('en Configuración, cada fin ofrece solo las plantillas creadas para él', async () => {
+    const { user } = montarRuta('/administracion/plantillas')
+    await user.click(await screen.findByRole('button', { name: 'Nueva plantilla' }))
+    const dialogo = await screen.findByRole('dialog', { name: 'Nueva plantilla' })
+    await user.type(within(dialogo).getByLabelText('Nombre'), 'Solo para agradecer')
+    await elegirOpcion(user, '¿Para qué se usará?', 'Agradecimiento')
+    await user.click(within(dialogo).getByRole('button', { name: 'Crear plantilla' }))
+    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull())
+    await screen.findByTitle('Vista previa del correo')
+
+    const { user: otro } = montarRuta('/administracion/configuracion')
+    const agradecimiento = await screen.findByRole('combobox', { name: /Agradecimiento de Educación/ })
+    await otro.click(agradecimiento)
+    expect(await screen.findByRole('option', { name: /Solo para agradecer/ })).toBeInTheDocument()
+    await otro.keyboard('{Escape}')
+    await otro.click(screen.getByRole('combobox', { name: /Invitación a evaluar de Educación/ }))
+    expect(await screen.findByRole('option', { name: /Invitación a evaluar/ })).toBeInTheDocument()
+    expect(screen.queryByRole('option', { name: /Solo para agradecer/ })).toBeNull()
+  })
+})
+
+describe('firma de los correos', () => {
+  it('la Administradora escribe el nombre y el cargo de quien firma cada revista', async () => {
+    const { user } = montarRuta('/administracion/configuracion')
+    expect(await screen.findByRole('heading', { level: 3, name: 'Firma de los correos' })).toBeInTheDocument()
+    const forma = screen.getByRole('form', { name: 'Firma de los correos de Educación y Pedagogía' })
+    expect(within(forma).getByText(/firma la Administradora de la dependencia/)).toBeInTheDocument()
+    await user.type(within(forma).getByLabelText('Nombre de quien firma'), 'Dra. Ana Lucía Pérez')
+    await user.type(within(forma).getByLabelText('Cargo'), 'Editora de la revista')
+    await user.click(within(forma).getByRole('button', { name: 'Guardar firma' }))
+    expect(await within(forma).findByText('Firma guardada.')).toBeInTheDocument()
+    // the preview of the mail of that journal closes with the signature
+    const { user: otro } = montarRuta('/administracion/plantillas')
+    const marco = await screen.findByTitle('Vista previa del correo')
+    await waitFor(() => expect(marco).toHaveAttribute('srcdoc', expect.stringContaining('Dra. Ana Lucía Pérez')))
+    void otro
   })
 })

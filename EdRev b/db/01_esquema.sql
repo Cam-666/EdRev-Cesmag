@@ -17,7 +17,9 @@ CREATE TABLE revista (
   nombre           VARCHAR(150) NOT NULL UNIQUE,
   correo_remitente VARCHAR(150) NOT NULL CHECK (correo_remitente = lower(correo_remitente)),
   issn             VARCHAR(20),     -- extensión: va en la constancia como {{issn}}
-  indexaciones     VARCHAR(1500)    -- extensión: texto con las indexaciones; va en la constancia como {{indexaciones}}
+  indexaciones     VARCHAR(1500),   -- extensión: texto con las indexaciones; va en la constancia como {{indexaciones}}
+  firma_nombre     VARCHAR(150),    -- extensión: quién firma los correos de la revista (nulo: la Administradora activa)
+  firma_cargo      VARCHAR(150)     -- extensión: su cargo, que aparece bajo el nombre en la firma de los correos
 );
  
 CREATE TABLE configuracion (          -- extensión: valores que la Administradora ajusta desde la página
@@ -50,7 +52,8 @@ CREATE TABLE plantilla (            -- cada revista tiene las suyas
   id_revista   SMALLINT     NOT NULL REFERENCES revista ON DELETE RESTRICT,
   nombre       VARCHAR(80)  NOT NULL,
   clase        VARCHAR(7)   NOT NULL CHECK (clase IN ('correo','archivo')),
-  tipo         VARCHAR(14)  CHECK (tipo IN ('invitacion','agradecimiento','constancia')),  -- para qué se usa hoy; NULL mientras no se le asigna uno
+  fin          VARCHAR(14)  NOT NULL CHECK (fin IN ('invitacion','agradecimiento','constancia')),  -- para qué sirve; no cambia
+  tipo         VARCHAR(14)  CHECK (tipo IN ('invitacion','agradecimiento','constancia')),  -- el fin al que está en uso hoy; NULL si no está en uso
   asunto       VARCHAR(200),
   cuerpo       TEXT         NOT NULL,
   encabezado   BYTEA,       -- imagen del encabezado de la constancia (solo tipo constancia)
@@ -60,7 +63,8 @@ CREATE TABLE plantilla (            -- cada revista tiene las suyas
   CONSTRAINT uq_plantilla_nombre UNIQUE (id_revista, nombre),
   CONSTRAINT ck_asunto_solo_correos CHECK ((clase = 'correo') = (asunto IS NOT NULL)),
   CONSTRAINT ck_imagenes_solo_archivo CHECK (clase = 'archivo' OR (encabezado IS NULL AND firma IS NULL AND correo_firma IS NULL)),  -- el correo solo lleva el pie
-  CONSTRAINT ck_tipo_de_su_clase CHECK (tipo IS NULL OR ((tipo = 'constancia') = (clase = 'archivo')))
+  CONSTRAINT ck_fin_de_su_clase CHECK ((fin = 'constancia') = (clase = 'archivo')),
+  CONSTRAINT ck_en_uso_es_su_fin CHECK (tipo IS NULL OR tipo = fin)
 );
  
 -- 2. Dependen de revista o de usuario

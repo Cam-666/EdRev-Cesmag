@@ -27,16 +27,16 @@ INSERT INTO usuario (nombre, correo, contrasena_hash, rol) VALUES
 
 -- Plantillas en uso de cada revista (RF-45). El encabezado, el pie y la firma de la constancia son
 -- imágenes que la Administradora sube desde Administración › Plantillas.
-INSERT INTO plantilla (id_revista, nombre, clase, tipo, asunto, cuerpo)
-SELECT r.id_revista, p.nombre, CASE WHEN p.tipo = 'constancia' THEN 'archivo' ELSE 'correo' END, p.tipo, p.asunto, p.cuerpo
+INSERT INTO plantilla (id_revista, nombre, clase, fin, tipo, asunto, cuerpo)
+SELECT r.id_revista, p.nombre, CASE WHEN p.tipo = 'constancia' THEN 'archivo' ELSE 'correo' END, p.tipo, p.tipo, p.asunto, p.cuerpo
 FROM revista r
 CROSS JOIN (VALUES
   ('Invitación a evaluar', 'invitacion',
    'Invitación a evaluar un artículo · {{revista}}',
-   E'Apreciado(a) {{par}}, {{profesion}} de la {{universidad}}:\n\nLa {{revista}} lo(a) invita a participar como par evaluador del artículo «{{articulo}}» (solicitud {{numero}}). Si acepta, recibirá los documentos desde el OJS.\n\nResponda con un clic:\n\n{{botones}}\n\nDependencia de Editorial'),
+   E'Apreciado(a) {{par}}, {{profesion}} de la {{universidad}}:\n\nLa {{revista}} lo(a) invita a participar como par evaluador del artículo «{{articulo}}» (solicitud {{numero}}). Si acepta, recibirá los documentos desde el OJS.\n\nResponda con un clic:\n\n{{botones}}\n\nCordialmente,'),
   ('Agradecimiento', 'agradecimiento',
    'Gracias por su evaluación · {{revista}}',
-   E'Apreciado(a) {{par}}:\n\nAgradecemos su participación como par evaluador del artículo «{{articulo}}». Adjuntamos su constancia.\n\nDependencia de Editorial'),
+   E'Apreciado(a) {{par}}:\n\nAgradecemos su participación como par evaluador del artículo «{{articulo}}». Adjuntamos su constancia.\n\nCordialmente,'),
   ('Constancia de participación', 'constancia', NULL,
    E'[centro]**LA EDITORA DE LA {{REVISTA}}**\n**ISSN {{issn}} (en línea)**\n\n[centro]**CERTIFICA QUE**\n\n[justificado]**{{PAR}}** participó como evaluador(a) académico(a) del artículo titulado **«{{articulo}}»**, postulado para publicación en una de las ediciones correspondientes al año {{anio}} de la {{revista}}.\n\n[justificado]Su participación se desarrolló en el marco del proceso editorial de evaluación por pares bajo la modalidad de doble ciego, y constituyó un valioso aporte al aseguramiento de la calidad, el rigor y la pertinencia científica de los contenidos publicados por la Revista.\n\n[justificado]Cabe destacar que la {{revista}} se encuentra indexada y referenciada en reconocidos sistemas de información, directorios y bases de datos académicas, entre ellos: {{indexaciones}}.\n\n[justificado]La presente certificación se expide a solicitud del interesado(a), para los fines académicos y profesionales que estime pertinentes.\n\nSan Juan de Pasto, {{fecha}}.\n\nCordialmente,\n\n[centro]{{firma}}\n\n[centro]Editor(a) de la {{revista}}')
 ) AS p(nombre, tipo, asunto, cuerpo);

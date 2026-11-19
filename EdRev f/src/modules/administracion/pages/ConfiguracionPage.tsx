@@ -13,6 +13,7 @@ import { useForm } from 'react-hook-form'
 import { z } from 'zod'
 import { DatosRevistaForm } from '../components/DatosRevistaForm'
 import { ElegirPlantillaDeUso } from '../components/ElegirPlantillaDeUso'
+import { FirmaDeLosCorreos } from '../components/FirmaDeLosCorreos'
 import { useConfiguracion, useGuardarConfiguracion, usePlantillas } from '../hooks/useAdmin'
 import { Alerta } from '@/components/common/Alerta'
 import { Boton } from '@/components/common/Boton'
@@ -22,6 +23,7 @@ import { EstadoConsulta } from '@/components/common/EstadoConsulta'
 import { Pestanas } from '@/components/common/Pestanas'
 import { mensajeDeApi } from '@/lib/api/errores'
 import { REVISTAS } from '@/types/revista'
+import type { Configuracion } from '@/types/configuracion'
 import type { Plantilla } from '@/types/plantilla'
 import type { Revista } from '@/types/revista'
 
@@ -80,7 +82,15 @@ function DiasDeEspera({ diasEspera }: { diasEspera: number }) {
   )
 }
 
-function PestanaCorreos({ diasEspera, plantillas }: { diasEspera: number; plantillas: Plantilla[] }) {
+function PestanaCorreos({
+  diasEspera,
+  plantillas,
+  revistas,
+}: {
+  diasEspera: number
+  plantillas: Plantilla[]
+  revistas: Configuracion['revistas']
+}) {
   return (
     <div className="flex flex-col gap-6">
       <DiasDeEspera diasEspera={diasEspera} />
@@ -102,6 +112,20 @@ function PestanaCorreos({ diasEspera, plantillas }: { diasEspera: number; planti
               <ElegirPlantillaDeUso revista={r} uso="invitacion" plantillas={plantillas} />
               <ElegirPlantillaDeUso revista={r} uso="agradecimiento" plantillas={plantillas} />
             </div>
+          ))}
+        </div>
+      </section>
+      <section aria-labelledby="titulo-firma-correos" className="flex flex-col gap-3">
+        <h3 id="titulo-firma-correos" className="text-titulo-16">
+          Firma de los correos
+        </h3>
+        <p className="max-w-2xl text-cuerpo-13 text-texto-secundario">
+          Escriba el nombre y el cargo de la persona encargada de cada revista. Aparecen al final de todos
+          los correos (invitación, agradecimiento y constancia), para que el par sepa quién los envía.
+        </p>
+        <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
+          {REVISTAS_IDS.map((r) => (
+            <FirmaDeLosCorreos key={r} revista={r} datos={revistas[r]} />
           ))}
         </div>
       </section>
@@ -135,7 +159,11 @@ export function ConfiguracionPage() {
                 valor: 'correos',
                 etiqueta: 'Correos',
                 contenido: (
-                  <PestanaCorreos diasEspera={configuracion.diasEspera} plantillas={lista} />
+                  <PestanaCorreos
+                    diasEspera={configuracion.diasEspera}
+                    plantillas={lista}
+                    revistas={configuracion.revistas}
+                  />
                 ),
               },
               {

@@ -7,6 +7,7 @@ import {
   crearPlantilla,
   guardarConfiguracion,
   guardarDatosRevista,
+  guardarFirmaRevista,
   obtenerConfiguracion,
   quitarImagen,
   vistaPreviaPlantilla,
@@ -23,7 +24,7 @@ import {
   eliminarUsuario,
 } from '../services/adminService'
 import type { FiltrosAuditoria } from '../services/adminService'
-import type { Configuracion, DatosRevista } from '@/types/configuracion'
+import type { Configuracion, DatosRevista, FirmaRevista } from '@/types/configuracion'
 import type { DatosNuevaPlantilla, ParteImagen, UsoPlantilla } from '@/types/plantilla'
 import type { Revista } from '@/types/revista'
 import type { DatosUsuario, Usuario } from '@/types/usuario'
@@ -153,6 +154,15 @@ export function useGuardarConfiguracion() {
   const cliente = useQueryClient()
   return useMutation({
     mutationFn: (datos: Pick<Configuracion, 'diasEspera'>) => guardarConfiguracion(datos),
+    onSuccess: () => cliente.invalidateQueries({ queryKey: ['admin', 'configuracion'] }),
+  })
+}
+
+export function useGuardarFirmaRevista() {
+  const cliente = useQueryClient()
+  return useMutation({
+    mutationFn: ({ revista, datos }: { revista: Revista; datos: FirmaRevista }) =>
+      guardarFirmaRevista(revista, datos),
     onSuccess: () => cliente.invalidateQueries({ queryKey: ['admin', 'configuracion'] }),
   })
 }

@@ -16,6 +16,7 @@ import { pool, type Cliente } from '../db.js'
 import { auditar } from '../lib/auditoria.js'
 import { aHtml } from '../lib/formato.js'
 import { pieHtml } from '../lib/imagenCorreo.js'
+import { firmanteDe, SQL_ADMINISTRADORA } from '../lib/firmaCorreo.js'
 import { apiPublica, marcoInstitucional } from '../lib/marcoCorreo.js'
 import { ACCIONES_CORREO, botonesHtml, enlaceRespuesta, MARCA_BOTONES } from '../lib/respuestas.js'
 import { generarConstancia } from './constanciaPdf.js'
@@ -48,6 +49,9 @@ interface Pendiente {
   cuerpo: string | null
   id_plantilla: number | null
   tiene_pie: boolean | null
+  firma_nombre: string | null
+  firma_cargo: string | null
+  administradora: string | null
 }
 
 function rellenar(texto: string, v: Record<string, string>): string {
@@ -84,7 +88,8 @@ async function procesar(): Promise<void> {
   const { rows } = await pool.query<Pendiente>(
     `SELECT c.id_correo, c.id_evaluacion, c.tipo, c.destinatario, a.id_revista, a.id_articulo, r.nombre AS revista,
             r.correo_remitente AS remitente, a.numero_ojs, a.titulo, p.nombre AS par, p.profesion,
-            p.universidad, pl.asunto, pl.cuerpo, pl.id_plantilla, (pl.pie IS NOT NULL) AS tiene_pie
+            p.universidad, pl.asunto, pl.cuerpo, pl.id_plantilla, (pl.pie IS NOT NULL) AS tiene_pie,
+            r.firma_nombre, r.firma_cargo, ${SQL_ADMINISTRADORA} AS administradora
        FROM correo c
        JOIN evaluacion e ON e.id_evaluacion = c.id_evaluacion
        JOIN articulo a ON a.id_articulo = e.id_articulo
@@ -123,6 +128,7 @@ async function procesar(): Promise<void> {
       revista: p.revista,
       contacto: p.remitente,
       contenido: aHtml(texto, { marca: MARCA_BOTONES, html: botones }),
+      firmante: firmanteDe(p),
       firma: pie,
     })
     let resultado: 'enviado' | 'rebotado' | 'fallido'

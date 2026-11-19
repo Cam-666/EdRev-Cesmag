@@ -27,6 +27,13 @@ dos revistas, las plantillas por uso con sus imágenes, `revista.issn` e `indexa
 
    Alternativa sin consola: en pgAdmin cree la base `edrev`, abra **Query Tool** sobre ella y ejecute
    `db/01_esquema.sql` y luego `db/02_datos_iniciales.sql`.
+   Una base que ya tenía datos de una versión anterior se actualiza ejecutando **una vez** `db/03_fin_y_firma.sql`
+   (agrega `plantilla.fin`, para qué sirve cada plantilla, y la firma de los correos de cada revista):
+
+   ```bash
+   node --env-file=.env -e "const {Pool}=require('pg');new Pool({connectionString:process.env.DATABASE_URL}).query(require('fs').readFileSync('db/03_fin_y_firma.sql','utf8')).then(()=>{console.log('listo');process.exit(0)})"
+   ```
+
 3. **Arrancar la API:** `npm run dev` → `http://localhost:3000/api` (prueba: `http://localhost:3000/api/salud`).
 4. **Conectar el frontend:** cree `EdRev f/.env.local` con
 

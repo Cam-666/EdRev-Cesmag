@@ -20,6 +20,11 @@ const datosRevista = z.object({
   indexaciones: z.string().trim().max(1500, 'Máximo 1500 caracteres'),
 })
 
+const firma = z.object({
+  firmaNombre: z.string().trim().max(150, 'Máximo 150 caracteres'),
+  firmaCargo: z.string().trim().max(150, 'Máximo 150 caracteres'),
+})
+
 export async function obtener(_req: Request, res: Response): Promise<void> {
   res.json(await configuracion.obtenerConfiguracion())
 }
@@ -32,4 +37,9 @@ export async function cambiarDias(req: Request, res: Response): Promise<void> {
 export async function cambiarRevista(req: Request, res: Response): Promise<void> {
   const id = idRevista(req.params.sigla)
   res.json(await configuracion.cambiarDatosRevista(id, datosRevista.parse(req.body), usuarioDe(req).id))
+}
+
+export async function cambiarFirma(req: Request, res: Response): Promise<void> {
+  const id = idRevista(req.params.sigla)
+  res.json(await configuracion.cambiarFirmaRevista(id, firma.parse(req.body), usuarioDe(req).id))
 }

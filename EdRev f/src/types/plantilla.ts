@@ -21,8 +21,10 @@ export interface Plantilla {
   id: string
   /** Each journal has its own templates (RF-45). */
   revista: Revista
-  /** What it is used for in its journal; null while the Administradora has not chosen one. */
+  /** What it is used for in its journal now; null while it is not in use. */
   uso: UsoPlantilla | null
+  /** What it was created for (invitation, thank-you or constancia); it does not change. */
+  fin: UsoPlantilla
   clase: ClasePlantilla
   nombre: string
   /** Mail subject; the constancia has none. */

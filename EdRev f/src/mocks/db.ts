@@ -39,7 +39,13 @@ function crear(): Base {
     plantillas: clonar(PLANTILLAS_INICIALES),
     cuentas: clonar(CUENTAS_INICIALES),
     usuarios: clonar(USUARIOS_SEED),
-    configuracion: { diasEspera: 5, revistas: clonar(DATOS_REVISTA_INICIALES) },
+    configuracion: {
+      diasEspera: 5,
+      revistas: {
+        reep: { ...clonar(DATOS_REVISTA_INICIALES).reep, firmaNombre: '', firmaCargo: '' },
+        ire: { ...clonar(DATOS_REVISTA_INICIALES).ire, firmaNombre: '', firmaCargo: '' },
+      },
+    },
   }
 }
 

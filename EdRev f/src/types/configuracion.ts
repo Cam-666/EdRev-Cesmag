@@ -12,8 +12,15 @@ export interface DatosRevista {
   indexaciones: string
 }
 
+/** Who signs the mails of a journal; empty name means the Administradora signs (RF-25). */
+export interface FirmaRevista {
+  firmaNombre: string
+  /** Position under the name, e.g. «Editora de la revista»; may be empty. */
+  firmaCargo: string
+}
+
 export interface Configuracion {
   /** Days before the automatic 2nd attempt and, if it also goes unanswered, the block. */
   diasEspera: number
-  revistas: Record<Revista, DatosRevista>
+  revistas: Record<Revista, DatosRevista & FirmaRevista>
 }

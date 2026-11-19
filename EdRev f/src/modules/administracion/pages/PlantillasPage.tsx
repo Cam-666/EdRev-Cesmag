@@ -15,12 +15,25 @@ import { EstadoConsulta } from '@/components/common/EstadoConsulta'
 import { ListaDesplegable } from '@/components/common/ListaDesplegable'
 import { ETIQUETA_USO } from '../config/plantillas'
 import { REVISTAS } from '@/types/revista'
+import type { Plantilla, UsoPlantilla } from '@/types/plantilla'
 import type { Revista } from '@/types/revista'
 
 const OPCIONES_REVISTA = (Object.keys(REVISTAS) as Revista[]).map((r) => ({
   valor: r,
   etiqueta: REVISTAS[r].nombreCorto,
 }))
+
+const PALABRA_DEL_FIN: Record<UsoPlantilla, string> = {
+  invitacion: 'invit',
+  agradecimiento: 'agradec',
+  constancia: 'constan',
+}
+
+/** The name, what it is for (unless the name already says it) and whether it is in use. */
+function etiquetaDeLaPlantilla(p: Plantilla): string {
+  const dice = p.nombre.toLowerCase().includes(PALABRA_DEL_FIN[p.fin])
+  return `${p.nombre}${dice ? '' : ` · ${ETIQUETA_USO[p.fin]}`}${p.uso ? ' · en uso' : ''}`
+}
 
 export function PlantillasPage() {
   const consulta = usePlantillas()
@@ -64,7 +77,7 @@ export function PlantillasPage() {
                 etiqueta="Plantilla"
                 opciones={plantillas.map((p) => ({
                   valor: p.id,
-                  etiqueta: p.uso ? `${p.nombre} (en uso como ${ETIQUETA_USO[p.uso].toLowerCase()})` : p.nombre,
+                  etiqueta: etiquetaDeLaPlantilla(p),
                 }))}
                 valor={plantilla?.id}
                 onCambio={setElegida}

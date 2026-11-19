@@ -15,14 +15,14 @@
 import type { CuentaRemitente, ImagenesPlantilla, Plantilla } from '@/types/plantilla'
 import type { Revista } from '@/types/revista'
 
-const BASE: Array<Omit<Plantilla, 'id' | 'revista' | 'imagenes' | 'imagenPie' | 'correoFirma'>> = [
+const BASE: Array<Omit<Plantilla, 'id' | 'revista' | 'imagenes' | 'imagenPie' | 'correoFirma' | 'fin'>> = [
   {
     uso: 'invitacion',
     clase: 'correo',
     nombre: 'Invitación a evaluar',
     asunto: 'Invitación a evaluar un artículo · {{revista}}',
     cuerpo:
-      'Apreciado(a) {{par}}, {{profesion}} de la {{universidad}}:\n\nLa {{revista}} lo(a) invita a participar como par evaluador del artículo «{{articulo}}» (solicitud {{numero}}). Si acepta, recibirá los documentos desde el OJS.\n\nResponda con un clic:\n\n{{botones}}\n\nDependencia de Editorial',
+      'Apreciado(a) {{par}}, {{profesion}} de la {{universidad}}:\n\nLa {{revista}} lo(a) invita a participar como par evaluador del artículo «{{articulo}}» (solicitud {{numero}}). Si acepta, recibirá los documentos desde el OJS.\n\nResponda con un clic:\n\n{{botones}}\n\nCordialmente,',
     variables: ['revista', 'numero', 'par', 'profesion', 'universidad', 'articulo', 'botones'],
     enUso: true,
   },
@@ -32,7 +32,7 @@ const BASE: Array<Omit<Plantilla, 'id' | 'revista' | 'imagenes' | 'imagenPie' | 
     nombre: 'Agradecimiento',
     asunto: 'Gracias por su evaluación · {{revista}}',
     cuerpo:
-      'Apreciado(a) {{par}}:\n\nAgradecemos su participación como par evaluador del artículo «{{articulo}}». Adjuntamos su constancia.\n\nDependencia de Editorial',
+      'Apreciado(a) {{par}}:\n\nAgradecemos su participación como par evaluador del artículo «{{articulo}}». Adjuntamos su constancia.\n\nCordialmente,',
     variables: ['revista', 'par', 'articulo'],
     enUso: true,
   },
@@ -82,6 +82,7 @@ export const PLANTILLAS_INICIALES: Plantilla[] = (['reep', 'ire'] as const).flat
     ...p,
     id: `${revista}-${p.uso}`,
     revista,
+    fin: p.uso ?? 'invitacion',
     imagenes: p.uso === 'constancia' ? { ...IMAGENES[revista] } : null,
     imagenPie: null,
     correoFirma: p.uso === 'constancia' ? '' : null,

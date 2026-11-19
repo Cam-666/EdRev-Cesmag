@@ -2,12 +2,15 @@
  * plantillas (servicio) — the templates of each journal (RF-45): a mail (subject and text) or a file
  * (the constancia: a text between a header and a footer image, with the signature image where
  * {{firma}} is). A new template starts as a copy of the one in use for its purpose; only one
- * template of each use is in use per journal; the data a template can bring in depend on its use.
+ * template of each use is in use per journal; the data a template can bring in depend on its purpose.
+ * A template keeps the purpose (`fin`) it was created for, in use or not: a thank-you template is
+ * previewed, edited and chosen as a thank-you template.
  */
 import { enTransaccion, pool } from '../../db.js'
 import { ErrorHttp, siglaDe } from '../../lib/http.js'
 import { aHtml } from '../../lib/formato.js'
 import { escudoEmbebido, marcoInstitucional } from '../../lib/marcoCorreo.js'
+import { firmanteDeRevista } from '../../lib/firmaCorreo.js'
 import { botonesHtml, MARCA_BOTONES } from '../../lib/respuestas.js'
 import { vistaPrevia } from '../constanciaPdf.js'
 
@@ -21,14 +24,20 @@ const VARIABLES: Record<Uso, string[]> = {
   agradecimiento: ['revista', 'par', 'articulo'],
   constancia: ['revista', 'REVISTA', 'par', 'PAR', 'articulo', 'issn', 'indexaciones', 'fecha', 'anio', 'firma'],
 }
-const CORREOS_TODAS = VARIABLES.invitacion
-const USOS_DE_CLASE = { correo: ['invitacion', 'agradecimiento'], archivo: ['constancia'] } as const
+const ETIQUETA_FIN: Record<Uso, string> = {
+  invitacion: 'la invitación a evaluar',
+  agradecimiento: 'el agradecimiento',
+  constancia: 'la constancia',
+}
 
 interface FilaPlantilla {
   id_plantilla: number
   id_revista: number
   nombre: string
   clase: 'correo' | 'archivo'
+  /** What the template is for; it does not change. */
+  fin: Uso
+  /** What it is used for now (equal to `fin`), or null when it is not in use. */
   tipo: string | null
   asunto: string | null
   cuerpo: string
@@ -38,14 +47,13 @@ interface FilaPlantilla {
   correo_firma: string | null
 }
 
-const SELECCION_PLANTILLA = `SELECT id_plantilla, id_revista, nombre, clase, tipo, asunto, cuerpo,
+const SELECCION_PLANTILLA = `SELECT id_plantilla, id_revista, nombre, clase, fin, tipo, asunto, cuerpo,
                                     octet_length(encabezado) AS t_encabezado, octet_length(pie) AS t_pie,
                                     octet_length(firma) AS t_firma, correo_firma FROM plantilla`
 
-/** The markers a template accepts: those of its use, or all the mail ones while it has none. */
+/** The data a template accepts: those of the purpose it was created for. */
 function variablesDe(p: FilaPlantilla): string[] {
-  if (p.tipo) return VARIABLES[p.tipo as Uso] ?? []
-  return p.clase === 'archivo' ? VARIABLES.constancia : CORREOS_TODAS
+  return VARIABLES[p.fin] ?? []
 }
 
 function plantillaApi(p: FilaPlantilla) {
@@ -54,6 +62,7 @@ function plantillaApi(p: FilaPlantilla) {
     id: String(p.id_plantilla),
     revista: siglaDe(p.id_revista),
     uso: p.tipo,
+    fin: p.fin,
     clase: p.clase,
     nombre: p.nombre,
     asunto: p.asunto,
@@ -107,6 +116,7 @@ export interface DatosNuevaPlantilla {
 export async function crearPlantilla(d: DatosNuevaPlantilla) {
   const revista = numeroDeRevista(d.revista)
   const clase = d.uso ? (d.uso === 'constancia' ? 'archivo' : 'correo') : (d.clase ?? 'correo')
+  const fin: Uso = d.uso ?? (clase === 'archivo' ? 'constancia' : 'invitacion')
   if (d.uso && d.clase && d.clase !== clase) throw new ErrorHttp(409, 'La clase no corresponde al uso elegido')
   const nombreRepetido = (e: { code?: string }): never => {
     if (e.code === '23505') throw new ErrorHttp(409, 'Ya existe una plantilla con ese nombre en esta revista')
@@ -126,17 +136,17 @@ export async function crearPlantilla(d: DatosNuevaPlantilla) {
     const { rows } = origen
       ? await c
           .query<{ id_plantilla: number }>(
-            `INSERT INTO plantilla (id_revista, nombre, clase, asunto, cuerpo, encabezado, pie, firma, correo_firma)
-             SELECT id_revista, $2, clase, asunto, cuerpo, encabezado, pie, firma, correo_firma
+            `INSERT INTO plantilla (id_revista, nombre, clase, fin, asunto, cuerpo, encabezado, pie, firma, correo_firma)
+             SELECT id_revista, $2, clase, fin, asunto, cuerpo, encabezado, pie, firma, correo_firma
                FROM plantilla WHERE id_plantilla = $1 RETURNING id_plantilla`,
             [origen.id_plantilla, d.nombre],
           )
           .catch(nombreRepetido)
       : await c
           .query<{ id_plantilla: number }>(
-            `INSERT INTO plantilla (id_revista, nombre, clase, asunto, cuerpo)
-             VALUES ($1, $2, $3, $4, '') RETURNING id_plantilla`,
-            [revista, d.nombre, clase, clase === 'correo' ? '' : null],
+            `INSERT INTO plantilla (id_revista, nombre, clase, fin, asunto, cuerpo)
+             VALUES ($1, $2, $3, $4, $5, '') RETURNING id_plantilla`,
+            [revista, d.nombre, clase, fin, clase === 'correo' ? '' : null],
           )
           .catch(nombreRepetido)
     const nueva = rows[0]?.id_plantilla ?? 0
@@ -153,20 +163,12 @@ export async function crearPlantilla(d: DatosNuevaPlantilla) {
 /** Chooses what a template is used for in its journal; the one that had that use is released. */
 export async function asignarUso(id: number, uso: Uso) {
   const p = await cargar(id)
-  if (!(USOS_DE_CLASE[p.clase] as readonly string[]).includes(uso)) {
-    throw new ErrorHttp(
-      409,
-      p.clase === 'archivo'
-        ? 'Una plantilla de archivo solo sirve como constancia'
-        : 'Una plantilla de correo solo sirve como invitación o agradecimiento',
-    )
+  // A template is chosen only for the purpose it was created for.
+  if (uso !== p.fin) {
+    throw new ErrorHttp(409, `Esta plantilla es para ${ETIQUETA_FIN[p.fin]} y no puede usarse para ${ETIQUETA_FIN[uso]}`)
   }
   if (!p.cuerpo.trim()) {
     throw new ErrorHttp(422, 'La plantilla aún no tiene texto: redáctela en Plantillas antes de elegirla')
-  }
-  // A template that is already in use for another purpose would leave that purpose without one.
-  if (p.tipo && p.tipo !== uso) {
-    throw new ErrorHttp(409, 'Esta plantilla ya está en uso para otro fin: cree una copia para el nuevo uso')
   }
   validar(VARIABLES[uso], p.asunto, p.cuerpo)
   await enTransaccion(async (c) => {
@@ -232,6 +234,7 @@ export async function vistaCorreo(d: { revista: 'reep' | 'ire'; uso: 'invitacion
     'SELECT nombre, correo_remitente FROM revista WHERE id_revista = $1',
     [numeroDeRevista(d.revista)],
   )
+  const firmante = await firmanteDeRevista(pool, numeroDeRevista(d.revista))
   const revista = rows[0]
   if (!revista) throw new ErrorHttp(404, 'Revista no encontrada')
   const ejemplo: Record<string, string> = {
@@ -251,6 +254,7 @@ export async function vistaCorreo(d: { revista: 'reep' | 'ire'; uso: 'invitacion
       revista: revista.nombre,
       contacto: revista.correo_remitente,
       contenido: aHtml(texto, { marca: MARCA_BOTONES, html: botones }),
+      firmante,
       escudo: escudoEmbebido(),
     }),
   }

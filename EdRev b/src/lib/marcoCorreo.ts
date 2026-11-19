@@ -9,6 +9,7 @@
  */
 import { readFileSync } from 'node:fs'
 import { config } from '../config.js'
+import type { Firmante } from './firmaCorreo.js'
 
 const AZUL = '#0f4a8a'
 const ROJO = '#c00000'
@@ -60,11 +61,25 @@ export interface DatosMarco {
   contacto: string
   /** The text of the template already as HTML (with the buttons, if it has them). */
   contenido: string
+  /** Who signs the mail: name and position, as text (it shows in every mail client). */
+  firmante?: Firmante
   /** The footer image of the template, if it has one and can be shown. */
   firma?: string
   fecha?: Date
   /** Source of the shield; by default the address of a real mail. The previews pass the embedded one. */
   escudo?: string | null
+}
+
+/** The signature as text: who sends the mail, their position and the dependency. */
+function bloqueDeFirma(d: DatosMarco): string {
+  if (!d.firmante?.nombre) return ''
+  const celda = 'font-family:Arial,Helvetica,sans-serif'
+  return `<div style="${celda};margin-top:22px;font-size:14px;line-height:21px;color:#222222">
+        <div style="font-size:16px;font-weight:bold;color:${AZUL}">${esc(d.firmante.nombre)}</div>
+        ${d.firmante.cargo ? `<div>${esc(d.firmante.cargo)}</div>` : ''}
+        <div style="color:${GRIS}">Dependencia de Editorial · ${esc(d.revista)}</div>
+        <div style="color:${GRIS}">Universidad CESMAG</div>
+      </div>`
 }
 
 export function marcoInstitucional(d: DatosMarco): string {
@@ -101,6 +116,7 @@ export function marcoInstitucional(d: DatosMarco): string {
     </td></tr>
     <tr><td style="${celda};font-size:15px;line-height:23px;color:#222222;padding:18px 36px 10px">
       ${d.contenido}
+      ${bloqueDeFirma(d)}
       ${d.firma ?? ''}
     </td></tr>
     <tr><td style="padding:10px 36px 0"><div style="border-top:1px solid #dddddd"></div></td></tr>

@@ -14,9 +14,10 @@ import type { RespuestaEnvioEnlace } from '@/types/acceso'
 import type { EntradaAuditoria } from '@/types/historial'
 import type { DatosNuevaPlantilla, ParteImagen, Plantilla, UsoPlantilla } from '@/types/plantilla'
 
-const USOS: Record<Plantilla['clase'], UsoPlantilla[]> = {
-  correo: ['invitacion', 'agradecimiento'],
-  archivo: ['constancia'],
+const FIN_TEXTO: Record<UsoPlantilla, string> = {
+  invitacion: 'la invitación a evaluar',
+  agradecimiento: 'el agradecimiento',
+  constancia: 'la constancia',
 }
 import type { Revista } from '@/types/revista'
 import type { DatosUsuario, Usuario } from '@/types/usuario'
@@ -29,7 +30,6 @@ const VARIABLES: Record<UsoPlantilla, string[]> = {
   agradecimiento: ['revista', 'par', 'articulo'],
   constancia: ['revista', 'REVISTA', 'par', 'PAR', 'articulo', 'issn', 'indexaciones', 'fecha', 'anio', 'firma'],
 }
-const VARIABLES_CORREO = VARIABLES.invitacion
 
 const PARTES: readonly ParteImagen[] = ['encabezado', 'pie', 'firma']
 const MAX_IMAGEN = 2 * 1024 * 1024
@@ -76,7 +76,26 @@ export const handlersAdmin = [
     const { issn, indexaciones } = (await request.json()) as { issn: string; indexaciones: string }
     if (!/^(\d{4}-\d{3}[\dXx])?$/.test(issn.trim())) return error(422, 'El ISSN tiene la forma 1234-567X')
     if (indexaciones.length > 1500) return error(422, 'Máximo 1500 caracteres')
-    configuracion().revistas[revista] = { issn: issn.trim().toUpperCase(), indexaciones: indexaciones.trim() }
+    configuracion().revistas[revista] = {
+      ...configuracion().revistas[revista],
+      issn: issn.trim().toUpperCase(),
+      indexaciones: indexaciones.trim(),
+    }
+    return HttpResponse.json(configuracion().revistas[revista])
+  }),
+
+  http.put('*/api/configuracion/revistas/:revista/firma', async ({ params, request }) => {
+    const c = contextoGlobal(request, 'administrar')
+    if (!c.ok) return c.respuesta
+    const revista = params.revista as Revista
+    if (revista !== 'reep' && revista !== 'ire') return error(404, 'Revista no encontrada')
+    const { firmaNombre, firmaCargo } = (await request.json()) as { firmaNombre: string; firmaCargo: string }
+    if (firmaNombre.length > 150 || firmaCargo.length > 150) return error(422, 'Máximo 150 caracteres')
+    configuracion().revistas[revista] = {
+      ...configuracion().revistas[revista],
+      firmaNombre: firmaNombre.trim(),
+      firmaCargo: firmaCargo.trim(),
+    }
     return HttpResponse.json(configuracion().revistas[revista])
   }),
 
@@ -189,14 +208,17 @@ export const handlersAdmin = [
     // With a use it starts as a copy of the one in use for it; without one it is blank.
     const id = `${revista}-pl-n${plantillas().length + 1}`
     const origen = uso ? plantillas().find((p) => p.revista === revista && p.uso === uso) : undefined
+    // What it is for does not change; the data it accepts depend on it.
+    const fin: UsoPlantilla = uso ?? (clase === 'archivo' ? 'constancia' : 'invitacion')
     const nueva: Plantilla = origen
       ? {
           ...origen,
           id,
           nombre: nombre.trim(),
+          fin: origen.fin,
           uso: null,
           enUso: false,
-          variables: clase === 'correo' ? [...VARIABLES_CORREO] : [...VARIABLES.constancia],
+          variables: [...VARIABLES[origen.fin]],
           imagenes: origen.imagenes ? { ...origen.imagenes } : null,
           imagenPie: origen.imagenPie ? { ...origen.imagenPie } : null,
         }
@@ -204,11 +226,12 @@ export const handlersAdmin = [
       id,
       revista,
       uso: null,
+      fin,
       clase,
       nombre: nombre.trim(),
       asunto: clase === 'correo' ? '' : null,
       cuerpo: '',
-      variables: clase === 'correo' ? [...VARIABLES_CORREO] : [...VARIABLES.constancia],
+      variables: [...VARIABLES[fin]],
       enUso: false,
       imagenes: clase === 'archivo' ? { encabezado: null, pie: null, firma: null } : null,
       imagenPie: null,
@@ -218,10 +241,8 @@ export const handlersAdmin = [
     if (usarAhora && uso && origen) {
       origen.uso = null
       origen.enUso = false
-      if (origen.clase === 'correo') origen.variables = [...VARIABLES_CORREO]
       nueva.uso = uso
       nueva.enUso = true
-      nueva.variables = [...VARIABLES[uso]]
     }
     return HttpResponse.json(nueva, { status: 201 })
   }),
@@ -232,13 +253,9 @@ export const handlersAdmin = [
     const plantilla = plantillas().find((p) => p.id === params.id)
     if (!plantilla) return error(404, 'Plantilla no encontrada')
     const { uso } = (await request.json()) as { uso: UsoPlantilla }
-    if (!USOS[plantilla.clase].includes(uso)) {
-      return error(
-        409,
-        plantilla.clase === 'archivo'
-          ? 'Una plantilla de archivo solo sirve como constancia'
-          : 'Una plantilla de correo solo sirve como invitación o agradecimiento',
-      )
+    // A template is chosen only for the purpose it was created for.
+    if (uso !== plantilla.fin) {
+      return error(409, `Esta plantilla es para ${FIN_TEXTO[plantilla.fin]} y no puede usarse para ${FIN_TEXTO[uso]}`)
     }
     if (!plantilla.cuerpo.trim()) {
       return error(422, 'La plantilla aún no tiene texto: redáctela en Plantillas antes de elegirla')
@@ -249,12 +266,10 @@ export const handlersAdmin = [
       if (p.revista === plantilla.revista && p.uso === uso) {
         p.uso = null
         p.enUso = false
-        if (p.clase === 'correo') p.variables = [...VARIABLES_CORREO]
       }
     }
     plantilla.uso = uso
     plantilla.enUso = true
-    plantilla.variables = [...VARIABLES[uso]]
     return HttpResponse.json(plantilla)
   }),
 
@@ -310,9 +325,16 @@ export const handlersAdmin = [
   http.post('*/api/plantillas/vista-correo', async ({ request }) => {
     const c = contextoGlobal(request, 'administrar')
     if (!c.ok) return c.respuesta
-    const { cuerpo } = (await request.json()) as { cuerpo: string }
+    const { cuerpo, uso, revista } = (await request.json()) as {
+      cuerpo: string
+      uso: 'invitacion' | 'agradecimiento'
+      revista: Revista
+    }
+    // The title says which mail it is, and the signature closes it (name of whoever signs).
+    const titulo = uso === 'agradecimiento' ? 'Gracias por su evaluación' : 'Invitación a evaluar un artículo'
+    const firma = configuracion().revistas[revista]?.firmaNombre || 'La Administradora'
     return HttpResponse.json({
-      html: `<!doctype html><html lang="es"><body><h1>Universidad CESMAG</h1><p>${cuerpo}</p></body></html>`,
+      html: `<!doctype html><html lang="es"><body><h1>Universidad CESMAG</h1><h2>${titulo}</h2><p>${cuerpo}</p><p>${firma}</p></body></html>`,
     })
   }),
 

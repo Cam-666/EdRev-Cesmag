@@ -101,3 +101,48 @@ describe('vista previa del PDF de la constancia', () => {
     expect((await api.post(`/plantillas/${correo?.id}/vista-previa`, {})).status).toBe(409)
   })
 })
+
+describe('firma de quien envía los correos', () => {
+  it('el marco la muestra como texto: nombre, cargo y dependencia', () => {
+    const html = marcoInstitucional({
+      tipo: 'agradecimiento',
+      revista: 'Revista Electrónica en Educación y Pedagogía',
+      contacto: 'reep@unicesmag.edu.co',
+      contenido: 'Gracias.',
+      firmante: { nombre: 'María Camila Mendoza', cargo: 'Editora de la revista' },
+    })
+    expect(html).toContain('María Camila Mendoza')
+    expect(html).toContain('Editora de la revista')
+    expect(html).toContain('Dependencia de Editorial · Revista Electrónica en Educación y Pedagogía')
+    expect(html).toContain('Gracias por su evaluación')
+    // sin firmante no hay bloque
+    expect(marcoInstitucional({ tipo: 'invitacion', revista: 'R', contacto: 'a@b.co', contenido: 'x' })).not.toContain('Universidad CESMAG</div>')
+  })
+
+  it('sin configurar firma la Administradora; al configurarla, firma quien se indique', async () => {
+    const api = await como()
+    const previa = (uso: 'invitacion' | 'agradecimiento') =>
+      api.post('/plantillas/vista-correo', { revista: 'reep', uso, cuerpo: 'Texto de prueba' })
+    const sin = await previa('agradecimiento')
+    expect(sin.body.html).toContain('Gracias por su evaluación')
+    expect(sin.body.html).toContain('Dependencia de Editorial ·')
+    // la Administradora de los datos iniciales firma por defecto
+    expect(sin.body.html).toContain('Mendoza')
+
+    const cambio = await api.put('/configuracion/revistas/reep/firma', { firmaNombre: 'Dra. Ana Lucía Pérez', firmaCargo: 'Editora de la revista' })
+    expect(cambio.status).toBe(200)
+    expect(cambio.body).toMatchObject({ firmaNombre: 'Dra. Ana Lucía Pérez', firmaCargo: 'Editora de la revista' })
+    const con = await previa('invitacion')
+    expect(con.body.html).toContain('Dra. Ana Lucía Pérez')
+    expect(con.body.html).toContain('Editora de la revista')
+    // la otra revista no cambia
+    expect((await api.post('/plantillas/vista-correo', { revista: 'ire', uso: 'invitacion', cuerpo: 'x' })).body.html).not.toContain('Dra. Ana Lucía Pérez')
+    // vuelve a la Administradora
+    await api.put('/configuracion/revistas/reep/firma', { firmaNombre: '', firmaCargo: '' })
+    expect((await previa('invitacion')).body.html).not.toContain('Dra. Ana Lucía Pérez')
+    // solo la Administradora lo cambia
+    const { AUXILIAR } = await import('./api.js')
+    const aux = await como(AUXILIAR)
+    expect((await aux.put('/configuracion/revistas/reep/firma', { firmaNombre: 'x', firmaCargo: '' })).status).toBe(403)
+  })
+})

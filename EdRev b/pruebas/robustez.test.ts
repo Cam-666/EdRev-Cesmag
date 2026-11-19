@@ -70,7 +70,7 @@ describe('plantillas y constancias', () => {
     const invitacion = lista.find((p) => p.revista === 'reep' && p.uso === 'invitacion')
     const r = await api.post(`/plantillas/${invitacion?.id}/asignar`, { uso: 'agradecimiento' })
     expect(r.status).toBe(409)
-    expect(r.body.mensaje).toContain('cree una copia')
+    expect(r.body.mensaje).toContain('es para la invitación a evaluar')
     // y sigue en uso como invitación
     const despues = (await api.get('/plantillas')).body.plantillas as Array<{ id: string; uso: string | null }>
     expect(despues.find((p) => p.id === invitacion?.id)?.uso).toBe('invitacion')

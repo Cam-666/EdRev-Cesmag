@@ -1,7 +1,7 @@
 /*
  * ElegirPlantillaDeUso — chooses which template of a journal is used for one purpose (the
- * invitation, the thank-you mail or the constancia). Only templates of the right class are offered;
- * choosing one releases the one used until now. Covers: RF-25, RF-30, RF-45.
+ * invitation, the thank-you mail or the constancia). Only the templates created for that purpose are
+ * offered; choosing one releases the one used until now. Covers: RF-25, RF-30, RF-45.
  */
 import { ETIQUETA_USO } from '../config/plantillas'
 import { useAsignarPlantilla } from '../hooks/useAdmin'
@@ -21,8 +21,7 @@ export interface ElegirPlantillaDeUsoProps {
 
 export function ElegirPlantillaDeUso({ revista, uso, plantillas }: ElegirPlantillaDeUsoProps) {
   const asignar = useAsignarPlantilla()
-  const clase = uso === 'constancia' ? 'archivo' : 'correo'
-  const candidatas = plantillas.filter((p) => p.revista === revista && p.clase === clase)
+  const candidatas = plantillas.filter((p) => p.revista === revista && p.fin === uso)
   const enUso = candidatas.find((p) => p.uso === uso)
   const nombre = REVISTAS[revista].nombreCorto
 
