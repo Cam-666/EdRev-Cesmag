@@ -6,6 +6,7 @@
  */
 import { enTransaccion, pool } from '../db.js'
 import { auditar } from '../lib/auditoria.js'
+import { FECHA_VALIDA } from '../lib/fechas.js'
 import { ErrorHttp, siglaDe, sinTildes } from '../lib/http.js'
 import { iso } from '../lib/mapeo.js'
 import { articuloDeRevista } from './articulos.js'
@@ -60,10 +61,11 @@ export async function listarArticulos(revista: number, f: FiltrosListado) {
   }
   if (f.q?.trim()) {
     // Search by title without accents, or by OJS number (HU-26).
-    valores.push(sinTildes(f.q.trim()))
+    // The wildcards of LIKE written by the user are literal characters, not patterns.
+    valores.push(sinTildes(f.q.trim()).replace(/[\\%_]/g, '\\$&'))
     const p = `$${valores.length}`
     filtros.push(
-      `(translate(lower(a.titulo), 'áéíóúüñ', 'aeiouun') LIKE '%' || ${p} || '%' OR a.numero_ojs LIKE '%' || ${p} || '%')`,
+      `(translate(lower(a.titulo), 'áéíóúüñ', 'aeiouun') LIKE '%' || ${p} || '%' ESCAPE '\\' OR a.numero_ojs LIKE '%' || ${p} || '%' ESCAPE '\\')`,
     )
   }
   if (f.estado) agregar('a.estado = ?', f.estado)
@@ -73,8 +75,8 @@ export async function listarArticulos(revista: number, f: FiltrosListado) {
     agregar('a.volumen = ?', v)
     agregar('a.numero = ?', n)
   }
-  if (f.desde) agregar('a.fecha_postulacion >= ?', f.desde)
-  if (f.hasta) agregar('a.fecha_postulacion <= ?', f.hasta)
+  if (f.desde && FECHA_VALIDA.test(f.desde)) agregar('a.fecha_postulacion >= ?', f.desde)
+  if (f.hasta && FECHA_VALIDA.test(f.hasta)) agregar('a.fecha_postulacion <= ?', f.hasta)
   if (f.sinResponder) {
     filtros.push(
       "EXISTS (SELECT 1 FROM evaluacion e WHERE e.id_articulo = a.id_articulo AND e.estado_par = 'invitado')",

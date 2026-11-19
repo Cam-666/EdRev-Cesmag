@@ -8,9 +8,10 @@
 import request from 'supertest'
 import { describe, expect, it } from 'vitest'
 import { app, articuloAprobado, candidato, como } from './api.js'
+import { fechaLocal } from '../src/lib/fechas.js'
 import { enlaceImagenPie } from '../src/lib/imagenCorreo.js'
 
-const hoy = () => new Date().toISOString().slice(0, 10)
+const hoy = () => fechaLocal()
 const unico = () => `${Date.now()}${Math.floor(Math.random() * 1000)}`
 const PNG = Buffer.from(
   'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==',

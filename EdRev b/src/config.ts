@@ -46,6 +46,8 @@ export const config = {
   /** Public address of the API, for the images of the mails (the footer image of a template). */
   urlApiPublica: (process.env.API_PUBLICA_URL ?? `http://localhost:${process.env.PORT ?? 3000}`).replace(/\/$/, ''),
   jwtHoras: numero('JWT_HORAS', 8),
+  /** Time zone of the dependency: what «today» means for a delivery date. */
+  zonaHoraria: process.env.ZONA_HORARIA ?? 'America/Bogota',
   umbralCoincidencias: numero('UMBRAL_COINCIDENCIAS', 15),
   diasEspera: numero('DIAS_ESPERA_RESPUESTA', 5),
   intentosAntesBloqueo: numero('INTENTOS_ANTES_BLOQUEO', 2),

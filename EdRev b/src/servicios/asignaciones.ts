@@ -7,8 +7,9 @@
  */
 import { enTransaccion, pool, type Cliente } from '../db.js'
 import { auditar } from '../lib/auditoria.js'
+import { fechaLocal } from '../lib/fechas.js'
 import { ErrorHttp, idNumerico } from '../lib/http.js'
-import { conceptoDb, iso, mismaInstitucion } from '../lib/mapeo.js'
+import { conceptoDb, mismaInstitucion } from '../lib/mapeo.js'
 import { reglaPares } from '../lib/paresArticulo.js'
 import type { DatosPar } from '../controladores/esquemas.js'
 import { articuloDeRevista, autoresDe, evaluacionesDe, ultimaRonda } from './articulos.js'
@@ -132,9 +133,9 @@ export async function marcarEntrega(
     if (e.estado_par !== 'acepto') {
       throw new ErrorHttp(409, 'Solo se marca la entrega de un par que aceptó la invitación')
     }
-    const hoy = new Date().toISOString().slice(0, 10)
+    const hoy = fechaLocal()
     if (datos.fecha > hoy) throw new ErrorHttp(422, 'La fecha de entrega no puede ser futura')
-    if (datos.fecha < (iso(e.fecha_asignacion) ?? '').slice(0, 10)) {
+    if (datos.fecha < fechaLocal(e.fecha_asignacion)) {
       throw new ErrorHttp(422, 'La fecha de entrega no puede ser anterior a la invitación')
     }
     // The evaluation is registered with its concept and date; only then can the constancia be issued.

@@ -14,6 +14,11 @@ import { rutasWebhooks } from './webhooks.js'
 export const rutasPublicas = Router()
 
 rutasPublicas.use(rutasAcceso)
+// The mail service's events are public too: a token protects them and a limit of requests slows guessing.
+rutasPublicas.use(
+  '/webhooks',
+  rateLimit({ windowMs: 15 * 60_000, limit: 600, standardHeaders: true, legacyHeaders: false }),
+)
 rutasPublicas.use(rutasWebhooks)
 // The peer answers from the mail without an account: public, with a limit of requests.
 rutasPublicas.use(

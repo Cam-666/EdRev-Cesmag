@@ -5,7 +5,7 @@
 import type { Request, Response } from 'express'
 import { z } from 'zod'
 import { pool } from '../db.js'
-import { idNumerico, idRevista } from '../lib/http.js'
+import { enteroDe, idNumerico, idRevista } from '../lib/http.js'
 import { usuarioDe } from '../middlewares/autenticacion.js'
 import { detalleArticulo } from '../servicios/articulos.js'
 import { agregarAutor } from '../servicios/autoresArticulo.js'
@@ -83,8 +83,8 @@ export async function listar(req: Request, res: Response): Promise<void> {
       desde: textoDe(q.desde),
       hasta: textoDe(q.hasta),
       sinResponder: q.sinResponder === '1',
-      pagina: Math.max(1, Number(q.pagina ?? 1)),
-      porPagina: Math.min(100, Math.max(1, Number(q.porPagina ?? 6))),
+      pagina: enteroDe(q.pagina, 1, 1),
+      porPagina: enteroDe(q.porPagina, 6, 1, 100),
     }),
   )
 }

@@ -4,7 +4,7 @@
  */
 import type { Request, Response } from 'express'
 import { z } from 'zod'
-import { CORREO_VALIDO, idNumerico, idRevista } from '../lib/http.js'
+import { CORREO_VALIDO, enteroDe, idNumerico, idRevista } from '../lib/http.js'
 import { usuarioDe } from '../middlewares/autenticacion.js'
 import * as correos from '../servicios/registroCorreos.js'
 
@@ -21,8 +21,8 @@ export async function listar(req: Request, res: Response): Promise<void> {
     await correos.listarCorreos(revistaDe(req), {
       tipo: q.tipo ? String(q.tipo) : null,
       estado: q.estado ? String(q.estado) : null,
-      pagina: Math.max(1, Number(q.pagina ?? 1)),
-      porPagina: Math.min(100, Math.max(1, Number(q.porPagina ?? 10))),
+      pagina: enteroDe(q.pagina, 1, 1),
+      porPagina: enteroDe(q.porPagina, 10, 1, 100),
     }),
   )
 }

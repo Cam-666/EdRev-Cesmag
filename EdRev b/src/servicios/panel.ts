@@ -4,6 +4,7 @@
  * and approved, and the migrated records still to correct.
  */
 import { pool } from '../db.js'
+import { fechaLocal } from '../lib/fechas.js'
 import { siglaDe } from '../lib/http.js'
 
 async function sinResponder(revista: number) {
@@ -57,7 +58,7 @@ async function porCorregir(revista: number): Promise<number> {
   return rows[0]?.n ?? 0
 }
 
-const hoy = () => new Date().toISOString().slice(0, 10)
+const hoy = () => fechaLocal()
 
 export async function tableroDeRevista(revista: number) {
   return {

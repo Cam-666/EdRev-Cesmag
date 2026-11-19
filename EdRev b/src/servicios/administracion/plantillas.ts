@@ -164,6 +164,10 @@ export async function asignarUso(id: number, uso: Uso) {
   if (!p.cuerpo.trim()) {
     throw new ErrorHttp(422, 'La plantilla aún no tiene texto: redáctela en Plantillas antes de elegirla')
   }
+  // A template that is already in use for another purpose would leave that purpose without one.
+  if (p.tipo && p.tipo !== uso) {
+    throw new ErrorHttp(409, 'Esta plantilla ya está en uso para otro fin: cree una copia para el nuevo uso')
+  }
   validar(VARIABLES[uso], p.asunto, p.cuerpo)
   await enTransaccion(async (c) => {
     await c.query('UPDATE plantilla SET tipo = NULL WHERE id_revista = $1 AND tipo = $2', [p.id_revista, uso])

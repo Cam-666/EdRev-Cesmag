@@ -104,6 +104,13 @@ async function procesar(): Promise<void> {
       botones: MARCA_BOTONES,
     }
     const solo = p.tipo === 'constancia'
+    // Without the template of its use the mail would leave empty (and an invitation without buttons).
+    if (!solo && !p.cuerpo) {
+      console.error(`Sin plantilla en uso para ${p.tipo} de ${p.revista}: el correo ${p.id_correo} no se envía`)
+      await pool.query("UPDATE correo SET resultado = 'fallido', fecha_envio = now() WHERE id_correo = $1", [p.id_correo])
+      await registrarFallo(pool, p.id_correo, p.id_revista, p.id_articulo)
+      continue
+    }
     const asunto = rellenar(p.asunto ?? (solo ? 'Constancia de participación · {{revista}}' : 'Editorial · {{revista}}'), v)
     const texto = rellenar(p.cuerpo ?? (solo ? TEXTO_SOLO_CONSTANCIA : ''), v)
     // The buttons of the invitation (acepto / no acepto / no desea) replace the {{botones}} marker.

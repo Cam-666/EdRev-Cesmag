@@ -138,15 +138,17 @@ export async function descargarConstancia(revista: number, id: number) {
 export async function emitirPendientes(revista: number, actor: number, conAgradecimiento: boolean) {
   const { rows } = await pool.query<FilaEntrega>(`${SELECCION} AND NOT e.constancia_emitida`, [revista])
   const resultados = []
-  let fallidos = 0
+  const motivos: Array<{ par: string; motivo: string }> = []
   for (const f of rows) {
     try {
       resultados.push(await enTransaccion((c) => emitir(c, revista, actor, f, false, conAgradecimiento)))
-    } catch {
-      fallidos += 1
+    } catch (e) {
+      // A known reason (no email, concept missing) is told to the user; anything else is a system error.
+      if (!(e instanceof ErrorHttp)) console.error('Constancia no emitida:', e)
+      motivos.push({ par: f.nombre, motivo: e instanceof ErrorHttp ? e.message : 'Error del sistema' })
     }
   }
-  return { emitidas: resultados.length, fallidos, resultados }
+  return { emitidas: resultados.length, fallidos: motivos.length, motivos, resultados }
 }
 
 export async function emitirConstancia(revista: number, id: number, actor: number, conAgradecimiento: boolean) {

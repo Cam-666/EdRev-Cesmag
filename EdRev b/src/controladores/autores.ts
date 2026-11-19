@@ -4,7 +4,7 @@
  */
 import type { Request, Response } from 'express'
 import { z } from 'zod'
-import { idNumerico, idRevista } from '../lib/http.js'
+import { enteroDe, idNumerico, idRevista } from '../lib/http.js'
 import * as autores from '../servicios/autores.js'
 
 const datosAutor = z.object({
@@ -32,7 +32,7 @@ export async function buscar(req: Request, res: Response): Promise<void> {
   res.json(
     await autores.buscarAutores(revista, {
       q: String(q.q ?? ''),
-      limite: Math.min(200, Math.max(1, Number(q.limite ?? 50))),
+      limite: enteroDe(q.limite, 50, 1, 200),
       en: q.en === 'reep' ? 1 : q.en === 'ire' ? 2 : null,
       pais: String(q.pais ?? ''),
       filiacion: String(q.filiacion ?? ''),

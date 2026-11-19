@@ -38,4 +38,11 @@ export function sinTildes(texto: string): string {
     .toLowerCase()
 }
 
+/** An integer query value inside [minimo, maximo]; anything else (text, decimals, NaN) is the default. */
+export function enteroDe(valor: unknown, porDefecto: number, minimo: number, maximo = Number.MAX_SAFE_INTEGER): number {
+  const n = Number(valor)
+  if (valor === undefined || valor === '' || !Number.isInteger(n)) return porDefecto
+  return Math.min(maximo, Math.max(minimo, n))
+}
+
 export const CORREO_VALIDO = /^[^\s@]+@[^\s@]+\.[^\s@]+$/

@@ -21,6 +21,21 @@ export function manejadorErrores(error: unknown, _req: Request, res: Response, _
     res.status(422).json({ mensaje: error.issues[0]?.message ?? 'Datos no válidos' })
     return
   }
+  // A badly formed or too big body, or an upload over its limit, is the client's mistake.
+  const cliente = error as { status?: number; type?: string; name?: string; code?: string }
+  if (cliente.type === 'entity.parse.failed') {
+    res.status(400).json({ mensaje: 'El cuerpo de la solicitud no es un JSON válido' })
+    return
+  }
+  if (cliente.type === 'entity.too.large' || cliente.status === 413) {
+    res.status(413).json({ mensaje: 'La solicitud es demasiado grande' })
+    return
+  }
+  if (cliente.name === 'MulterError') {
+    const grande = cliente.code === 'LIMIT_FILE_SIZE'
+    res.status(grande ? 413 : 422).json({ mensaje: grande ? 'La imagen no puede pesar más de 2 MB' : 'No se pudo leer el archivo adjunto' })
+    return
+  }
   const pg = error as { code?: string; message?: string }
   if (pg.code === '23505') {
     res.status(409).json({ mensaje: 'Ya existe un registro con esos datos' })

@@ -1,10 +1,11 @@
 /*
  * Pruebas de asignación, evaluación, constancias y correos — RF-19 a RF-34.
  */
+import { fechaLocal } from '../src/lib/fechas.js'
 import { describe, expect, it } from 'vitest'
 import { articuloAprobado, candidato, como } from './api.js'
 
-const hoy = () => new Date().toISOString().slice(0, 10)
+const hoy = () => fechaLocal()
 
 describe('asignación, evaluación, constancias y correos (RF-19 a RF-34)', () => {
   it('un artículo archivado y retomado como «Postulado» pasa de nuevo por el comité antes de tener pares', async () => {
