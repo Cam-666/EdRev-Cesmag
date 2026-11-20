@@ -22,15 +22,28 @@ export const ETIQUETA_USO: Record<UsoPlantilla, string> = {
  * mostrar para qué sirve).
  */
 export const ETIQUETA_FIN: Record<FinPlantilla, string> = {
-  ...ETIQUETA_USO,
-  mensaje: 'Mensaje para enviar a mano',
+  invitacion: 'Correo de invitación',
+  agradecimiento: 'Correo de agradecimiento',
+  constancia: 'Constancia',
+  mensaje: 'Correo libre',
 }
 
 export const EXPLICACION_FIN: Record<FinPlantilla, string> = {
   invitacion: 'Se envía sola al par cuando usted lo asigna a un artículo.',
   agradecimiento: 'Se envía sola, junto con la constancia, cuando usted emite la constancia.',
-  constancia: 'Es el documento PDF de la constancia que recibe el par.',
+  constancia: 'Es el documento PDF de la constancia que recibe el par. Siempre está en uso: solo se edita.',
   mensaje: 'Sirve para escribirle a un par o a un autor cuando usted quiera, desde su ficha, con el botón «Enviar correo».',
+}
+
+/**
+ * Los datos que acepta cada uso (los mismos que valida el servidor). Al cambiar el uso de una plantilla en la
+ * pantalla, el editor ofrece los datos del uso elegido antes de guardar.
+ */
+export const VARIABLES_POR_FIN: Record<FinPlantilla, string[]> = {
+  invitacion: ['revista', 'numero', 'par', 'profesion', 'universidad', 'articulo', 'botones'],
+  agradecimiento: ['revista', 'par', 'articulo'],
+  constancia: ['revista', 'REVISTA', 'par', 'PAR', 'articulo', 'issn', 'indexaciones', 'fecha', 'anio', 'firma'],
+  mensaje: ['revista', 'nombre', 'universidad', 'profesion', 'fecha', 'anio'],
 }
 
 /** Los correos para los que puede servir una plantilla de correo; la plantilla de archivo es la constancia. */
@@ -39,12 +52,11 @@ export const USOS_CORREO: Array<{ valor: Exclude<UsoPlantilla, 'constancia'>; et
   { valor: 'agradecimiento', etiqueta: 'Agradecimiento' },
 ]
 
-/** Los tipos que se pueden elegir al crear una plantilla. */
-export const TIPOS_AL_CREAR: Array<{ valor: FinPlantilla; etiqueta: string }> = [
-  { valor: 'mensaje', etiqueta: 'Mensaje para enviar a mano a un par o a un autor' },
-  { valor: 'invitacion', etiqueta: 'Invitación a evaluar (se envía sola al asignar un par)' },
-  { valor: 'agradecimiento', etiqueta: 'Agradecimiento (se envía sola con la constancia)' },
-  { valor: 'constancia', etiqueta: 'Constancia de participación (el PDF)' },
+/** El menú «Uso» de una plantilla de correo (la constancia no cambia de uso y no aparece). */
+export const USOS_DE_CORREO: Array<{ valor: Exclude<FinPlantilla, 'constancia'>; etiqueta: string }> = [
+  { valor: 'invitacion', etiqueta: 'Correo de invitación' },
+  { valor: 'agradecimiento', etiqueta: 'Correo de agradecimiento' },
+  { valor: 'mensaje', etiqueta: 'Correo libre' },
 ]
 
 /** Devuelve el primer problema encontrado como frase, o null cuando la plantilla es válida. */

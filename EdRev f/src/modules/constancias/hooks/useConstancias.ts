@@ -11,6 +11,7 @@ import {
   obtenerVistaConstancia,
   reenviarConstancia,
 } from '../services/constanciasService'
+import { solicitarArchivo } from '@/lib/api/cliente'
 import { useRevista } from '@/lib/revista/useRevista'
 
 function useInvalidarConstancias() {
@@ -39,6 +40,16 @@ export function useVistaConstancia(constanciaId: string | null) {
     queryKey: ['constancias', revista, 'vista', constanciaId],
     queryFn: () => obtenerVistaConstancia(revista, constanciaId ?? ''),
     enabled: constanciaId !== null,
+  })
+}
+
+/** El PDF de la constancia tal como lo recibirá el par; solo existe con el servidor real. */
+export function useVistaPdfConstancia(constanciaId: string | null) {
+  const { revista } = useRevista()
+  return useQuery({
+    queryKey: ['constancias', revista, 'pdf', constanciaId],
+    queryFn: () => solicitarArchivo(`/${revista}/constancias/${encodeURIComponent(constanciaId ?? '')}/pdf`),
+    enabled: constanciaId !== null && import.meta.env.VITE_USE_MOCKS === 'false',
   })
 }
 

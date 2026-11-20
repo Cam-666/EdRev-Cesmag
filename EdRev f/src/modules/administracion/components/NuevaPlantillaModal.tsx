@@ -1,27 +1,24 @@
 /*
- * NuevaPlantillaModal — crea una plantilla nueva de una revista: un nombre libre y de qué tipo es (un mensaje para
- * enviar a mano, la invitación, el agradecimiento o la constancia), con una frase que explica cada tipo. Se crea en
- * blanco: la persona la escribe y la deja lista desde la propia plantilla. No tiene diseño en Figma.
+ * NuevaPlantillaModal — crea una plantilla nueva de una revista: solo pide el nombre. Nace en blanco como «correo
+ * libre»; el uso (invitación, agradecimiento o libre) se elige después, en la propia plantilla. La constancia de cada
+ * revista ya existe y es única, por eso no se puede crear otra. No tiene diseño en Figma.
  */
 import { zodResolver } from '@hookform/resolvers/zod'
-import { Controller, useForm, useWatch } from 'react-hook-form'
+import { useForm } from 'react-hook-form'
 import { z } from 'zod'
-import { EXPLICACION_FIN, TIPOS_AL_CREAR } from '../config/plantillas'
 import { useCrearPlantilla } from '../hooks/useAdmin'
 import { Alerta } from '@/components/common/Alerta'
 import { Boton } from '@/components/common/Boton'
 import { CampoTexto } from '@/components/common/CampoTexto'
-import { ListaDesplegable } from '@/components/common/ListaDesplegable'
 import { Modal } from '@/components/common/Modal'
 import { mensajeDeApi } from '@/lib/api/errores'
 import { REVISTAS } from '@/types/revista'
 import type { Revista } from '@/types/revista'
-import type { FinPlantilla, Plantilla } from '@/types/plantilla'
+import type { Plantilla } from '@/types/plantilla'
 
 
 const esquema = z.object({
   nombre: z.string().trim().min(1, 'Escriba el nombre de la plantilla.'),
-  uso: z.enum(['mensaje', 'invitacion', 'agradecimiento', 'constancia']),
 })
 type Datos = z.infer<typeof esquema>
 
@@ -45,17 +42,14 @@ function Contenido({ revista, onCerrar, onCreada }: NuevaPlantillaModalProps) {
   const {
     register,
     handleSubmit,
-    control,
     formState: { errors },
   } = useForm<Datos>({
     resolver: zodResolver(esquema),
-    defaultValues: { nombre: '', uso: 'mensaje' },
+    defaultValues: { nombre: '' },
   })
 
-  const tipo = useWatch({ control, name: 'uso' })
-
   function enviar(datos: Datos) {
-    crear.mutate({ revista, nombre: datos.nombre, uso: datos.uso }, { onSuccess: onCreada })
+    crear.mutate({ revista, nombre: datos.nombre }, { onSuccess: onCreada })
   }
 
   return (
@@ -63,7 +57,7 @@ function Contenido({ revista, onCerrar, onCreada }: NuevaPlantillaModalProps) {
       abierto
       onCerrar={onCerrar}
       titulo="Nueva plantilla"
-      descripcion={`Nueva plantilla de ${REVISTAS[revista].nombreCorto}. Se crea en blanco: usted escribe el texto y la deja lista.`}
+      descripcion={`Nueva plantilla de ${REVISTAS[revista].nombreCorto}. Se crea en blanco: después elige para qué se usa y escribe el texto.`}
       acciones={
         <>
           <Boton variante="neutro" onClick={onCerrar}>
@@ -92,19 +86,6 @@ function Contenido({ revista, onCerrar, onCreada }: NuevaPlantillaModalProps) {
           error={errors.nombre?.message}
           {...register('nombre')}
         />
-        <Controller
-          control={control}
-          name="uso"
-          render={({ field }) => (
-            <ListaDesplegable
-              etiqueta="¿Qué tipo de plantilla es?"
-              opciones={TIPOS_AL_CREAR.map((u) => ({ valor: u.valor, etiqueta: u.etiqueta }))}
-              valor={field.value}
-              onCambio={(v) => field.onChange(v as FinPlantilla)}
-            />
-          )}
-        />
-        <p className="text-cuerpo-13 text-texto-secundario">{EXPLICACION_FIN[tipo]}</p>
       </form>
     </Modal>
   )

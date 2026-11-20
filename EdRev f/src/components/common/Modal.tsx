@@ -11,9 +11,11 @@ export interface ModalProps {
   children?: ReactNode
   /** Acciones del pie (botones). */
   acciones?: ReactNode
+  /** «amplio» para los diálogos que muestran una vista previa grande (un correo o una constancia). */
+  ancho?: 'normal' | 'amplio'
 }
 
-export function Modal({ abierto, onCerrar, titulo, descripcion, children, acciones }: ModalProps) {
+export function Modal({ abierto, onCerrar, titulo, descripcion, children, acciones, ancho = 'normal' }: ModalProps) {
   // El diálogo es controlado (sin Radix Trigger), así que se recuerda quién lo abrió para devolverle el foco.
   const previo = useRef<HTMLElement | null>(null)
   return (
@@ -28,7 +30,7 @@ export function Modal({ abierto, onCerrar, titulo, descripcion, children, accion
             evento.preventDefault()
             previo.current?.focus()
           }}
-          className="fixed left-1/2 top-1/2 z-50 flex max-h-full w-full max-w-acceso -translate-x-1/2 -translate-y-1/2 flex-col gap-4 overflow-y-auto rounded-lg bg-superficie-tarjeta p-6 shadow-elevada"
+          className={`fixed left-1/2 top-1/2 z-50 flex max-h-full w-full ${ancho === 'amplio' ? 'max-w-5xl' : 'max-w-acceso'} -translate-x-1/2 -translate-y-1/2 flex-col gap-4 overflow-y-auto rounded-lg bg-superficie-tarjeta p-6 shadow-elevada`}
         >
           <div className="flex items-start justify-between gap-4">
             <Dialog.Title className="text-titulo-20">{titulo}</Dialog.Title>

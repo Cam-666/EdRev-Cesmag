@@ -17,11 +17,12 @@ const nueva = z
     uso: uso.optional(),
     clase: z.enum(['correo', 'archivo']).optional(),
   })
-  .refine((x) => x.uso || x.clase, { message: 'Elija para qué se usará la plantilla' })
 
 const edicion = z.object({
   asunto: z.string().nullable(),
   cuerpo: z.string(),
+  // El uso de una plantilla de correo (la constancia no cambia de uso).
+  fin: z.enum(['invitacion', 'agradecimiento', 'mensaje']).optional(),
 })
 
 const idDe = (req: Request) => idNumerico(req.params.id, 'Plantilla')

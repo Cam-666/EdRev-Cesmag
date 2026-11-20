@@ -71,6 +71,7 @@ function Contenido({ onCerrar, destino, nombre, correo }: EnviarCorreoModalProps
   return (
     <Modal
       abierto
+      ancho="amplio"
       onCerrar={onCerrar}
       titulo={`Enviar correo a ${nombre}`}
       descripcion="Elija desde qué revista y con qué plantilla, revise cómo queda y pulse «Enviar correo»."
@@ -145,7 +146,7 @@ function Contenido({ onCerrar, destino, nombre, correo }: EnviarCorreoModalProps
                   title="Vista previa del correo"
                   srcDoc={vista.data.html}
                   sandbox=""
-                  className="h-[420px] w-full rounded-lg border border-borde-base bg-white"
+                  className="h-[65vh] min-h-[480px] w-full rounded-lg border border-borde-base bg-white"
                 />
               </>
             ) : (

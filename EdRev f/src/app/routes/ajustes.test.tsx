@@ -116,14 +116,14 @@ describe('plantillas: cada una conserva el fin para el que se creó', () => {
     await user.click(await screen.findByRole('button', { name: 'Nueva plantilla' }))
     const dialogo = await screen.findByRole('dialog', { name: 'Nueva plantilla' })
     await user.type(within(dialogo).getByLabelText('Nombre'), 'Gracias de fin de año')
-    await elegirOpcion(user, '¿Qué tipo de plantilla es?', 'Agradecimiento (se envía sola con la constancia)')
     await user.click(within(dialogo).getByRole('button', { name: 'Crear plantilla' }))
     await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull())
+    await elegirOpcion(user, 'Uso de la plantilla', 'Correo de agradecimiento')
     const marco = await screen.findByTitle('Vista previa del correo')
     await waitFor(() => expect(marco).toHaveAttribute('srcdoc', expect.stringContaining('Gracias por su evaluación')))
     expect(marco.getAttribute('srcdoc')).not.toContain('Invitación a evaluar un artículo')
     // la lista dice para qué sirve cada una
-    expect(screen.getByRole('combobox', { name: 'Plantilla' })).toHaveTextContent('Gracias de fin de año · Agradecimiento')
+    expect(screen.getByRole('combobox', { name: 'Plantilla' })).toHaveTextContent('Gracias de fin de año · Correo libre')
   })
 
   it('una plantilla de agradecimiento se marca «en uso» desde ella misma, sin pasar por Configuración', async () => {
@@ -131,12 +131,12 @@ describe('plantillas: cada una conserva el fin para el que se creó', () => {
     await user.click(await screen.findByRole('button', { name: 'Nueva plantilla' }))
     const dialogo = await screen.findByRole('dialog', { name: 'Nueva plantilla' })
     await user.type(within(dialogo).getByLabelText('Nombre'), 'Solo para agradecer')
-    await elegirOpcion(user, '¿Qué tipo de plantilla es?', 'Agradecimiento (se envía sola con la constancia)')
-    // cada tipo se explica con una frase sencilla
-    expect(within(dialogo).getByText(/Se envía sola, junto con la constancia/)).toBeInTheDocument()
     await user.click(within(dialogo).getByRole('button', { name: 'Crear plantilla' }))
     await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull())
     await screen.findByTitle('Vista previa del correo')
+    // cada uso se explica con una frase sencilla
+    await elegirOpcion(user, 'Uso de la plantilla', 'Correo de agradecimiento')
+    expect(screen.getByText(/Se envía sola, junto con la constancia/)).toBeInTheDocument()
     // la plantilla trae su propio botón; ya no hay que ir a Configuración
     expect(screen.getByRole('button', { name: 'Usar esta plantilla' })).toBeInTheDocument()
     expect(screen.getByRole('combobox', { name: 'Plantilla' })).toHaveTextContent('Solo para agradecer')
@@ -160,5 +160,35 @@ describe('firma de los correos', () => {
     expect(marco.getAttribute('srcdoc')).not.toContain('alt="Firma"')
     expect(screen.queryByRole('heading', { name: 'Firma del correo' })).toBeNull()
     expect(screen.queryByLabelText('Imagen de imagen de la firma')).toBeNull()
+  })
+})
+
+describe('plantillas: la constancia es permanente y el aviso de guardado está debajo de los botones', () => {
+  it('la constancia no tiene menú de uso, ni «Usar esta plantilla», ni se puede eliminar', async () => {
+    const { user } = montarRuta('/administracion/plantillas')
+    await screen.findByRole('combobox', { name: 'Plantilla' })
+    await elegirOpcion(user, 'Plantilla', 'Constancia de participación · EN USO')
+    expect(await screen.findByText(/Siempre está en uso: solo se edita/)).toBeInTheDocument()
+    expect(screen.queryByRole('combobox', { name: 'Uso de la plantilla' })).toBeNull()
+    expect(screen.queryByRole('button', { name: 'Usar esta plantilla' })).toBeNull()
+    expect(screen.queryByRole('button', { name: 'Eliminar plantilla' })).toBeNull()
+    expect(screen.getByRole('button', { name: 'Guardar plantilla' })).toBeInTheDocument()
+  })
+
+  it('al guardar, el aviso verde sale debajo del botón Guardar, donde se ve', async () => {
+    const { user } = montarRuta('/administracion/plantillas')
+    const guardar = await screen.findByRole('button', { name: 'Guardar plantilla' })
+    expect(screen.queryByText(/Plantilla guardada/)).toBeNull()
+    await user.click(guardar)
+    const aviso = await screen.findByText(/Plantilla guardada\. Los próximos envíos usarán el texto nuevo/)
+    // el aviso está después del botón en la página (abajo del todo), no arriba del formulario
+    expect(guardar.compareDocumentPosition(aviso) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+  })
+
+  it('una plantilla en uso no cambia de uso: el menú está bloqueado y lo explica', async () => {
+    montarRuta('/administracion/plantillas')
+    const menu = await screen.findByRole('combobox', { name: 'Uso de la plantilla' })
+    expect(menu).toBeDisabled()
+    expect(screen.getAllByText(/primero use otra plantilla/).length).toBeGreaterThan(0)
   })
 })

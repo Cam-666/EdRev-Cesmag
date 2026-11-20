@@ -255,11 +255,16 @@ describe('administration', () => {
     await user.click(await screen.findByRole('button', { name: 'Nueva plantilla' }))
     const dialogo = await screen.findByRole('dialog', { name: 'Nueva plantilla' })
     expect(within(dialogo).queryByRole('checkbox')).toBeNull()
+    // al crearla solo se pide el nombre
+    expect(within(dialogo).queryByRole('combobox')).toBeNull()
     await user.type(within(dialogo).getByLabelText('Nombre'), 'Invitación renovada')
-    await user.click(within(dialogo).getByRole('combobox', { name: '¿Qué tipo de plantilla es?' }))
-    await user.click(await screen.findByRole('option', { name: 'Invitación a evaluar (se envía sola al asignar un par)' }))
     await user.click(within(dialogo).getByRole('button', { name: 'Crear plantilla' }))
     await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull())
+    // el uso se elige después, en la propia plantilla (empieza como correo libre)
+    expect(await screen.findByRole('combobox', { name: 'Uso de la plantilla' })).toHaveTextContent('Correo libre')
+    expect(screen.queryByRole('button', { name: 'Usar esta plantilla' })).toBeNull()
+    await user.click(screen.getByRole('combobox', { name: 'Uso de la plantilla' }))
+    await user.click(await screen.findByRole('option', { name: 'Correo de invitación' }))
     expect(await screen.findByRole('button', { name: 'Usar esta plantilla' })).toBeInTheDocument()
 
     const texto = screen.getByLabelText('Texto')

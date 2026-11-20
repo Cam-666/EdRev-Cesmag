@@ -292,8 +292,8 @@ describe('templates API', () => {
     )
   })
 
-  it('a new mail template has no use until it is chosen, and only then is it sent', async () => {
-    const datos = { revista: 'reep', nombre: 'Invitación breve', clase: 'correo' }
+  it('a new template only needs a name: it is a free mail, its use is changed when editing and it is chosen afterwards', async () => {
+    const datos = { revista: 'reep', nombre: 'Invitación breve' }
     expect(
       (await llamar('/plantillas', { metodo: 'POST', usuario: AUXILIAR, cuerpo: datos })).status,
     ).toBe(403)
@@ -303,7 +303,7 @@ describe('templates API', () => {
     const r = await llamar('/plantillas', { metodo: 'POST', cuerpo: datos })
     expect(r.status).toBe(201)
     const nueva = await json<Plantilla>(r)
-    expect(nueva).toMatchObject({ revista: 'reep', uso: null, enUso: false })
+    expect(nueva).toMatchObject({ revista: 'reep', uso: null, enUso: false, fin: 'mensaje', clase: 'correo' })
     expect(nueva.cuerpo).toBe('') // a new template is blank
     expect((await llamar('/plantillas', { metodo: 'POST', cuerpo: datos })).status).toBe(409)
     // El mismo nombre está bien en la otra revista
@@ -313,13 +313,22 @@ describe('templates API', () => {
     })
     expect(enIre.status).toBe(201)
 
-    await llamar(`/plantillas/${nueva.id}`, {
+    // el uso se cambia al editarla: como invitación acepta {{par}} y {{articulo}}; como libre no
+    const comoLibre = await llamar(`/plantillas/${nueva.id}`, {
+      metodo: 'PUT',
+      cuerpo: { asunto: 'Invitación · {{revista}}', cuerpo: 'Hola {{par}}' },
+    })
+    expect(comoLibre.status).toBe(422)
+    const comoInvitacion = await llamar(`/plantillas/${nueva.id}`, {
       metodo: 'PUT',
       cuerpo: {
         asunto: 'Invitación · {{revista}}',
         cuerpo: 'Hola {{par}}, ¿evalúa «{{articulo}}»?',
+        fin: 'invitacion',
       },
     })
+    expect(comoInvitacion.status).toBe(200)
+    expect((await json<Plantilla>(comoInvitacion)).fin).toBe('invitacion')
     expect(await asuntoDeLaInvitacion()).toBe(
       'Invitación a evaluar un artículo · Revista Electrónica en Educación y Pedagogía',
     )
@@ -345,7 +354,7 @@ describe('templates API', () => {
     const creada = await json<Plantilla>(
       await llamar('/plantillas', {
         metodo: 'POST',
-        cuerpo: { revista: 'ire', nombre: 'Para eliminar', clase: 'correo' },
+        cuerpo: { revista: 'ire', nombre: 'Para eliminar' },
       }),
     )
     expect((await llamar('/plantillas/ire-invitacion', { metodo: 'DELETE' })).status).toBe(409)
@@ -353,15 +362,26 @@ describe('templates API', () => {
     expect((await llamar(`/plantillas/${creada.id}`, { metodo: 'DELETE' })).status).toBe(404)
   })
 
-  it('a new file template is blank and has no images', async () => {
-    const r = await llamar('/plantillas', {
-      metodo: 'POST',
-      cuerpo: { revista: 'ire', nombre: 'Constancia 2027', clase: 'archivo' },
+  it('the constancia of each journal is permanent: it cannot be created again nor deleted, and its use does not change', async () => {
+    for (const cuerpo of [
+      { revista: 'ire', nombre: 'Constancia 2027', clase: 'archivo' },
+      { revista: 'ire', nombre: 'Constancia 2028', uso: 'constancia' },
+    ]) {
+      expect((await llamar('/plantillas', { metodo: 'POST', cuerpo })).status).toBe(409)
+    }
+    const borrar = await llamar('/plantillas/ire-constancia', { metodo: 'DELETE' })
+    expect(borrar.status).toBe(409)
+    const cambiar = await llamar('/plantillas/ire-constancia', {
+      metodo: 'PUT',
+      cuerpo: { asunto: null, cuerpo: '{{par}}', fin: 'mensaje' },
     })
-    const nueva = await json<Plantilla>(r)
-    expect(nueva).toMatchObject({ clase: 'archivo', uso: null })
-    expect(nueva.imagenes?.encabezado).toBeNull()
-    expect(nueva.cuerpo).toBe('')
+    expect(cambiar.status).toBe(409)
+    // y la que está en uso como invitación no cambia de uso
+    const enUso = await llamar('/plantillas/ire-invitacion', {
+      metodo: 'PUT',
+      cuerpo: { asunto: 'Hola', cuerpo: 'Hola {{par}}', fin: 'mensaje' },
+    })
+    expect(enUso.status).toBe(409)
   })
 })
 

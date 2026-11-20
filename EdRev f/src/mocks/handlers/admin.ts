@@ -183,9 +183,11 @@ export const handlersAdmin = [
     if (!c.ok) return c.respuesta
     const datos = (await request.json()) as DatosNuevaPlantilla
     const { revista, nombre, uso } = datos
-    const clase = uso ? (uso === 'constancia' ? 'archivo' : 'correo') : datos.clase
+    // La constancia de cada revista es única y permanente: no se crea otra.
+    if (uso === 'constancia' || datos.clase === 'archivo') {
+      return error(409, 'La constancia de cada revista ya existe y es única: edítela en Plantillas, no se crea otra')
+    }
     if (revista !== 'reep' && revista !== 'ire') return error(422, 'Revista no válida')
-    if (clase !== 'correo' && clase !== 'archivo') return error(422, 'Elija para qué se usará la plantilla')
     if (!nombre.trim()) return error(422, 'Escriba el nombre de la plantilla')
     const repetido = plantillas().some(
       (p) => p.revista === revista && p.nombre.trim().toLowerCase() === nombre.trim().toLowerCase(),
@@ -193,19 +195,20 @@ export const handlersAdmin = [
     if (repetido) return error(409, 'Ya existe una plantilla con ese nombre en esta revista')
     // Una plantilla nueva siempre nace en blanco; para qué sirve no cambia y los datos que acepta dependen de ello.
     const id = `${revista}-pl-n${plantillas().length + 1}`
-    const fin: FinPlantilla = uso ?? (clase === 'archivo' ? 'constancia' : 'invitacion')
+    // Una plantilla nueva es un correo libre; su uso se cambia después, al editarla.
+    const fin: FinPlantilla = uso ?? 'mensaje'
     const nueva: Plantilla = {
       id,
       revista,
       uso: null,
       fin,
-      clase,
+      clase: 'correo',
       nombre: nombre.trim(),
-      asunto: clase === 'correo' ? '' : null,
+      asunto: '',
       cuerpo: '',
       variables: [...VARIABLES[fin]],
       enUso: false,
-      imagenes: clase === 'archivo' ? { encabezado: null, pie: null, firma: null } : null,
+      imagenes: null,
     }
     plantillas().push(nueva)
     return HttpResponse.json(nueva, { status: 201 })
@@ -245,6 +248,9 @@ export const handlersAdmin = [
     if (!c.ok) return c.respuesta
     const plantilla = plantillas().find((p) => p.id === params.id)
     if (!plantilla) return error(404, 'Plantilla no encontrada')
+    if (plantilla.fin === 'constancia') {
+      return error(409, 'La constancia de la revista es permanente: no se puede eliminar, solo editar')
+    }
     if (plantilla.uso) {
       return error(409, 'La plantilla está en uso; marque otra como «en uso» antes de eliminarla')
     }
@@ -329,18 +335,32 @@ export const handlersAdmin = [
     if (!c.ok) return c.respuesta
     const plantilla = plantillas().find((p) => p.id === params.id)
     if (!plantilla) return error(404, 'Plantilla no encontrada')
-    const { asunto, cuerpo } = (await request.json()) as {
+    const { asunto, cuerpo, fin } = (await request.json()) as {
       asunto: string | null
       cuerpo: string
+      fin?: FinPlantilla
+    }
+    // El uso de una plantilla de correo se cambia al editarla, salvo el de la que está en uso y el de la constancia.
+    let nuevoFin: FinPlantilla = plantilla.fin
+    if (fin && fin !== plantilla.fin) {
+      if (plantilla.clase === 'archivo' || fin === 'constancia') {
+        return error(409, 'El uso de la constancia no se cambia: es la constancia de la revista')
+      }
+      if (plantilla.uso) {
+        return error(409, `Esta plantilla es la que se usa para ${FIN_TEXTO[plantilla.fin]}: para cambiar su uso, primero marque otra plantilla como la que se usa`)
+      }
+      nuevoFin = fin
     }
     const fallo = validarPlantilla(
-      plantilla.variables,
+      VARIABLES[nuevoFin],
       plantilla.asunto === null ? null : asunto,
       cuerpo,
     )
     if (fallo) return error(422, fallo)
     if (plantilla.asunto !== null) plantilla.asunto = asunto ?? plantilla.asunto
     plantilla.cuerpo = cuerpo
+    plantilla.fin = nuevoFin
+    plantilla.variables = [...VARIABLES[nuevoFin]]
     return HttpResponse.json(plantilla)
   }),
 

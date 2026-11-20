@@ -12,13 +12,21 @@ describe('plantillas, auditoría, informes y pares por revista', () => {
     const constancia = plantillas.find((p: { revista: string; uso: string }) => p.revista === 'ire' && p.uso === 'constancia')
     expect((await api.put(`/plantillas/${constancia.id}`, { asunto: null, cuerpo: '   ' })).status).toBe(422) // vacío
     expect((await api.put(`/plantillas/${constancia.id}`, { asunto: null, cuerpo: '{{par}} {{articulo}} {{otro}}' })).status).toBe(422)
-    const nueva = await api.post('/plantillas', { revista: 'ire', nombre: 'Constancia 2027', clase: 'archivo' })
-    expect(nueva.body).toMatchObject({ revista: 'ire', uso: null, clase: 'archivo', enUso: false })
-    expect((await api.post(`/plantillas/${nueva.body.id}/asignar`, { uso: 'constancia' })).status).toBe(422) // aún en blanco
-    await api.put(`/plantillas/${nueva.body.id}`, { asunto: null, cuerpo: '{{PAR}} {{articulo}}' })
-    expect((await api.post(`/plantillas/${nueva.body.id}/asignar`, { uso: 'constancia' })).body.enUso).toBe(true)
+    // una plantilla nueva solo pide el nombre: nace como correo libre y en blanco
+    const nueva = await api.post('/plantillas', { revista: 'ire', nombre: `Recordatorio ${Date.now()}` })
+    expect(nueva.body).toMatchObject({ revista: 'ire', uso: null, clase: 'correo', fin: 'mensaje', enUso: false })
+    // para marcarla como la plantilla de invitación necesita texto, y su uso se cambia al editarla
+    expect((await api.post(`/plantillas/${nueva.body.id}/asignar`, { uso: 'invitacion' })).status).toBe(409) // es libre
+    expect((await api.put(`/plantillas/${nueva.body.id}`, { asunto: 'Hola', cuerpo: '{{par}} {{articulo}}', fin: 'invitacion' })).status).toBe(200)
+    expect((await api.post(`/plantillas/${nueva.body.id}/asignar`, { uso: 'invitacion' })).body.enUso).toBe(true)
     const despues = (await api.get('/plantillas')).body.plantillas
+    expect(despues.filter((p: { revista: string; uso: string; enUso: boolean }) => p.revista === 'ire' && p.uso === 'invitacion' && p.enUso)).toHaveLength(1)
+    // la constancia de la revista sigue en uso: es permanente
     expect(despues.filter((p: { revista: string; uso: string; enUso: boolean }) => p.revista === 'ire' && p.uso === 'constancia' && p.enUso)).toHaveLength(1)
+    // la invitación original vuelve a quedar en uso y la de prueba se elimina
+    const original = despues.find((p: { revista: string; nombre: string }) => p.revista === 'ire' && p.nombre === 'Invitación a evaluar')
+    await api.post(`/plantillas/${original.id}/asignar`, { uso: 'invitacion' })
+    expect((await api.delete(`/plantillas/${nueva.body.id}`)).status).toBe(204)
   })
 
   it('se elimina una cuenta sin actividad; no la propia ni una con historial', async () => {

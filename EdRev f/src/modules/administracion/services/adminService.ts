@@ -9,6 +9,7 @@ import type { EntradaAuditoria, TipoAuditoria } from '@/types/historial'
 import type {
   DatosNuevaPlantilla,
   DatosPlantillas,
+  FinPlantilla,
   ParteImagen,
   Plantilla,
   UsoPlantilla,
@@ -129,7 +130,7 @@ export function eliminarPlantilla(id: string): Promise<void> {
 
 export function guardarPlantilla(
   id: string,
-  datos: { asunto: string | null; cuerpo: string },
+  datos: { asunto: string | null; cuerpo: string; fin?: FinPlantilla },
 ): Promise<Plantilla> {
   return solicitar<Plantilla>(`/plantillas/${encodeURIComponent(id)}`, {
     method: 'PUT',

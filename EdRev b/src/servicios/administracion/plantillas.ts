@@ -1,8 +1,10 @@
 /*
  * plantillas (servicio) — las plantillas de cada revista: un correo (asunto y texto) o un archivo (la constancia:
  * un texto entre una imagen de encabezado y una de pie de página, con la imagen de la firma donde está {{firma}}).
- * Una plantilla nueva siempre nace en blanco (la persona la escribe). En cada revista solo hay una plantilla en
- * uso por tipo, y los datos que una plantilla puede traer dependen de su fin.
+ * Una plantilla nueva solo pide un nombre: nace en blanco, es un correo y su uso es «correo libre»; el uso (invitación,
+ * agradecimiento o libre) se cambia después, al editarla. La constancia de cada revista es única y permanente: no se crea
+ * ni se elimina, solo se edita. En cada revista solo hay una plantilla en uso por tipo, y los datos que una plantilla
+ * puede traer dependen de su uso.
  * Cada plantilla conserva el fin (`fin`) para el que se creó, esté en uso o no: una de agradecimiento se
  * previsualiza, se edita y se elige como de agradecimiento. `tipo` solo dice para qué está en uso hoy.
  */
@@ -107,16 +109,18 @@ export async function listarPlantillas() {
 export interface DatosNuevaPlantilla {
   revista: 'reep' | 'ire'
   nombre: string
-  /** Para qué sirve: de ahí sale la clase. Sin él, la clase viene dada. La plantilla siempre nace en blanco. */
+  /** Opcional: por omisión es «mensaje» (correo libre). La constancia no se puede crear: ya existe una por revista. */
   uso?: Fin
   clase?: 'correo' | 'archivo'
 }
 
 export async function crearPlantilla(d: DatosNuevaPlantilla) {
   const revista = numeroDeRevista(d.revista)
-  const clase = d.uso ? (d.uso === 'constancia' ? 'archivo' : 'correo') : (d.clase ?? 'correo')
-  const fin: Fin = d.uso ?? (clase === 'archivo' ? 'constancia' : 'invitacion')
-  if (d.uso && d.clase && d.clase !== clase) throw new ErrorHttp(409, 'La clase no corresponde al uso elegido')
+  if (d.uso === 'constancia' || d.clase === 'archivo') {
+    throw new ErrorHttp(409, 'La constancia de cada revista ya existe y es única: edítela en Plantillas, no se crea otra')
+  }
+  const clase = 'correo'
+  const fin: Fin = d.uso ?? 'mensaje'
   const nombreRepetido = (e: { code?: string }): never => {
     if (e.code === '23505') throw new ErrorHttp(409, 'Ya existe una plantilla con ese nombre en esta revista')
     throw e
@@ -158,20 +162,37 @@ export async function asignarUso(id: number, uso: Fin) {
 
 export async function eliminarPlantilla(id: number): Promise<void> {
   const p = await cargar(id)
+  if (p.fin === 'constancia') throw new ErrorHttp(409, 'La constancia de la revista es permanente: no se puede eliminar, solo editar')
   if (p.tipo) throw new ErrorHttp(409, 'La plantilla está en uso; marque otra como «en uso» antes de eliminarla')
   await pool.query('DELETE FROM plantilla WHERE id_plantilla = $1', [p.id_plantilla])
 }
 
+/**
+ * Guarda el asunto y el texto y, si se indica, cambia el uso de una plantilla de correo (invitación, agradecimiento
+ * o libre). No se cambia el uso de la plantilla que está en uso (los correos automáticos dejarían de tener una) ni el
+ * de la constancia.
+ */
 export async function guardarPlantilla(
   id: number,
-  d: { asunto: string | null; cuerpo: string },
+  d: { asunto: string | null; cuerpo: string; fin?: Fin },
 ) {
   const p = await cargar(id)
+  let fin: Fin = p.fin
+  if (d.fin && d.fin !== p.fin) {
+    if (p.clase === 'archivo' || d.fin === 'constancia') {
+      throw new ErrorHttp(409, 'El uso de la constancia no se cambia: es la constancia de la revista')
+    }
+    if (p.tipo) {
+      throw new ErrorHttp(409, `Esta plantilla es la que se usa para ${ETIQUETA_FIN[p.fin]}: para cambiar su uso, primero marque otra plantilla como la que se usa`)
+    }
+    fin = d.fin
+  }
   const asunto = p.clase === 'archivo' ? null : (d.asunto ?? p.asunto)
-  validar(variablesDe(p), asunto, d.cuerpo)
-  await pool.query('UPDATE plantilla SET asunto = $1, cuerpo = $2 WHERE id_plantilla = $3', [
+  validar(VARIABLES[fin], asunto, d.cuerpo)
+  await pool.query('UPDATE plantilla SET asunto = $1, cuerpo = $2, fin = $3 WHERE id_plantilla = $4', [
     asunto,
     d.cuerpo,
+    fin,
     p.id_plantilla,
   ])
   return plantillaApi(await cargar(p.id_plantilla))

@@ -6,6 +6,7 @@
  * revista; sin marcar, solo se envía la constancia. «Más tarde» la deja pendiente en Constancias.
  */
 import { useState } from 'react'
+import { VistaPdfConstancia } from './VistaPdfConstancia'
 import { VistaPreviaConstancia } from './VistaPreviaConstancia'
 import { useEmitirConstancia, useVistaConstancia } from '../hooks/useConstancias'
 import { Alerta } from '@/components/common/Alerta'
@@ -54,6 +55,7 @@ export function EmitirConstanciaModal({
 
   return (
     <Modal
+      ancho="amplio"
       abierto={constanciaId !== null}
       onCerrar={onCerrar}
       titulo={`Emitir la constancia de ${nombrePar}`}
@@ -80,7 +82,13 @@ export function EmitirConstanciaModal({
         onReintentar={() => void vista.refetch()}
         descripcion="la constancia"
       >
-        {vista.data && <VistaPreviaConstancia vista={vista.data} />}
+        {/* Con el servidor real se ve el PDF que recibirá el par, en grande; con los datos de ejemplo, la vista de texto. */}
+        {vista.data &&
+          (import.meta.env.VITE_USE_MOCKS === 'false' ? (
+            <VistaPdfConstancia constanciaId={constanciaId} />
+          ) : (
+            <VistaPreviaConstancia vista={vista.data} />
+          ))}
       </EstadoConsulta>
       <Casilla
         etiqueta="Emitir con correo de agradecimiento"

@@ -46,10 +46,17 @@ export function valoresDe(v: ValoresConstancia, fecha = new Date()): Record<stri
   return { ...v, REVISTA: v.revista.toUpperCase(), PAR: v.par.toUpperCase(), fecha: fechaLarga(fecha), anio: String(fecha.getFullYear()) }
 }
 
-const A4: [number, number] = [595, 842]
-const MARGEN_LATERAL = 70
-const TAMANO = 11.5
-const INTERLINEADO = 1.4
+// Diseño de la constancia, tal como la entrega la dependencia (hoja Carta): el texto y el membrete ocupan el mismo
+// ancho, el cuerpo va en 12 pt con interlineado sencillo y los títulos centrados en negrita de una sola línea
+// («CERTIFICA QUE») se dibujan un poco más grandes.
+const CARTA: [number, number] = [612, 792]
+const MARGEN_LATERAL = 81
+const MARGEN_SUPERIOR = 36
+const SEPARACION_MEMBRETE = 55
+const MARGEN_INFERIOR = 20
+const TAMANO = 12
+const TAMANO_TITULO = 14.5
+const INTERLINEADO = 1.15
 const ENTRE_PARRAFOS = 12
 
 async function incrustar(doc: PDFDocument, datos: Buffer | null): Promise<PDFImage | null> {
@@ -74,7 +81,7 @@ export async function dibujarConstancia(p: PlantillaArchivo, valores: Record<str
   const encabezado = await incrustar(doc, p.encabezado)
   const pie = await incrustar(doc, p.pie)
   const firma = await incrustar(doc, p.firma)
-  const [ancho, alto] = A4
+  const [ancho, alto] = CARTA
   const anchoTexto = ancho - MARGEN_LATERAL * 2
 
   /** Ajusta una imagen a una caja conservando su proporción. */
@@ -82,19 +89,19 @@ export async function dibujarConstancia(p: PlantillaArchivo, valores: Record<str
     const k = Math.min(maxAncho / img.width, maxAlto / img.height, 1)
     return { w: img.width * k, h: img.height * k }
   }
-  const medidaEnc = encabezado ? ajustar(encabezado, ancho - 80, 110) : { w: 0, h: 0 }
-  const medidaPie = pie ? ajustar(pie, ancho - 80, 80) : { w: 0, h: 0 }
-  const arriba = alto - (encabezado ? 28 + medidaEnc.h + 24 : 72)
-  const abajo = pie ? 22 + medidaPie.h + 18 : 72
+  const medidaEnc = encabezado ? ajustar(encabezado, anchoTexto, 80) : { w: 0, h: 0 }
+  const medidaPie = pie ? ajustar(pie, anchoTexto, 80) : { w: 0, h: 0 }
+  const arriba = alto - (encabezado ? MARGEN_SUPERIOR + medidaEnc.h + SEPARACION_MEMBRETE : 72)
+  const abajo = pie ? MARGEN_INFERIOR + medidaPie.h + 14 : 60
 
   let pagina!: PDFPage
   let y = 0
   const nuevaPagina = () => {
-    pagina = doc.addPage(A4)
+    pagina = doc.addPage(CARTA)
     if (encabezado) {
-      pagina.drawImage(encabezado, { x: (ancho - medidaEnc.w) / 2, y: alto - 28 - medidaEnc.h, width: medidaEnc.w, height: medidaEnc.h })
+      pagina.drawImage(encabezado, { x: (ancho - medidaEnc.w) / 2, y: alto - MARGEN_SUPERIOR - medidaEnc.h, width: medidaEnc.w, height: medidaEnc.h })
     }
-    if (pie) pagina.drawImage(pie, { x: (ancho - medidaPie.w) / 2, y: 22, width: medidaPie.w, height: medidaPie.h })
+    if (pie) pagina.drawImage(pie, { x: (ancho - medidaPie.w) / 2, y: MARGEN_INFERIOR, width: medidaPie.w, height: medidaPie.h })
     y = arriba
   }
   nuevaPagina()
@@ -104,17 +111,19 @@ export async function dibujarConstancia(p: PlantillaArchivo, valores: Record<str
     return [...s.replace(/[​ ]/g, ' ')].map((c) => (permitidos.has(c.codePointAt(0) ?? 0) ? c : '?')).join('')
   }
   const fuente = (b: boolean) => (b ? negrita : normal)
-  const medir = (t: string, b: boolean) => fuente(b).widthOfTextAtSize(t, TAMANO)
-  const espacio = medir(' ', false)
+  // El tamaño de la letra del párrafo que se está dibujando (los títulos son más grandes).
+  let tam = TAMANO
+  const medir = (t: string, b: boolean) => fuente(b).widthOfTextAtSize(t, tam)
+  const espacio = () => medir(' ', false)
 
   /** Dibuja una línea en la altura actual, alineada; las líneas `ultima` (final de párrafo) nunca se estiran al justificar. */
   const dibujarLinea = (palabras: Palabra[], alineacion: Alineacion, ultima: boolean) => {
-    if (y - TAMANO < abajo) nuevaPagina()
+    if (y - tam < abajo) nuevaPagina()
     const suma = palabras.reduce((s, w) => s + w.ancho, 0)
     const huecos = Math.max(palabras.length - 1, 1)
-    const natural = suma + espacio * (palabras.length - 1)
+    const natural = suma + espacio() * (palabras.length - 1)
     const estirar = alineacion === 'justificado' && !ultima && palabras.length > 1
-    const sep = estirar ? (anchoTexto - suma) / huecos : espacio
+    const sep = estirar ? (anchoTexto - suma) / huecos : espacio()
     const total = estirar ? anchoTexto : natural
     let x =
       alineacion === 'centro' ? MARGEN_LATERAL + (anchoTexto - total) / 2
@@ -123,16 +132,25 @@ export async function dibujarConstancia(p: PlantillaArchivo, valores: Record<str
     for (const w of palabras) {
       let xp = x
       for (const parte of w.partes) {
-        pagina.drawText(segura(fuente(parte.negrita), parte.texto), { x: xp, y: y - TAMANO, size: TAMANO, font: fuente(parte.negrita), color: rgb(0.05, 0.05, 0.08) })
+        pagina.drawText(segura(fuente(parte.negrita), parte.texto), { x: xp, y: y - tam, size: tam, font: fuente(parte.negrita), color: rgb(0.05, 0.05, 0.08) })
         xp += parte.ancho
       }
       x += w.ancho + sep
     }
-    y -= TAMANO * INTERLINEADO
+    y -= tam * INTERLINEADO
   }
 
   let firmaPuesta = false
   for (const parrafo of analizar(rellenarTexto(p.cuerpo, valores))) {
+    // Un título: centrado, todo en negrita, de una sola línea corta.
+    const unica = parrafo.lineas.length === 1 ? parrafo.lineas[0] : undefined
+    const esTitulo =
+      parrafo.alineacion === 'centro' &&
+      unica !== undefined &&
+      unica.length > 0 &&
+      unica.every((x) => x.negrita) &&
+      unica.map((x) => x.texto).join('').length <= 40
+    tam = esTitulo ? TAMANO_TITULO : TAMANO
     if (parrafo.firma) {
       if (firma) {
         firmaPuesta = true
@@ -168,13 +186,13 @@ export async function dibujarConstancia(p: PlantillaArchivo, valores: Record<str
         }
       }
       if (palabras.length === 0) {
-        y -= TAMANO * INTERLINEADO
+        y -= tam * INTERLINEADO
         continue
       }
       let actual: Palabra[] = []
       let usado = 0
       for (const w of palabras) {
-        const nuevo = usado + (actual.length ? espacio : 0) + w.ancho
+        const nuevo = usado + (actual.length ? espacio() : 0) + w.ancho
         if (nuevo > anchoTexto && actual.length) {
           dibujarLinea(actual, parrafo.alineacion, false)
           actual = [w]

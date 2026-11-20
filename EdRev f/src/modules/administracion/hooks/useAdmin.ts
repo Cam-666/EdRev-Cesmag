@@ -24,7 +24,7 @@ import {
 } from '../services/adminService'
 import type { FiltrosAuditoria } from '../services/adminService'
 import type { Configuracion, DatosRevista } from '@/types/configuracion'
-import type { DatosNuevaPlantilla, ParteImagen, UsoPlantilla } from '@/types/plantilla'
+import type { DatosNuevaPlantilla, FinPlantilla, ParteImagen, UsoPlantilla } from '@/types/plantilla'
 import type { Revista } from '@/types/revista'
 import type { DatosUsuario, Usuario } from '@/types/usuario'
 
@@ -80,6 +80,7 @@ export function useGuardarPlantilla() {
       id: string
       asunto: string | null
       cuerpo: string
+      fin?: FinPlantilla
     }) => guardarPlantilla(id, datos),
     onSuccess: () => cliente.invalidateQueries({ queryKey: ['admin', 'plantillas'] }),
   })

@@ -1,5 +1,5 @@
 /*
- * Pruebas de las plantillas de archivo (la constancia) y del formato del texto
+ * Pruebas de las plantillas (la constancia permanente, los correos de uso editable) y del formato del texto
  */
 import request from 'supertest'
 import { describe, expect, it } from 'vitest'
@@ -13,10 +13,21 @@ const PNG = Buffer.from(
   'base64',
 )
 
-async function archivo(api: Awaited<ReturnType<typeof como>>, nombre: string) {
-  const r = await api.post('/plantillas', { revista: 'reep', nombre, clase: 'archivo' })
-  expect(r.status).toBe(201)
-  return r.body as { id: string; clase: string; uso: string | null }
+type Api = Awaited<ReturnType<typeof como>>
+
+/** La constancia de una revista: es única y permanente (no se crea ni se elimina), así que las pruebas usan la que ya existe. */
+async function constancia(api: Api, revista = 'reep') {
+  const c = (await api.get('/plantillas')).body.plantillas.find(
+    (p: { revista: string; fin: string }) => p.revista === revista && p.fin === 'constancia',
+  )
+  expect(c).toBeTruthy()
+  return c as { id: string; clase: string; uso: string | null; cuerpo: string; imagenes: Record<string, unknown> }
+}
+
+/** Deja la constancia como estaba: su texto original y sin imágenes. */
+async function restaurar(api: Api, c: { id: string; cuerpo: string }) {
+  await api.put(`/plantillas/${c.id}`, { asunto: null, cuerpo: c.cuerpo })
+  for (const parte of ['encabezado', 'pie', 'firma']) await api.delete(`/plantillas/${c.id}/imagen/${parte}`)
 }
 
 describe('formato del texto', () => {
@@ -36,14 +47,57 @@ describe('formato del texto', () => {
   })
 })
 
-describe('plantillas de archivo (constancia)', () => {
-  it('se crea de clase «archivo» o «correo» y el nombre es libre', async () => {
+describe('plantillas: constancia permanente y correos de uso editable', () => {
+  it('una plantilla nueva solo pide el nombre y nace como correo libre; la constancia no se crea', async () => {
     const api = await como()
-    const a = await archivo(api, 'Constancia con logo nuevo')
-    expect(a).toMatchObject({ clase: 'archivo', uso: null })
-    const correo = await api.post('/plantillas', { revista: 'reep', nombre: 'Otro correo', clase: 'correo' })
-    expect(correo.body).toMatchObject({ clase: 'correo', uso: null, enUso: false, imagenes: null })
-    expect((await api.post('/plantillas', { revista: 'reep', nombre: 'Otro correo', clase: 'correo' })).status).toBe(409)
+    const nombre = `Otro correo ${Date.now()}`
+    const correo = await api.post('/plantillas', { revista: 'reep', nombre })
+    expect(correo.status).toBe(201)
+    expect(correo.body).toMatchObject({ clase: 'correo', fin: 'mensaje', uso: null, enUso: false, imagenes: null, cuerpo: '' })
+    expect((await api.post('/plantillas', { revista: 'reep', nombre })).status).toBe(409) // el nombre no se repite
+    // la constancia de cada revista es única: no se puede crear otra
+    expect((await api.post('/plantillas', { revista: 'reep', nombre: 'Otra constancia', uso: 'constancia' })).status).toBe(409)
+    expect((await api.post('/plantillas', { revista: 'reep', nombre: 'Otro archivo', clase: 'archivo' })).status).toBe(409)
+    await api.delete(`/plantillas/${correo.body.id}`)
+  })
+
+  it('el uso de una plantilla de correo se cambia al editarla, salvo el de la que está en uso y el de la constancia', async () => {
+    const api = await como()
+    const nueva = (await api.post('/plantillas', { revista: 'ire', nombre: `Uso cambiante ${Date.now()}` })).body
+    // libre: no acepta los botones de la invitación ni el número de solicitud
+    expect((await api.put(`/plantillas/${nueva.id}`, { asunto: 'Hola', cuerpo: '{{nombre}}\n\n{{botones}}' })).status).toBe(422)
+    // al pasarla a invitación sí los acepta (y deja de aceptar {{nombre}})
+    const inv = await api.put(`/plantillas/${nueva.id}`, { asunto: 'Hola', cuerpo: '{{par}} {{articulo}}\n\n{{botones}}', fin: 'invitacion' })
+    expect(inv.status).toBe(200)
+    expect(inv.body).toMatchObject({ fin: 'invitacion', uso: null })
+    expect(inv.body.variables).toContain('botones')
+    expect((await api.put(`/plantillas/${nueva.id}`, { asunto: 'Hola', cuerpo: '{{nombre}}', fin: 'invitacion' })).status).toBe(422)
+    // y de vuelta a libre
+    const libre = await api.put(`/plantillas/${nueva.id}`, { asunto: 'Hola', cuerpo: 'Estimado(a) {{nombre}}', fin: 'mensaje' })
+    expect(libre.body.fin).toBe('mensaje')
+    // la que está en uso no cambia de uso: los correos automáticos se quedarían sin plantilla
+    const enUso = (await api.get('/plantillas')).body.plantillas.find((p: { revista: string; uso: string }) => p.revista === 'ire' && p.uso === 'agradecimiento')
+    const r = await api.put(`/plantillas/${enUso.id}`, { asunto: enUso.asunto, cuerpo: enUso.cuerpo, fin: 'mensaje' })
+    expect(r.status).toBe(409)
+    expect(r.body.mensaje).toContain('primero marque otra')
+    // la constancia no cambia de uso
+    const c = await constancia(api, 'ire')
+    expect((await api.put(`/plantillas/${c.id}`, { asunto: null, cuerpo: c.cuerpo, fin: 'mensaje' })).status).toBe(409)
+    await api.delete(`/plantillas/${nueva.id}`)
+  })
+
+  it('la constancia es permanente: siempre está en uso y no se elimina, pero se edita', async () => {
+    const api = await como()
+    for (const revista of ['reep', 'ire']) {
+      const c = await constancia(api, revista)
+      expect(c).toMatchObject({ clase: 'archivo', uso: 'constancia' })
+      const borrar = await api.delete(`/plantillas/${c.id}`)
+      expect(borrar.status).toBe(409)
+      expect(borrar.body.mensaje).toContain('permanente')
+    }
+    const c = await constancia(api)
+    expect((await api.put(`/plantillas/${c.id}`, { asunto: null, cuerpo: `${c.cuerpo}\n\nNota` })).status).toBe(200)
+    await restaurar(api, c)
   })
 
   it('la plantilla se elige para su fin: reemplaza a la anterior, no sirve para otro fin y una plantilla en uso no se elimina', async () => {
@@ -89,7 +143,8 @@ describe('plantillas de archivo (constancia)', () => {
 
   it('sube el encabezado, el pie y la firma como imagen, y no acepta otra cosa', async () => {
     const api = await como()
-    const { id } = await archivo(api, 'Constancia con imágenes')
+    const original = await constancia(api)
+    const { id } = original
     for (const parte of ['encabezado', 'pie', 'firma']) {
       const r = await api.subir(`/plantillas/${id}/imagen/${parte}`, PNG, 'logo.png')
       expect(r.status).toBe(200)
@@ -99,6 +154,7 @@ describe('plantillas de archivo (constancia)', () => {
     expect(pdf.status).toBe(422)
     const quitada = await api.delete(`/plantillas/${id}/imagen/firma`)
     expect(quitada.body.imagenes.firma).toBeNull()
+    await restaurar(api, original)
     const correo = (await api.get('/plantillas')).body.plantillas.find((p: { clase: string }) => p.clase === 'correo')
     // Una plantilla de correo no lleva imágenes
     for (const parte of ['encabezado', 'pie', 'firma']) {
@@ -108,7 +164,8 @@ describe('plantillas de archivo (constancia)', () => {
 
   it('la vista previa es un PDF y el texto acepta los marcadores de la constancia', async () => {
     const api = await como()
-    const { id } = await archivo(api, 'Constancia vista previa')
+    const original = await constancia(api)
+    const { id } = original
     await api.subir(`/plantillas/${id}/imagen/encabezado`, PNG, 'e.png')
     const ok = await api.put(`/plantillas/${id}`, {
       asunto: null,
@@ -121,17 +178,17 @@ describe('plantillas de archivo (constancia)', () => {
     expect(Number(vista.headers['content-length'])).toBeGreaterThan(500)
     expect((await api.put(`/plantillas/${id}`, { asunto: null, cuerpo: '{{PAR}} y {{articulo}} {{inventado}}' })).status).toBe(422)
     expect((await request((await import('./api.js')).app).get(`/api/plantillas/${id}/vista-previa`)).status).toBe(401)
+    await restaurar(api, original)
   })
 
-  it('una plantilla nueva queda en blanco', async () => {
+  it('una plantilla nueva queda en blanco, sin imágenes ni firma', async () => {
     const api = await como()
-    const a = (await api.post('/plantillas', { revista: 'ire', nombre: 'Archivo en blanco', clase: 'archivo' })).body
-    expect(a).toMatchObject({ cuerpo: '', imagenes: { encabezado: null, pie: null, firma: null } })
-    const c = (await api.post('/plantillas', { revista: 'ire', nombre: 'Correo en blanco', clase: 'correo' })).body
-    expect(c).toMatchObject({ cuerpo: '', asunto: '' })
-    expect(a).not.toHaveProperty('correoFirma')
-    const ok = await api.put(`/plantillas/${a.id}`, { asunto: null, cuerpo: '{{par}} {{articulo}}' })
+    const c = (await api.post('/plantillas', { revista: 'ire', nombre: `Correo en blanco ${Date.now()}` })).body
+    expect(c).toMatchObject({ cuerpo: '', asunto: '', imagenes: null })
+    expect(c).not.toHaveProperty('correoFirma')
+    const ok = await api.put(`/plantillas/${c.id}`, { asunto: 'Hola', cuerpo: 'Estimado(a) {{nombre}}' })
     expect(ok.status).toBe(200)
+    await api.delete(`/plantillas/${c.id}`)
   })
 
   it('la firma de la constancia es solo la imagen: el PDF no lleva enlaces', async () => {
@@ -191,15 +248,12 @@ describe('crear una plantilla eligiendo para qué sirve', () => {
     await api.delete(`/plantillas/${r.body.id}`)
   })
 
-  it('una constancia nueva nace sin texto ni imágenes, y su vista previa es el archivo en blanco con lo que se le agregue', async () => {
+  it('la constancia, sin texto ni imágenes, es un archivo en blanco; con la firma, esta se ve aunque el texto no tenga el marcador', async () => {
     const api = await como()
-    const r = await api.post('/plantillas', { revista: 'reep', nombre: `Constancia de prueba ${Date.now()}`, uso: 'constancia' })
-    expect(r.status).toBe(201)
-    expect(r.body).toMatchObject({ clase: 'archivo', uso: null, cuerpo: '', imagenes: { encabezado: null, pie: null, firma: null } })
-    // sin texto ni imágenes: un archivo en blanco; con la imagen de la firma, esta se ve aunque el texto no tenga el marcador
-    const vacia = await api.get(`/plantillas/${r.body.id}/vista-previa`)
-    expect(vacia.status).toBe(200)
-    expect(vacia.headers['content-type']).toContain('application/pdf')
+    const c = await constancia(api)
+    const vista = await api.get(`/plantillas/${c.id}/vista-previa`)
+    expect(vista.status).toBe(200)
+    expect(vista.headers['content-type']).toContain('application/pdf')
     const { PDFDocument } = await import('pdf-lib')
     const { valoresDe, dibujarConstancia } = await import('../src/servicios/constanciaPdf.js')
     const v = valoresDe({ revista: 'R', par: 'P', articulo: 'A', issn: '', indexaciones: '' })
@@ -207,15 +261,23 @@ describe('crear una plantilla eligiendo para qué sirve', () => {
     const conFirma = await dibujarConstancia({ cuerpo: '', encabezado: null, pie: null, firma: PNG }, v)
     expect((await PDFDocument.load(sola)).getPageCount()).toBe(1)
     expect(conFirma.length).toBeGreaterThan(sola.length)
-    await api.delete(`/plantillas/${r.body.id}`)
+  })
+
+  it('la constancia se dibuja en hoja Carta, con el título «CERTIFICA QUE» más grande que el cuerpo', async () => {
+    const { PDFDocument } = await import('pdf-lib')
+    const v = valoresDe({ revista: 'R', par: 'P', articulo: 'A', issn: '', indexaciones: '' })
+    const pdf = await dibujarConstancia({ cuerpo: '[centro]**CERTIFICA QUE**\n\n[justificado]Texto del cuerpo.', encabezado: null, pie: null, firma: null }, v)
+    const { width, height } = (await PDFDocument.load(pdf)).getPage(0).getSize()
+    expect([width, height]).toEqual([612, 792])
   })
 
   it('una plantilla en blanco no se puede elegir y el mensaje lo explica', async () => {
     const api = await como()
-    const c = await api.post('/plantillas', { revista: 'ire', nombre: `En blanco ${Date.now()}`, clase: 'correo' })
+    const c = await api.post('/plantillas', { revista: 'ire', nombre: `En blanco ${Date.now()}`, uso: 'invitacion' })
     expect(c.body.fin).toBe('invitacion')
     const r = await api.post(`/plantillas/${c.body.id}/asignar`, { uso: 'invitacion' })
     expect(r.status).toBe(422)
     expect(r.body.mensaje).toContain('aún no tiene texto')
+    await api.delete(`/plantillas/${c.body.id}`)
   })
 })
