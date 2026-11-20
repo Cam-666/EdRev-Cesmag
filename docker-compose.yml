@@ -1,18 +1,23 @@
-# EdRev Cesmag completo: base de datos, API y frontend.
-#   docker compose up --build   →   frontend http://localhost:8080 · API http://localhost:3000/api
-# La primera vez PostgreSQL ejecuta EdRev b/db/*.sql (esquema y datos iniciales).
+# EdRev Cesmag completo: base de datos, API e interfaz.
+#   docker compose up -d --build   →   todo en http://<dirección-del-servidor>:8080
+# Las variables se leen del archivo .env que está junto a este (copie .env.example como .env y complételo).
+# La primera vez PostgreSQL ejecuta EdRev b/db/01_esquema.sql y 02_datos_iniciales.sql.
+# Solo se publica el puerto 8080: la API queda detrás de nginx (en /api) y la base solo se ve desde el propio servidor.
 services:
   db:
     image: postgres:18-alpine
+    restart: unless-stopped
     environment:
       POSTGRES_DB: edrev
       POSTGRES_USER: edrev
-      POSTGRES_PASSWORD: ${DB_PASSWORD:-cambie-esta-clave}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?Defina DB_PASSWORD en el archivo .env}
     volumes:
       - datos:/var/lib/postgresql
-      - ./EdRev b/db:/docker-entrypoint-initdb.d:ro
+      # Solo el esquema y los datos iniciales, en ese orden (03_fin_de_plantilla.sql es para bases viejas).
+      - ./EdRev b/db/01_esquema.sql:/docker-entrypoint-initdb.d/01_esquema.sql:ro
+      - ./EdRev b/db/02_datos_iniciales.sql:/docker-entrypoint-initdb.d/02_datos_iniciales.sql:ro
     ports:
-      - "5433:5432"
+      - "127.0.0.1:5433:5432"
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U edrev -d edrev"]
       interval: 5s
@@ -20,31 +25,36 @@ services:
 
   api:
     build: ./EdRev b
+    restart: unless-stopped
     depends_on:
       db:
         condition: service_healthy
     environment:
       PORT: 3000
-      DATABASE_URL: postgres://edrev:${DB_PASSWORD:-cambie-esta-clave}@db:5432/edrev
+      DATABASE_URL: postgres://edrev:${DB_PASSWORD}@db:5432/edrev
       # Cadena aleatoria de 32+ caracteres; el servidor no arranca con una más corta ni con un texto de ejemplo.
       JWT_SECRET: ${JWT_SECRET:?Defina JWT_SECRET con una cadena aleatoria de 32 o más caracteres}
-      CORS_ORIGIN: http://localhost:8080
+      # Dirección con la que se abre la página (la misma que escribe el navegador). Va en los enlaces de los correos.
       FRONTEND_URL: ${FRONTEND_URL:-http://localhost:8080}
-      API_PUBLICA_URL: ${API_PUBLICA_URL:-http://localhost:3000}
+      CORS_ORIGIN: ${FRONTEND_URL:-http://localhost:8080}
+      API_PUBLICA_URL: ${API_PUBLICA_URL:-http://localhost:8080}
       ZONA_HORARIA: ${ZONA_HORARIA:-America/Bogota}
       CORREO_MODO: ${CORREO_MODO:-simulado}
       BREVO_API_KEY: ${BREVO_API_KEY:-}
+      BREVO_WEBHOOK_TOKEN: ${BREVO_WEBHOOK_TOKEN:-}
+      REMITENTE_CUENTAS: ${REMITENTE_CUENTAS:-}
       ENLACE_DEMO: ${ENLACE_DEMO:-true}
-    ports:
-      - "3000:3000"
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3000/api/salud"]
+      interval: 10s
+      retries: 6
 
   web:
-    build:
-      context: ./EdRev f
-      args:
-        VITE_API_URL: http://localhost:3000/api
+    build: ./EdRev f
+    restart: unless-stopped
     depends_on:
-      - api
+      api:
+        condition: service_healthy
     ports:
       - "8080:80"
 

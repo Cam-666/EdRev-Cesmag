@@ -187,16 +187,24 @@ Antes de entregar un cambio: `npm run typecheck`, `npm run lint` y `npm test` en
 Prográmelo cada día con el Programador de tareas de Windows o con `cron`, y copie la carpeta `respaldos/` fuera del
 servidor: contiene datos personales. Los detalles (ruta de `pg_dump`, restauración) están en `EdRev b/README.md`.
 
-## Despliegue con Docker
+## Despliegue con Docker (servidor Ubuntu)
 
-```bash
-docker compose up --build
-```
+Todo el sistema corre en tres contenedores: la base de datos (PostgreSQL 18), la API y la interfaz (nginx). Solo se
+publica el puerto **8080**: nginx sirve la página y reenvía `/api` a la API, así el navegador usa una sola dirección.
 
-Interfaz en `http://localhost:8080`, API en `http://localhost:3000/api`, PostgreSQL en el puerto `5433`. La primera vez
-la base se crea sola con los archivos de `EdRev b/db/`. Defina `JWT_SECRET` (obligatorio), `DB_PASSWORD`,
-`CORREO_MODO`, `BREVO_API_KEY`, `FRONTEND_URL`, `API_PUBLICA_URL` y `ZONA_HORARIA` en un archivo `.env` junto al
-`docker-compose.yml`. En producción ponga `ENLACE_DEMO=false`.
+1. Instale Docker en el servidor (`curl -fsSL https://get.docker.com | sudo sh`) y descargue el proyecto con `git clone`.
+2. En la carpeta del proyecto, copie `.env.example` como `.env` y complételo: `DB_PASSWORD`, `JWT_SECRET`
+   (`openssl rand -hex 32`) y `FRONTEND_URL` / `API_PUBLICA_URL` con la dirección con que se abrirá la página
+   (por ejemplo `http://192.168.1.50:8080`, sin `/` al final).
+3. Arranque: `docker compose up -d --build`. La primera vez la base se crea sola con `EdRev b/db/01_esquema.sql` y
+   `02_datos_iniciales.sql`.
+4. Abra `http://<dirección-del-servidor>:8080`.
+
+Comandos útiles: `docker compose ps` (estado), `docker compose logs -f api` (registro de la API),
+`docker compose restart api` (reiniciar), `docker compose down` (apagar; los datos se conservan en el volumen `datos`)
+y `docker compose down -v` (apagar **y borrar** la base). Para cambiar una variable del `.env`, edítelo y ejecute
+`docker compose up -d`. En producción ponga `ENLACE_DEMO=false` y `CORREO_MODO=brevo` (ver la sección de Brevo).
+Respaldo de la base: `docker compose exec db pg_dump -U edrev edrev > respaldo.sql`.
 
 ## Migración de los datos del Excel
 

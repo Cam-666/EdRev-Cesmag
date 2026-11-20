@@ -1,15 +1,14 @@
-# Frontend de EdRev Cesmag: se compila con la URL de la API y lo sirve nginx
+# Interfaz de EdRev Cesmag: se compila aquí y la sirve nginx, que además reenvía /api a la API.
 FROM node:24-alpine AS build
 WORKDIR /app
 COPY package*.json ./
 RUN npm ci
 COPY . .
-ARG VITE_API_URL=http://localhost:3000/api
-ENV VITE_API_URL=$VITE_API_URL VITE_USE_MOCKS=false
+# La interfaz llama a /api en su mismo servidor (nginx lo reenvía a la API): no depende de ninguna IP.
+ENV VITE_API_URL=/api VITE_USE_MOCKS=false
 RUN npx vite build
 
 FROM nginx:1.27-alpine
 COPY --from=build /app/dist /usr/share/nginx/html
-# Las rutas de la aplicación (React Router) vuelven a index.html
-RUN printf 'server {\n  listen 80;\n  root /usr/share/nginx/html;\n  location / { try_files $uri /index.html; }\n}\n' > /etc/nginx/conf.d/default.conf
+COPY nginx.conf /etc/nginx/conf.d/default.conf
 EXPOSE 80
