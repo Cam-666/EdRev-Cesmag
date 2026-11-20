@@ -14,8 +14,14 @@ services:
     volumes:
       - datos:/var/lib/postgresql
       # Solo el esquema y los datos iniciales, en ese orden (03_fin_de_plantilla.sql es para bases viejas).
-      - ./EdRev b/db/01_esquema.sql:/docker-entrypoint-initdb.d/01_esquema.sql:ro
-      - ./EdRev b/db/02_datos_iniciales.sql:/docker-entrypoint-initdb.d/02_datos_iniciales.sql:ro
+      - type: bind
+        source: ./EdRev b/db/01_esquema.sql
+        target: /docker-entrypoint-initdb.d/01_esquema.sql
+        read_only: true
+      - type: bind
+        source: ./EdRev b/db/02_datos_iniciales.sql
+        target: /docker-entrypoint-initdb.d/02_datos_iniciales.sql
+        read_only: true
     ports:
       - "127.0.0.1:5433:5432"
     healthcheck:
