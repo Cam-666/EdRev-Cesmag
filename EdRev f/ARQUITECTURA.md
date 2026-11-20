@@ -107,7 +107,8 @@ use «Reenviar invitación».
 
 - `modules/constancias`: pendientes y emitidas; la constancia pasa a «pendiente» al entregar la evaluación y se
   emite con «Emitir y enviar» (o «Emitir pendientes»). Cada emisión envía el correo de
-  agradecimiento y queda en Correos enviados y en la auditoría. La descarga simula el PDF con HTML.
+  agradecimiento con la constancia en PDF adjunta y queda en Correos enviados y en la auditoría. La descarga
+  entrega el PDF real que genera el servidor.
 - `modules/correos`: bitácora por revista con contadores, «Reintentar fallidos» y «Corregir y reenviar»
   (el correo fallido queda «Reintentado»).
 - `modules/inicio`: Tablero por revista (pares sin responder, constancias pendientes) e Inicio
@@ -115,10 +116,13 @@ use «Reenviar invitación».
 - `modules/informes`: informe comparativo para ambos perfiles; exporta CSV.
 - `modules/administracion`: usuarios, plantillas de cada revista (invitación, agradecimiento, constancia) con
   validación de marcadores `{{revista}}`, `{{par}}`, `{{articulo}}` y auditoría de ambas revistas. Se elige la
-  revista y se pueden crear plantillas nuevas para cualquiera de los tres usos: parten del texto (y del PDF de
-  fondo) de la que está en uso en esa revista y solo se envían cuando se elige «Usar en los envíos» (una en
-  uso por uso y revista). La constancia lleva un PDF de fondo (membrete, diseño y firma) que se sube como
-  archivo (`POST /plantillas/:id/fondo`, multipart); el texto se escribe sobre él.
+  revista y se pueden crear plantillas nuevas para cualquiera de los tres fines: nacen en blanco, conservan el fin
+  para el que se crearon (`fin`) y solo se envían cuando se eligen en Configuración (una en uso por tipo y
+  revista, y solo para su fin). El texto se edita en un recuadro donde la negrita y la alineación se aplican
+  directamente (`EditorTexto`, `lib/textoRico`); lo que se guarda conserva las marcas de `lib/formato`. La
+  constancia lleva imágenes de encabezado, de pie de página y de firma (`POST /plantillas/:id/imagen/:parte`,
+  multipart); las plantillas de correo no llevan imágenes. Configuración también guarda los días de espera, el
+  ISSN y las indexaciones de cada revista.
 - Las plantillas son estado compartido del mock (`mocks/db.ts`); cambiarlas afecta los siguientes envíos sin
   tocar código (RNF-19). La cuenta remitente de cada revista no se edita en pantalla: es configuración del
   servicio de correo (remitente verificado en Brevo) y sus credenciales nunca viajan al frontend.
@@ -126,12 +130,12 @@ use «Reenviar invitación».
 ## Permisos, acciones de pantalla y pares (ajustes previos a la fase 7)
 
 - Permisos (`modules/acceso/config/permisos.ts`, tabla única): la Auxiliar hace todo el trabajo editorial de
-  ambas revistas; solo Administración (usuarios, plantillas, auditoría) queda para la
+  ambas revistas; solo Administración (usuarios, plantillas, configuración, auditoría) queda para la
   Administradora. Informes e Inicio son para ambos perfiles; el panel lateral oculta Administración a la
   Auxiliar y el mock responde 403 si lo intenta por la API.
 - Las acciones de cada pantalla («Registrar artículo», «Editar», «Asignar par»…) van junto al título, en el
   contenido (`components/common/EncabezadoPagina`), no en la barra de la revista.
-- Pares: cada revista tiene su propia base (no se comparten). Las invitaciones corren en paralelo.
+- Pares: la base de pares es común a las dos revistas (el correo es único). Las invitaciones corren en paralelo.
 - Sin recuadros que expliquen el uso del sistema: solo avisos de estado (errores, conflictos, rebotes, éxito).
 
 ## Flujo del artículo (documentación v3.3)
@@ -141,28 +145,29 @@ use «Reenviar invitación».
    pestaña «Revisión del comité» con el formulario de la ronda.
 2. **Revisión del comité** (`/articulos/:id/comite`): cada ronda registra coincidencias, IA (aviso sobre el
    15 %, nunca bloquea), resultado (Aprobado · Requiere ajustes · Rechazado) y observaciones; sin límite de
-   rondas y sin sobrescribir. Rechazado deja el artículo Rechazado y sin pares; Aprobado lleva a la
-   asignación de pares. Reglas en `lib/dominio/comite.ts` (las usan pantallas y mock).
-3. **Cambiar de revista**: botón en la ficha mientras el artículo está en revisión del comité (sin ronda
-   aprobada y sin pares), las veces que haga falta; luego se bloquea. Queda en el historial («Cambio de
-   revista»).
+   rondas y sin sobrescribir. El resultado lo elige el comité en una lista y la pantalla solo sugiere uno
+   (`resultadoSugerido`). Ninguna ronda cierra el proceso: con Rechazado o Requiere ajustes el artículo sigue
+   en revisión y sin pares; solo Aprobado lleva a la asignación de pares. Reglas en `lib/dominio/comite.ts`.
+3. **Cambiar de revista**: botón en la ficha, en cualquier etapa y las veces que haga falta (RF-07); el
+   artículo conserva sus pares, correos y constancias, y se borran su volumen y número. Queda en el historial
+   («Cambio de revista»).
 4. **Asignar par** (pestaña «Pares y evaluación»): solo si la ronda más reciente es Aprobado. Dos caminos:
    elegir de los pares disponibles (no bloqueados y sin evaluaciones en curso: invitado o aceptó) o registrar
-   un candidato nuevo (queda en la base de la revista). En ambos la invitación sale sola. Como máximo tres
+   un candidato nuevo (queda en la base de pares, común). En ambos la invitación sale sola. Como máximo tres
    pares que aceptaron o entregaron (`lib/dominio/pares.ts`); los que no aceptan o no responden no ocupan
    cupo. El artículo pasa a En evaluación cuando acepta el primer par.
 5. **Respuesta del par**: Aceptó · No aceptó esta invitación (no bloquea) · No desea participar más (bloquea) ·
    Sin respuesta tras el 2.º intento (bloquea, estado «Sin respuesta»).
 6. **Entrega**: al marcarla se ofrece de inmediato «Emitir constancia» (vista previa con la plantilla de
-   constancia de la revista sobre su PDF de fondo); «Más tarde» la deja pendiente y se puede emitir desde
+   constancia de la revista, con sus imágenes); «Más tarde» la deja pendiente y se puede emitir desde
    el par o desde Constancias.
 
 7. **Cerrar proceso** (botón en la ficha): Aprobado, Rechazado o Archivado con motivo obligatorio, que queda en
    observaciones e historial («Cierre del proceso»). Al aprobar se registran volumen y número juntos
    (`lib/dominio/publicacion.ts`); el filtro de publicación va de la más reciente a la más antigua.
 
-Pares: al registrar uno nuevo (base o candidato), si el correo ya está en la otra revista se avisa, se dice si
-allí está bloqueado y se ofrece «Copiar sus datos»; el par queda igual en la base de esta revista. Cada par
+Pares: al registrar uno nuevo (base o candidato), si el correo o el nombre ya existen se avisa, se dice si el
+par está bloqueado y no se registra de nuevo (la base es común a las dos revistas). Cada par
 tiene «Profesión o título». La invitación admite `{{numero}}` (solicitud OJS), `{{profesion}}` y
 `{{universidad}}` además de `{{revista}}`, `{{par}}` y `{{articulo}}`.
 
