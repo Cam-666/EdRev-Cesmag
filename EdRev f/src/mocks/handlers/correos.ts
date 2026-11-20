@@ -142,6 +142,9 @@ export const handlersCorreos = [
     if (!c.ok) return c.respuesta
     const correo = c.base.correos.find((x) => x.id === params.id)
     if (!correo) return error(404, 'Correo no encontrado')
+    if (correo.tipo === 'mensaje') {
+      return error(409, 'Corrija el correo en la ficha de la persona y vuelva a enviarle el mensaje')
+    }
     if ((correo.estado !== 'rebotado' && correo.estado !== 'fallido') || correo.atendido) {
       return error(409, 'Solo se corrige un envío que rebotó o falló')
     }

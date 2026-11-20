@@ -3,6 +3,12 @@ import type { Revista } from './revista'
 /** Para qué se usa una plantilla. Cada revista tiene exactamente una plantilla en uso por cada uso. */
 export type UsoPlantilla = 'invitacion' | 'agradecimiento' | 'constancia'
 
+/**
+ * Para qué se creó una plantilla: uno de los tres usos automáticos, o «mensaje» (un correo que la dependencia escribe
+ * a mano a un par o a un autor; esas plantillas nunca están «en uso»: se eligen al enviar el correo).
+ */
+export type FinPlantilla = UsoPlantilla | 'mensaje'
+
 /** Una plantilla es un correo (asunto y texto) o un archivo (la constancia: texto, encabezado, pie y firma). */
 export type ClasePlantilla = 'correo' | 'archivo'
 
@@ -23,8 +29,8 @@ export interface Plantilla {
   revista: Revista
   /** Para qué se usa ahora en su revista; null mientras no está en uso. */
   uso: UsoPlantilla | null
-  /** Para qué se creó (invitación, agradecimiento o constancia); no cambia. */
-  fin: UsoPlantilla
+  /** Para qué se creó (invitación, agradecimiento, constancia o mensaje); no cambia. */
+  fin: FinPlantilla
   clase: ClasePlantilla
   nombre: string
   /** Asunto del correo; la constancia no tiene. */
@@ -45,7 +51,7 @@ export interface Plantilla {
 export interface DatosNuevaPlantilla {
   revista: Revista
   nombre: string
-  uso?: UsoPlantilla
+  uso?: FinPlantilla
   clase?: ClasePlantilla
 }
 

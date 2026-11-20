@@ -238,7 +238,9 @@ describe('administration', () => {
     await waitFor(() => expect(lista).toHaveTextContent('Invitación en inglés'))
     // una plantilla nueva está en blanco: la persona la escribe
     expect(screen.getByLabelText('Texto').textContent).toBe('')
-    expect(screen.getByText(/Sin uso asignado/)).toBeInTheDocument()
+    // por omisión es un mensaje para enviar a mano: se explica y no se marca «en uso»
+    expect(screen.getByText(/Sirve para escribirle a un par o a un autor/)).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Usar esta plantilla' })).toBeNull()
     expect(screen.queryByText('Invitación en inglés (en uso', { exact: false })).toBeNull()
 
     await user.click(screen.getByRole('button', { name: 'Eliminar plantilla' }))
@@ -254,9 +256,11 @@ describe('administration', () => {
     const dialogo = await screen.findByRole('dialog', { name: 'Nueva plantilla' })
     expect(within(dialogo).queryByRole('checkbox')).toBeNull()
     await user.type(within(dialogo).getByLabelText('Nombre'), 'Invitación renovada')
+    await user.click(within(dialogo).getByRole('combobox', { name: '¿Qué tipo de plantilla es?' }))
+    await user.click(await screen.findByRole('option', { name: 'Invitación a evaluar (se envía sola al asignar un par)' }))
     await user.click(within(dialogo).getByRole('button', { name: 'Crear plantilla' }))
     await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull())
-    expect(await screen.findByText(/Sin uso asignado/)).toBeInTheDocument()
+    expect(await screen.findByRole('button', { name: 'Usar esta plantilla' })).toBeInTheDocument()
 
     const texto = screen.getByLabelText('Texto')
     expect(texto.textContent).toBe('')
@@ -269,13 +273,12 @@ describe('administration', () => {
     expect(marco).toHaveAttribute('srcdoc', expect.stringContaining('Universidad CESMAG'))
   })
 
-  it('Configuración lets the Administradora choose which template each use takes', async () => {
-    const { user } = montarRuta('/administracion/configuracion')
-    await user.click(await screen.findByRole('tab', { name: 'Constancias' }))
-    expect(
-      await screen.findByRole('combobox', { name: /Constancia de participación de Educación/ }),
-    ).toBeInTheDocument()
-    expect(screen.getAllByLabelText(/ISSN de/)).toHaveLength(2)
+  it('Configuración keeps the waiting days and the ISSN, and no longer chooses templates', async () => {
+    montarRuta('/administracion/configuracion')
+    expect(await screen.findAllByLabelText(/ISSN de/)).toHaveLength(2)
+    expect(screen.getByLabelText('Días de espera de la respuesta del par')).toBeInTheDocument()
+    expect(screen.queryByRole('combobox', { name: /Constancia de participación de/ })).toBeNull()
+    expect(screen.queryByRole('tab', { name: 'Constancias' })).toBeNull()
   })
 
   it('a new account receives the link to define its password', async () => {

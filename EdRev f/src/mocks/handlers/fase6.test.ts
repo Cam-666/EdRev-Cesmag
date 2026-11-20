@@ -217,18 +217,22 @@ describe('constancias API (mock)', () => {
 })
 
 describe('templates API', () => {
-  it('each journal has its own three templates, one in use per use; Administradora only', async () => {
+  it('each journal has its own three automatic templates plus a message template; Administradora only', async () => {
     expect((await llamar('/plantillas', { usuario: AUXILIAR })).status).toBe(403)
     const d = await json<DatosPlantillas>(await llamar('/plantillas'))
     expect(d.plantillas.map((p) => p.id)).toEqual([
       'reep-invitacion',
       'reep-agradecimiento',
       'reep-constancia',
+      'reep-mensaje',
       'ire-invitacion',
       'ire-agradecimiento',
       'ire-constancia',
+      'ire-mensaje',
     ])
-    expect(d.plantillas.every((p) => p.enUso)).toBe(true)
+    // las tres automáticas están en uso; la de mensaje nunca lo está (se elige al enviar un correo)
+    expect(d.plantillas.filter((p) => p.fin !== 'mensaje').every((p) => p.enUso)).toBe(true)
+    expect(d.plantillas.filter((p) => p.fin === 'mensaje').every((p) => !p.enUso)).toBe(true)
     // Solo la constancia (una plantilla de archivo) lleva imágenes de encabezado, pie y firma
     expect(d.plantillas.filter((p) => p.imagenes).map((p) => p.id)).toEqual([
       'reep-constancia',

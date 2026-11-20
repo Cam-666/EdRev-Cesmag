@@ -116,7 +116,7 @@ describe('plantillas: cada una conserva el fin para el que se creó', () => {
     await user.click(await screen.findByRole('button', { name: 'Nueva plantilla' }))
     const dialogo = await screen.findByRole('dialog', { name: 'Nueva plantilla' })
     await user.type(within(dialogo).getByLabelText('Nombre'), 'Gracias de fin de año')
-    await elegirOpcion(user, '¿Para qué se usará?', 'Agradecimiento')
+    await elegirOpcion(user, '¿Qué tipo de plantilla es?', 'Agradecimiento (se envía sola con la constancia)')
     await user.click(within(dialogo).getByRole('button', { name: 'Crear plantilla' }))
     await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull())
     const marco = await screen.findByTitle('Vista previa del correo')
@@ -126,31 +126,29 @@ describe('plantillas: cada una conserva el fin para el que se creó', () => {
     expect(screen.getByRole('combobox', { name: 'Plantilla' })).toHaveTextContent('Gracias de fin de año · Agradecimiento')
   })
 
-  it('en Configuración, cada fin ofrece solo las plantillas creadas para él', async () => {
+  it('una plantilla de agradecimiento se marca «en uso» desde ella misma, sin pasar por Configuración', async () => {
     const { user } = montarRuta('/administracion/plantillas')
     await user.click(await screen.findByRole('button', { name: 'Nueva plantilla' }))
     const dialogo = await screen.findByRole('dialog', { name: 'Nueva plantilla' })
     await user.type(within(dialogo).getByLabelText('Nombre'), 'Solo para agradecer')
-    await elegirOpcion(user, '¿Para qué se usará?', 'Agradecimiento')
+    await elegirOpcion(user, '¿Qué tipo de plantilla es?', 'Agradecimiento (se envía sola con la constancia)')
+    // cada tipo se explica con una frase sencilla
+    expect(within(dialogo).getByText(/Se envía sola, junto con la constancia/)).toBeInTheDocument()
     await user.click(within(dialogo).getByRole('button', { name: 'Crear plantilla' }))
     await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull())
     await screen.findByTitle('Vista previa del correo')
-
-    const { user: otro } = montarRuta('/administracion/configuracion')
-    const agradecimiento = await screen.findByRole('combobox', { name: /Agradecimiento de Educación/ })
-    await otro.click(agradecimiento)
-    expect(await screen.findByRole('option', { name: /Solo para agradecer/ })).toBeInTheDocument()
-    await otro.keyboard('{Escape}')
-    await otro.click(screen.getByRole('combobox', { name: /Invitación a evaluar de Educación/ }))
-    expect(await screen.findByRole('option', { name: /Invitación a evaluar/ })).toBeInTheDocument()
-    expect(screen.queryByRole('option', { name: /Solo para agradecer/ })).toBeNull()
+    // la plantilla trae su propio botón; ya no hay que ir a Configuración
+    expect(screen.getByRole('button', { name: 'Usar esta plantilla' })).toBeInTheDocument()
+    expect(screen.getByRole('combobox', { name: 'Plantilla' })).toHaveTextContent('Solo para agradecer')
   })
 })
 
 describe('firma de los correos', () => {
   it('ya no se escribe en Configuración: la firma es la imagen de cada plantilla', async () => {
     montarRuta('/administracion/configuracion')
-    expect(await screen.findByRole('heading', { level: 3, name: 'Plantillas de los correos' })).toBeInTheDocument()
+    // Configuración ya no elige plantillas: solo los días de espera y los datos de la constancia
+    expect(await screen.findByRole('heading', { level: 3, name: 'Respuesta de los pares' })).toBeInTheDocument()
+    expect(screen.queryByRole('heading', { name: 'Plantillas de los correos' })).toBeNull()
     expect(screen.queryByRole('heading', { name: 'Firma de los correos' })).toBeNull()
     expect(screen.queryByLabelText('Nombre de quien firma')).toBeNull()
   })

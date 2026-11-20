@@ -150,10 +150,17 @@ revise en **Correos enviados** que la invitación quede «Enviado». Si no llega
   `src/servicios/segundoIntento.ts`.
 - **Capas de la API:** ruta → controlador (valida la petición) → servicio (reglas de negocio y SQL). Las rutas públicas
   (ingreso, respuesta del par, webhook, escudo) están separadas de las privadas, que exigen sesión.
-- **Plantillas:** cada revista tiene las suyas. Una plantilla conserva el fin para el que se creó (`fin`: invitación,
-  agradecimiento o constancia) y solo se elige para ese fin; la que está en uso se escoge en Configuración. Las nuevas
-  nacen en blanco. El texto se guarda con marcas sencillas (`{{par}}`, `[centro]`, `**negrita**`) que el editor de la
-  página oculta.
+- **Plantillas:** cada revista tiene las suyas. Una plantilla conserva el tipo para el que se creó (`fin`: invitación,
+  agradecimiento, constancia o mensaje). Las tres primeras se envían solas y la que está en uso se marca con el botón
+  «Usar esta plantilla» de la propia plantilla (ya no hay que ir a Configuración). Las de **mensaje** nunca están «en
+  uso»: se eligen al pulsar **Enviar correo** en la ficha de un par o de un autor. Las nuevas nacen en blanco. El
+  texto se guarda con marcas sencillas (`{{par}}`, `[centro]`, `**negrita**`) que el editor de la página oculta.
+- **Mensajes a mano:** un correo que la dependencia le escribe a un par o a un autor se guarda en la tabla `mensaje`
+  (no en `correo`, que es de las evaluaciones), sale desde la revista elegida y aparece en «Correos enviados» como
+  «Mensaje». Ver `src/servicios/mensajes.ts`.
+- **Actualización de la base:** al arrancar, la API pone al día una base creada con una versión anterior (tipo de
+  plantilla «mensaje», tabla `mensaje` y una plantilla «Mensaje general» por revista) sin tocar los datos; no hay
+  scripts que ejecutar a mano. Ver `src/esquema.ts`.
 - **Constancia:** se genera de nuevo cada vez que se envía o se descarga (no se guarda el archivo), con las imágenes de
   encabezado, pie y firma de la plantilla, y viaja como PDF adjunto al correo de agradecimiento.
 - **Pares:** una sola base para las dos revistas; el correo es único y un bloqueo vale para ambas. Un artículo toma dos

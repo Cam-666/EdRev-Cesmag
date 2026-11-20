@@ -7,6 +7,7 @@ import { BotonVolver } from '@/components/common/BotonVolver'
 import { useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { BloquearParModal } from '../components/BloquearParModal'
+import { EnviarCorreoModal } from '@/modules/correos/components/EnviarCorreoModal'
 import { DesbloquearParModal } from '../components/DesbloquearParModal'
 import { ParModal } from '../components/ParModal'
 import { TablaParticipaciones } from '../components/TablaParticipaciones'
@@ -29,6 +30,7 @@ export function ParDetallePage() {
   const puedeBloquear = usePermiso('bloquear-par')
   const puedeDesbloquear = usePermiso('desbloquear-par')
   const [editando, setEditando] = useState(false)
+  const [escribiendo, setEscribiendo] = useState(false)
   const [bloqueando, setBloqueando] = useState(false)
   const [desbloqueando, setDesbloqueando] = useState(false)
 
@@ -67,6 +69,11 @@ export function ParDetallePage() {
             titulo={par.nombre}
             acciones={
               <>
+                {puedeEditar && (
+                  <Boton variante="secundario" tamano="sm" onClick={() => setEscribiendo(true)}>
+                    Enviar correo
+                  </Boton>
+                )}
                 {puedeEditar && (
                   <Boton variante="neutro" tamano="sm" onClick={() => setEditando(true)}>
                     Editar
@@ -170,6 +177,13 @@ export function ParDetallePage() {
           </section>
 
           <ParModal abierto={editando} onCerrar={() => setEditando(false)} par={par} />
+          <EnviarCorreoModal
+            abierto={escribiendo}
+            onCerrar={() => setEscribiendo(false)}
+            destino={{ tipo: 'par', id: par.id }}
+            nombre={par.nombre}
+            correo={par.correo}
+          />
           <BloquearParModal par={par} abierto={bloqueando} onCerrar={() => setBloqueando(false)} />
           <DesbloquearParModal
             par={desbloqueando ? par : null}

@@ -14,19 +14,24 @@ import { botonesHtml, MARCA_BOTONES } from '../../lib/respuestas.js'
 import { vistaPrevia } from '../constanciaPdf.js'
 
 export type Uso = 'invitacion' | 'agradecimiento' | 'constancia'
+/** Para qué se creó una plantilla: los tres usos automáticos, o «mensaje» (un correo que se envía a mano). */
+export type Fin = Uso | 'mensaje'
 export type Parte = 'encabezado' | 'pie' | 'firma'
 export const PARTES: readonly Parte[] = ['encabezado', 'pie', 'firma']
 
 /** Los datos (marcas) que acepta cada fin; REVISTA y PAR son los mismos textos en mayúsculas. */
-const VARIABLES: Record<Uso, string[]> = {
+const VARIABLES: Record<Fin, string[]> = {
   invitacion: ['revista', 'numero', 'par', 'profesion', 'universidad', 'articulo', 'botones'],
   agradecimiento: ['revista', 'par', 'articulo'],
   constancia: ['revista', 'REVISTA', 'par', 'PAR', 'articulo', 'issn', 'indexaciones', 'fecha', 'anio', 'firma'],
+  // Un mensaje se escribe a un par o a un autor, así que sus datos son los de la persona, no los de un artículo.
+  mensaje: ['revista', 'nombre', 'universidad', 'profesion', 'fecha', 'anio'],
 }
-const ETIQUETA_FIN: Record<Uso, string> = {
+const ETIQUETA_FIN: Record<Fin, string> = {
   invitacion: 'la invitación a evaluar',
   agradecimiento: 'el agradecimiento',
   constancia: 'la constancia',
+  mensaje: 'los mensajes que se envían a mano',
 }
 
 interface FilaPlantilla {
@@ -35,7 +40,7 @@ interface FilaPlantilla {
   nombre: string
   clase: 'correo' | 'archivo'
   /** Para qué sirve la plantilla; no cambia. */
-  fin: Uso
+  fin: Fin
   /** Para qué se usa ahora (igual a `fin`), o null si no está en uso. */
   tipo: string | null
   asunto: string | null
@@ -103,14 +108,14 @@ export interface DatosNuevaPlantilla {
   revista: 'reep' | 'ire'
   nombre: string
   /** Para qué sirve: de ahí sale la clase. Sin él, la clase viene dada. La plantilla siempre nace en blanco. */
-  uso?: Uso
+  uso?: Fin
   clase?: 'correo' | 'archivo'
 }
 
 export async function crearPlantilla(d: DatosNuevaPlantilla) {
   const revista = numeroDeRevista(d.revista)
   const clase = d.uso ? (d.uso === 'constancia' ? 'archivo' : 'correo') : (d.clase ?? 'correo')
-  const fin: Uso = d.uso ?? (clase === 'archivo' ? 'constancia' : 'invitacion')
+  const fin: Fin = d.uso ?? (clase === 'archivo' ? 'constancia' : 'invitacion')
   if (d.uso && d.clase && d.clase !== clase) throw new ErrorHttp(409, 'La clase no corresponde al uso elegido')
   const nombreRepetido = (e: { code?: string }): never => {
     if (e.code === '23505') throw new ErrorHttp(409, 'Ya existe una plantilla con ese nombre en esta revista')
@@ -131,8 +136,11 @@ export async function crearPlantilla(d: DatosNuevaPlantilla) {
 }
 
 /** Elige para qué se usa una plantilla en su revista; la que tenía ese uso queda libre. */
-export async function asignarUso(id: number, uso: Uso) {
+export async function asignarUso(id: number, uso: Fin) {
   const p = await cargar(id)
+  if (p.fin === 'mensaje') {
+    throw new ErrorHttp(409, 'Esta plantilla es para mensajes que se envían a mano: no se marca como «en uso», se elige al enviar el correo')
+  }
   // Una plantilla solo se elige para el fin con el que se creó.
   if (uso !== p.fin) {
     throw new ErrorHttp(409, `Esta plantilla es para ${ETIQUETA_FIN[p.fin]} y no puede usarse para ${ETIQUETA_FIN[uso]}`)
@@ -150,7 +158,7 @@ export async function asignarUso(id: number, uso: Uso) {
 
 export async function eliminarPlantilla(id: number): Promise<void> {
   const p = await cargar(id)
-  if (p.tipo) throw new ErrorHttp(409, 'La plantilla está en uso; elija otra en Configuración antes de eliminarla')
+  if (p.tipo) throw new ErrorHttp(409, 'La plantilla está en uso; marque otra como «en uso» antes de eliminarla')
   await pool.query('DELETE FROM plantilla WHERE id_plantilla = $1', [p.id_plantilla])
 }
 
@@ -196,7 +204,7 @@ export async function quitarImagen(id: number, parte: Parte) {
 /** El correo completo (con el marco institucional) con datos de ejemplo, para el texto que se está editando. */
 export async function vistaCorreo(d: {
   revista: 'reep' | 'ire'
-  uso: 'invitacion' | 'agradecimiento'
+  uso: 'invitacion' | 'agradecimiento' | 'mensaje'
   cuerpo: string
 }) {
   const { rows } = await pool.query<{ nombre: string; correo_remitente: string }>(
@@ -212,6 +220,9 @@ export async function vistaCorreo(d: {
     profesion: 'Magíster en Educación',
     universidad: 'Universidad de Nariño',
     articulo: 'Alfabetización mediática en la formación de maestros',
+    nombre: 'Luz Marina Burbano',
+    fecha: new Date().toLocaleDateString('es-CO', { day: 'numeric', month: 'long', year: 'numeric' }),
+    anio: String(new Date().getFullYear()),
     botones: MARCA_BOTONES,
   }
   const texto = d.cuerpo.replace(/\{\{(\w+)\}\}/g, (m, k: string) => ejemplo[k] ?? m)

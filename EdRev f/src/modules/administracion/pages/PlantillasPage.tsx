@@ -1,8 +1,9 @@
 /*
  * PlantillasPage — Plantillas (/administracion/plantillas): las plantillas de correo y de archivo de cada revista,
- * que se editan sin tocar el código. Las plantillas nuevas se crean con un nombre libre y un fin (invitación,
- * agradecimiento o constancia), nacen en blanco y se pueden eliminar mientras no estén en uso; para qué se usa
- * cada una se elige en Configuración. Solo para la Administradora.
+ * que se editan sin tocar el código. Las plantillas nuevas se crean con un nombre libre y un tipo (mensaje,
+ * invitación, agradecimiento o constancia) y nacen en blanco. Las de invitación, agradecimiento y constancia se
+ * marcan «en uso» desde la propia plantilla; las de mensaje se eligen al enviar un correo. Solo para la
+ * Administradora.
  */
 import { useState } from 'react'
 import { FormularioPlantilla } from '../components/FormularioPlantilla'
@@ -12,9 +13,9 @@ import { Boton } from '@/components/common/Boton'
 import { EncabezadoPagina } from '@/components/common/EncabezadoPagina'
 import { EstadoConsulta } from '@/components/common/EstadoConsulta'
 import { ListaDesplegable } from '@/components/common/ListaDesplegable'
-import { ETIQUETA_USO } from '../config/plantillas'
+import { ETIQUETA_FIN } from '../config/plantillas'
 import { REVISTAS } from '@/types/revista'
-import type { Plantilla, UsoPlantilla } from '@/types/plantilla'
+import type { FinPlantilla, Plantilla } from '@/types/plantilla'
 import type { Revista } from '@/types/revista'
 
 const OPCIONES_REVISTA = (Object.keys(REVISTAS) as Revista[]).map((r) => ({
@@ -22,16 +23,17 @@ const OPCIONES_REVISTA = (Object.keys(REVISTAS) as Revista[]).map((r) => ({
   etiqueta: REVISTAS[r].nombreCorto,
 }))
 
-const PALABRA_DEL_FIN: Record<UsoPlantilla, string> = {
+const PALABRA_DEL_FIN: Record<FinPlantilla, string> = {
   invitacion: 'invit',
   agradecimiento: 'agradec',
   constancia: 'constan',
+  mensaje: 'mensaj',
 }
 
 /** El nombre, para qué sirve (salvo que el nombre ya lo diga) y si está en uso. */
 function etiquetaDeLaPlantilla(p: Plantilla): string {
   const dice = p.nombre.toLowerCase().includes(PALABRA_DEL_FIN[p.fin])
-  return `${p.nombre}${dice ? '' : ` · ${ETIQUETA_USO[p.fin]}`}${p.uso ? ' · en uso' : ''}`
+  return `${p.nombre}${dice ? '' : ` · ${ETIQUETA_FIN[p.fin]}`}${p.uso ? ' · EN USO' : ''}`
 }
 
 export function PlantillasPage() {

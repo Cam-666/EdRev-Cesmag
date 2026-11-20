@@ -6,6 +6,7 @@
 import { useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { EditarAutorModal } from '../components/EditarAutorModal'
+import { EnviarCorreoModal } from '@/modules/correos/components/EnviarCorreoModal'
 import { useArticulosDeAutor, useAutor } from '../hooks/useAutores'
 import { usePermiso } from '@/modules/acceso/hooks/usePermiso'
 import { Boton } from '@/components/common/Boton'
@@ -26,6 +27,7 @@ export function AutorDetallePage() {
   const articulos = useArticulosDeAutor(id)
   const puedeEditar = usePermiso('registrar-datos')
   const [editando, setEditando] = useState<Autor | null>(null)
+  const [escribiendo, setEscribiendo] = useState(false)
   const volver = <BotonVolver to="/autores">Volver a autores</BotonVolver>
 
   if (autor.error instanceof ErrorApi && autor.error.estado === 404) {
@@ -68,13 +70,18 @@ export function AutorDetallePage() {
               titulo={autor.data.nombre}
               acciones={
                 puedeEditar && (
-                  <Boton
-                    variante="secundario"
-                    tamano="sm"
-                    onClick={() => setEditando(autor.data ?? null)}
-                  >
-                    Editar
-                  </Boton>
+                  <>
+                    <Boton variante="secundario" tamano="sm" onClick={() => setEscribiendo(true)}>
+                      Enviar correo
+                    </Boton>
+                    <Boton
+                      variante="neutro"
+                      tamano="sm"
+                      onClick={() => setEditando(autor.data ?? null)}
+                    >
+                      Editar
+                    </Boton>
+                  </>
                 )
               }
             >
@@ -135,6 +142,15 @@ export function AutorDetallePage() {
         )}
       </EstadoConsulta>
       <EditarAutorModal autor={editando} onCerrar={() => setEditando(null)} />
+      {autor.data && (
+        <EnviarCorreoModal
+          abierto={escribiendo}
+          onCerrar={() => setEscribiendo(false)}
+          destino={{ tipo: 'autor', id: autor.data.id }}
+          nombre={autor.data.nombre}
+          correo={autor.data.correo}
+        />
+      )}
     </section>
   )
 }

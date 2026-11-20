@@ -11,6 +11,7 @@ import { rutasAutores } from './autores.js'
 import { rutasConstancias } from './constancias.js'
 import { rutasCorreos } from './correos.js'
 import { rutasInformes } from './informes.js'
+import { rutasMensajes } from './mensajes.js'
 import { rutasMigracion } from './migracion.js'
 import { rutasPanel } from './panel.js'
 import { rutasPares } from './pares.js'
@@ -26,4 +27,5 @@ rutasPrivadas.use(rutasPares)
 rutasPrivadas.use(rutasAsignaciones)
 rutasPrivadas.use(rutasConstancias)
 rutasPrivadas.use(rutasCorreos)
+rutasPrivadas.use(rutasMensajes)
 rutasPrivadas.use(rutasMigracion)

@@ -24,6 +24,8 @@ const TITULOS = {
   agradecimiento: 'Gracias por su evaluación',
   constancia: 'Constancia de participación',
   // Correos de la cuenta (no son de una evaluación): el enlace para definir la contraseña.
+  // Mensaje que la dependencia escribe a mano a un par o a un autor (el asunto va en el asunto del correo).
+  mensaje: 'Mensaje de la Dependencia de Editorial',
   activacion: 'Active su cuenta',
   recuperacion: 'Recupere su contraseña',
 } as const

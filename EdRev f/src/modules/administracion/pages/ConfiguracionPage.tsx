@@ -1,9 +1,9 @@
 /*
- * ConfiguracionPage — Configuración (/administracion/configuracion), en dos pestañas:
- * - Correos: los días que tiene un par para responder una invitación (pasado ese tiempo el sistema envía solo el
- *   2.º intento y, si tampoco se responde, bloquea al par) y, de cada revista, qué plantilla es la invitación y
- *   cuál el correo de agradecimiento.
- * - Constancias: de cada revista, qué plantilla es su constancia y su ISSN e indexaciones, que van en la constancia.
+ * ConfiguracionPage — Configuración (/administracion/configuracion), en una sola página con dos partes:
+ * - Respuesta de los pares: los días que tiene un par para responder una invitación (pasado ese tiempo el sistema
+ *   envía solo el 2.º intento y, si tampoco se responde, bloquea al par).
+ * - Constancias: de cada revista, su ISSN y sus indexaciones, que van en la constancia.
+ * Qué plantilla se usa para cada correo ya no se elige aquí: se marca desde la propia plantilla, en Plantillas.
  * Solo para la Administradora.
  */
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -11,17 +11,14 @@ import { useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { z } from 'zod'
 import { DatosRevistaForm } from '../components/DatosRevistaForm'
-import { ElegirPlantillaDeUso } from '../components/ElegirPlantillaDeUso'
-import { useConfiguracion, useGuardarConfiguracion, usePlantillas } from '../hooks/useAdmin'
+import { useConfiguracion, useGuardarConfiguracion } from '../hooks/useAdmin'
 import { Alerta } from '@/components/common/Alerta'
 import { Boton } from '@/components/common/Boton'
 import { CampoTexto } from '@/components/common/CampoTexto'
 import { EncabezadoPagina } from '@/components/common/EncabezadoPagina'
 import { EstadoConsulta } from '@/components/common/EstadoConsulta'
-import { Pestanas } from '@/components/common/Pestanas'
 import { mensajeDeApi } from '@/lib/api/errores'
 import { REVISTAS } from '@/types/revista'
-import type { Plantilla } from '@/types/plantilla'
 import type { Revista } from '@/types/revista'
 
 const esquema = z.object({
@@ -79,85 +76,43 @@ function DiasDeEspera({ diasEspera }: { diasEspera: number }) {
   )
 }
 
-function PestanaCorreos({ diasEspera, plantillas }: { diasEspera: number; plantillas: Plantilla[] }) {
-  return (
-    <div className="flex flex-col gap-6">
-      <DiasDeEspera diasEspera={diasEspera} />
-      <section aria-labelledby="titulo-correos-uso" className="flex flex-col gap-3">
-        <h3 id="titulo-correos-uso" className="text-titulo-16">
-          Plantillas de los correos
-        </h3>
-        <p className="max-w-2xl text-cuerpo-13 text-texto-secundario">
-          Elija, para cada revista, la plantilla que se usará en la invitación a evaluar y en el
-          correo de agradecimiento. Las plantillas se crean y se editan en Plantillas.
-        </p>
-        <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
-          {REVISTAS_IDS.map((r) => (
-            <div
-              key={r}
-              className="flex flex-col gap-3 rounded-lg border border-borde-base bg-superficie-tarjeta p-4"
-            >
-              <h4 className="text-titulo-16">{REVISTAS[r].nombreCorto}</h4>
-              <ElegirPlantillaDeUso revista={r} uso="invitacion" plantillas={plantillas} />
-              <ElegirPlantillaDeUso revista={r} uso="agradecimiento" plantillas={plantillas} />
-            </div>
-          ))}
-        </div>
-      </section>
-    </div>
-  )
-}
-
 export function ConfiguracionPage() {
   const consulta = useConfiguracion()
-  const plantillas = usePlantillas()
   const configuracion = consulta.data
-  const lista = plantillas.data?.plantillas
 
   return (
-    <section className="flex flex-col gap-4" aria-labelledby="titulo-configuracion">
+    <section className="flex flex-col gap-6" aria-labelledby="titulo-configuracion">
       <EncabezadoPagina nivel="h2" titulo={<span id="titulo-configuracion">Configuración</span>} />
       <EstadoConsulta
-        cargando={consulta.isPending || plantillas.isPending}
-        error={consulta.isError || plantillas.isError}
-        onReintentar={() => {
-          void consulta.refetch()
-          void plantillas.refetch()
-        }}
+        cargando={consulta.isPending}
+        error={consulta.isError}
+        onReintentar={() => void consulta.refetch()}
         descripcion="la configuración"
       >
-        {configuracion && lista && (
-          <Pestanas
-            etiqueta="Secciones de la configuración"
-            pestanas={[
-              {
-                valor: 'correos',
-                etiqueta: 'Correos',
-                contenido: (
-                  <PestanaCorreos diasEspera={configuracion.diasEspera} plantillas={lista} />
-                ),
-              },
-              {
-                valor: 'constancias',
-                etiqueta: 'Constancias',
-                contenido: (
-                  <div className="flex flex-col gap-4">
-                    <p className="max-w-2xl text-cuerpo-13 text-texto-secundario">
-                      Elija la plantilla de la constancia de cada revista y registre su ISSN y sus
-                      indexaciones, que cambian con el tiempo. Al editarlos, las constancias que se
-                      envíen o se descarguen desde ese momento salen con el texto nuevo.
-                    </p>
-                    {REVISTAS_IDS.map((r) => (
-                      <div key={r} className="flex max-w-2xl flex-col gap-3">
-                        <ElegirPlantillaDeUso revista={r} uso="constancia" plantillas={lista} />
-                        <DatosRevistaForm revista={r} datos={configuracion.revistas[r]} />
-                      </div>
-                    ))}
-                  </div>
-                ),
-              },
-            ]}
-          />
+        {configuracion && (
+          <>
+            <section aria-labelledby="titulo-respuesta-pares" className="flex flex-col gap-3">
+              <h3 id="titulo-respuesta-pares" className="text-titulo-16">
+                Respuesta de los pares
+              </h3>
+              <DiasDeEspera diasEspera={configuracion.diasEspera} />
+            </section>
+            <section aria-labelledby="titulo-datos-constancia" className="flex flex-col gap-3">
+              <h3 id="titulo-datos-constancia" className="text-titulo-16">
+                Datos de la constancia
+              </h3>
+              <p className="max-w-2xl text-cuerpo-13 text-texto-secundario">
+                Registre el ISSN y las indexaciones de cada revista, que cambian con el tiempo. Al
+                editarlos, las constancias que se envíen o se descarguen desde ese momento salen con el
+                texto nuevo. El texto de la constancia y de los correos se escribe en Plantillas.
+              </p>
+              {REVISTAS_IDS.map((r) => (
+                <div key={r} className="flex max-w-2xl flex-col gap-3">
+                  <DatosRevistaForm revista={r} datos={configuracion.revistas[r]} />
+                </div>
+              ))}
+            </section>
+          </>
         )}
       </EstadoConsulta>
     </section>

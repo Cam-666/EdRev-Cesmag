@@ -28,6 +28,13 @@ export async function registrarEventos(eventos: EventoCorreo[]): Promise<void> {
         RETURNING c.id_correo, a.id_articulo, a.id_revista`,
       [resultado, e.email],
     )
+    // El mismo aviso también puede ser de un mensaje que se envió a mano a esa dirección.
+    await pool.query(
+      `UPDATE mensaje SET resultado = $1
+        WHERE id_mensaje = (SELECT id_mensaje FROM mensaje WHERE lower(destinatario) = lower($2)
+                              AND resultado = 'enviado' ORDER BY fecha_envio DESC LIMIT 1)`,
+      [resultado, e.email],
+    )
     const fila = rows[0]
     if (fila) {
       await auditar(pool, {

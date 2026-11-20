@@ -11,6 +11,7 @@ export const ETIQUETA_TIPO_CORREO: Record<TipoCorreo, string> = {
   reenvio: 'Reenvío por corrección',
   agradecimiento: 'Agradecimiento',
   constancia: 'Constancia',
+  mensaje: 'Mensaje',
 }
 
 export const ETIQUETA_RESPUESTA_PAR: Record<RespuestaDelPar, string> = {

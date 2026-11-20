@@ -8,7 +8,7 @@ import { idNumerico } from '../../lib/http.js'
 import * as plantillas from '../../servicios/administracion/plantillas.js'
 
 const revista = z.enum(['reep', 'ire'])
-const uso = z.enum(['invitacion', 'agradecimiento', 'constancia'])
+const uso = z.enum(['invitacion', 'agradecimiento', 'constancia', 'mensaje'])
 
 const nueva = z
   .object({
@@ -60,7 +60,7 @@ export async function quitarImagen(req: Request, res: Response): Promise<void> {
 
 export async function vistaCorreo(req: Request, res: Response): Promise<void> {
   const datos = z
-    .object({ revista, uso: z.enum(['invitacion', 'agradecimiento']), cuerpo: z.string() })
+    .object({ revista, uso: z.enum(['invitacion', 'agradecimiento', 'mensaje']), cuerpo: z.string() })
     .parse(req.body)
   res.json(await plantillas.vistaCorreo(datos))
 }

@@ -2,16 +2,17 @@
  * FormularioPlantilla — edita una plantilla (asunto y texto) con las marcas que acepta, una vista previa en vivo
  * con datos de ejemplo y la validación antes de guardar: solo puede usar sus propias marcas. El texto puede
  * tener alineación y negrita. La constancia (plantilla de archivo) no tiene asunto; lleva imágenes de encabezado,
- * de pie de página y de firma. Dice para qué se usa la plantilla (se elige en Configuración) y una plantilla que
- * no está en uso se puede eliminar.
+ * de pie de página y de firma. Dice de qué tipo es la plantilla y, en las de invitación, agradecimiento y constancia,
+ * tiene el botón «Usar esta plantilla» (guarda el texto y la deja como la que se envía); las de mensaje se eligen
+ * al enviar un correo desde la ficha de un par o de un autor. Una plantilla que no está en uso se puede eliminar.
  */
 import { useState } from 'react'
-import { DATOS_EJEMPLO, ETIQUETA_USO, validarPlantilla } from '../config/plantillas'
+import { DATOS_EJEMPLO, ETIQUETA_USO, EXPLICACION_FIN, ETIQUETA_FIN, validarPlantilla } from '../config/plantillas'
 import { EditorTexto } from './EditorTexto'
 import { ImagenesConstancia } from './ImagenesConstancia'
 import { VistaPreviaConstancia } from './VistaPreviaConstancia'
 import { VistaPreviaCorreo } from './VistaPreviaCorreo'
-import { useEliminarPlantilla, useGuardarPlantilla } from '../hooks/useAdmin'
+import { useAsignarPlantilla, useEliminarPlantilla, useGuardarPlantilla } from '../hooks/useAdmin'
 import { Alerta } from '@/components/common/Alerta'
 import { Boton } from '@/components/common/Boton'
 import { CampoTexto } from '@/components/common/CampoTexto'
@@ -19,7 +20,7 @@ import { ModalConfirmacion } from '@/components/common/ModalConfirmacion'
 import { mensajeDeApi } from '@/lib/api/errores'
 import { aGuardado, aVisible } from '@/lib/datosPlantilla'
 import { rellenar } from '@/lib/plantillas'
-import type { Plantilla } from '@/types/plantilla'
+import type { Plantilla, UsoPlantilla } from '@/types/plantilla'
 import { REVISTAS } from '@/types/revista'
 
 export interface FormularioPlantillaProps {
@@ -35,6 +36,7 @@ export function FormularioPlantilla({ plantilla, onEliminada }: FormularioPlanti
   const [guardada, setGuardada] = useState(false)
   const mutacion = useGuardarPlantilla()
   const eliminar = useEliminarPlantilla()
+  const asignar = useAsignarPlantilla()
   const [confirmando, setConfirmando] = useState(false)
   const tieneAsunto = plantilla.asunto !== null
   const ejemplo = { ...DATOS_EJEMPLO, revista: REVISTAS[plantilla.revista].nombre }
@@ -54,8 +56,26 @@ export function FormularioPlantilla({ plantilla, onEliminada }: FormularioPlanti
     )
   }
 
+  /** Guarda lo escrito y la deja como la plantilla que se envía para su tipo. */
+  function usar() {
+    setGuardada(false)
+    const problema = validarPlantilla(plantilla, tieneAsunto ? asunto : null, cuerpo)
+    setError(problema)
+    if (problema || plantilla.fin === 'mensaje') return
+    mutacion.mutate(
+      { id: plantilla.id, asunto: tieneAsunto ? asunto : null, cuerpo },
+      { onSuccess: () => asignar.mutate({ id: plantilla.id, uso: plantilla.fin as UsoPlantilla }) },
+    )
+  }
+
   return (
     <div className="flex flex-col gap-4">
+      <p className="text-cuerpo-13 text-texto-secundario">
+        <strong>{ETIQUETA_FIN[plantilla.fin]}.</strong> {EXPLICACION_FIN[plantilla.fin]}
+      </p>
+      {asignar.isError && (
+        <Alerta tipo="error">{mensajeDeApi(asignar.error, 'No fue posible usar la plantilla.')}</Alerta>
+      )}
       {mutacion.isError && (
         <Alerta tipo="error">
           {mensajeDeApi(mutacion.error, 'No fue posible guardar la plantilla.')}
@@ -94,7 +114,7 @@ export function FormularioPlantilla({ plantilla, onEliminada }: FormularioPlanti
         </h3>
         <p className="text-cuerpo-13 text-texto-secundario">
           {plantilla.clase === 'correo'
-            ? 'Así recibe el par el mensaje, con datos de ejemplo. Se actualiza mientras usted escribe.'
+            ? 'Así recibe la persona el correo, con datos de ejemplo. Se actualiza mientras usted escribe.'
             : 'Así se ve el archivo PDF, con datos de ejemplo. Se actualiza mientras usted escribe y al subir las imágenes.'}
         </p>
         {tieneAsunto && (
@@ -103,7 +123,13 @@ export function FormularioPlantilla({ plantilla, onEliminada }: FormularioPlanti
         {plantilla.clase === 'correo' ? (
           <VistaPreviaCorreo
             revista={plantilla.revista}
-            uso={plantilla.fin === 'agradecimiento' ? 'agradecimiento' : 'invitacion'}
+            uso={
+              plantilla.fin === 'agradecimiento'
+                ? 'agradecimiento'
+                : plantilla.fin === 'mensaje'
+                  ? 'mensaje'
+                  : 'invitacion'
+            }
             cuerpo={cuerpo}
           />
         ) : (
@@ -117,14 +143,20 @@ export function FormularioPlantilla({ plantilla, onEliminada }: FormularioPlanti
         </Boton>
         {plantilla.enUso ? (
           <span className="text-cuerpo-13 text-texto-secundario">
-            En uso como: {plantilla.uso ? ETIQUETA_USO[plantilla.uso] : ''}. Para eliminarla,
-            elija antes otra en Configuración.
+            <strong>Es la plantilla en uso</strong> para «{plantilla.uso ? ETIQUETA_USO[plantilla.uso] : ''}».
+            Para eliminarla, primero use otra plantilla del mismo tipo.
           </span>
         ) : (
           <>
-            <span className="text-cuerpo-13 text-texto-secundario">
-              Sin uso asignado. Elija para qué se usará en Configuración.
-            </span>
+            {plantilla.fin !== 'mensaje' && (
+              <Boton
+                variante="secundario"
+                onClick={usar}
+                cargando={asignar.isPending || mutacion.isPending}
+              >
+                Usar esta plantilla
+              </Boton>
+            )}
             <Boton variante="peligro" onClick={() => setConfirmando(true)}>
               Eliminar plantilla
             </Boton>

@@ -13,7 +13,7 @@ import type { Revista } from '@/types/revista'
 
 export interface VistaPreviaCorreoProps {
   revista: Revista
-  uso: 'invitacion' | 'agradecimiento'
+  uso: 'invitacion' | 'agradecimiento' | 'mensaje'
   /** El texto guardado que se está editando (con sus marcas). */
   cuerpo: string
 }

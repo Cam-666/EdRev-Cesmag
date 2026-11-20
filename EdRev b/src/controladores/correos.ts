@@ -13,7 +13,12 @@ const correccion = z.object({
 })
 
 const revistaDe = (req: Request) => idRevista(req.params.revista)
-const correoDe = (req: Request) => idNumerico(req.params.id, 'Correo')
+// Los mensajes enviados a mano llevan una «m» antes del número (m12); los demás correos, solo el número.
+const correoDe = (req: Request): string => {
+  const id = String(req.params.id)
+  if (/^m\d+$/.test(id)) return id
+  return String(idNumerico(id, 'Correo'))
+}
 
 export async function listar(req: Request, res: Response): Promise<void> {
   const q = req.query

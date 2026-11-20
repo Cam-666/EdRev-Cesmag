@@ -8,10 +8,13 @@ import { enTransaccion, pool } from '../db.js'
 import { auditar } from '../lib/auditoria.js'
 import { ErrorHttp } from '../lib/http.js'
 import { correosApi, encolar, SELECCION_CORREOS, type FilaCorreo } from './correos.js'
+import { mensajesDeRevista } from './mensajes.js'
 
 async function correosDeRevista(revista: number) {
   const { rows } = await pool.query<FilaCorreo>(`${SELECCION_CORREOS} WHERE a.id_revista = $1`, [revista])
-  return correosApi(rows)
+  // Los mensajes que se envían a mano a un par o a un autor van en el mismo registro, mezclados por fecha.
+  const mensajes = await mensajesDeRevista(revista)
+  return [...correosApi(rows), ...mensajes].sort((a, b) => (b.fechaEnvio ?? '').localeCompare(a.fechaEnvio ?? ''))
 }
 
 export interface FiltrosCorreos {
@@ -41,26 +44,38 @@ export async function reintentarPendientes(revista: number) {
   )
   await pool.query(
     `UPDATE correo SET resultado = 'en-cola', fecha_envio = now() WHERE id_correo = ANY ($1::int[])`,
-    [pendientes.map((c) => Number(c.id))],
+    [pendientes.filter((c) => !c.id.startsWith('m')).map((c) => Number(c.id))],
+  )
+  await pool.query(
+    `UPDATE mensaje SET resultado = 'en-cola', fecha_envio = now() WHERE id_mensaje = ANY ($1::int[])`,
+    [pendientes.filter((c) => c.id.startsWith('m')).map((c) => Number(c.id.slice(1)))],
   )
   // Mientras el servicio de correo no esté conectado nada sale de la cola: ninguno se reporta como enviado.
   return { reintentados: pendientes.length, enviados: 0, siguenFallando: 0 }
 }
 
-export async function reintentarCorreo(revista: number, id: number) {
-  const correo = (await correosDeRevista(revista)).find((c) => c.id === String(id))
+export async function reintentarCorreo(revista: number, id: string) {
+  const correo = (await correosDeRevista(revista)).find((c) => c.id === id)
   if (!correo) throw new ErrorHttp(404, 'Correo no encontrado')
   if (!(correo.estado === 'en-cola' || (correo.estado === 'fallido' && !correo.atendido))) {
     throw new ErrorHttp(409, 'Este correo no necesita reintento')
   }
-  await pool.query(`UPDATE correo SET resultado = 'en-cola', fecha_envio = now() WHERE id_correo = $1`, [id])
+  if (id.startsWith('m')) {
+    await pool.query(`UPDATE mensaje SET resultado = 'en-cola', fecha_envio = now() WHERE id_mensaje = $1`, [Number(id.slice(1))])
+  } else {
+    await pool.query(`UPDATE correo SET resultado = 'en-cola', fecha_envio = now() WHERE id_correo = $1`, [Number(id)])
+  }
   return { estado: 'en-cola' }
 }
 
 /** Corrige la dirección del par y encola hacia ella un correo nuevo del mismo tipo. */
-export async function corregirYReenviar(revista: number, id: number, nuevoCorreo: string, actor: number) {
-  const correo = (await correosDeRevista(revista)).find((c) => c.id === String(id))
+export async function corregirYReenviar(revista: number, idTexto: string, nuevoCorreo: string, actor: number) {
+  const correo = (await correosDeRevista(revista)).find((c) => c.id === idTexto)
   if (!correo) throw new ErrorHttp(404, 'Correo no encontrado')
+  if (correo.tipo === 'mensaje') {
+    throw new ErrorHttp(409, 'Corrija el correo en la ficha de la persona y vuelva a enviarle el mensaje')
+  }
+  const id = Number(idTexto)
   if (!['rebotado', 'fallido'].includes(correo.estado) || correo.atendido) {
     throw new ErrorHttp(409, 'Solo se corrige un envío que rebotó o falló')
   }

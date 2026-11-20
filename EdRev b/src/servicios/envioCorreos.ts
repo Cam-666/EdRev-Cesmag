@@ -51,7 +51,12 @@ function rellenar(texto: string, v: Record<string, string>): string {
 }
 
 
-async function enviarBrevo(p: Pendiente, asunto: string, html: string, adjunto?: Uint8Array) {
+async function enviarBrevo(
+  p: Pick<Pendiente, 'remitente' | 'revista' | 'destinatario' | 'par'>,
+  asunto: string,
+  html: string,
+  adjunto?: Uint8Array,
+) {
   const respuesta = await fetch('https://api.brevo.com/v3/smtp/email', {
     method: 'POST',
     headers: {
@@ -142,7 +147,51 @@ async function procesar(): Promise<void> {
     ])
     if (resultado === 'fallido') await registrarFallo(pool, p.id_correo, p.id_revista, p.id_articulo)
   }
+  await procesarMensajes()
   await reencolarFallidos(pool)
+}
+
+/**
+ * Los mensajes que la dependencia escribió a mano a un par o a un autor (tabla `mensaje`): se arman con el marco
+ * institucional y se envían igual que los demás correos. Si el servicio falla quedan «fallido» y se reintentan
+ * a mano desde «Correos enviados».
+ */
+async function procesarMensajes(): Promise<void> {
+  const { rows } = await pool.query<{
+    id_mensaje: number
+    destinatario: string
+    nombre: string
+    asunto: string
+    cuerpo: string
+    revista: string
+    remitente: string
+  }>(
+    `SELECT m.id_mensaje, m.destinatario, m.nombre, m.asunto, m.cuerpo, r.nombre AS revista,
+            r.correo_remitente AS remitente
+       FROM mensaje m JOIN revista r ON r.id_revista = m.id_revista
+      WHERE m.resultado = 'en-cola' ORDER BY m.fecha_envio LIMIT 20`,
+  )
+  for (const m of rows) {
+    let resultado: 'enviado' | 'rebotado' | 'fallido'
+    try {
+      if (modo() === 'simulado') {
+        resultado = 'enviado'
+        console.log(`[correo simulado] mensaje → ${m.destinatario}: ${m.asunto}`)
+      } else {
+        const html = marcoInstitucional({
+          tipo: 'mensaje',
+          revista: m.revista,
+          contacto: m.remitente,
+          contenido: aHtml(m.cuerpo),
+        })
+        resultado = await enviarBrevo({ remitente: m.remitente, revista: m.revista, destinatario: m.destinatario, par: m.nombre }, m.asunto, html)
+      }
+    } catch (e) {
+      console.error('Mensaje no enviado:', (e as Error).message)
+      resultado = 'fallido'
+    }
+    await pool.query('UPDATE mensaje SET resultado = $1, fecha_envio = now() WHERE id_mensaje = $2', [resultado, m.id_mensaje])
+  }
 }
 
 /** Cada falla deja una huella «fallo» del correo; las huellas son los intentos ya hechos. */

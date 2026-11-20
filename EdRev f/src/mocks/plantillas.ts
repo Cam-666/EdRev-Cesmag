@@ -75,16 +75,33 @@ export const DATOS_REVISTA_INICIALES: Record<Revista, { issn: string; indexacion
   },
 }
 
-/** Cada revista empieza con su propia invitación, correo de agradecimiento y constancia. */
-export const PLANTILLAS_INICIALES: Plantilla[] = (['reep', 'ire'] as const).flatMap((revista) =>
-  BASE.map((p) => ({
+/**
+ * Cada revista empieza con su propia invitación, correo de agradecimiento y constancia, y con una plantilla de
+ * mensaje para escribirle a mano a un par o a un autor (esa nunca está «en uso»: se elige al enviar el correo).
+ */
+export const PLANTILLAS_INICIALES: Plantilla[] = (['reep', 'ire'] as const).flatMap((revista) => [
+  ...BASE.map((p) => ({
     ...p,
     id: `${revista}-${p.uso}`,
     revista,
     fin: p.uso ?? 'invitacion',
     imagenes: p.uso === 'constancia' ? { ...IMAGENES[revista] } : null,
   })),
-)
+  {
+    id: `${revista}-mensaje`,
+    revista,
+    uso: null,
+    fin: 'mensaje' as const,
+    clase: 'correo' as const,
+    nombre: 'Mensaje general',
+    asunto: 'Mensaje de {{revista}}',
+    cuerpo:
+      'Apreciado(a) {{nombre}}:\n\nLe escribimos desde la Dependencia de Editorial de la {{revista}}.\n\nCordialmente,',
+    variables: ['revista', 'nombre', 'universidad', 'profesion', 'fecha', 'anio'],
+    enUso: false,
+    imagenes: null,
+  },
+])
 
 /** Dirección remitente de cada revista (un remitente verificado en el servicio de correo). */
 export const CUENTAS_INICIALES: CuentaRemitente[] = [

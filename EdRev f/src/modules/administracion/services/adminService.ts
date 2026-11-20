@@ -100,7 +100,7 @@ export function vistaPreviaPlantilla(id: string): Promise<Blob> {
 /** El correo completo (con el marco institucional) con datos de ejemplo, para el texto que se está editando. */
 export function vistaCorreoPlantilla(datos: {
   revista: Revista
-  uso: 'invitacion' | 'agradecimiento'
+  uso: 'invitacion' | 'agradecimiento' | 'mensaje'
   cuerpo: string
 }): Promise<{ html: string }> {
   return solicitar<{ html: string }>('/plantillas/vista-correo', { method: 'POST', ...json(datos) })

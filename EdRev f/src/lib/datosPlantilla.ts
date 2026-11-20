@@ -9,6 +9,7 @@ export const ETIQUETA_DATO: Record<string, string> = {
   revista: 'Nombre de la revista',
   REVISTA: 'Nombre de la revista en mayúsculas',
   numero: 'Número de la solicitud',
+  nombre: 'Nombre del destinatario',
   par: 'Nombre del par',
   PAR: 'Nombre del par en mayúsculas',
   profesion: 'Profesión del par',

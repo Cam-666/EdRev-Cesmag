@@ -49,12 +49,12 @@ export function TablaCorreosRevista({
           key={c.id}
           tipo={ETIQUETA_TIPO_CORREO[c.tipo]}
           destinatario={c.destinatario}
-          numeroOjs={c.numeroOjs}
+          numeroOjs={c.tipo === 'mensaje' ? '—' : c.numeroOjs}
           fechaEnvio={c.fechaEnvio}
           resultado={c.estado}
           atendido={c.atendido}
           accion={
-            c.estado === 'rebotado' && !c.atendido && puedeReintentar ? (
+            c.estado === 'rebotado' && !c.atendido && puedeReintentar && c.tipo !== 'mensaje' ? (
               <Boton variante="secundario" tamano="sm" onClick={() => onCorregir(c)}>
                 Corregir <span className="sr-only">el correo a {c.destinatario}</span>
               </Boton>

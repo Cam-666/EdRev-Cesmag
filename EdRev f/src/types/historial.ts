@@ -4,7 +4,14 @@ import type { Revista } from './revista'
  * Tipos de correo: la invitación, su segundo intento automático, el reenvío tras corregir una dirección rebotada o
  * fallida y el correo de agradecimiento con la constancia.
  */
-export type TipoCorreo = 'invitacion' | 'segundo-intento' | 'reenvio' | 'agradecimiento' | 'constancia'
+export type TipoCorreo =
+  | 'invitacion'
+  | 'segundo-intento'
+  | 'reenvio'
+  | 'agradecimiento'
+  | 'constancia'
+  /** Un mensaje que la dependencia escribió a mano a un par o a un autor (no pertenece a un artículo). */
+  | 'mensaje'
 
 /**
  * Resultado de un correo: en cola, enviado (el servidor de correo lo aceptó), rebotado (la dirección no existe:
@@ -32,6 +39,8 @@ export interface CorreoEnviado {
   asignacionId: string
   tipo: TipoCorreo
   destinatario: string
+  /** Nombre de la persona a quien se escribió; solo en los mensajes enviados a mano. */
+  nombreDestinatario?: string
   asunto: string
   fechaEnvio: string
   estado: EstadoCorreo

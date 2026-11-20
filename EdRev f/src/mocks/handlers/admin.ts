@@ -11,12 +11,13 @@ import { contextoGlobal, error, sinTildes } from './util'
 import { marcadores } from '@/lib/plantillas'
 import type { RespuestaEnvioEnlace } from '@/types/acceso'
 import type { EntradaAuditoria } from '@/types/historial'
-import type { DatosNuevaPlantilla, ParteImagen, Plantilla, UsoPlantilla } from '@/types/plantilla'
+import type { DatosNuevaPlantilla, FinPlantilla, ParteImagen, Plantilla } from '@/types/plantilla'
 
-const FIN_TEXTO: Record<UsoPlantilla, string> = {
+const FIN_TEXTO: Record<FinPlantilla, string> = {
   invitacion: 'la invitación a evaluar',
   agradecimiento: 'el agradecimiento',
   constancia: 'la constancia',
+  mensaje: 'los mensajes que se envían a mano',
 }
 import type { Revista } from '@/types/revista'
 import type { DatosUsuario, Usuario } from '@/types/usuario'
@@ -24,10 +25,11 @@ import type { DatosUsuario, Usuario } from '@/types/usuario'
 /** Marcas que toda plantilla debe conservar, o su correo o constancia pierde los datos para los que existe. */
 
 /** Marcas que acepta cada uso; una plantilla sin uso acepta las de su clase. */
-const VARIABLES: Record<UsoPlantilla, string[]> = {
+const VARIABLES: Record<FinPlantilla, string[]> = {
   invitacion: ['revista', 'numero', 'par', 'profesion', 'universidad', 'articulo', 'botones'],
   agradecimiento: ['revista', 'par', 'articulo'],
   constancia: ['revista', 'REVISTA', 'par', 'PAR', 'articulo', 'issn', 'indexaciones', 'fecha', 'anio', 'firma'],
+  mensaje: ['revista', 'nombre', 'universidad', 'profesion', 'fecha', 'anio'],
 }
 
 const PARTES: readonly ParteImagen[] = ['encabezado', 'pie', 'firma']
@@ -191,7 +193,7 @@ export const handlersAdmin = [
     if (repetido) return error(409, 'Ya existe una plantilla con ese nombre en esta revista')
     // Una plantilla nueva siempre nace en blanco; para qué sirve no cambia y los datos que acepta dependen de ello.
     const id = `${revista}-pl-n${plantillas().length + 1}`
-    const fin: UsoPlantilla = uso ?? (clase === 'archivo' ? 'constancia' : 'invitacion')
+    const fin: FinPlantilla = uso ?? (clase === 'archivo' ? 'constancia' : 'invitacion')
     const nueva: Plantilla = {
       id,
       revista,
@@ -214,7 +216,10 @@ export const handlersAdmin = [
     if (!c.ok) return c.respuesta
     const plantilla = plantillas().find((p) => p.id === params.id)
     if (!plantilla) return error(404, 'Plantilla no encontrada')
-    const { uso } = (await request.json()) as { uso: UsoPlantilla }
+    const { uso } = (await request.json()) as { uso: FinPlantilla }
+    if (plantilla.fin === 'mensaje') {
+      return error(409, 'Esta plantilla es para mensajes que se envían a mano: no se marca como «en uso», se elige al enviar el correo')
+    }
     // Una plantilla solo se elige para el fin con el que se creó.
     if (uso !== plantilla.fin) {
       return error(409, `Esta plantilla es para ${FIN_TEXTO[plantilla.fin]} y no puede usarse para ${FIN_TEXTO[uso]}`)
@@ -241,7 +246,7 @@ export const handlersAdmin = [
     const plantilla = plantillas().find((p) => p.id === params.id)
     if (!plantilla) return error(404, 'Plantilla no encontrada')
     if (plantilla.uso) {
-      return error(409, 'La plantilla está en uso; elija otra en Configuración antes de eliminarla')
+      return error(409, 'La plantilla está en uso; marque otra como «en uso» antes de eliminarla')
     }
     plantillas().splice(plantillas().indexOf(plantilla), 1)
     return new HttpResponse(null, { status: 204 })
@@ -283,10 +288,15 @@ export const handlersAdmin = [
     if (!c.ok) return c.respuesta
     const { cuerpo, uso } = (await request.json()) as {
       cuerpo: string
-      uso: 'invitacion' | 'agradecimiento'
+      uso: 'invitacion' | 'agradecimiento' | 'mensaje'
     }
     // El título dice de qué correo se trata.
-    const titulo = uso === 'agradecimiento' ? 'Gracias por su evaluación' : 'Invitación a evaluar un artículo'
+    const titulo =
+      uso === 'agradecimiento'
+        ? 'Gracias por su evaluación'
+        : uso === 'mensaje'
+          ? 'Mensaje de la Dependencia de Editorial'
+          : 'Invitación a evaluar un artículo'
     return HttpResponse.json({
       html: `<!doctype html><html lang="es"><body><h1>Universidad CESMAG</h1><h2>${titulo}</h2><p>${cuerpo}</p><small>Aviso de datos personales</small></body></html>`,
     })

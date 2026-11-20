@@ -41,3 +41,13 @@ CROSS JOIN (VALUES
   ('Constancia de participación', 'constancia', NULL,
    E'[centro]**LA EDITORA DE LA {{REVISTA}}**\n**ISSN {{issn}} (en línea)**\n\n[centro]**CERTIFICA QUE**\n\n[justificado]**{{PAR}}** participó como evaluador(a) académico(a) del artículo titulado **«{{articulo}}»**, postulado para publicación en una de las ediciones correspondientes al año {{anio}} de la {{revista}}.\n\n[justificado]Su participación se desarrolló en el marco del proceso editorial de evaluación por pares bajo la modalidad de doble ciego, y constituyó un valioso aporte al aseguramiento de la calidad, el rigor y la pertinencia científica de los contenidos publicados por la Revista.\n\n[justificado]Cabe destacar que la {{revista}} se encuentra indexada y referenciada en reconocidos sistemas de información, directorios y bases de datos académicas, entre ellos: {{indexaciones}}.\n\n[justificado]La presente certificación se expide a solicitud del interesado(a), para los fines académicos y profesionales que estime pertinentes.\n\nSan Juan de Pasto, {{fecha}}.\n\nCordialmente,\n\n[centro]{{firma}}\n\n[centro]Editor(a) de la {{revista}}')
 ) AS p(nombre, tipo, asunto, cuerpo);
+
+-- Plantilla de ejemplo para escribirle a mano a un par o a un autor (no está «en uso»: se elige al enviar el correo).
+INSERT INTO plantilla (id_revista, nombre, clase, fin, tipo, asunto, cuerpo)
+SELECT id_revista, 'Mensaje general', 'correo', 'mensaje', NULL, 'Mensaje de {{revista}}',
+       E'Apreciado(a) {{nombre}}:
+
+Le escribimos desde la Dependencia de Editorial de la {{revista}}.
+
+Cordialmente,'
+FROM revista;
