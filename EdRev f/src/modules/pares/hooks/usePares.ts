@@ -8,7 +8,7 @@ import {
 import type { FiltrosPares } from '../services/paresService'
 import { useRevistaDatos } from '@/lib/revista/useRevista'
 
-/** Peers of the active journal (RF-14). The journal is part of the cache key. */
+/** Pares de la revista activa. La revista forma parte de la clave de la caché. */
 export function usePares(filtros: FiltrosPares) {
   const revista = useRevistaDatos()
   return useQuery({
@@ -18,7 +18,7 @@ export function usePares(filtros: FiltrosPares) {
   })
 }
 
-/** Thematic areas already registered, offered as suggestions (RF-13). */
+/** Áreas temáticas ya registradas, que se ofrecen como sugerencias. */
 export function useAreas() {
   const revista = useRevistaDatos()
   return useQuery({ queryKey: ['pares', revista, 'areas'], queryFn: () => listarAreas(revista) })

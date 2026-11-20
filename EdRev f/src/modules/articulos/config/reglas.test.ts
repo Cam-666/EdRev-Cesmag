@@ -1,6 +1,6 @@
 import { aNumero, conceptosContradictorios, superaUmbral } from './reglas'
 
-describe('superaUmbral (RF-05)', () => {
+describe('superaUmbral', () => {
   it('warns only strictly above 15 %', () => {
     expect(superaUmbral(15)).toBe(false)
     expect(superaUmbral(15.1)).toBe(true)
@@ -9,7 +9,7 @@ describe('superaUmbral (RF-05)', () => {
   })
 })
 
-describe('conceptosContradictorios (RF-21)', () => {
+describe('conceptosContradictorios', () => {
   it('flags publicable against no publicable, in either order', () => {
     expect(conceptosContradictorios('publicable', 'no-publicable')).toBe(true)
     expect(conceptosContradictorios('no-publicable', 'publicable')).toBe(true)

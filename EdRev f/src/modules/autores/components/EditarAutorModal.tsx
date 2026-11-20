@@ -1,7 +1,6 @@
 /*
- * EditarAutorModal — edits the record of an author of the common directory (the change is seen by
- * every article that includes the author, in both journals). No Figma design for the dialog itself.
- * Covers: RF-09, RF-10, RF-44 (manual correction), RNF-05 (Auxiliar can register data).
+ * EditarAutorModal — edita la ficha de un autor del directorio común (el cambio lo ven todos los artículos que
+ * incluyen al autor, en las dos revistas). No tiene diseño en Figma.
  */
 import { FormularioAutor } from './FormularioAutor'
 import { useEditarAutor } from '../hooks/useEditarAutor'

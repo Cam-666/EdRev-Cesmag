@@ -1,6 +1,4 @@
-/*
- * listas — labels of the peers module. Covers: RF-15 (block reasons), RF-20 (concepts).
- */
+/* listas — nombres del módulo de pares: motivos de bloqueo y conceptos. */
 import type { MotivoBloqueo } from '@/types/par'
 
 export const ETIQUETA_MOTIVO: Record<MotivoBloqueo, string> = {

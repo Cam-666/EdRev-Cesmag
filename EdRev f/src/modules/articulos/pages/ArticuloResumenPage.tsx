@@ -1,7 +1,4 @@
-/*
- * ArticuloResumenPage — Resumen tab (/:revista/articulos/:id): article data plus anti-plagiarism
- * and committee. Covers: RF-04, RF-05, RF-06, RF-36, HU-02, HU-03, HU-26.
- */
+/* ArticuloResumenPage — pestaña Resumen (/:revista/articulos/:id): los datos del artículo más el antiplagio y el comité. */
 import { DatosArticulo } from '../components/DatosArticulo'
 import { PanelAntiplagio } from '../components/PanelAntiplagio'
 import { useArticuloActual } from '../hooks/useArticuloActual'

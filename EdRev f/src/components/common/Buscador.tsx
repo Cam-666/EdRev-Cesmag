@@ -1,6 +1,6 @@
 /*
- * Buscador — search box with a programmatic label (visually hidden; the placeholder is the hint).
- * Covers: RF-10 (author search), RF-14 (par search), RF-35 (article list), RNF-11.
+ * Buscador — caja de búsqueda con etiqueta para lectores de pantalla (oculta a la vista; el texto de ejemplo es
+ * la pista). Se usa en los listados de autores, pares y artículos.
  */
 import { useId } from 'react'
 import type { ComponentPropsWithRef } from 'react'

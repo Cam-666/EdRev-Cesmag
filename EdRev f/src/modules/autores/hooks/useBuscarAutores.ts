@@ -4,7 +4,7 @@ import type { FiltrosAutores } from '../services/autoresService'
 import { useRetardo } from '@/lib/useRetardo'
 import { useRevistaDatos } from '@/lib/revista/useRevista'
 
-/** The countries and institutions of the directory, for the filters of the list. */
+/** Los países e instituciones del directorio, para los filtros del listado. */
 export function useOpcionesFiltrosAutores() {
   const revista = useRevistaDatos()
   return useQuery({
@@ -13,7 +13,7 @@ export function useOpcionesFiltrosAutores() {
   })
 }
 
-/** Searches the common author directory by name or ORCID (debounced) and by the filters given. */
+/** Busca en el directorio común de autores por nombre u ORCID (con retardo) y por los filtros dados. */
 export function useBuscarAutores(
   texto: string,
   limite = 50,

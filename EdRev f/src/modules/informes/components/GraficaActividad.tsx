@@ -1,8 +1,7 @@
 /*
- * GraficaActividad — grouped horizontal bars of the editorial process (postulations, approvals,
- * rejections, evaluations, constancias) with one bar per journal on a shared scale. Each journal
- * keeps its own color; every bar has its figure beside it, and the table of the next section holds
- * the same data. Covers: RF-38, HU-27.
+ * GraficaActividad — barras horizontales agrupadas del proceso editorial (postulaciones, aprobaciones, rechazos,
+ * evaluaciones, constancias) con una barra por revista en una escala compartida. Cada revista conserva su color;
+ * cada barra lleva su cifra al lado, y la tabla de la sección siguiente tiene los mismos datos.
  */
 import { BarraIndicador } from './BarraIndicador'
 import type { SerieInforme } from './BarraIndicador'

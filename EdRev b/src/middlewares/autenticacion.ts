@@ -1,7 +1,7 @@
 /*
- * auth — session token (JWT) and the guards of the routes. The Auxiliar can do everything except
- * Administración (RNF-05); the profile is read from the database on every request, so a disabled
- * account stops working at once (HU-29).
+ * autenticacion — el token de sesión (JWT) y los guardias de las rutas. La Auxiliar puede hacer todo menos
+ * Administración; el perfil se lee de la base de datos en cada petición, así una cuenta inhabilitada deja de
+ * funcionar de inmediato aunque su token no haya vencido.
  */
 import type { NextFunction, Request, Response } from 'express'
 import jwt from 'jsonwebtoken'
@@ -33,7 +33,7 @@ export async function requiereSesion(req: Request, _res: Response, next: NextFun
   const token = cabecera.startsWith('Bearer ') ? cabecera.slice(7) : ''
   let id: number
   try {
-    // Signature, expiry and algorithm are checked; a token signed another way is refused.
+    // Se comprueban la firma, el vencimiento y el algoritmo; un token firmado de otra manera se rechaza.
     const datos = jwt.verify(token, config.jwtSecreto, { algorithms: ['HS256'] }) as { sub?: string }
     id = Number(datos.sub)
     if (!Number.isInteger(id)) throw new Error('sub')
@@ -50,7 +50,7 @@ export async function requiereSesion(req: Request, _res: Response, next: NextFun
   next()
 }
 
-/** Administración is the Administradora's only (RNF-05). */
+/** Administración es solo de la Administradora. */
 export function soloAdministradora(req: Request, _res: Response, next: NextFunction) {
   if (req.usuario?.perfil !== 'administrador') {
     throw new ErrorHttp(403, 'Sin permiso para esta acción')

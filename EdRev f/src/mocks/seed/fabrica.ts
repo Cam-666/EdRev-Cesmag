@@ -1,7 +1,7 @@
 /*
- * fabrica — builds a full journal seed from compact tuples. Mails and audit entries are derived
- * from the assignments so the three views (peers, mails, history) never disagree.
- * Each journal is built separately: nothing here ever mixes REEP and IRE.
+ * fabrica — arma los datos de ejemplo completos de una revista a partir de tuplas compactas. Los correos y las
+ * entradas de auditoría se derivan de las asignaciones, así las tres vistas (pares, correos, historial) nunca se
+ * contradicen. Cada revista se arma por separado: nada aquí mezcla REEP e IRE.
  */
 import type {
   Articulo,
@@ -31,37 +31,37 @@ export interface SeedRevista {
   constancias: Constancia[]
   correos: CorreoEnviado[]
   auditoria: EntradaAuditoria[]
-  /** Migrated records whose Excel text did not fit the closed lists (RF-44). */
+  /** Registros migrados cuyo texto del Excel no encajó en las listas cerradas. */
   porCorregir: RegistroPorCorregir[]
 }
 
-/** [name, orcid, affiliation, country?] */
+/** [nombre, orcid, filiación, país?] */
 export type AutorSeed = [string, string, string, string?]
 
 export interface ParSeed {
   nombre: string
-  /** Profession or title; a default one is given when omitted. */
+  /** Profesión o título; si se omite, se da uno por defecto. */
   prof?: string
   correo: string
   universidad: string
   area: string
-  /** [reason, ISO date] when the peer is blocked. */
+  /** [motivo, fecha ISO] cuando el par está bloqueado. */
   bloqueo?: [MotivoBloqueo, string]
 }
 
 export interface AsigSeed {
-  /** Index in the peers list (0-based). */
+  /** Posición en la lista de pares (desde 0). */
   par: number
   e: EstadoAsignacion
-  /** Invitation date (ISO date). */
+  /** Fecha de la invitación (fecha ISO). */
   inv: string
   resp?: string
   ent?: string
   c?: ConceptoPar
   desempate?: boolean
-  /** Constancia: 'e' = issued (system), 'm' = pending migrated, 's' = pending system. */
+  /** Constancia: 'e' = emitida (sistema), 'm' = pendiente migrada, 's' = pendiente del sistema. */
   k?: 'e' | 'm' | 's'
-  /** Date the constancia was issued (ISO date). */
+  /** Fecha en que se emitió la constancia (fecha ISO). */
   emitida?: string
   intento?: number
 }
@@ -73,14 +73,14 @@ export interface ArtSeed {
   e: EstadoArticulo
   f: string
   pub?: string
-  /** [coincidences %, AI %] */
+  /** [% de coincidencias, % de IA] */
   ap?: [number, number]
-  /** Results of the committee rounds, oldest first. An article with peers always ends approved. */
+  /** Resultados de las rondas del comité, de la más antigua a la más nueva. Un artículo con pares siempre termina aprobado. */
   com?: ResultadoRonda[]
-  /** 1-based indices in the authors list, in order. */
+  /** Posiciones (desde 1) en la lista de autores, en orden. */
   au: number[]
   as?: AsigSeed[]
-  /** [archive date, reason] */
+  /** [fecha de archivo, motivo] */
   arch?: [string, string]
 }
 
@@ -93,8 +93,8 @@ export interface CorreoSeed {
 }
 
 /**
- * A datum of the Excel that did not fit: `ref` is the article number, `article#order` for an
- * evaluation, or the peer index for a peer without email.
+ * Un dato del Excel que no encajó: `ref` es el número del artículo, `artículo#orden` para una evaluación, o la
+ * posición del par para un par sin correo.
  */
 export interface PorCorregirSeed {
   campo: CampoPorCorregir
@@ -102,7 +102,7 @@ export interface PorCorregirSeed {
   excel: string
 }
 
-/** Articles postulated before the system: they come from the Excel (RF-42). */
+/** Artículos postulados antes del sistema: vienen del Excel. */
 const ANTES_DEL_SISTEMA = '2026-01-01'
 const EQUIPO = 'Equipo del proyecto'
 
@@ -401,7 +401,7 @@ export function construirSeed(entrada: EntradaSeed): SeedRevista {
     }
   }
 
-  // RF-44: what did not fit is loaded with the datum empty and listed to be corrected.
+  // Lo que no encajó se carga con el dato vacío y se lista para corregirlo.
   const porCorregir: RegistroPorCorregir[] = (entrada.porCorregir ?? []).map((x, i) => {
     const id = `${p}-pc-${i + 1}`
     if (x.campo === 'correo-par') {

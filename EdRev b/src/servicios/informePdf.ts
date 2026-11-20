@@ -1,9 +1,8 @@
 /*
- * informePdf — the management report as a PDF document (RF-38, HU-27): cover with the header of the
- * university, executive summary, key figures, a section with charts for each journal (the stages
- * of the process and the distribution of the concepts of the peers), a comparison when both
- * journals are included, and the notes on how each figure is counted. It is drawn here, not
- * captured from the screen: every journal keeps its own color and its own section.
+ * informePdf — el informe de gestión como documento PDF: portada con el encabezado de la universidad, resumen
+ * ejecutivo, cifras clave, una sección con gráficas de cada revista (las etapas del proceso y la distribución de
+ * los conceptos de los pares), un comparativo cuando están las dos revistas y las notas sobre cómo se cuenta
+ * cada cifra. Se dibuja aquí, no se captura de la pantalla: cada revista conserva su color y su sección.
  */
 import { readFileSync } from 'node:fs'
 import { PDFDocument, StandardFonts, rgb, type PDFFont, type PDFImage, type PDFPage } from 'pdf-lib'
@@ -16,9 +15,9 @@ export interface DatosRevista {
   rechazados: number
   entregadas: number
   constancias: number
-  /** Mean days from the assignment of the peer to the delivery of the evaluation. */
+  /** Días promedio desde la asignación del par hasta la entrega de la evaluación. */
   dias: number
-  /** Sum of those days, to weigh the mean of both journals by their evaluations. */
+  /** Suma de esos días, para ponderar el promedio de las dos revistas por sus evaluaciones. */
   sumaDias: number
   conceptos: { publicable: number; conModificaciones: number; noPublicable: number; pendienteFormato: number }
 }
@@ -76,7 +75,7 @@ function totales(revistas: DatosRevista[]) {
   }
 }
 
-/** The executive summary of a set of journals, in formal Spanish. */
+/** El resumen ejecutivo de un conjunto de revistas, en español formal. */
 export function redactarResumen(etiquetaPeriodo: string, revistas: DatosRevista[]): string[] {
   const periodo = `el ${etiquetaPeriodo.charAt(0).toLowerCase()}${etiquetaPeriodo.slice(1)}`
   const unica = revistas.length === 1 ? revistas[0] : undefined
@@ -129,13 +128,13 @@ class Lienzo {
       this.y = ALTO - MARGEN
       return
     }
-    // Running header: what report this is, with a thin rule.
+    // Encabezado de cada página: de qué informe se trata, con una línea fina.
     this.pagina.drawText(this.cabecera, { x: MARGEN, y: ALTO - 34, size: 8.5, font: this.normal, color: GRIS })
     this.pagina.drawLine({ start: { x: MARGEN, y: ALTO - 42 }, end: { x: ANCHO - MARGEN, y: ALTO - 42 }, thickness: 0.6, color: LINEA })
     this.y = ALTO - 78
   }
 
-  /** Makes sure `alto` points are free; otherwise starts a new page. */
+  /** Se asegura de que haya `alto` puntos libres; si no, empieza una página nueva. */
   asegurar(alto: number): void {
     if (this.y - alto < PIE + 10) this.nuevaPagina()
   }
@@ -148,7 +147,7 @@ class Lienzo {
     this.pagina.drawText(t, { x: o.x ?? MARGEN, y: this.y, size: o.size ?? 11, font: o.font ?? this.normal, color: o.color ?? TEXTO })
   }
 
-  /** A paragraph wrapped to the width of the page; returns nothing, moves the cursor. */
+  /** Un párrafo partido al ancho de la página; no devuelve nada, solo mueve el cursor. */
   parrafo(t: string, o: { size?: number; font?: PDFFont; color?: ReturnType<typeof rgb>; x?: number; ancho?: number; interlineado?: number } = {}): void {
     const size = o.size ?? 11
     const font = o.font ?? this.normal
@@ -161,7 +160,7 @@ class Lienzo {
     }
   }
 
-  /** A numbered section; without a number it is a part of the section above (rule and title). */
+  /** Una sección numerada; sin número es parte de la sección anterior (línea y título). */
   seccion(numero: number | null, titulo: string, color = AZUL): void {
     this.asegurar(70)
     this.espacio(6)
@@ -178,7 +177,7 @@ class Lienzo {
     this.y -= 26
   }
 
-  /** Cards with a big figure and its label, in rows of three. */
+  /** Tarjetas con una cifra grande y su etiqueta, en filas de tres. */
   tarjetas(items: Array<{ valor: string; etiqueta: string }>, color = AZUL): void {
     const columnas = 3
     const gap = 10
@@ -199,7 +198,7 @@ class Lienzo {
     }
   }
 
-  /** Horizontal bars on a shared scale: one bar per series in every row. */
+  /** Barras horizontales en una escala compartida: una barra por serie en cada fila. */
   barras(filas: Array<{ etiqueta: string; valores: Array<{ n: number; color: ReturnType<typeof rgb>; texto?: string }> }>, maximo: number): void {
     const etiqueta = 150
     const campo = UTIL - etiqueta - 70
@@ -251,7 +250,7 @@ class Lienzo {
   }
 }
 
-/** Splits a text into lines that fit `ancho`. */
+/** Parte un texto en líneas que caben en `ancho`. */
 function envolver(t: string, font: PDFFont, size: number, ancho: number): string[] {
   const lineas: string[] = []
   let actual = ''
@@ -298,7 +297,7 @@ export async function generarInformePdf(datos: DatosInforme): Promise<Uint8Array
   try {
     escudo = await doc.embedPng(readFileSync(new URL('../../assets/escudo-cesmag.png', import.meta.url)))
   } catch {
-    escudo = null // the report does not depend on the image
+    escudo = null // el informe se genera igual aunque falte el escudo
   }
   const fecha = datos.fecha ?? new Date()
   const ambas = datos.revistas.length > 1
@@ -306,7 +305,7 @@ export async function generarInformePdf(datos: DatosInforme): Promise<Uint8Array
   const l = new Lienzo(doc, normal, negrita, cursiva, escudo, `Informe de gestión editorial · ${datos.etiquetaPeriodo}`)
   l.nuevaPagina()
 
-  // --- Cover block --------------------------------------------------------------------------
+  // --- Portada ---
   if (escudo) l.pagina.drawImage(escudo, { x: MARGEN, y: l.y - 58, width: 58, height: 58 * (escudo.height / escudo.width) })
   l.pagina.drawText('UNIVERSIDAD', { x: MARGEN + 70, y: l.y - 22, size: 9, font: normal, color: AZUL })
   l.pagina.drawText('CESMAG', { x: MARGEN + 70, y: l.y - 46, size: 26, font: negrita, color: AZUL })
@@ -322,7 +321,7 @@ export async function generarInformePdf(datos: DatosInforme): Promise<Uint8Array
   l.espacio(18)
 
   let n = 1
-  // --- Summary and key figures ------------------------------------------------------------
+  // --- Resumen y cifras clave ---
   l.seccion(n++, 'Resumen ejecutivo')
   const resumen = redactarResumen(datos.etiquetaPeriodo, datos.revistas)
   const alto = resumen.reduce((s, p) => s + envolver(p, normal, 11.5, UTIL - 36).length * 17.8 + 8, 24)
@@ -347,7 +346,7 @@ export async function generarInformePdf(datos: DatosInforme): Promise<Uint8Array
     { valor: String(t.dias), etiqueta: 'Días promedio por evaluación' },
   ])
 
-  // --- Each journal on its own pages ---------------------------------------------------------
+  // --- Cada revista en sus propias páginas ---
   for (const r of datos.revistas) {
     const color = ambas ? SERIE[r.sigla] : UNICA
     l.nuevaPagina()
@@ -389,7 +388,7 @@ export async function generarInformePdf(datos: DatosInforme): Promise<Uint8Array
     }
   }
 
-  // --- Comparison (both journals) ----------------------------------------------------------
+  // --- Comparativo (las dos revistas) ---
   if (ambas) {
     l.nuevaPagina()
     l.seccion(n++, 'Comparativo entre las dos revistas')
@@ -427,7 +426,7 @@ export async function generarInformePdf(datos: DatosInforme): Promise<Uint8Array
     )
   }
 
-  // --- Notes ------------------------------------------------------------------------------------
+  // --- Notas ---
   l.asegurar(125)
   l.seccion(n++, 'Notas sobre los datos')
   for (const nota of [
@@ -442,7 +441,7 @@ export async function generarInformePdf(datos: DatosInforme): Promise<Uint8Array
   l.espacio(10)
   l.parrafo('Informe generado por el Sistema de Gestión Editorial de la Universidad CESMAG.', { size: 9.5, font: cursiva, color: GRIS })
 
-  // Footer with the page number, once the total is known.
+  // Pie de página con el número de página, una vez que se sabe el total.
   const paginas = doc.getPages()
   paginas.forEach((p, i) => {
     p.drawLine({ start: { x: MARGEN, y: PIE }, end: { x: ANCHO - MARGEN, y: PIE }, thickness: 0.6, color: LINEA })

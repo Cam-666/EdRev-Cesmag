@@ -1,7 +1,7 @@
 /*
- * CorregirCorreoModal — "Corregir y reenviar": fixes the address of a mail that bounced (the
- * address belongs to the peer, so later sends use it too) and sends it again. The failed entry
- * becomes "Reintentado" and the new delivery is logged. Covers: RF-27, HU-18.
+ * CorregirCorreoModal — «Corregir y reenviar»: corrige la dirección de un correo que rebotó (la dirección es del
+ * par, así que los envíos posteriores también la usan) y lo envía de nuevo. La entrada fallida queda
+ * «Reintentado» y el nuevo envío se registra.
  */
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useForm } from 'react-hook-form'
@@ -38,7 +38,7 @@ export function CorregirCorreoModal({ correo, onCerrar, onReenviado }: CorregirC
   return correo ? <Contenido correo={correo} onCerrar={onCerrar} onReenviado={onReenviado} /> : null
 }
 
-/** Mounted only while open so each opening starts from the failed address, not a previous edit. */
+/** Se monta solo mientras está abierto, así cada vez parte de la dirección fallida y no de una edición anterior. */
 function Contenido({
   correo,
   onCerrar,

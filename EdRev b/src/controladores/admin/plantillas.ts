@@ -1,6 +1,6 @@
 /*
- * plantillas (controlador) — receives and validates the requests about the templates (RF-45) and
- * answers; the rules are in servicios/administracion/plantillas.
+ * plantillas (controlador) — recibe y valida las peticiones sobre las plantillas y responde. Las reglas están
+ * en servicios/administracion/plantillas.
  */
 import type { Request, Response } from 'express'
 import { z } from 'zod'

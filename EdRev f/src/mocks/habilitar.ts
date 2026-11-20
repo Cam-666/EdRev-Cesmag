@@ -1,6 +1,6 @@
 /*
- * habilitarMocks — starts MSW in the browser while there is no backend. Turn it off with
- * VITE_USE_MOCKS=false once the real API exists: no component needs to change.
+ * habilitarMocks — arranca MSW en el navegador mientras no hay backend. Se apaga con VITE_USE_MOCKS=false cuando
+ * existe la API real: ningún componente cambia.
  */
 export function mocksActivos(): boolean {
   return import.meta.env.VITE_USE_MOCKS !== 'false'

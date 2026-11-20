@@ -1,7 +1,7 @@
 /*
- * FormularioDatosArticulo — data of the article in the registration form: OJS number, postulation date, title, type
- * and the journal (fixed by the URL, shown read-only). Warns, without blocking, when the OJS
- * number already exists in this journal. Covers: RF-01, RF-02, RF-03, HU-01.
+ * FormularioDatosArticulo — datos del artículo en el formulario de registro: número de OJS, fecha de
+ * postulación, título, tipo y la revista (la fija la URL, se muestra solo de lectura). Advierte, sin bloquear,
+ * cuando el número de OJS ya existe en esta revista.
  */
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Controller, useForm, useWatch } from 'react-hook-form'
@@ -17,7 +17,7 @@ import { ListaDesplegable } from '@/components/common/ListaDesplegable'
 import { useRevista } from '@/lib/revista/useRevista'
 
 export interface FormularioDatosArticuloProps {
-  /** Id of the <form>, so the header button («Guardar artículo») can submit it. */
+  /** Id del <form>, para que el botón del encabezado («Guardar artículo») pueda enviarlo. */
   idFormulario: string
   valoresIniciales: DatosBorrador | null
   onContinuar: (datos: DatosBorrador) => void

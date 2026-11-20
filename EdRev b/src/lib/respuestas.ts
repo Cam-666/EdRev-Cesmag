@@ -1,9 +1,9 @@
 /*
- * respuestas — the links of the three buttons of the invitation mail (acepto / no acepto esta
- * invitación / no desea participar más). Each link is signed by the server and carries the
- * evaluation and the answer; it opens a page that asks the peer to confirm, so a mail scanner that
- * opens the link does not answer for the peer. The link stops working once the invitation is
- * answered (the state of the evaluation is the single use) and expires after 45 days.
+ * respuestas — los enlaces de los tres botones del correo de invitación (acepto / no acepto esta invitación /
+ * no deseo participar más). Cada enlace lo firma el servidor y lleva la evaluación y la respuesta; abre una
+ * página que pide al par confirmar, así un antivirus de correo que abre el enlace no responde por el par.
+ * El enlace deja de servir cuando la invitación ya fue respondida (el estado de la evaluación es el «un solo
+ * uso») y vence a los 45 días.
  */
 import jwt from 'jsonwebtoken'
 import { config } from '../config.js'
@@ -29,21 +29,21 @@ export function leerRespuesta(token: string): { idEvaluacion: number; accion: Ac
   }
 }
 
-/** The page of the app that confirms the answer. */
+/** La página de la aplicación que confirma la respuesta. */
 export function enlaceRespuesta(idEvaluacion: number, accion: AccionCorreo): string {
   return `${config.urlFrontend}/invitacion?token=${encodeURIComponent(firmarRespuesta(idEvaluacion, accion))}`
 }
 
 const BOTONES: Array<{ accion: AccionCorreo; texto: string; color: string }> = [
-  // Institutional blue, another blue, and red for the one that blocks the peer.
+  // Azul institucional, otro azul, y rojo para el que bloquea al par.
   { accion: 'acepto', texto: 'Acepto la invitación', color: '#0d47a1' },
   { accion: 'no-acepto', texto: 'No acepto esta invitación', color: '#0277bd' },
   { accion: 'no-desea', texto: 'No deseo participar más', color: '#c62828' },
 ]
 
-/** The three buttons as email HTML (inline styles: mail clients ignore style sheets). */
+/** Los tres botones como HTML de correo (estilos en línea: los clientes de correo ignoran las hojas de estilo). */
 export function botonesHtml(idEvaluacion: number, ejemplo = false): string {
-  // Inline blocks, not a table: on a narrow screen they wrap onto the next line by themselves.
+  // Bloques en línea y no una tabla: en una pantalla angosta pasan solos a la línea siguiente.
   const enlaces = BOTONES.map(
     (b) =>
       `<a href="${ejemplo ? '#' : enlaceRespuesta(idEvaluacion, b.accion)}" style="display:inline-block;background:${b.color};color:#ffffff;text-decoration:none;font-family:Arial,sans-serif;font-size:13px;font-weight:bold;white-space:nowrap;padding:11px 14px;border-radius:6px;margin:0 8px 8px 0">${b.texto}</a>`,
@@ -51,5 +51,5 @@ export function botonesHtml(idEvaluacion: number, ejemplo = false): string {
   return `<div style="margin:14px 0 6px">${enlaces}</div>`
 }
 
-/** Marker the template's {{botones}} becomes before the text is escaped; then it turns into the buttons. */
+/** Marca en que se convierte {{botones}} de la plantilla antes de escapar el texto; luego se cambia por los botones. */
 export const MARCA_BOTONES = '@@BOTONES@@'

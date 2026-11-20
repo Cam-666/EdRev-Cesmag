@@ -1,7 +1,7 @@
 /*
- * MSW handlers for the dashboards: the journal dashboard (the two alerts the dependency flagged
- * as priority), the home summary of both journals, and the management report of a period.
- * The home summary and the report are the cross-journal screens (RF-37, RF-38).
+ * Manejadores MSW de los tableros: el tablero de la revista (las dos alertas que la dependencia marcó como
+ * prioridad), el resumen de Inicio de las dos revistas y el informe de gestión de un periodo.
+ * El resumen de Inicio y el informe son las pantallas de las dos revistas.
  */
 import { http, HttpResponse } from 'msw'
 import { baseDe } from '../db'
@@ -57,7 +57,7 @@ function pendientes(base: SeedRevista): CasoConstanciaPendiente[] {
     }))
 }
 
-/** Semesters from the first year with data up to the current one, newest first. */
+/** Semestres desde el primer año con datos hasta el actual, del más nuevo al más antiguo. */
 function periodos(): PeriodoInforme[] {
   const anio = new Date().getFullYear()
   const semestre = new Date().getMonth() < 6 ? 1 : 2
@@ -163,7 +163,7 @@ function informe(periodo: string, filtro: FiltroRevistaInforme): Informe {
     diasPromedioEvaluacion: {
       reep: filtro === 'ire' ? 0 : promedio('reep'),
       ire: filtro === 'reep' ? 0 : promedio('ire'),
-      // The total weighs each journal by its evaluations, it is not the mean of two means.
+      // El total pondera cada revista por sus evaluaciones; no es el promedio de dos promedios.
       total: promedioDe(REVISTAS.filter((r) => filtro === 'ambas' || filtro === r).flatMap((r) => entregas[r])),
     },
     conceptos: {

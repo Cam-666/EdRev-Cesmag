@@ -1,6 +1,6 @@
 /*
- * FormularioCorreccion — corrects one migrated datum: the value is chosen from its closed list
- * (type, state, concept) or typed (the peer email, which the Excel did not bring). Covers: RF-44.
+ * FormularioCorreccion — corrige un dato migrado: el valor se elige de su lista cerrada (tipo, estado, concepto)
+ * o se escribe (el correo del par, que el Excel no trajo).
  */
 import { useState } from 'react'
 import { ETIQUETA_CAMPO, OPCIONES_CAMPO } from '../config/campos'

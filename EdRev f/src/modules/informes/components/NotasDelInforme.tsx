@@ -1,6 +1,6 @@
 /*
- * NotasDelInforme — how each figure of the report is counted, so whoever reads it (or the
- * committee it is delivered to) knows what it means. Covers: RF-38, HU-27.
+ * NotasDelInforme — cómo se cuenta cada cifra del informe, para que quien lo lea (o el comité al que se entrega)
+ * sepa qué significa.
  */
 export function NotasDelInforme() {
   return (

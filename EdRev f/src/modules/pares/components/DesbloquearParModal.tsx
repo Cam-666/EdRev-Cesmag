@@ -1,7 +1,6 @@
 /*
- * DesbloquearParModal — "Desbloquear a {par}": asks the reason and returns the peer to the list
- * of peers who can receive invitations. The change is recorded with user and date.
- * Covers: RF-16, HU-11. Both profiles (RNF-05).
+ * DesbloquearParModal — «Desbloquear a {par}»: pide el motivo y devuelve al par a la lista de pares que pueden
+ * recibir invitaciones. El cambio queda registrado con usuario y fecha. Para ambos perfiles.
  */
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useForm } from 'react-hook-form'

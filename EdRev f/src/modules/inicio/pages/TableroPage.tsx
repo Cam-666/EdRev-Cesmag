@@ -1,9 +1,8 @@
 /*
- * TableroPage — Tablero (/:revista/tablero): the journal dashboard. Shows at login the two
- * situations the dependency identified as priority — peers that have not answered and delivered
- * evaluations with a pending constancia — with their count and a way to open each list, plus the
- * articles in evaluation and approved.
- * Covers: RF-37, RF-44, HU-25, RF-02.
+ * TableroPage — Tablero (/:revista/tablero): el tablero de la revista. Muestra al ingresar las dos situaciones
+ * que la dependencia identificó como prioridad —pares que no han respondido y evaluaciones entregadas con
+ * constancia pendiente—, con su cantidad y una forma de abrir cada listado, además de los artículos en
+ * evaluación y aprobados.
  */
 import { Alerta } from '@/components/common/Alerta'
 import { AlertasTablero } from '../components/AlertasTablero'

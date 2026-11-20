@@ -1,7 +1,7 @@
 /*
- * usuarios (servicio) — the rules of the user accounts (RF-40): a new account receives a link to
- * define its password, at least one active Administradora must always remain, and an account with
- * activity in the audit log cannot be deleted (it is disabled instead).
+ * usuarios (servicio) — las reglas de las cuentas de usuario: una cuenta nueva recibe un enlace para definir su
+ * contraseña, siempre debe quedar al menos una Administradora activa, y una cuenta con actividad en el registro
+ * de auditoría no se puede eliminar (se inhabilita).
  */
 import { enTransaccion, pool, type Cliente } from '../../db.js'
 import { auditar } from '../../lib/auditoria.js'
@@ -30,7 +30,7 @@ export async function listarUsuarios() {
   return rows.map(usuarioApi)
 }
 
-/** Creates the account and sends the link to define the password; returns what the page shows. */
+/** Crea la cuenta y envía el enlace para definir la contraseña; devuelve lo que muestra la página. */
 export async function crearUsuario(datos: DatosNuevoUsuario, actor: number) {
   const creada = await enTransaccion(async (c) => {
     const existe = await c.query('SELECT 1 FROM usuario WHERE correo = $1', [datos.correo])
@@ -54,7 +54,7 @@ export async function crearUsuario(datos: DatosNuevoUsuario, actor: number) {
   return creada.cuerpo
 }
 
-/** Fails when this account is the last active Administradora. */
+/** Falla cuando esta cuenta es la última Administradora activa. */
 async function exigirOtraAdministradora(c: Cliente, id: number): Promise<void> {
   const otras = await c.query<{ n: number }>(
     "SELECT count(*)::int AS n FROM usuario WHERE rol = 'administrador' AND activo AND id_usuario <> $1",
@@ -97,7 +97,7 @@ export async function eliminarUsuario(id: number, actor: number): Promise<void> 
     const actual = rows[0]
     if (!actual) throw new ErrorHttp(404, 'Usuario no encontrado')
     if (actual.rol === 'administrador' && actual.activo) await exigirOtraAdministradora(c, id)
-    // An account with activity in the audit log cannot disappear without breaking that history.
+    // Una cuenta con actividad en el registro de auditoría no puede desaparecer sin romper ese historial.
     await c.query('DELETE FROM usuario WHERE id_usuario = $1', [id]).catch((e: { code?: string }) => {
       if (e.code === '23503')
         throw new ErrorHttp(409, 'La cuenta tiene actividad registrada y no se puede eliminar; inhabilítela en su lugar')
@@ -113,7 +113,7 @@ export async function eliminarUsuario(id: number, actor: number): Promise<void> 
   })
 }
 
-/** Sends a new link to define the password. */
+/** Envía un enlace nuevo para definir la contraseña. */
 export async function reenviarEnlace(id: number) {
   const { rows } = await pool.query<FilaUsuario>('SELECT * FROM usuario WHERE id_usuario = $1', [id])
   const cuenta = rows[0]

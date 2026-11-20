@@ -1,6 +1,6 @@
 /*
- * Phase 10 — final review: accessibility of every main screen with its data loaded, the menu on
- * small screens, and the whole flow of an article from its registration to the constancia.
+ * Fase 10 — revisión final: accesibilidad de cada pantalla principal con sus datos cargados, el menú en
+ * pantallas pequeñas y todo el recorrido de un artículo desde su registro hasta la constancia.
  */
 import { screen, waitFor, within } from '@testing-library/react'
 import { axe } from 'vitest-axe'
@@ -29,17 +29,17 @@ const PANTALLAS = [
   '/administracion/auditoria',
 ]
 
-describe('accessibility of every main screen (RNF-11)', () => {
+describe('accessibility of every main screen', () => {
   it.each(PANTALLAS)('%s has no violations once its data is loaded', async (ruta) => {
     const { container } = montarRuta(ruta)
     await screen.findAllByRole('heading', { level: 1 })
     await new Promise((r) => setTimeout(r, 400))
-    // The previews are frames (the mail, the PDF): axe cannot enter them in jsdom, and they are not the page.
+    // Las vistas previas son marcos (el correo, el PDF): axe no puede entrar en ellos en jsdom, y no son la página.
     expect(await axe(container, { iframes: false })).toHaveNoViolations()
   })
 })
 
-describe('small screens (RNF-10)', () => {
+describe('small screens', () => {
   it('«Menú» opens the side panel as a drawer and it closes when navigating', async () => {
     const { user, router } = montarRuta('/reep/tablero')
     await user.click(await screen.findByRole('button', { name: 'Menú' }))
@@ -50,11 +50,11 @@ describe('small screens (RNF-10)', () => {
   })
 })
 
-describe('the whole flow of an article (HU-01, HU-03, HU-13, HU-14, HU-17, HU-22)', () => {
+describe('the whole flow of an article', () => {
   it('register → committee approves → new candidate invited → accepts → delivers → constancia', async () => {
     const { user, router } = montarRuta('/reep/articulos/nuevo')
 
-    // 1. Registration: data and an author of the common directory
+    // 1. Registro: datos y un autor del directorio común
     await user.type(await screen.findByLabelText('Número de OJS'), '2026-090')
     await user.type(screen.getByLabelText('Título'), 'Escuela rural y memoria')
     await elegirOpcion(user, 'Tipo de artículo', 'Investigación')
@@ -63,7 +63,7 @@ describe('the whole flow of an article (HU-01, HU-03, HU-13, HU-14, HU-17, HU-22
     await user.click(screen.getByRole('button', { name: 'Agregar' }))
     await user.click(screen.getByRole('button', { name: 'Guardar artículo' }))
 
-    // 2. Committee review with the anti-plagiarism report: approved
+    // 2. Revisión del comité con el reporte antiplagio: aprobada
     await screen.findByRole('heading', { name: 'Ronda 1 de la revisión del comité' })
     await user.type(screen.getByLabelText('Coincidencias (%)'), '9')
     await user.type(screen.getByLabelText('Atribuido a IA (%)'), '2')
@@ -71,7 +71,7 @@ describe('the whole flow of an article (HU-01, HU-03, HU-13, HU-14, HU-17, HU-22
     await user.click(screen.getByRole('button', { name: 'Guardar ronda' }))
     await waitFor(() => expect(router.state.location.pathname).toMatch(/\/pares$/))
 
-    // 3. Assignment: a brand-new candidate receives the invitation
+    // 3. Asignación: un candidato nuevo recibe la invitación
     const panel = await screen.findByRole('region', { name: 'Asignar par evaluador' })
     await user.click(within(panel).getByRole('tab', { name: 'Registrar un candidato nuevo' }))
     await user.type(within(panel).getByLabelText('Nombre'), 'Marta Lucía Gómez')
@@ -82,7 +82,7 @@ describe('the whole flow of an article (HU-01, HU-03, HU-13, HU-14, HU-17, HU-22
     await user.click(within(panel).getByRole('button', { name: 'Registrar y enviar invitación' }))
     expect(await screen.findByText('Par asignado e invitación enviada')).toBeInTheDocument()
 
-    // 4. The peer accepts: the article goes to «En evaluación»
+    // 4. El par acepta: el artículo pasa a «En evaluación»
     await user.click(
       await screen.findByRole('button', { name: /Registrar respuesta de Marta Lucía Gómez/ }),
     )
@@ -90,7 +90,7 @@ describe('the whole flow of an article (HU-01, HU-03, HU-13, HU-14, HU-17, HU-22
     await user.click(within(respuesta).getByRole('button', { name: 'Registrar respuesta' }))
     expect((await screen.findAllByText('En evaluación')).length).toBeGreaterThan(0)
 
-    // 5. Delivery, and the constancia right away
+    // 5. Entrega, y la constancia de inmediato
     await user.click(
       await screen.findByRole('button', { name: /Marcar entrega de Marta Lucía Gómez/ }),
     )

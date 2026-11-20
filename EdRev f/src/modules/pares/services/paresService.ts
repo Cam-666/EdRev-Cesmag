@@ -1,7 +1,6 @@
 /*
- * paresService — HTTP calls of the peers module: the journal's peer base (list, areas, record,
- * registration, edition, block / unblock). Each call carries the journal in the URL.
- * Covers: RF-12..RF-18, RNF-06.
+ * paresService — llamadas HTTP del módulo de pares: la base de pares (listado, áreas, ficha, registro, edición,
+ * bloqueo y desbloqueo). Cada llamada lleva la revista en la URL.
  */
 import { solicitar } from '@/lib/api/cliente'
 import type {
@@ -13,7 +12,7 @@ import type {
 } from '@/types/par'
 import type { Revista } from '@/types/revista'
 
-/** `asignables`: not blocked, no evaluation in progress and not yet in the article (RF-19). */
+/** `asignables`: no bloqueados, sin evaluación en curso y que aún no están en el artículo. */
 export type FiltroEstadoPares = 'disponibles' | 'bloqueados' | 'todos' | 'asignables'
 
 export interface FiltrosPares {
@@ -21,7 +20,7 @@ export interface FiltrosPares {
   area?: string
   universidad?: string
   estado: FiltroEstadoPares
-  /** Article being worked on: the "same institution" state is computed against its authors. */
+  /** Artículo en el que se trabaja: el estado «misma institución» se calcula contra sus autores. */
   articulo?: string
   pagina: number
   porPagina: number
@@ -30,7 +29,7 @@ export interface FiltrosPares {
 export interface RespuestaPares {
   items: ParListado[]
   total: number
-  /** Peers of the whole journal base (not only the filtered ones). */
+  /** Pares de toda la base (no solo los filtrados). */
   totalBase: number
   totalBloqueados: number
 }

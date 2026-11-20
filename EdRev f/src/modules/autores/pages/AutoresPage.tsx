@@ -1,9 +1,7 @@
 /*
- * AutoresPage — Autores (/:revista/autores): the common author directory of both journals,
- * searchable by name or ORCID and filterable by journal, country, institution, ORCID and number of
- * articles, with the number of articles of each.
- * A click on an author opens its own screen (AutorDetallePage).
- * Covers: RF-09, RF-10, RF-11, HU-06, HU-07.
+ * AutoresPage — Autores (/:revista/autores): el directorio común de autores de las dos revistas, con búsqueda por
+ * nombre u ORCID y filtros por revista, país, institución, ORCID y número de artículos, con el número de
+ * artículos de cada uno. Un clic en un autor abre su propia pantalla (AutorDetallePage).
  */
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'

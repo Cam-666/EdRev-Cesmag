@@ -1,8 +1,8 @@
 /*
- * acceso (servicio) — login with institutional email and password (RF-39), with the attempt counter
- * and the lockout the screens show, the password-recovery request (RF-46) and the links to define a
- * password (RF-40, RF-46). The counters live in memory: they only slow down guessing, the real
- * protection is the password hash and the limit of requests (app.ts).
+ * acceso (servicio) — ingreso con correo institucional y contraseña, con el contador de intentos y el bloqueo
+ * que muestran las pantallas, la solicitud de recuperación de contraseña y los enlaces para definirla.
+ * Los contadores viven en memoria (se pierden al reiniciar el servidor): solo frenan los intentos de adivinar;
+ * la protección real es el hash de la contraseña y el límite de peticiones de app.ts.
  */
 import bcrypt from 'bcryptjs'
 import { config } from '../config.js'
@@ -57,7 +57,7 @@ export async function iniciarSesion(correo: string, contrasena: string): Promise
   return { tipo: 'ok', usuario: usuarioApi(actualizada[0] ?? fila), token: firmarToken(fila.id_usuario) }
 }
 
-/** RF-46: the answer is the same whether or not the account exists, so accounts cannot be enumerated. */
+/** La respuesta es la misma exista o no la cuenta, para que no se pueda averiguar qué correos están registrados. */
 export async function solicitarRecuperacion(correo: string): Promise<Record<string, unknown>> {
   const { rows } = await pool.query<{ id_usuario: number; nombre: string }>(
     'SELECT id_usuario, nombre FROM usuario WHERE correo = $1 AND activo',

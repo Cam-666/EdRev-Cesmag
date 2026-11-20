@@ -1,7 +1,6 @@
 /*
- * Registros migrados por corregir (RF-44, HU-32) — the routes only say where each request goes.
- * Both profiles can correct (RNF-05). Validation is in controladores/migracion, the rules in
- * servicios/correccionMigracion.
+ * Registros migrados por corregir — las rutas solo dicen a dónde va cada petición. Ambos perfiles pueden
+ * corregir. La validación está en controladores/migracion y las reglas en servicios/correccionMigracion.
  */
 import { Router } from 'express'
 import * as migracion from '../../controladores/migracion.js'

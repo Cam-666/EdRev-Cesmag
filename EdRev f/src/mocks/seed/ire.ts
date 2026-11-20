@@ -1,6 +1,6 @@
 /*
- * Seed of Revista Investigium IRE Ciencias Sociales y Humanas: 20 articles, 25 authors,
- * 15 peers. Social sciences and humanities only — nothing of REEP appears here.
+ * Datos de ejemplo de la Revista Investigium IRE Ciencias Sociales y Humanas: 20 artículos, 25 autores,
+ * 15 pares. Solo ciencias sociales y humanidades — nada de REEP aparece aquí.
  */
 import { construirSeed } from './fabrica'
 import type { SeedRevista } from './fabrica'

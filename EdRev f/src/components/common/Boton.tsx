@@ -1,6 +1,6 @@
 /*
- * Boton — base button. Covers: RNF-11 (accessibility: visible focus, keyboard), RNF-12.
- * Always institutional blue/red, never the journal color.
+ * Boton — botón base, con foco visible y manejo por teclado. Siempre en azul o rojo institucional, nunca en el
+ * color de la revista.
  */
 import type { ComponentPropsWithRef } from 'react'
 import { cn } from '@/lib/cn'
@@ -30,7 +30,7 @@ const TAMANOS: Record<TamanoBoton, string> = {
   sm: 'min-h-control-sm px-3 text-etiqueta-13',
 }
 
-/** Class list of a button; shared by <Boton> and <EnlaceBoton> so both look identical. */
+/** Clases de un botón; las comparten <Boton> y <EnlaceBoton> para que se vean idénticos. */
 export function clasesBoton(
   variante: VarianteBoton = 'primario',
   tamano: TamanoBoton = 'md',

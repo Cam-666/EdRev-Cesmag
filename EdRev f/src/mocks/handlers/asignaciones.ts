@@ -1,9 +1,8 @@
 /*
- * MSW handlers for assigning peers to an article and following their answer: assignment of an
- * available peer or of a brand-new candidate (both send the invitation by themselves), resend /
- * reminder, the peer's answer, delivery mark and concept. Simulates the mail sending: it records a sent mail and, when
- * the address bounces, keeps the assignment so it can be fixed and resent (RF-27).
- * Covers: RF-15, RF-17, RF-19..RF-29. Permissions are enforced here as the real API will.
+ * Manejadores MSW para asignar pares a un artículo y seguir su respuesta: asignación de un par disponible o de un
+ * candidato nuevo (los dos envían la invitación solos), reenvío, la respuesta del par, la marca de entrega y el
+ * concepto. Simulan el envío de correo: registran un correo enviado y, cuando la dirección rebota, conservan la
+ * asignación para poder corregirla y reenviar. Los permisos se aplican aquí como los aplicará la API real.
  */
 import { http, HttpResponse } from 'msw'
 import { autoresDeArticulo } from './pares'
@@ -29,7 +28,7 @@ import type {
 } from '@/types/par'
 import type { Revista } from '@/types/revista'
 
-/** Addresses ending like this bounce, so the failed-send flow can be demonstrated (RF-27). */
+/** Las direcciones que terminan así rebotan, para poder mostrar el flujo de envío fallido. */
 const DOMINIO_QUE_REBOTA = '@invalido.test'
 
 function asignadas(base: SeedRevista, articuloId: string): Asignacion[] {
@@ -42,9 +41,9 @@ type Validacion =
   { ok: true; orden: number; esDesempate: boolean } | { ok: false; estado: number; mensaje: string }
 
 /**
- * RF-19: peers are assigned once the committee approved the article (most recent round). At most
- * three peers who accepted or delivered; those who decline or do not answer take no place, so the
- * dependency keeps inviting while the others go on. RF-15: blocked peers get no invitation.
+ * Los pares se asignan cuando el comité aprobó el artículo (ronda más reciente). Como máximo tres pares que
+ * aceptaron o entregaron; los que declinan o no responden no ocupan lugar, así la dependencia sigue invitando
+ * mientras los demás avanzan. Un par bloqueado no recibe invitación.
  */
 function validarArticulo(base: SeedRevista, articulo: Articulo): Validacion | null {
   if (!puedeAsignarPares(articulo)) {
@@ -54,7 +53,7 @@ function validarArticulo(base: SeedRevista, articulo: Articulo): Validacion | nu
       mensaje: 'El comité aún no aprueba el artículo: no se pueden asignar pares',
     }
   }
-  // Two peers per article; a third only when their concepts do not coincide (RF-19, RF-21).
+  // Dos pares por artículo; un tercero solo cuando sus conceptos no coinciden.
   const regla = reglaPares(asignadas(base, articulo.id))
   if (!regla.puede) {
     return { ok: false, estado: 409, mensaje: regla.motivo ?? 'El artículo ya tiene sus pares' }
@@ -83,17 +82,17 @@ function validar(base: SeedRevista, articulo: Articulo, par: ParEvaluador): Vali
   if (actuales.some((a) => a.parId === par.id)) {
     return { ok: false, estado: 409, mensaje: 'El par ya está asignado a este artículo' }
   }
-  // The base of peers is common: an evaluation in progress in either journal counts.
+  // La base de pares es común: una evaluación en curso en cualquiera de las dos revistas cuenta.
   if (todasLasAsignaciones().some((a) => a.parId === par.id && enCurso(a))) {
     return { ok: false, estado: 409, mensaje: 'El par tiene otra evaluación en curso' }
   }
-  // RF-17: a peer of the same institution as an author is not assigned.
+  // No se asigna un par de la misma institución que alguno de los autores.
   const igual = mismaInstitucion(par, autoresDeArticulo(base, articulo.id))
   if (igual) return { ok: false, estado: 409, mensaje: igual }
   return { ok: true, orden: actuales.length + 1, esDesempate: reglaPares(actuales).desempate }
 }
 
-/** RF-12: a new candidate is saved in the journal's base before being invited. */
+/** Un candidato nuevo se guarda en la base de pares antes de invitarlo. */
 function registrarCandidato(
   base: SeedRevista,
   revista: Revista,
@@ -165,7 +164,7 @@ function auditar(
   })
 }
 
-/** The concepts of the peers decide the article (RF-20): close it, send it back to the committee or approve it. */
+/** Los conceptos de los pares deciden el artículo: cerrarlo, devolverlo al comité o aprobarlo. */
 function aplicarResultado(base: SeedRevista, revista: Revista, articuloId: string, usuario: string): void {
   const articulo = base.articulos.find((a) => a.id === articuloId)
   if (!articulo || (articulo.estado !== 'en-revision' && articulo.estado !== 'en-evaluacion')) return
@@ -182,7 +181,7 @@ function aplicarResultado(base: SeedRevista, revista: Revista, articuloId: strin
   }
 }
 
-/** The last invitation mail of an evaluation (invitation, 2nd attempt or resend). */
+/** El último correo de invitación de una evaluación (invitación, 2.º intento o reenvío). */
 export function ultimoCorreo(base: SeedRevista, asignacionId: string): CorreoEnviado | undefined {
   return base.correos
     .filter((x) => x.asignacionId === asignacionId && x.tipo !== 'agradecimiento' && x.tipo !== 'constancia')
@@ -190,7 +189,7 @@ export function ultimoCorreo(base: SeedRevista, asignacionId: string): CorreoEnv
 }
 
 function textosInvitacion(revista: Revista, par: ParEvaluador, articulo: Articulo) {
-  // RF-25: journal, request number, peer with profession, university and article title.
+  // Revista, número de solicitud, par con su profesión, universidad y título del artículo.
   const variables = {
     revista: NOMBRE_EN_CORREO[revista],
     numero: articulo.numeroOjs,
@@ -206,9 +205,8 @@ function textosInvitacion(revista: Revista, par: ParEvaluador, articulo: Articul
 }
 
 /**
- * The answer of a peer (RF-22, RF-15), shared by the screen and by the buttons of the invitation
- * mail (`porCorreo`: the peer answered by itself, so the history says so). Returns the refusal, or
- * null when it was registered.
+ * La respuesta de un par, que comparten la pantalla y los botones del correo de invitación (`porCorreo`: el par
+ * respondió por sí mismo, y el historial lo dice). Devuelve el rechazo, o null cuando quedó registrada.
  */
 export function aplicarRespuestaMock(
   base: SeedRevista,
@@ -234,22 +232,22 @@ export function aplicarRespuestaMock(
     }
     asignacion.estado = 'acepto'
     asignacion.fechaRespuesta = ahora
-    // RF-22: the article goes to «En evaluación» when the first peer accepts.
+    // El artículo pasa a «En evaluación» cuando acepta el primer par.
     if (articulo?.estado === 'en-revision') articulo.estado = 'en-evaluacion'
     auditar(base, revista, asignacion.articuloId, 'respuesta', texto(`Registró que el par ${asignacion.orden} aceptó`, 'aceptó la invitación'), origen)
   } else if (respuesta === 'no-acepto') {
-    // Declining this invitation does not block the peer: it can be invited again later.
+    // Declinar esta invitación no bloquea al par: se le puede invitar de nuevo más adelante.
     asignacion.estado = 'no-acepto'
     asignacion.fechaRespuesta = ahora
     auditar(base, revista, asignacion.articuloId, 'respuesta', texto(`Registró que el par ${asignacion.orden} no aceptó esta invitación`, 'no aceptó esta invitación'), origen)
   } else if (respuesta === 'no-desea') {
-    // RF-15: a peer who does not want to take part any more goes to the blocked list.
+    // Un par que no desea participar más pasa a la lista de bloqueados.
     asignacion.estado = 'no-acepto'
     asignacion.fechaRespuesta = ahora
     par.bloqueo = { motivo: 'no-desea', fecha: ahora.slice(0, 10) }
     auditar(base, revista, asignacion.articuloId, 'bloqueo', texto(`Bloqueó al par ${asignacion.orden}: no desea participar`, 'no desea participar más'), origen)
   } else {
-    // RF-15, RF-29: blocked after the second attempt without an answer.
+    // Se bloquea tras el segundo intento sin respuesta.
     if (asignacion.estado !== 'segundo-intento') {
       return { estado: 409, mensaje: 'El bloqueo por falta de respuesta se aplica tras el segundo intento' }
     }
@@ -299,7 +297,7 @@ export const handlersAsignaciones = [
     }
     c.base.asignaciones.push(asignacion)
 
-    // The invitation goes out by itself when the assignment is saved (RF-24).
+    // La invitación sale sola cuando se guarda la asignación.
     const { asunto } = textosInvitacion(c.revista, par, articulo)
     const estadoCorreo = correoDe(
       c.base,
@@ -337,9 +335,8 @@ export const handlersAsignaciones = [
     return HttpResponse.json(cuerpo, { status: 201 })
   }),
 
-  // RF-28: the invitation is resent only when the previous send bounced or failed (usually after
-  // correcting the peer's address). It does not count as an attempt for the block. The second
-  // attempt itself is automatic (RF-29, D7): there is no reminder.
+  // La invitación se reenvía solo cuando el envío anterior rebotó o falló (normalmente después de corregir la
+  // dirección del par). No cuenta como intento para el bloqueo. El segundo intento es automático: no hay recordatorio.
   http.post('*/api/:revista/asignaciones/:id/reenviar', ({ params, request }) => {
     const c = contexto(params, request, 'asignar-pares')
     if (!c.ok) return c.respuesta
@@ -432,7 +429,7 @@ export const handlersAsignaciones = [
     asignacion.estado = 'entrego'
     asignacion.fechaEntrega = `${fecha}T12:00:00`
     if (concepto) asignacion.concepto = concepto
-    // Delivered evaluation => its constancia is now pending (RF-34).
+    // Evaluación entregada => su constancia queda pendiente.
     if (!c.base.constancias.some((k) => k.asignacionId === asignacion.id)) {
       c.base.constancias.push({
         id: `${asignacion.id}-k`,
@@ -451,7 +448,7 @@ export const handlersAsignaciones = [
       c.usuario.nombre,
     )
     if (concepto) aplicarResultado(c.base, c.revista, asignacion.articuloId, c.usuario.nombre)
-    // RF-23: the sheet offers to issue the constancia right away.
+    // La ficha ofrece emitir la constancia de inmediato.
     const constancia = c.base.constancias.find((k) => k.asignacionId === asignacion.id)
     return HttpResponse.json({ ...asignacion, constanciaId: constancia?.id ?? null })
   }),

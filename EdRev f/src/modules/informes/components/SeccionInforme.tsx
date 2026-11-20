@@ -1,6 +1,6 @@
 /*
- * SeccionInforme — numbered section of the report (heading plus content). When printed, a
- * heading never stays alone at the end of a page. Covers: RF-38, HU-27.
+ * SeccionInforme — sección numerada del informe (título y contenido). Al imprimir, un título nunca queda solo al
+ * final de una página.
  */
 import type { ReactNode } from 'react'
 import { cn } from '@/lib/cn'
@@ -8,7 +8,7 @@ import { cn } from '@/lib/cn'
 export interface SeccionInformeProps {
   numero: number
   titulo: string
-  /** When printed, the section starts on a new page. */
+  /** Al imprimir, la sección empieza en una página nueva. */
   nuevaPagina?: boolean
   children: ReactNode
 }

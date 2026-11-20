@@ -1,14 +1,14 @@
 // @vitest-environment node
 /*
- * Upload of the header, footer and signature images of a file template (RF-45), and the ISSN and
- * indexations of each journal. It runs in Node because the browser simulator used by the other
- * tests cannot parse multipart bodies.
+ * Subida de las imágenes de encabezado, pie y firma de una plantilla de archivo, y el ISSN y las indexaciones de
+ * cada revista. Corre en Node porque el simulador de navegador que usan las demás pruebas no puede leer cuerpos
+ * multipart.
  */
 import { json, llamar, multipart } from '@/test/llamarApi'
 import type { Configuracion } from '@/types/configuracion'
 import type { Plantilla } from '@/types/plantilla'
 
-describe('images of the file template (mock, RF-45)', () => {
+describe('images of the file template', () => {
   const subir = (id: string, parte: string, nombre: string, tipo: string) =>
     llamar(`/plantillas/${id}/imagen/${parte}`, {
       metodo: 'POST',
@@ -21,7 +21,7 @@ describe('images of the file template (mock, RF-45)', () => {
     expect((await json<Plantilla>(ok)).imagenes?.pie).toMatchObject({ nombre: 'pie-2027.png' })
     expect((await subir('ire-constancia', 'pie', 'pie.pdf', 'application/pdf')).status).toBe(422)
     expect((await subir('ire-constancia', 'lateral', 'a.png', 'image/png')).status).toBe(404)
-    // A mail template carries no images at all
+    // Una plantilla de correo no lleva imágenes
     for (const parte of ['encabezado', 'pie', 'firma']) {
       expect((await subir('ire-invitacion', parte, 'a.png', 'image/png')).status).toBe(409)
     }

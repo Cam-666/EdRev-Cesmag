@@ -1,8 +1,8 @@
 /*
- * errores — the last middlewares of the application: what to answer when no route matches and how
- * every error is turned into { mensaje }, the same shape the simulated API uses, so the frontend
- * shows the same messages. Known errors keep their status; the rest is a 500 that never leaks
- * details to the client.
+ * errores — los últimos middlewares de la aplicación: qué responder cuando ninguna ruta coincide y cómo se
+ * convierte cada error en { mensaje }, la misma forma que usa la API simulada de la interfaz, para que se
+ * muestren los mismos mensajes. Los errores conocidos conservan su código; el resto es un 500 que nunca
+ * filtra detalles al cliente.
  */
 import type { NextFunction, Request, Response } from 'express'
 import { ZodError } from 'zod'
@@ -21,7 +21,7 @@ export function manejadorErrores(error: unknown, _req: Request, res: Response, _
     res.status(422).json({ mensaje: error.issues[0]?.message ?? 'Datos no válidos' })
     return
   }
-  // A badly formed or too big body, or an upload over its limit, is the client's mistake.
+  // Un cuerpo mal formado o demasiado grande, o un archivo que pasa su límite, es error del cliente.
   const cliente = error as { status?: number; type?: string; name?: string; code?: string }
   if (cliente.type === 'entity.parse.failed') {
     res.status(400).json({ mensaje: 'El cuerpo de la solicitud no es un JSON válido' })

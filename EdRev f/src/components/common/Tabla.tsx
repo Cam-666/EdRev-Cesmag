@@ -1,7 +1,6 @@
 /*
- * Tabla — semantic table: Micro 11 uppercase headers (th scope="col"), 44 px rows,
- * fully clickable row via a stretched real link, empty and loading states, horizontal scroll.
- * Covers: RNF-11, RNF-14 (horizontal scroll), RNF-01.
+ * Tabla — tabla semántica: encabezados en mayúsculas pequeñas (th scope="col"), filas de 44 px, fila completa
+ * clicable mediante un enlace real extendido, estados vacío y de carga, y desplazamiento horizontal.
  */
 import type { ReactNode } from 'react'
 import { Link } from 'react-router-dom'
@@ -15,18 +14,18 @@ export interface ColumnaTabla<T> {
 }
 
 export interface TablaProps<T> {
-  /** Accessible name of the table (rendered as a hidden caption). */
+  /** Nombre accesible de la tabla (se dibuja como un caption oculto). */
   etiqueta: string
   columnas: ColumnaTabla<T>[]
   filas: T[]
   obtenerClave: (fila: T) => string
-  /** If provided, the whole row is clickable: the first cell holds a stretched link. */
+  /** Si se da, toda la fila es clicable: la primera celda lleva un enlace extendido. */
   hrefFila?: (fila: T) => string
-  /** Accessible name of each row link. */
+  /** Nombre accesible del enlace de cada fila. */
   etiquetaEnlace?: (fila: T) => string
   cargando?: boolean
   vacio?: ReactNode
-  /** Replaces the default row rendering; must return a <tr>. */
+  /** Reemplaza el dibujo normal de la fila; debe devolver un <tr>. */
   renderFila?: (fila: T) => ReactNode
 }
 

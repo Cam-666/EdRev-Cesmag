@@ -1,8 +1,8 @@
 /*
- * correos — the mail log of the model (D12) stores only «invitacion», «agradecimiento» or «constancia» and the
- * result. The page also shows «2.º intento» and «Reenvío por corrección», and whether a bounced or
- * failed mail was already handled; all of it is derived here from the order of the mails of each
- * evaluation. Queuing a mail = inserting it «en-cola» (the mail service picks it up).
+ * correos — el registro de correos de la base guarda solo «invitacion», «agradecimiento» o «constancia» y el
+ * resultado. La página además muestra «2.º intento» y «Reenvío por corrección», y si un correo rebotado o
+ * fallido ya fue atendido; todo eso se deduce aquí del orden de los correos de cada evaluación.
+ * Encolar un correo es insertarlo «en-cola» (el servicio de correo lo recoge).
  */
 import type { Cliente } from '../db.js'
 import { siglaDe } from '../lib/http.js'
@@ -20,7 +20,7 @@ export interface FilaCorreo {
   id_articulo: number
   id_revista: number
   numero_ojs: string
-  /** What the peer answered to the invitation (for the invitation mails). */
+  /** Lo que respondió el par a la invitación (para los correos de invitación). */
   estado_par: string
   motivo_bloqueo: string | null
   fecha_respuesta: Date | null
@@ -29,7 +29,7 @@ export interface FilaCorreo {
 
 export type RespuestaDelPar = 'sin-respuesta-aun' | 'acepto' | 'no-acepto' | 'no-desea' | 'sin-respuesta'
 
-/** The answer of the peer to an invitation, in the words of the page. */
+/** La respuesta del par a una invitación, con las palabras de la página. */
 function respuestaDe(f: FilaCorreo) {
   const respuesta: RespuestaDelPar =
     f.estado_par === 'invitado'
@@ -44,7 +44,7 @@ function respuestaDe(f: FilaCorreo) {
   return {
     respuesta,
     fecha: iso(f.fecha_respuesta),
-    // The buttons of the mail leave «El par respondió desde el correo» in the history.
+    // Los botones del correo dejan «El par respondió desde el correo» en el historial.
     medio: f.texto_respuesta
       ? f.texto_respuesta.startsWith('El par respondió desde el correo')
         ? ('correo' as const)
@@ -61,7 +61,7 @@ const ASUNTO: Record<TipoGuardado, string> = {
   constancia: 'Constancia de participación como par evaluador',
 }
 
-/** Mails with their page type and «atendido», in the order the page lists them (newest first). */
+/** Correos con su tipo para la página y «atendido», en el orden en que los lista la página (el más nuevo primero). */
 export function correosApi(filas: FilaCorreo[]) {
   const porEvaluacion = new Map<string, FilaCorreo[]>()
   for (const f of [...filas].sort((a, b) => +a.fecha_envio - +b.fecha_envio || a.id_correo - b.id_correo)) {
@@ -97,7 +97,7 @@ export function correosApi(filas: FilaCorreo[]) {
       fechaEnvio: iso(f.fecha_envio),
       estado: f.resultado,
       atendido: derivados.get(f.id_correo)?.atendido ?? false,
-      // Only the invitations (and their second attempts or resends) wait for an answer.
+      // Solo las invitaciones (y sus segundos intentos o reenvíos) esperan respuesta.
       respuestaPar: f.tipo === 'invitacion' ? respuestaDe(f) : null,
     }))
 }

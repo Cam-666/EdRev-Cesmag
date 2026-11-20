@@ -1,8 +1,8 @@
 /*
- * VistaPreviaCorreo — the mail of a template as the peer receives it: the institutional header with
- * the shield, the text with sample data, the buttons, the contact block and the legal notices. It
- * is built by the server from the text being edited (a moment after the last key), so what is seen
- * here is the mail itself and not a plain text. Covers: RF-25, RF-45, RNF-11.
+ * VistaPreviaCorreo — el correo de una plantilla tal como lo recibe el par: el encabezado institucional con el
+ * escudo, el texto con datos de ejemplo, los botones, el bloque de contacto y los avisos legales. Lo arma el
+ * servidor con el texto que se está editando (un momento después de la última tecla), así lo que se ve aquí es
+ * el correo mismo y no un texto plano.
  */
 import { useQuery } from '@tanstack/react-query'
 import { useEffect, useState } from 'react'
@@ -14,11 +14,11 @@ import type { Revista } from '@/types/revista'
 export interface VistaPreviaCorreoProps {
   revista: Revista
   uso: 'invitacion' | 'agradecimiento'
-  /** The stored text being edited (with its markers). */
+  /** El texto guardado que se está editando (con sus marcas). */
   cuerpo: string
 }
 
-/** The value after it has stopped changing for `ms`; avoids a request on every key. */
+/** El valor después de que dejó de cambiar durante `ms`; evita una petición en cada tecla. */
 function useRetrasado<T>(valor: T, ms = 500): T {
   const [retrasado, setRetrasado] = useState(valor)
   useEffect(() => {

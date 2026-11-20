@@ -1,8 +1,7 @@
 /*
- * anios — year of management of an article (the list of the year it is worked on). An article
- * whose process is still open (Postulado, En revisión, En evaluación) from a previous year passes
- * by itself to the current year's list; its postulation date does not change. A closed article
- * stays in the year it was postulated. Covers: the dependency's yearly volumes.
+ * anios — año de gestión de un artículo (el listado del año en que se trabaja). Un artículo cuyo proceso sigue
+ * abierto (Postulado, En revisión, En evaluación) de un año anterior pasa solo al listado del año actual; su
+ * fecha de postulación no cambia. Un artículo cerrado se queda en el año en que se postuló.
  */
 import type { EstadoArticulo } from '@/types/articulo'
 

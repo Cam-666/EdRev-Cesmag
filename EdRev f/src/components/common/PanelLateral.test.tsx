@@ -28,7 +28,7 @@ describe('PanelLateral', () => {
       'href',
       '/reep/correos',
     )
-    // IRE group is closed: its submodules are not rendered
+    // El grupo de IRE está cerrado: sus submódulos no se dibujan
     expect(
       within(nav).queryByText('Correos enviados', { selector: '[href="/ire/correos"]' }),
     ).toBeNull()

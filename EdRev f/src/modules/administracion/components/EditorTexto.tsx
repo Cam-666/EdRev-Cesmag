@@ -1,10 +1,10 @@
 /*
- * EditorTexto — the text of a template in a box where it is seen as it will look: bold applies to
- * the selected text, the alignment (left, centered, right, justified) to the paragraph where the
- * cursor is, and the data the text can bring in (the name of the peer, the title of the article…)
- * are inserted with a button and shown with plain names between brackets. Nobody writes marks by
- * hand: the box is converted to the stored text (see lib/textoRico and lib/formato), so the same
- * text drives the mail and the constancia PDF. Covers: RF-25, RF-30, RF-45, RNF-11.
+ * EditorTexto — el texto de una plantilla en un recuadro donde se ve como va a quedar: la negrita se aplica al
+ * texto seleccionado, la alineación (izquierda, centro, derecha, justificado) al párrafo donde está el cursor, y
+ * los datos que el texto puede traer (el nombre del par, el título del artículo…) se insertan con un botón y se
+ * muestran con nombres sencillos entre corchetes. Nadie escribe marcas a mano: el recuadro se convierte en el
+ * texto guardado (ver lib/textoRico y lib/formato), así el mismo texto sirve para el correo y para el PDF de la
+ * constancia.
  */
 import { useEffect, useId, useLayoutEffect, useRef, useState } from 'react'
 import type { MouseEvent as EventoRaton } from 'react'
@@ -17,10 +17,10 @@ import type { Alineacion } from '@/lib/formato'
 import { alineacionDe, aHtmlEditable, CSS_ALINEACION, deEditable } from '@/lib/textoRico'
 
 export interface EditorTextoProps {
-  /** The stored text (with {{markers}}, [centro] and **bold**); the editor shows it formatted. */
+  /** El texto guardado (con {{marcas}}, [centro] y **negrita**); el editor lo muestra con su formato. */
   valor: string
   onCambio: (texto: string) => void
-  /** Keys of the data this template can bring in. */
+  /** Claves de los datos que esta plantilla puede traer. */
   datos?: string[]
   error?: string
   ayuda?: string
@@ -35,7 +35,7 @@ const ICONO: Record<Alineacion, string> = {
 
 const esBloque = (n: Node) => n.nodeType === 1 && ['P', 'DIV'].includes((n as HTMLElement).tagName)
 
-/** The buttons must not take the selection away from the text. */
+/** Los botones no deben quitarle la selección al texto. */
 const conservarSeleccion = (e: EventoRaton) => e.preventDefault()
 
 const hayOrden = () => typeof document.execCommand === 'function'
@@ -44,13 +44,13 @@ export function EditorTexto({ valor, onCambio, datos = [], error, ayuda }: Edito
   const ref = useRef<HTMLDivElement>(null)
   const ultimo = useRef<string | null>(null)
   const idEtiqueta = useId()
-  // The alignment of the paragraph where the cursor is, so the button of the one in use shows pressed.
+  // La alineación del párrafo donde está el cursor, para que el botón de la que está en uso se vea presionado.
   const [activa, setActiva] = useState<Alineacion>('izquierda')
   const idError = `${idEtiqueta}-error`
   const idAyuda = `${idEtiqueta}-ayuda`
   const describedBy = [error ? idError : null, ayuda ? idAyuda : null].filter(Boolean).join(' ')
 
-  // The box is drawn from the stored text only when it changes from outside (not on every key).
+  // El recuadro se dibuja a partir del texto guardado solo cuando este cambia desde fuera (no en cada tecla).
   useLayoutEffect(() => {
     const el = ref.current
     if (el && valor !== ultimo.current) {
@@ -93,14 +93,14 @@ export function EditorTexto({ valor, onCambio, datos = [], error, ayuda }: Edito
     sel?.addRange(r)
   }
 
-  /** Puts the focus in the box without losing what is selected in it. */
+  /** Pone el foco en el recuadro sin perder lo que está seleccionado en él. */
   function enfocar(el: HTMLElement) {
     const previa = rango()?.cloneRange()
     el.focus()
     if (previa) ponerSeleccion(previa)
   }
 
-  /** Text typed straight into the box (outside a paragraph) goes into one, keeping the selection. */
+  /** El texto escrito directamente en el recuadro (fuera de un párrafo) pasa a un párrafo, conservando la selección. */
   function envolverSueltos(el: HTMLElement) {
     const r = rango()
     const guardado = r ? { sc: r.startContainer, so: r.startOffset, ec: r.endContainer, eo: r.endOffset } : null
@@ -123,7 +123,7 @@ export function EditorTexto({ valor, onCambio, datos = [], error, ayuda }: Edito
         r.setEnd(guardado.ec, guardado.eo)
         ponerSeleccion(r)
       } catch {
-        /* the selection stays where the browser put it */
+        /* la selección queda donde la puso el navegador */
       }
     }
   }
@@ -136,7 +136,7 @@ export function EditorTexto({ valor, onCambio, datos = [], error, ayuda }: Edito
       emitir()
       return
     }
-    // Without the browser's command: wrap (or unwrap) the selected text by hand.
+    // Sin el comando del navegador: se envuelve (o desenvuelve) a mano el texto seleccionado.
     const r = rango()
     if (!r || r.collapsed) return
     let dentro: Node | null = r.commonAncestorContainer
@@ -165,7 +165,7 @@ export function EditorTexto({ valor, onCambio, datos = [], error, ayuda }: Edito
       if (!(h instanceof HTMLElement)) return false
       if (!r) return h === el.lastElementChild
       if (!r.intersectsNode(h)) return false
-      // A selection that ends at the very start of the next paragraph does not include it.
+      // Una selección que termina justo al inicio del párrafo siguiente no lo incluye.
       return r.collapsed || !(r.endContainer === h && r.endOffset === 0)
     })
     for (const b of bloques) {
@@ -176,7 +176,7 @@ export function EditorTexto({ valor, onCambio, datos = [], error, ayuda }: Edito
     emitir()
   }
 
-  /** Puts `texto` where the cursor is (at the end when the box has no cursor). */
+  /** Escribe `texto` donde está el cursor (al final cuando el recuadro no tiene cursor). */
   function escribir(texto: string) {
     const el = ref.current
     if (!el) return

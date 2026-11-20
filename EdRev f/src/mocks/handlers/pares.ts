@@ -1,7 +1,6 @@
 /*
- * MSW handlers for the peer base of a journal: list with filters, thematic-area suggestions,
- * record, registration, edition, block and unblock. Each journal has its own base (RF-12).
- * Covers: RF-12..RF-18, RNF-06. Simulates the backend; permissions are enforced here.
+ * Manejadores MSW de la base de pares: listado con filtros, sugerencias de área temática, ficha, registro,
+ * edición, bloqueo y desbloqueo. La base es común a las dos revistas. Simulan el backend; los permisos se aplican aquí.
  */
 import { http, HttpResponse } from 'msw'
 import { autorPorId, baseDe, todasLasAsignaciones } from '../db'
@@ -62,7 +61,7 @@ function listado(base: SeedRevista, par: ParEvaluador, articuloId: string | null
 }
 
 function detalle(par: ParEvaluador): ParDetalle {
-  // The base of peers is common: the history gathers the evaluations of both journals.
+  // La base de pares es común: el historial reúne las evaluaciones de las dos revistas.
   const propias = (['reep', 'ire'] as const).flatMap((revista) =>
     baseDe(revista)
       .asignaciones.filter((a) => a.parId === par.id)
@@ -116,7 +115,7 @@ export const handlersPares = [
     const porPagina = Math.max(1, Number(url.searchParams.get('porPagina') ?? 10))
 
     const todos = c.base.pares.map((p) => listado(c.base, p, articulo))
-    // RF-19: peers that can be assigned have no evaluation in progress and are not in the article.
+    // Los pares que se pueden asignar no tienen una evaluación en curso y no están ya en el artículo.
     const ocupados = new Set(
       todasLasAsignaciones()
         .filter((a) => enCurso(a) || a.articuloId === articulo)
@@ -154,7 +153,7 @@ export const handlersPares = [
   http.get('*/api/:revista/pares/universidades', ({ params, request }) => {
     const c = contexto(params, request)
     if (!c.ok) return c.respuesta
-    // "CESMAG" and "Cesmag" are the same university: one entry per comparison key
+    // "CESMAG" y "Cesmag" son la misma universidad: una entrada por clave de comparación
     const lista = [
       ...new Map(c.base.pares.map((p) => [claveTexto(p.universidad), p.universidad])).values(),
     ].sort((a, b) => a.localeCompare(b))

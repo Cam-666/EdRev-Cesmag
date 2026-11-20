@@ -1,13 +1,13 @@
 /*
- * EncabezadoPagina — title of a screen with its actions beside it (e.g. "Registrar artículo").
- * The actions live next to the title they act on, in the content area, not in the journal bar.
- * `children` is the line under the title (counts, step, date). Covers: RNF-11.
+ * EncabezadoPagina — título de una pantalla con sus acciones al lado (por ejemplo «Registrar artículo»).
+ * Las acciones van junto al título sobre el que actúan, en el contenido, no en la barra de la revista.
+ * `children` es la línea bajo el título (conteos, paso, fecha).
  */
 import type { ReactNode } from 'react'
 
 export interface EncabezadoPaginaProps {
   titulo: ReactNode
-  /** h1 for screens; h2 when the screen already has its own h1 (e.g. tabs of a record). */
+  /** h1 para pantallas; h2 cuando la pantalla ya tiene su propio h1 (por ejemplo las pestañas de una ficha). */
   nivel?: 'h1' | 'h2'
   acciones?: ReactNode
   children?: ReactNode

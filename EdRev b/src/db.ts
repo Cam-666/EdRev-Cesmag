@@ -1,12 +1,10 @@
-/*
- * db — PostgreSQL connection pool and a transaction helper. Queries are always parameterized.
- */
+/* db — conexión a PostgreSQL (pool) y ayuda para transacciones. Las consultas siempre van parametrizadas. */
 import pg from 'pg'
 import { config } from './config.js'
 
-// DATE columns come back as 'yyyy-MM-dd' strings, not as Date objects in local time.
+// Las columnas DATE llegan como texto 'aaaa-mm-dd', no como objetos Date en hora local (evita corrimientos de un día).
 pg.types.setTypeParser(1082, (valor) => valor)
-// NUMERIC (percentages) as numbers
+// Las columnas NUMERIC (porcentajes) llegan como números.
 pg.types.setTypeParser(1700, (valor) => Number(valor))
 
 export const pool = new pg.Pool({ connectionString: config.baseDatos, max: 10 })

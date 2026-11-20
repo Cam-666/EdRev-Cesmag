@@ -4,16 +4,16 @@ import type { Usuario } from '@/types/usuario'
 
 export interface CierreSesion {
   motivo: MotivoCierre
-  /** Email of the user whose session closed (to prefill "Reanudar sesión"). */
+  /** Correo del usuario cuya sesión se cerró (para llenar «Reanudar sesión»). */
   correo: string
 }
 
 export interface SesionContextValue {
-  /** null = not authenticated. */
+  /** null = sin autenticar. */
   usuario: Usuario | null
-  /** Why the last session ended; null after a new login or before any session. */
+  /** Por qué terminó la última sesión; null después de un nuevo ingreso o antes de cualquier sesión. */
   ultimoCierre: CierreSesion | null
-  /** The session lives only in this browser tab; there is no "keep me signed in" (RNF-05). */
+  /** La sesión vive solo en esta pestaña del navegador; no existe «mantener la sesión iniciada». */
   iniciarSesion: (respuesta: RespuestaIngreso) => void
   cerrarSesion: (motivo?: MotivoCierre) => void
 }

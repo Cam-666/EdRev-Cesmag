@@ -1,6 +1,6 @@
 /*
- * plantillas — classes and uses of a template and validation before saving it. A template may only
- * use the data of its own use; none is mandatory. Covers: RNF-19, RF-25, RF-30, RF-45.
+ * plantillas — clases y usos de una plantilla y la validación antes de guardarla. Una plantilla solo puede usar los
+ * datos de su propio fin; ninguno es obligatorio.
  */
 import { ETIQUETA_DATO } from '@/lib/datosPlantilla'
 import { marcadores } from '@/lib/plantillas'
@@ -17,13 +17,13 @@ export const ETIQUETA_USO: Record<UsoPlantilla, string> = {
   constancia: 'Constancia de participación',
 }
 
-/** The mails a correo template can be for; the file template is the constancia. */
+/** Los correos para los que puede servir una plantilla de correo; la plantilla de archivo es la constancia. */
 export const USOS_CORREO: Array<{ valor: Exclude<UsoPlantilla, 'constancia'>; etiqueta: string }> = [
   { valor: 'invitacion', etiqueta: 'Invitación a evaluar' },
   { valor: 'agradecimiento', etiqueta: 'Agradecimiento' },
 ]
 
-/** Returns the first problem found as a sentence, or null when the template is valid. */
+/** Devuelve el primer problema encontrado como frase, o null cuando la plantilla es válida. */
 export function validarPlantilla(
   plantilla: Pick<Plantilla, 'variables'>,
   asunto: string | null,
@@ -37,7 +37,7 @@ export function validarPlantilla(
   return null
 }
 
-/** Sample data for the preview of a template; {{revista}} is the journal of the template. */
+/** Datos de ejemplo para la vista previa de una plantilla; {{revista}} es la revista de la plantilla. */
 export const DATOS_EJEMPLO: Record<string, string> = {
   numero: '2026-034',
   profesion: 'Magíster en Educación',

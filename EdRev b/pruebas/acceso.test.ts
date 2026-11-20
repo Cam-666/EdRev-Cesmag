@@ -1,11 +1,11 @@
 /*
- * Pruebas de acceso — RF-39, RF-40, RF-46, RNF-05.
+ * Pruebas de acceso
  */
 import request from 'supertest'
 import { describe, expect, it } from 'vitest'
 import { ADMIN, AUXILIAR, app, como } from './api.js'
 
-describe('acceso (RF-39, RF-40, RF-46, RNF-05)', () => {
+describe('acceso', () => {
   it('ingresa con la cuenta inicial y rechaza una contraseña equivocada con el contador', async () => {
     const ok = await request(app).post('/api/auth/login').send(ADMIN)
     expect(ok.status).toBe(200)

@@ -1,7 +1,4 @@
-/*
- * RecuperarPage — Recuperar contraseña (/acceso/recuperar).
- * Covers: RF-46, HU-28 (criterion 2), RNF-11.
- */
+/* RecuperarPage — Recuperar contraseña (/acceso/recuperar). */
 import { useNavigate } from 'react-router-dom'
 import { FormularioRecuperar } from '../components/FormularioRecuperar'
 import { TarjetaAcceso } from '../components/TarjetaAcceso'

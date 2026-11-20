@@ -3,43 +3,43 @@ import type { Revista } from './revista'
 
 export type MotivoBloqueo = 'sin-respuesta' | 'no-desea'
 
-/** Peer reviewer. Each journal has its own base, independent of the other (RF-12). */
+/** Par evaluador. La base de pares es común a las dos revistas. */
 export interface ParEvaluador {
   id: string
   revista: Revista
   nombre: string
-  /** Profession or academic title, e.g. "Magíster en Educación"; it goes in the invitation (RF-25). */
+  /** Profesión o título académico, por ejemplo "Magíster en Educación"; va en la invitación. */
   profesion: string
   correo: string
   universidad: string
-  /** Free-text thematic area (RF-13). */
+  /** Área temática de texto libre. */
   area: string
   bloqueo: { motivo: MotivoBloqueo; fecha: string } | null
 }
 
-/** State of a peer in an article (RF-22). `segundo-intento` is «Invitado» after the resend. */
+/** Estado de un par en un artículo. `segundo-intento` es «Invitado» después del reenvío. */
 export type EstadoAsignacion =
   'invitado' | 'segundo-intento' | 'acepto' | 'no-acepto' | 'sin-respuesta' | 'entrego'
 
 export type ConceptoPar =
   'publicable' | 'publicable-con-modificaciones' | 'no-publicable' | 'pendiente-formato'
 
-/** What the concepts of the peers decide for the article: a concept that is a real judgment. */
+/** Lo que deciden los conceptos de los pares para el artículo: un concepto que es un juicio real. */
 export type ResultadoPares = Exclude<ConceptoPar, 'pendiente-formato'>
 
 /**
- * A peer assigned to an article, in order. At most three peers who accepted or delivered; those
- * who decline or do not answer take no place. The tiebreaker is flagged (RF-19, RF-21).
+ * Un par asignado a un artículo, en orden. Como máximo tres pares que aceptaron o entregaron; los que declinan o
+ * no responden no ocupan lugar. El de desempate se marca.
  */
 export interface Asignacion {
   id: string
   articuloId: string
   parId: string
-  /** Order of assignment (1, 2, 3…). Peers who did not accept keep their number. */
+  /** Orden de asignación (1, 2, 3…). Los pares que no aceptaron conservan su número. */
   orden: number
   esDesempate: boolean
   estado: EstadoAsignacion
-  /** ISO 8601 dates. */
+  /** Fechas ISO 8601. */
   fechaInvitacion: string
   fechaRespuesta: string | null
   fechaEntrega: string | null
@@ -54,28 +54,28 @@ export interface Constancia {
   asignacionId: string
   estado: EstadoConstancia
   fechaEmision: string | null
-  /** "migrado" = came from the Excel (outside this version's scope but kept as data). */
+  /** "migrado" = vino del Excel. */
   origen: 'sistema' | 'migrado'
 }
 
-/** Assignment joined with the data of its peer, as the article sheet shows it. */
+/** La asignación unida a los datos de su par, como la muestra la ficha del artículo. */
 export interface AsignacionDetalle extends Asignacion {
   par: Pick<ParEvaluador, 'id' | 'nombre' | 'correo' | 'universidad'>
   constanciaEmitida: boolean
-  /** The constancia of a delivered evaluation (pending or issued), to issue it from the sheet. */
+  /** La constancia de una evaluación entregada (pendiente o emitida), para emitirla desde la ficha. */
   constanciaId: string | null
-  /** The last invitation mail of this peer: a bounced or failed one can be resent (RF-28). */
+  /** El último correo de invitación de este par: uno rebotado o fallido se puede reenviar. */
   ultimoCorreo: { tipo: TipoCorreo; estado: EstadoCorreo; atendido: boolean } | null
 }
 
-/** Answer of «Marcar entrega»: the constancia that can be issued right away (RF-23). */
+/** Respuesta de «Marcar entrega»: la constancia que se puede emitir de inmediato. */
 export interface EntregaRegistrada extends Asignacion {
   constanciaId: string | null
 }
 
 export type EstadoDisponibilidad = 'disponible' | 'bloqueado' | 'misma-institucion'
 
-/** Row of the peers list; `misma-institucion` = same institution as an author of the article (cannot be assigned). */
+/** Fila del listado de pares; `misma-institucion` = misma institución que un autor del artículo (no se puede asignar). */
 export interface ParListado extends Pick<
   ParEvaluador,
   'id' | 'nombre' | 'correo' | 'universidad' | 'area' | 'bloqueo'
@@ -85,7 +85,7 @@ export interface ParListado extends Pick<
 }
 
 export interface Participacion {
-  /** Journal of the article (the base of peers is common to both). */
+  /** Revista del artículo (la base de pares es común a las dos). */
   revista: Revista
   asignacionId: string
   articuloId: string
@@ -101,7 +101,7 @@ export interface Participacion {
 export interface ParDetalle extends ParEvaluador {
   evaluacionesEntregadas: number
   invitacionesSinResponder: number
-  /** ISO date of the last participation. */
+  /** Fecha ISO de la última participación. */
   ultimaParticipacion: string | null
   participaciones: Participacion[]
 }
@@ -116,19 +116,19 @@ export interface NuevoPar {
 
 export interface ResultadoAsignacion {
   asignacion: Asignacion
-  /** The peer assigned (the new candidate, when one was registered). */
+  /** El par asignado (el candidato nuevo, cuando se registró uno). */
   par: Pick<ParEvaluador, 'id' | 'nombre' | 'correo'>
   correo: { estado: EstadoCorreo; destinatario: string }
 }
 
-/** How the dependency registers the answer of a peer to the invitation (RF-22, RF-15). */
+/** Cómo registra la dependencia la respuesta de un par a la invitación. */
 /**
- * The peer's answer (RF-22): accepted; did not accept this invitation (not blocked); does not want
- * to take part any more (blocked); no answer after the second attempt (blocked by the system).
+ * La respuesta del par: aceptó; no aceptó esta invitación (no se bloquea); no desea participar más (se
+ * bloquea); sin respuesta tras el segundo intento (lo bloquea el sistema).
  */
 export type RespuestaPar = 'acepto' | 'no-acepto' | 'no-desea' | 'sin-respuesta'
 
-/** A brand-new candidate typed while assigning peers (RF-12, RF-19). */
+/** Un candidato nuevo escrito mientras se asignan pares. */
 export interface CandidatoPar {
   nombre: string
   profesion: string
@@ -137,6 +137,6 @@ export interface CandidatoPar {
   area: string
 }
 
-/** Body of an assignment: a peer of the base, or a new candidate saved in the base first. */
+/** Cuerpo de una asignación: un par de la base, o un candidato nuevo que se guarda primero en la base. */
 export type DatosAsignacion = { parId: string } | { nuevo: CandidatoPar }
 

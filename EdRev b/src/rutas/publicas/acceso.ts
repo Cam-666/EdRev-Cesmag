@@ -1,6 +1,6 @@
 /*
- * Acceso — public: login (RF-39), password recovery (RF-46) and the links to define a password
- * (RF-40, RF-46). The routes only say where each request goes; the rules are in servicios/acceso.
+ * Acceso — público: ingreso, recuperación de contraseña y los enlaces para definir una contraseña.
+ * Las rutas solo dicen a dónde va cada petición; las reglas están en servicios/acceso.
  */
 import { Router } from 'express'
 import * as acceso from '../../controladores/acceso.js'

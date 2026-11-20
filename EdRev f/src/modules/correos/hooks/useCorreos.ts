@@ -1,6 +1,6 @@
 /*
- * Hooks of the sent-mail module. Retrying changes the log, the article history and the dashboard
- * alert, so every mutation refreshes them for the active journal. Covers: RF-26..RF-28, RNF-02.
+ * Hooks del módulo de correos enviados. Reintentar cambia el registro, el historial del artículo y la alerta del
+ * tablero, por eso cada mutación los refresca para la revista activa.
  */
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {

@@ -1,11 +1,11 @@
 /*
- * migrarExcel — loads a journal's Excel (.xlsx) or CSV into the database (RF-42, RF-43).
+ * migrarExcel — carga el Excel (.xlsx) o CSV de una revista en la base de datos.
  *
- *   npm run migrar -- reep ruta/al/archivo.xlsx            (carga)
- *   npm run migrar -- ire ruta/al/archivo.csv --simular    (prueba: no guarda nada)
- *   npm run migrar -- todas ruta/al/archivo.xlsx           (ambas revistas mezcladas: usa la columna «Revista»)
+ * npm run migrar -- reep ruta/al/archivo.xlsx            (carga)
+ * npm run migrar -- ire ruta/al/archivo.csv --simular    (prueba: no guarda nada)
+ * npm run migrar -- todas ruta/al/archivo.xlsx           (ambas revistas mezcladas: usa la columna «Revista»)
  *
- * Reads the first sheet; the first row is the headings (see servicios/migracion.ts).
+ * Lee la primera hoja; la primera fila son los encabezados (ver servicios/migracion.ts).
  */
 import ExcelJS from 'exceljs'
 import { enTransaccion, pool } from '../src/db.js'

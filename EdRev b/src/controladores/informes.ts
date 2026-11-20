@@ -1,6 +1,6 @@
 /*
- * informes (controlador) — reads the journal and the period of the management report and answers
- * (RF-38); the figures are in servicios/informeGestion.
+ * informes (controlador) — lee la revista y el periodo del informe de gestión y responde. Las cifras están
+ * en servicios/informeGestion.
  */
 import type { Request, Response } from 'express'
 import * as informes from '../servicios/informeGestion.js'

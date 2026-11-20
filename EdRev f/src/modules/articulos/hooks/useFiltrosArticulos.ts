@@ -1,6 +1,6 @@
 /*
- * useFiltrosArticulos — list filters live in the URL query string, so a filtered list can be
- * linked, reloaded and used with the browser's back button. Covers: RF-35, HU-26.
+ * useFiltrosArticulos — los filtros del listado viven en la cadena de consulta de la URL, así un listado filtrado
+ * se puede enlazar, recargar y usar con el botón de atrás del navegador.
  */
 import { useSearchParams } from 'react-router-dom'
 import { ESTADOS_FILTRO, POR_PAGINA } from '../config/listas'

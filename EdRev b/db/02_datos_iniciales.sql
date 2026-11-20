@@ -4,10 +4,11 @@
 --
 -- Contraseña inicial de las dos cuentas: Editorial2026*  (cámbiela con
 -- «¿Olvidó su contraseña?» antes de la puesta en marcha). Se guarda cifrada
--- con bcrypt (RNF-04) mediante pgcrypto.
+-- con bcrypt mediante pgcrypto.
 -- =============================================================================
 
--- Revistas (D9: sigla, ISSN, logo y colores viven en el código de la página).
+-- Revistas. La sigla, el logo y los colores viven en el código de la página; aquí solo van el nombre y el
+-- correo desde el que sale cada revista (debe estar verificado como remitente en Brevo, ver el README).
 -- id 1 = Educación y Pedagogía (reep) · id 2 = Investigium IRE (ire)
 INSERT INTO revista (id_revista, nombre, correo_remitente, issn, indexaciones) OVERRIDING SYSTEM VALUE VALUES
   (1, 'Revista Electrónica en Educación y Pedagogía', 'revistaeducacionpedagogia@gmail.com', '2590-7476',
@@ -15,17 +16,17 @@ INSERT INTO revista (id_revista, nombre, correo_remitente, issn, indexaciones) O
   (2, 'Revista Investigium IRE Ciencias Sociales y Humanas', 'revistainvestigiumire@gmail.com', '2357-5239',
    'Publindex (categoría C), Redalyc, EBSCO, ERIH PLUS, Dialnet, DOAJ, REDIB, LATINDEX, Actualidad Iberoamericana, EZB, LatinREV, REDIPE, MIAR, LivRe y Ulrichsweb de ProQuest');
 
--- Días de espera de la respuesta del par (RF-29): 5, ajustable en Administración › Configuración
+-- Días de espera de la respuesta del par: 5. La Administradora lo ajusta en Administración › Configuración.
 INSERT INTO configuracion (clave, valor) VALUES ('dias_espera_respuesta', '5');
 
--- Cuentas de la dependencia (RF-40)
+-- Cuentas de la dependencia
 INSERT INTO usuario (nombre, correo, contrasena_hash, rol) VALUES
   ('Ma. Camila Mendoza', 'maria.mendoza@unicesmag.edu.co',
    crypt('Editorial2026*', gen_salt('bf', 10)), 'administrador'),
   ('Andrea Villota', 'andrea.villota@unicesmag.edu.co',
    crypt('Editorial2026*', gen_salt('bf', 10)), 'auxiliar');
 
--- Plantillas en uso de cada revista (RF-45). El encabezado, el pie y la firma de la constancia son
+-- Plantillas en uso de cada revista. El encabezado, el pie y la firma de la constancia son
 -- imágenes que la Administradora sube desde Administración › Plantillas.
 INSERT INTO plantilla (id_revista, nombre, clase, fin, tipo, asunto, cuerpo)
 SELECT r.id_revista, p.nombre, CASE WHEN p.tipo = 'constancia' THEN 'archivo' ELSE 'correo' END, p.tipo, p.tipo, p.asunto, p.cuerpo

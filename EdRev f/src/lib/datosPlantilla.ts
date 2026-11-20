@@ -1,8 +1,8 @@
 /*
- * datosPlantilla — the data a template can bring in (the name of the peer, the title of the
- * article…), named in plain Spanish. The person who edits a template sees and writes
- * [Nombre del par]; the system keeps it as the marker {{par}} that the mail and the constancia
- * fill in. The two forms convert into each other without loss. Covers: RF-45, RNF-11, RNF-12.
+ * datosPlantilla — los datos que una plantilla puede traer (el nombre del par, el título del artículo…),
+ * con nombres en español sencillo. Quien edita una plantilla ve y escribe [Nombre del par]; el sistema lo
+ * guarda como la marca {{par}} que el correo y la constancia rellenan. Las dos formas se convierten una en la
+ * otra sin pérdida.
  */
 
 export const ETIQUETA_DATO: Record<string, string> = {
@@ -26,19 +26,19 @@ const CLAVE_DE: Record<string, string> = Object.fromEntries(
   Object.entries(ETIQUETA_DATO).map(([clave, etiqueta]) => [etiqueta, clave]),
 )
 
-/** The name of a data, as it is written between square brackets in the editor. */
+/** El nombre de un dato, tal como se escribe entre corchetes en el editor. */
 export function datoVisible(clave: string): string {
   return `[${ETIQUETA_DATO[clave] ?? clave}]`
 }
 
-/** Stored text → the text the person edits: {{par}} becomes [Nombre del par]. */
+/** Texto guardado → texto que edita la persona: {{par}} se vuelve [Nombre del par]. */
 export function aVisible(texto: string): string {
   return texto.replace(/\{\{(\w+)\}\}/g, (marca, clave: string) =>
     clave in ETIQUETA_DATO ? datoVisible(clave) : marca,
   )
 }
 
-/** The text the person edits → stored text: [Nombre del par] becomes {{par}}. */
+/** Texto que edita la persona → texto guardado: [Nombre del par] se vuelve {{par}}. */
 export function aGuardado(texto: string): string {
   return texto.replace(/\[([^[\]\n]+)\]/g, (marca, etiqueta: string) => {
     const clave = CLAVE_DE[etiqueta.trim()]

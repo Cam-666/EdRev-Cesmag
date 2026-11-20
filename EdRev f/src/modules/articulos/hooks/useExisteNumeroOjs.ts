@@ -3,7 +3,7 @@ import { existeNumeroOjs } from '../services/articulosService'
 import { useRetardo } from '@/lib/useRetardo'
 import { useRevista } from '@/lib/revista/useRevista'
 
-/** RF-03: warns when the typed OJS number already belongs to another article of this journal. */
+/** Advierte cuando el número de OJS escrito ya pertenece a otro artículo de esta revista. */
 export function useExisteNumeroOjs(numeroOjs: string) {
   const { revista } = useRevista()
   const numero = useRetardo(numeroOjs.trim(), 300)

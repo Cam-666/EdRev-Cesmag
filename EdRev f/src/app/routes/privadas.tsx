@@ -1,8 +1,7 @@
 /*
- * Private routes — everything behind <RutaPrivada> (session required). Administration is
- * further protected by <RutaPorPermiso> (RNF-05). One implementation per view; the journal is
- * the :revista segment (18 views per journal, identical for reep and ire).
- * Covers: RF-02, RNF-05.
+ * Rutas privadas — todo lo que está detrás de <RutaPrivada> (exige sesión). Administración tiene además la
+ * protección de <RutaPorPermiso> (solo la Administradora). Hay una sola implementación por pantalla; la revista
+ * es el segmento :revista (las mismas pantallas para reep e ire).
  */
 import { Navigate } from 'react-router-dom'
 import type { RouteObject } from 'react-router-dom'
@@ -41,12 +40,12 @@ export const rutasPrivadas: RouteObject[] = [
     element: <RutaPrivada />,
     children: [
       {
-        // Cross-journal modules: the only screens allowed to show both journals.
+        // Módulos de las dos revistas: las únicas pantallas que pueden mostrar ambas revistas a la vez.
         element: <AppLayout />,
         children: [
           { path: '/inicio', element: <InicioGeneralPage /> },
           { path: '/informes', element: <InformesPage /> },
-          // Authors and peers are one directory shared by both journals.
+          // Autores y pares son un solo directorio compartido por las dos revistas.
           { path: '/autores', element: <AutoresPage /> },
           { path: '/autores/:id', element: <AutorDetallePage /> },
           { path: '/pares', element: <ParesPage /> },
@@ -70,7 +69,7 @@ export const rutasPrivadas: RouteObject[] = [
         ],
       },
       {
-        // Journal modules: reep | ire.
+        // Módulos de cada revista: reep | ire.
         path: '/:revista',
         element: <RevistaRoute />,
         children: [

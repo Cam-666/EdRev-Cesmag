@@ -1,8 +1,8 @@
 /*
- * CambiarRevistaModal — moves an article to the other journal while it is in the committee
- * review (e.g. the committee says «cambiar a revista Investigium»). It can be done as many times
- * as needed; once the committee approves the article or it has peers, the option is blocked.
- * The change stays in the history. No Figma design for the dialog. Covers: RF-02, RF-07, HU-04.
+ * CambiarRevistaModal — pasa un artículo a la otra revista (por ejemplo cuando el comité dice «cambiar a revista
+ * Investigium»). Se puede hacer en cualquier etapa y las veces que haga falta. El artículo conserva sus pares,
+ * correos y constancias; se borran su volumen y su número. El cambio queda en el historial.
+ * No tiene diseño en Figma.
  */
 import { useNavigate } from 'react-router-dom'
 import { useTrasladarArticulo } from '../hooks/useMutacionesArticulo'

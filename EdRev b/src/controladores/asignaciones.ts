@@ -1,6 +1,6 @@
 /*
- * asignaciones (controlador) — receives and validates the requests about assigning peers and
- * following their answer, delivery and concept, and answers; the rules are in servicios/asignaciones.
+ * asignaciones (controlador) — recibe y valida las peticiones para asignar pares y seguir su respuesta,
+ * entrega y concepto, y responde. Las reglas están en servicios/asignaciones.
  */
 import type { Request, Response } from 'express'
 import { z } from 'zod'

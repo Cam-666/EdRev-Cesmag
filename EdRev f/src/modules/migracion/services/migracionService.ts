@@ -1,6 +1,4 @@
-/*
- * migracionService — HTTP calls of the migrated records to correct (RF-44, HU-32).
- */
+/* migracionService — llamadas HTTP de los registros migrados por corregir. */
 import { solicitar } from '@/lib/api/cliente'
 import type { RegistroPorCorregir } from '@/types/migracion'
 import type { Revista } from '@/types/revista'

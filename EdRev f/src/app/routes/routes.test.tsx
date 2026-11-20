@@ -8,7 +8,7 @@ import type { Usuario } from '@/types/usuario'
 import { REVISTAS } from '@/types/revista'
 import type { Revista } from '@/types/revista'
 
-/** The 11 views each journal has, identical for reep and ire. */
+/** Las 11 pantallas que tiene cada revista, idénticas para reep e ire. */
 const VISTAS = [
   'tablero',
   'articulos',
@@ -35,7 +35,7 @@ function montar(ruta: string, usuario: Usuario | null = ADMINISTRADORA) {
 
 const REVISTAS_IDS: Revista[] = ['reep', 'ire']
 
-/** Each journal has its own articles: an ordinary one and an archived one. */
+/** Cada revista tiene sus propios artículos: uno normal y uno archivado. */
 const ARTICULOS: Record<Revista, { id: string; archivado: string; autor: string }> = {
   reep: { id: '2026-034', archivado: '2026-007', autor: 'reep-au-3' },
   ire: { id: '2026-077', archivado: '2026-022', autor: 'ire-au-1' },
@@ -65,7 +65,7 @@ describe('route table', () => {
           .replace('{id}', ARTICULOS[revista].id)
           .replace('{autor}', ARTICULOS[revista].autor)
         const { container } = montar(`/${revista}/${ruta}`)
-        // Article views load their data first: wait until the page title is there.
+        // Las pantallas de artículos cargan primero sus datos: se espera a que aparezca el título de la página.
         await waitFor(() =>
           expect(screen.getAllByRole('heading', { level: 1, hidden: true })).toHaveLength(1),
         )
@@ -74,7 +74,7 @@ describe('route table', () => {
         expect(screen.queryByText(new RegExp(`ISSN: ${REVISTAS[otra].issn}`))).toBeNull()
         expect(screen.getByRole('main', { hidden: true })).toBeInTheDocument()
         expect(screen.getAllByRole('heading', { level: 1, hidden: true })).toHaveLength(1)
-        // The side panel only lists the active journal's submodules.
+        // El panel lateral solo lista los submódulos de la revista activa.
         const nav = screen.getByRole('navigation', { name: 'Principal', hidden: true })
         expect(
           within(nav)

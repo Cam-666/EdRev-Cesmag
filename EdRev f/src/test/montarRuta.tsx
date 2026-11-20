@@ -1,6 +1,6 @@
 /*
- * montarRuta — test helper: renders the real route table inside the real providers, starting at
- * `ruta` with the given user (null = signed out). Also a helper to pick an option of a Radix select.
+ * montarRuta — ayuda de pruebas: dibuja la tabla de rutas real dentro de los proveedores reales, empezando en
+ * `ruta` con el usuario dado (null = sin sesión). También una ayuda para elegir una opción de un select de Radix.
  */
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
@@ -22,7 +22,7 @@ export function montarRuta(ruta: string, usuario: Usuario | null = ADMINISTRADOR
 
 export type Usuaria = ReturnType<typeof userEvent.setup>
 
-/** Opens a Radix select by its label and clicks the option with the given name. */
+/** Abre un select de Radix por su etiqueta y hace clic en la opción con el nombre dado. */
 export async function elegirOpcion(user: Usuaria, etiqueta: string, opcion: string) {
   await user.click(screen.getByRole('combobox', { name: etiqueta }))
   await user.click(await screen.findByRole('option', { name: opcion }))

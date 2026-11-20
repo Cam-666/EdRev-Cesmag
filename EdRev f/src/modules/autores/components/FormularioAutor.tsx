@@ -1,8 +1,7 @@
 /*
- * FormularioAutor — author form: search an existing record by name or ORCID (selecting one fills
- * the data and makes it read-only) or type a new author. Reused by the registration step 2 and by
- * the "Agregar autor" modal of the article sheet.
- * Covers: RF-09, RF-10, HU-06, HU-07. The email field has no design in Figma (required by RF-09).
+ * FormularioAutor — formulario de autor: busca un registro existente por nombre u ORCID (al elegir uno se llenan
+ * los datos y quedan de solo lectura) o se escribe un autor nuevo. Lo reutilizan el paso 2 del registro y el modal
+ * «Agregar autor» de la ficha del artículo. El campo de correo no tiene diseño en Figma, pero es obligatorio.
  */
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useState } from 'react'
@@ -16,7 +15,7 @@ import { CampoTexto } from '@/components/common/CampoTexto'
 import type { Autor, DatosAutor } from '@/types/autor'
 
 export interface AutorElegido {
-  /** Existing record reused, or null when the author is new. */
+  /** Registro existente que se reutiliza, o null cuando el autor es nuevo. */
   autorId: string | null
   datos: DatosAutor
 }
@@ -24,16 +23,16 @@ export interface AutorElegido {
 export interface FormularioAutorProps {
   textoBoton: string
   onGuardar: (autor: AutorElegido) => void
-  /** Allow searching existing records (off when editing a record). */
+  /** Permite buscar registros existentes (apagado al editar un registro). */
   permitirBuscar?: boolean
   valoresIniciales?: DatosAutor
-  /** Existing record ids that cannot be chosen (already in the article). */
+  /** Ids de registros existentes que no se pueden elegir (ya están en el artículo). */
   idsExcluidos?: string[]
   cargando?: boolean
   error?: string
   /**
-   * Clear the form after submitting (step 2 adds several authors one after another). Leave it off in
-   * dialogs: if the server rejects the data, the person must not lose what they typed.
+   * Limpia el formulario después de enviar (el paso 2 agrega varios autores uno tras otro). Se deja apagado en los
+   * diálogos: si el servidor rechaza los datos, la persona no debe perder lo que escribió.
    */
   reiniciar?: boolean
 }

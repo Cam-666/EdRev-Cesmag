@@ -1,7 +1,6 @@
 /*
- * panel (servicio) — the dashboard of each journal and the home summary of both (RF-37, HU-25):
- * peers that have not answered, evaluations delivered without constancia, articles in evaluation
- * and approved, and the migrated records still to correct.
+ * panel (servicio) — el tablero de cada revista y el resumen de Inicio de las dos: pares que no han respondido,
+ * evaluaciones entregadas sin constancia, artículos en evaluación y aprobados, y registros migrados por corregir.
  */
 import { pool } from '../db.js'
 import { fechaLocal } from '../lib/fechas.js'

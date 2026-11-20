@@ -1,9 +1,9 @@
 /*
- * MensajeError — field error: symbol + text, announced with role="alert" and linked to its field
- * through aria-describedby. Shared by every form control. Covers: RNF-11, RNF-12.
+ * MensajeError — error de un campo: símbolo y texto, anunciado con role="alert" y enlazado a su campo mediante
+ * aria-describedby. Lo comparten todos los controles de formulario.
  */
 export interface MensajeErrorProps {
-  /** Must match the aria-describedby of the field. */
+  /** Debe coincidir con el aria-describedby del campo. */
   id: string
   children: string
 }

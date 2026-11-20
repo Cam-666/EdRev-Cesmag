@@ -1,8 +1,6 @@
 /*
- * EditarArticuloModal — edits title, type and publication (volume and number, together) of an
- * article. The OJS number
- * is not editable (it identifies the article). No Figma design for the dialog itself.
- * Covers: RF-01, RF-04 (publication number), RNF-05 (Auxiliar can register data).
+ * EditarArticuloModal — edita el título, el tipo y la publicación (volumen y número, juntos) de un artículo.
+ * El número de OJS no se edita (identifica al artículo). No tiene diseño en Figma.
  */
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Controller, useForm } from 'react-hook-form'
@@ -25,7 +23,7 @@ export interface EditarArticuloModalProps {
 
 const FORMULARIO = 'formulario-editar-articulo'
 
-/** Mounted only while open: each opening starts from the saved data, not from abandoned edits. */
+/** Se monta solo mientras está abierto: cada vez parte de los datos guardados, no de ediciones abandonadas. */
 export function EditarArticuloModal(props: EditarArticuloModalProps) {
   return props.abierto ? <ContenidoEditarArticulo {...props} /> : null
 }

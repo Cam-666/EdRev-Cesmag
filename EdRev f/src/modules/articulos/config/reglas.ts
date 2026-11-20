@@ -1,17 +1,16 @@
 /*
- * reglas — business rules of the articles module, free of React so they are easy to test.
- * Covers: RF-05 (warning above 15 %, never blocking), RF-21 (tiebreaker only when the first two
- * concepts contradict each other).
+ * reglas — reglas de negocio del módulo de artículos, sin React para que sean fáciles de probar: el aviso sobre
+ * 15 % (nunca bloquea) y el par de desempate (solo cuando los dos primeros conceptos se contradicen).
  */
 import { UMBRAL_COINCIDENCIAS } from './listas'
 import type { ConceptoPar, EstadoAsignacion } from '@/types/par'
 
-/** RF-05: only the matches percentage triggers the warning; the AI percentage never does. */
+/** Solo el porcentaje de coincidencias dispara el aviso; el de IA nunca. */
 export function superaUmbral(coincidencias: number): boolean {
   return coincidencias > UMBRAL_COINCIDENCIAS
 }
 
-/** RF-21: "publicable" against "no publicable" is a contradiction; anything else is not. */
+/** «publicable» contra «no publicable» es una contradicción; cualquier otra combinación no lo es. */
 export function conceptosContradictorios(a: ConceptoPar | null, b: ConceptoPar | null): boolean {
   if (!a || !b) return false
   return (
@@ -20,8 +19,8 @@ export function conceptosContradictorios(a: ConceptoPar | null, b: ConceptoPar |
 }
 
 /**
- * RF-19: up to three evaluators. A peer who did not accept stays listed but frees the slot, so the
- * process goes on with whoever accepted while other peers are invited.
+ * Hasta tres evaluadores. Un par que no aceptó sigue en la lista pero libera el lugar, así el proceso continúa con
+ * quien aceptó mientras se invita a otros pares.
  */
 export function paresVigentes<T extends { estado: EstadoAsignacion }>(asignaciones: T[]): T[] {
   return asignaciones.filter((a) => a.estado === 'acepto' || a.estado === 'entrego')

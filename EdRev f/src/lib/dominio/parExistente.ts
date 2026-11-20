@@ -1,12 +1,11 @@
 /*
- * parExistente — detects that a person being registered as a peer is already in the common base,
- * by e-mail or by name (the other data may vary), and writes the notice for the user: that the
- * peer is already in the system and, when so, that it is blocked. Mirrors the backend rule; the
- * mock API uses it. Covers: RF-12, RF-15, HU-08, HU-10.
+ * parExistente — detecta que una persona que se registra como par ya está en la base común, por correo o por
+ * nombre (los demás datos pueden variar), y redacta el aviso para el usuario: que el par ya está en el sistema
+ * y, si es el caso, que está bloqueado. Replica la regla del backend; la usa la API simulada.
  */
 import type { ParEvaluador } from '@/types/par'
 
-/** Comparison key of a text: without accents, case or repeated spaces ("CESMAG" = "Cesmag"). */
+/** Clave para comparar un texto: sin tildes, mayúsculas ni espacios repetidos ("CESMAG" = "Cesmag"). */
 export function claveTexto(texto: string): string {
   return texto
     .normalize('NFD')
@@ -48,7 +47,7 @@ export function avisoParExistente(par: ParBase): string {
   )
 }
 
-/** The text as the base already spells it: "cesmag" is stored as the existing "Cesmag". */
+/** El texto tal como la base ya lo escribe: "cesmag" se guarda como el "Cesmag" que ya existe. */
 export function formaExistente(
   pares: Array<Pick<ParEvaluador, 'universidad' | 'area'>>,
   campo: 'universidad' | 'area',

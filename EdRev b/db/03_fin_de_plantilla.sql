@@ -1,8 +1,10 @@
 -- =============================================================================
 -- EdRev Cesmag · Migración para bases ya creadas (ejecutar UNA vez sobre «edrev»)
---   · plantilla.fin: para qué sirve cada plantilla (no cambia aunque no esté en uso)
---   · quita revista.firma_nombre y revista.firma_cargo las imágenes de las plantillas de correo y plantilla.correo_firma (el correo no lleva firma)
+--   · plantilla.fin: para qué sirve cada plantilla (no cambia aunque no esté en uso).
+--   · Quita revista.firma_nombre y revista.firma_cargo, plantilla.correo_firma y las imágenes de las
+--     plantillas de correo (el correo no lleva firma aparte).
 -- Una base nueva ya trae todo esto en 01_esquema.sql; no necesita este archivo.
+-- Se puede ejecutar más de una vez sin dañar nada.
 -- =============================================================================
 BEGIN;
 

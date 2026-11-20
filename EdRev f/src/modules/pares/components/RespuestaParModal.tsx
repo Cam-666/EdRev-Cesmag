@@ -1,9 +1,8 @@
 /*
- * RespuestaParModal — registers how the peer answered the invitation: accepted, did not accept
- * this invitation (not blocked), does not want to take part any more (blocked), or no answer after
- * the 2nd attempt (blocked). The dialog says when the peer will be blocked. No Figma design.
- * The article goes to «En evaluación» when the first peer accepts (RF-22).
- * Covers: RF-15, RF-22, HU-10. Both profiles (RNF-05).
+ * RespuestaParModal — registra cómo respondió el par a la invitación: aceptó, no aceptó esta invitación (no se
+ * bloquea), no desea participar más (se bloquea) o sin respuesta tras el 2.º intento (se bloquea). El diálogo
+ * avisa cuándo se bloqueará al par. No tiene diseño en Figma. El artículo pasa a «En evaluación» cuando acepta el
+ * primer par. Para ambos perfiles.
  */
 import { useState } from 'react'
 import { useRegistrarRespuesta } from '../hooks/useAsignaciones'

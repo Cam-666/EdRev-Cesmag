@@ -1,9 +1,8 @@
 /*
- * PlantillasPage — Plantillas (/administracion/plantillas): each journal's mail and file templates,
- * edited without touching code. New templates are created with a free name and a class (mail or
- * file) and can be deleted while they are not in use; what each one is used for is chosen in
- * Configuración. Administradora only.
- * Covers: RF-25, RF-30, RF-31, RF-45, RNF-12, HU-30.
+ * PlantillasPage — Plantillas (/administracion/plantillas): las plantillas de correo y de archivo de cada revista,
+ * que se editan sin tocar el código. Las plantillas nuevas se crean con un nombre libre y un fin (invitación,
+ * agradecimiento o constancia), nacen en blanco y se pueden eliminar mientras no estén en uso; para qué se usa
+ * cada una se elige en Configuración. Solo para la Administradora.
  */
 import { useState } from 'react'
 import { FormularioPlantilla } from '../components/FormularioPlantilla'
@@ -29,7 +28,7 @@ const PALABRA_DEL_FIN: Record<UsoPlantilla, string> = {
   constancia: 'constan',
 }
 
-/** The name, what it is for (unless the name already says it) and whether it is in use. */
+/** El nombre, para qué sirve (salvo que el nombre ya lo diga) y si está en uso. */
 function etiquetaDeLaPlantilla(p: Plantilla): string {
   const dice = p.nombre.toLowerCase().includes(PALABRA_DEL_FIN[p.fin])
   return `${p.nombre}${dice ? '' : ` · ${ETIQUETA_USO[p.fin]}`}${p.uso ? ' · en uso' : ''}`

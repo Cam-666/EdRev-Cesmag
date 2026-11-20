@@ -1,5 +1,5 @@
 /*
- * Pruebas de la migración del Excel — RF-42, RF-43, RF-44.
+ * Pruebas de la migración del Excel
  */
 import { describe, expect, it } from 'vitest'
 import { enTransaccion } from '../src/db.js'
@@ -38,7 +38,7 @@ const filas = [
   { Título: 'Fila sin número de OJS' },
 ]
 
-describe('migración del Excel (RF-42 a RF-44)', () => {
+describe('migración del Excel', () => {
   it('carga artículos, autores, pares y evaluaciones; lo que no encaja queda por corregir', async () => {
     const resumen = await enTransaccion((c) => migrarFilas(c, 1, filas))
     expect(resumen).toMatchObject({ articulos: 2, omitidos: 0, pares: 2, evaluaciones: 2, porCorregir: 4 })
@@ -51,7 +51,7 @@ describe('migración del Excel (RF-42 a RF-44)', () => {
     expect(lista.find((r) => r.campo === 'concepto')?.descripcion).toContain('M-100 · Pedagogía rural en Nariño · par 2')
     expect(lista.find((r) => r.campo === 'correo-par')?.enlace).toMatch(/^\/reep\/pares\/\d+$/)
 
-    // The other journal sees nothing, and the panel counts them.
+    // La otra revista no ve nada, y el tablero los cuenta.
     expect((await api.get('/ire/por-corregir')).body).toEqual([])
     expect((await api.get('/reep/tablero')).body.porCorregir).toBe(lista.length)
   })

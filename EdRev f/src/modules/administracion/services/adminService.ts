@@ -1,6 +1,6 @@
 /*
- * adminService — HTTP calls of Administración: user accounts, templates with the sender accounts,
- * and the cross-journal audit log. Covers: RF-40, RF-41, RNF-19, HU-29, HU-30.
+ * adminService — llamadas HTTP de Administración: cuentas de usuario, plantillas con las cuentas remitentes y el
+ * registro de auditoría de las dos revistas.
  */
 import { solicitar, solicitarArchivo } from '@/lib/api/cliente'
 import type { RespuestaEnvioEnlace } from '@/types/acceso'
@@ -41,12 +41,12 @@ export function listarUsuarios(): Promise<Usuario[]> {
   return solicitar<Usuario[]>('/usuarios')
 }
 
-/** RF-40: the account is created and its owner receives a link to define the password. */
+/** Se crea la cuenta y su dueño recibe un enlace para definir la contraseña. */
 export function crearUsuario(datos: DatosUsuario): Promise<Usuario & RespuestaEnvioEnlace> {
   return solicitar<Usuario & RespuestaEnvioEnlace>('/usuarios', { method: 'POST', ...json(datos) })
 }
 
-/** Sends again the link to define the password of an account that has not entered yet. */
+/** Envía de nuevo el enlace para definir la contraseña de una cuenta que aún no ha ingresado. */
 export function reenviarEnlaceUsuario(id: string): Promise<RespuestaEnvioEnlace> {
   return solicitar<RespuestaEnvioEnlace>(`/usuarios/${encodeURIComponent(id)}/enlace`, {
     method: 'POST',
@@ -63,7 +63,7 @@ export function editarUsuario(
   })
 }
 
-/** Deletes an account; it fails when the account already has activity in the history. */
+/** Elimina una cuenta; falla cuando la cuenta ya tiene actividad en el historial. */
 export function eliminarUsuario(id: string): Promise<void> {
   return solicitar<undefined>(`/usuarios/${encodeURIComponent(id)}`, { method: 'DELETE' })
 }
@@ -76,7 +76,7 @@ export function crearPlantilla(datos: DatosNuevaPlantilla): Promise<Plantilla> {
   return solicitar<Plantilla>('/plantillas', { method: 'POST', ...json(datos) })
 }
 
-/** Uploads the header, the footer or the signature image of a file template (RF-45). */
+/** Sube la imagen de encabezado, de pie de página o de firma de una plantilla de archivo. */
 export function subirImagen(id: string, parte: ParteImagen, archivo: File): Promise<Plantilla> {
   const datos = new FormData()
   datos.append('archivo', archivo)
@@ -92,12 +92,12 @@ export function quitarImagen(id: string, parte: ParteImagen): Promise<Plantilla>
   })
 }
 
-/** The constancia template as a PDF with sample data. */
+/** La plantilla de constancia como PDF con datos de ejemplo. */
 export function vistaPreviaPlantilla(id: string): Promise<Blob> {
   return solicitarArchivo(`/plantillas/${encodeURIComponent(id)}/vista-previa`)
 }
 
-/** The complete mail (institutional frame included) with sample data, for the text being edited. */
+/** El correo completo (con el marco institucional) con datos de ejemplo, para el texto que se está editando. */
 export function vistaCorreoPlantilla(datos: {
   revista: Revista
   uso: 'invitacion' | 'agradecimiento'
@@ -106,7 +106,7 @@ export function vistaCorreoPlantilla(datos: {
   return solicitar<{ html: string }>('/plantillas/vista-correo', { method: 'POST', ...json(datos) })
 }
 
-/** The constancia as a PDF with sample data, built from the text being edited. */
+/** La constancia como PDF con datos de ejemplo, armada con el texto que se está editando. */
 export function vistaPdfConstancia(id: string, cuerpo: string): Promise<Blob> {
   return solicitarArchivo(`/plantillas/${encodeURIComponent(id)}/vista-previa`, {
     method: 'POST',
@@ -114,7 +114,7 @@ export function vistaPdfConstancia(id: string, cuerpo: string): Promise<Blob> {
   })
 }
 
-/** Makes this template the one its journal sends for a use; the one that had that use is released. */
+/** Hace que esta plantilla sea la que su revista envía para un uso; la que tenía ese uso queda libre. */
 export function asignarPlantilla(id: string, uso: UsoPlantilla): Promise<Plantilla> {
   return solicitar<Plantilla>(`/plantillas/${encodeURIComponent(id)}/asignar`, {
     method: 'POST',
@@ -122,7 +122,7 @@ export function asignarPlantilla(id: string, uso: UsoPlantilla): Promise<Plantil
   })
 }
 
-/** Deletes a template that is not in use. */
+/** Elimina una plantilla que no está en uso. */
 export function eliminarPlantilla(id: string): Promise<void> {
   return solicitar<undefined>(`/plantillas/${encodeURIComponent(id)}`, { method: 'DELETE' })
 }

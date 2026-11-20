@@ -1,7 +1,7 @@
 /*
- * Webhook de Brevo — the mail service reports what happened after accepting a mail (RF-27). Brevo
- * is configured to call /api/webhooks/brevo?token=BREVO_WEBHOOK_TOKEN. The routes only say where
- * the request goes; the rules are in servicios/eventosCorreo.
+ * Webhook de Brevo — el servicio de correo avisa qué pasó después de aceptar un correo (rebote, bloqueo).
+ * En Brevo se configura para llamar a /api/webhooks/brevo?token=BREVO_WEBHOOK_TOKEN. Las rutas solo dicen a
+ * dónde va la petición; las reglas están en servicios/eventosCorreo.
  */
 import { Router } from 'express'
 import * as webhooks from '../../controladores/webhooks.js'

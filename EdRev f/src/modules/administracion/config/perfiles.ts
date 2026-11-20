@@ -1,7 +1,4 @@
-/*
- * perfiles — the profiles a user account can have and the labels of the audit types.
- * Covers: RF-40, RF-41.
- */
+/* perfiles — los perfiles que puede tener una cuenta de usuario y los nombres de los tipos de acción de la auditoría. */
 import type { TipoAuditoria } from '@/types/historial'
 import type { Perfil } from '@/types/usuario'
 

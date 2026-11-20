@@ -1,18 +1,17 @@
 /*
- * migracion — loads the rows of the journals' Excel files into the database (RF-42, RF-43, RF-44).
- * One row per article and peer (an article with three peers takes three rows with the same OJS
- * number; an article with no peers takes one). What the closed lists of the system do not
- * recognise is loaded with the datum empty and listed in «Por corregir»; the CONSTANCIA mark is
- * kept so the delivered evaluations without constancia show as pending (RF-43). Every migrated
- * article and evaluation leaves a «migracion» trace (that is how the page tells «migrado» apart).
- * An article whose OJS number already exists in the journal is skipped, so the load can be rerun.
- * A file with both journals mixed has a «Revista» column; `repartirPorRevista` splits its rows.
+ * migracion — carga las filas de los Excel de las revistas en la base de datos. Hay una fila por artículo y par
+ * (un artículo con tres pares ocupa tres filas con el mismo número de OJS; uno sin pares ocupa una). Lo que las
+ * listas cerradas del sistema no reconocen se carga con el dato vacío y se lista en «Por corregir»; la marca de
+ * CONSTANCIA se conserva para que las evaluaciones entregadas sin constancia aparezcan como pendientes. Cada
+ * artículo y evaluación migrados dejan una huella «migracion» (así distingue la página lo «migrado»).
+ * Un artículo cuyo número de OJS ya existe en la revista se omite, así que la carga se puede repetir.
+ * Un archivo con las dos revistas mezcladas trae una columna «Revista»; `repartirPorRevista` separa sus filas.
  */
 import type { Cliente } from '../db.js'
 import { auditar } from '../lib/auditoria.js'
 import { CORREO_VALIDO, sinTildes } from '../lib/http.js'
 
-/** Normalised column names the loader understands, with the headings the Excel may use. */
+/** Nombres de columna normalizados que entiende el cargador, con los encabezados que puede traer el Excel. */
 const ALIAS: Record<string, string[]> = {
   numero_ojs: ['numero_ojs', 'n_ojs', 'no_ojs', 'ojs', 'solicitud', 'numero'],
   titulo: ['titulo', 'titulo_del_articulo', 'articulo'],
@@ -51,7 +50,7 @@ export interface FilaNormal {
   constancia: string
 }
 
-/** The row with its headings mapped to the loader's names; unknown headings are ignored. */
+/** La fila con sus encabezados traducidos a los nombres del cargador; los encabezados desconocidos se ignoran. */
 export function normalizarFila(fila: FilaCruda): FilaNormal {
   const porNombre = new Map(Object.entries(fila).map(([k, v]) => [normalizar(k), v]))
   const dato = (campo: keyof FilaNormal): string => {
@@ -108,7 +107,7 @@ const CONCEPTOS: Record<string, string> = {
 }
 const SI = ['si', 'x', '1', 'true', 'emitida', 'entregada', 'enviada']
 
-/** DD/MM/YYYY or YYYY-MM-DD; anything else is no date. */
+/** DD/MM/AAAA o AAAA-MM-DD; cualquier otra cosa no es una fecha. */
 export function fechaDe(t: string): string | null {
   const iso = /^(\d{4})-(\d{2})-(\d{2})/.exec(t)
   const lat = /^(\d{1,2})[/.-](\d{1,2})[/.-](\d{4})$/.exec(t)
@@ -134,7 +133,7 @@ async function existeOCrea(c: Cliente, sql: string, valores: unknown[], crear: s
   return { id: creado.rows[0]?.id ?? 0, nuevo: true }
 }
 
-/** Loads the rows of one journal. `usuario` is who runs the load (null: the system). */
+/** Carga las filas de una revista. `usuario` es quien ejecuta la carga (null: el sistema). */
 export async function migrarFilas(
   c: Cliente,
   revista: number,
@@ -244,7 +243,7 @@ export async function migrarFilas(
 
 const ALIAS_REVISTA = ['revista', 'journal', 'revista_del_articulo']
 
-/** The journal a row says it belongs to (1 REEP, 2 IRE), by its sigla or its name; null if unclear. */
+/** La revista a la que dice pertenecer una fila (1 REEP, 2 IRE), por su sigla o su nombre; null si no está claro. */
 export function revistaDeFila(fila: FilaCruda): number | null {
   const porNombre = new Map(Object.entries(fila).map(([k, v]) => [normalizar(k), v]))
   const valor = limpio(texto(ALIAS_REVISTA.map((a) => porNombre.get(a)).find((v) => v !== undefined && v !== null)))
@@ -254,7 +253,7 @@ export function revistaDeFila(fila: FilaCruda): number | null {
   return null
 }
 
-/** Splits the rows of a file with both journals mixed; the rows with no clear journal are counted apart. */
+/** Separa las filas de un archivo con las dos revistas mezcladas; las filas sin una revista clara se cuentan aparte. */
 export function repartirPorRevista(filas: FilaCruda[]): { porRevista: Map<number, FilaCruda[]>; sinRevista: number } {
   const porRevista = new Map<number, FilaCruda[]>()
   let sinRevista = 0

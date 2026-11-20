@@ -1,9 +1,8 @@
 /*
- * UsuariosPage — Usuarios (/administracion/usuarios): the accounts of the dependency with profile,
- * last access and status; create (the user receives a link to define the password), edit,
- * disable, delete (only an account without activity in the history), and send the link again to an
- * account that has not entered.
- * Administradora only. Covers: RF-40, HU-29, RNF-05.
+ * UsuariosPage — Usuarios (/administracion/usuarios): las cuentas de la dependencia con perfil, último ingreso y
+ * estado; crear (el usuario recibe un enlace para definir su contraseña), editar, inhabilitar, eliminar (solo una
+ * cuenta sin actividad en el historial) y enviar de nuevo el enlace a una cuenta que no ha ingresado.
+ * Solo para la Administradora.
  */
 import { useState } from 'react'
 import { UsuarioModal } from '../components/UsuarioModal'

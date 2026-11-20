@@ -1,6 +1,6 @@
 /*
- * EstadoConsulta — renders the loading, error (with retry) or content state of a server query,
- * so every screen handles the three states the same way. Covers: RNF-01, RNF-11.
+ * EstadoConsulta — muestra el estado de carga, de error (con reintento) o el contenido de una consulta al
+ * servidor, para que todas las pantallas manejen los tres estados igual.
  */
 import type { ReactNode } from 'react'
 import { Alerta } from './Alerta'
@@ -10,7 +10,7 @@ export interface EstadoConsultaProps {
   cargando: boolean
   error: boolean
   onReintentar: () => void
-  /** What is being loaded, for the messages ("el artículo", "el listado"). */
+  /** Qué se está cargando, para los mensajes («el artículo», «el listado»). */
   descripcion: string
   children: ReactNode
 }

@@ -1,6 +1,6 @@
 /*
- * errores — turns an API failure into a sentence for the user: the server's own message when it
- * sent one (409/422 explain what rule was broken), otherwise the given fallback.
+ * errores — convierte una falla de la API en una frase para el usuario: el mensaje del propio servidor cuando lo
+ * envió (los 409 y 422 explican qué regla se incumplió) y, si no, el mensaje de respaldo que se indique.
  */
 import { ErrorApi } from './cliente'
 

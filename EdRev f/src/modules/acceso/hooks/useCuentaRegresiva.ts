@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 
-/** Counts down once per second from `inicial`; `reiniciar` restarts it. */
+/** Cuenta hacia atrás una vez por segundo desde `inicial`; `reiniciar` la reinicia. */
 export function useCuentaRegresiva(inicial: number) {
   const [segundos, setSegundos] = useState(Math.max(0, Math.ceil(inicial)))
   const activa = segundos > 0

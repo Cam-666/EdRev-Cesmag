@@ -1,9 +1,8 @@
 /*
- * pares (servicio) — the base of peers, common to both journals (RF-12): the list with filters
- * (RF-14), the areas and universities already written (RF-13), the record with its history in both
- * journals (RF-18), registration (a peer already in the base is refused and pointed out, a blocked
- * one is reported as such), edition, block and unblock (RF-15, RF-16). A block applies to both
- * journals.
+ * pares (servicio) — la base de pares, común a las dos revistas: el listado con filtros, las áreas y
+ * universidades ya escritas, la ficha con su historial en las dos revistas, el registro (un par que ya está en
+ * la base se rechaza y se señala; si está bloqueado, se informa), la edición, el bloqueo y el desbloqueo.
+ * Un bloqueo vale para las dos revistas.
  */
 import { pool, type Cliente } from '../db.js'
 import { auditar } from '../lib/auditoria.js'
@@ -43,9 +42,9 @@ export async function parPorId(id: number): Promise<FilaPar> {
   return rows[0]
 }
 
-// ----------------------------------------------------------------------------- spellings
+// ----------------------------------------------------------------------------- escrituras
 
-/** Comparison key of a free text: without accents, case or repeated spaces ("CESMAG" = "Cesmag"). */
+/** Clave para comparar un texto libre: sin tildes, mayúsculas ni espacios repetidos ("CESMAG" = "Cesmag"). */
 export function claveTexto(texto: string): string {
   return sinTildes(texto).replace(/\s+/g, ' ').trim()
 }
@@ -55,7 +54,7 @@ interface FormaEscrita {
   n: number
 }
 
-/** Among the spellings of the same text, the most used one; on a tie, the one that has capitals. */
+/** Entre las escrituras del mismo texto, la más usada; si empatan, la que tiene mayúsculas. */
 export function mejorForma(formas: FormaEscrita[]): string {
   const conMayuscula = (t: string) => (/[A-ZÁÉÍÓÚÑ]/.test(t) ? 1 : 0)
   return [...formas].sort(
@@ -72,14 +71,14 @@ async function formasDe(c: Cliente, columna: Columna): Promise<FormaEscrita[]> {
   return rows
 }
 
-/** The text as the base already spells it: "cesmag" is stored as the existing "Cesmag". */
+/** El texto tal como la base ya lo escribe: "cesmag" se guarda como el "Cesmag" que ya existe. */
 async function formaCanonica(c: Cliente, columna: Columna, texto: string): Promise<string> {
   const limpio = texto.trim().replace(/\s+/g, ' ')
   const iguales = (await formasDe(c, columna)).filter((f) => claveTexto(f.valor) === claveTexto(limpio))
   return iguales.length > 0 ? mejorForma(iguales) : limpio
 }
 
-/** The values of a column without duplicates that differ only in case or accents. */
+/** Los valores de una columna sin duplicados que solo se diferencian en mayúsculas o tildes. */
 async function formasUnicas(c: Cliente, columna: Columna): Promise<string[]> {
   const grupos = new Map<string, FormaEscrita[]>()
   for (const f of await formasDe(c, columna)) {
@@ -92,7 +91,7 @@ async function formasUnicas(c: Cliente, columna: Columna): Promise<string[]> {
 export const areasRegistradas = () => formasUnicas(pool, 'area')
 export const universidadesRegistradas = () => formasUnicas(pool, 'universidad')
 
-// ----------------------------------------------------------------------------- list and record
+// ----------------------------------------------------------------------------- listado y ficha
 
 export interface FiltrosPares {
   q: string
@@ -150,7 +149,7 @@ export async function listarPares(f: FiltrosPares) {
   }
 }
 
-/** The record of a peer with its participations in both journals (RF-18). */
+/** La ficha de un par con sus participaciones en las dos revistas. */
 export async function fichaDePar(id: number) {
   const par = await parPorId(id)
   const { rows } = await pool.query(
@@ -179,7 +178,7 @@ export async function fichaDePar(id: number) {
   }
 }
 
-// ----------------------------------------------------------------------------- registration
+// ----------------------------------------------------------------------------- registro
 
 interface ExistentePar {
   id_par: number
@@ -194,7 +193,7 @@ const MOTIVO_BLOQUEO: Record<string, string> = {
   'no-participa': 'manifestó que no desea participar',
 }
 
-/** The sentence shown when the person being registered is already in the common base. */
+/** La frase que se muestra cuando la persona que se registra ya está en la base común. */
 function avisoDeParExistente(p: ExistentePar): string {
   if (p.motivo_bloqueo) {
     const desde = p.fecha_bloqueo ? ` desde el ${iso(p.fecha_bloqueo)?.slice(0, 10)}` : ''
@@ -210,10 +209,10 @@ function avisoDeParExistente(p: ExistentePar): string {
   )
 }
 
-/** Registers a peer in the common base (`revista` is where it was registered); used by the base and by «candidato nuevo». */
+/** Registra un par en la base común (`revista` es donde se registró); lo usan la base de pares y el «candidato nuevo». */
 export async function registrarPar(cliente: Cliente, revista: number, usuario: number, d: DatosPar): Promise<FilaPar> {
-  // The same person must not be registered twice: the e-mail is unique, and the name counts too
-  // (the other data may vary). A blocked peer is reported as such.
+  // La misma persona no debe registrarse dos veces: el correo es único y el nombre también cuenta (los demás
+  // datos pueden variar). Un par bloqueado se informa como tal.
   const existentes = await cliente.query<ExistentePar>(
     'SELECT id_par, nombre, correo, motivo_bloqueo, fecha_bloqueo FROM par_evaluador',
   )

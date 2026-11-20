@@ -1,9 +1,8 @@
 /*
- * MSW handlers for the constancias of a journal: pending and issued lists, preview rendered from
- * the template, issue (generates the document and sends it attached to the thank-you mail), issue
- * all pending, and reissue. Each journal uses its own thank-you and constancia templates in use
- * (with its PDF background). Simulates the PDF and the mail; no consecutive number is created.
- * Covers: RF-30..RF-34, RNF-19. Issuing is Administradora-only (RNF-05).
+ * Manejadores MSW de las constancias de una revista: listas de pendientes y emitidas, vista previa armada con la
+ * plantilla, emitir (genera el documento y lo envía adjunto al correo de agradecimiento), emitir todas las
+ * pendientes y volver a emitir. Cada revista usa sus propias plantillas de agradecimiento y de constancia en
+ * uso. Simulan el PDF y el correo; no se crea consecutivo. Emitir es solo de la Administradora.
  */
 import { http, HttpResponse } from 'msw'
 import { configuracion, plantillaEnUso } from '../db'
@@ -17,12 +16,12 @@ import type { EstadoCorreo } from '@/types/historial'
 import type { Constancia } from '@/types/par'
 import type { Revista } from '@/types/revista'
 
-/** Addresses ending like this bounce (demo of the failed-send flow, RF-27). */
+/** Las direcciones que terminan así rebotan (demostración del flujo de envío fallido). */
 const DOMINIO_QUE_REBOTA = '@invalido.test'
 
 /**
- * Every delivered evaluation has a constancia record: one that never got it (RF-34) is created
- * as pending, so the "pendientes" list never misses a case.
+ * Toda evaluación entregada tiene un registro de constancia: la que nunca lo tuvo se crea como pendiente, así
+ * la lista de «pendientes» no deja de mostrar ningún caso.
  */
 export function asegurarConstancias(base: SeedRevista): void {
   for (const a of base.asignaciones) {
@@ -63,7 +62,7 @@ export function filasDe(base: SeedRevista): FilaConstancia[] {
   })
 }
 
-/** The journal's constancia template in use, written over its PDF background (RF-30). */
+/** La plantilla de constancia en uso de la revista, con sus imágenes. */
 function vistaDe(revista: Revista, fila: FilaConstancia): VistaConstancia {
   const nombreRevista = NOMBRE_EN_CORREO[revista]
   const plantilla = plantillaEnUso(revista, 'constancia')
@@ -71,7 +70,7 @@ function vistaDe(revista: Revista, fila: FilaConstancia): VistaConstancia {
   return {
     universidad: UNIVERSIDAD_MEMBRETE,
     revista: nombreRevista,
-    // The text without its formatting marks; the PDF carries the alignment, the bold and the images.
+    // El texto sin sus marcas de formato; el PDF lleva la alineación, la negrita y las imágenes.
     cuerpo: textoPlano(
       rellenar(plantilla.cuerpo, {
         par: fila.par.nombre,
@@ -91,7 +90,7 @@ function vistaDe(revista: Revista, fila: FilaConstancia): VistaConstancia {
   }
 }
 
-/** Generates the constancia and sends the thank-you mail with it attached (RF-30, RF-31). */
+/** Genera la constancia y envía el correo de agradecimiento con ella adjunta. */
 function emitir(
   base: SeedRevista,
   revista: Revista,
@@ -148,7 +147,7 @@ function emitir(
   return emitida ? { constancia: emitida, correo: { estado, destinatario: fila.par.correo } } : null
 }
 
-/** Body of an emit request; the thank-you text is included unless it says otherwise. */
+/** Cuerpo de una petición de emitir; el texto de agradecimiento se incluye salvo que diga lo contrario. */
 async function opcionesDe(request: Request): Promise<{ conAgradecimiento: boolean }> {
   const cuerpo = (await request.json().catch(() => ({}))) as { conAgradecimiento?: boolean }
   return { conAgradecimiento: cuerpo.conAgradecimiento !== false }
@@ -179,7 +178,7 @@ export const handlersConstancias = [
     return HttpResponse.json(vistaDe(c.revista, fila))
   }),
 
-  // Registered before the ":id" route so "emitir-pendientes" is not read as an id.
+  // Se registra antes de la ruta ":id" para que "emitir-pendientes" no se lea como un id.
   http.post('*/api/:revista/constancias/emitir-pendientes', async ({ params, request }) => {
     const c = contexto(params, request, 'emitir-constancia')
     if (!c.ok) return c.respuesta
@@ -211,7 +210,7 @@ export const handlersConstancias = [
     const constancia = c.base.constancias.find((k) => k.id === params.id)
     if (!constancia) return error(404, 'Constancia no encontrada')
     if (constancia.estado === 'emitida') return error(409, 'La constancia ya fue emitida')
-    // The constancia is issued once the evaluation is complete: concept and date registered.
+    // La constancia se emite cuando la evaluación está completa: concepto y fecha registrados.
     const evaluacion = c.base.asignaciones.find((a) => a.id === constancia.asignacionId)
     if (evaluacion && !evaluacion.concepto) {
       return error(

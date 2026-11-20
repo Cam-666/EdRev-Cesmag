@@ -3,7 +3,7 @@ import { articulosDeAutor, obtenerAutor, registrarAutor } from '../services/auto
 import { useRevistaDatos } from '@/lib/revista/useRevista'
 import type { DatosAutor } from '@/types/autor'
 
-/** One author of the common directory (RF-11). */
+/** Un autor del directorio común. */
 export function useAutor(id: string) {
   const revista = useRevistaDatos()
   return useQuery({
@@ -12,7 +12,7 @@ export function useAutor(id: string) {
   })
 }
 
-/** Articles of one author in both journals (RF-11). */
+/** Artículos de un autor en las dos revistas. */
 export function useArticulosDeAutor(id: string) {
   const revista = useRevistaDatos()
   return useQuery({

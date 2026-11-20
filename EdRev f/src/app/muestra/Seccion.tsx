@@ -1,6 +1,4 @@
-/*
- * Seccion — titled block of the design-system showcase (development only).
- */
+/* Seccion — bloque con título del muestrario del sistema de diseño (solo desarrollo). */
 import type { ReactNode } from 'react'
 
 export interface SeccionProps {

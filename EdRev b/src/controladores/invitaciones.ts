@@ -1,6 +1,6 @@
 /*
- * invitaciones (controlador) — the public answers of a peer from the buttons of the mail; the rules
- * are in servicios/invitacionesPar.
+ * invitaciones (controlador) — las respuestas públicas de un par desde los botones del correo. Las reglas
+ * están en servicios/invitacionesPar.
  */
 import type { Request, Response } from 'express'
 import * as invitaciones from '../servicios/invitacionesPar.js'

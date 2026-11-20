@@ -1,16 +1,15 @@
 /*
- * comite — rules of the initial committee review shared by the screens and the mock API, so
- * what the page offers and what the server accepts never disagree.
- * - Rounds are registered while the article is being screened (Postulado / En revisión) and has
- *   no peers; there is no limit of rounds (RF-06).
- * - Only «Aprobado» in the most recent round enables the assignment of peers (RF-19), and only
- *   while the article is «En revisión» or «En evaluación». An article taken up again after being
- *   archived comes back as «Postulado»: it must go through the committee again, so it can register
- *   a new round even though it had peers, and cannot be assigned peers until that round approves it.
- * - The committee chooses the result of a round; the page only suggests one from the
- *   anti-plagiarism report and the observations (see resultadoSugerido). No result closes the process.
- * - The article can change journal at any stage, as many times as needed (RF-02, RF-07).
- * Covers: RF-02, RF-06, RF-07, RF-19, HU-03, HU-04, HU-13.
+ * comite — reglas de la revisión inicial del comité que comparten las pantallas y la API simulada, para que lo
+ * que ofrece la página y lo que acepta el servidor nunca se contradigan.
+ * - Las rondas se registran mientras el artículo se está revisando (Postulado / En revisión) y no tiene pares;
+ *   no hay límite de rondas.
+ * - Solo «Aprobado» en la ronda más reciente permite asignar pares, y solo mientras el artículo está «En
+ *   revisión» o «En evaluación». Un artículo retomado tras archivarse vuelve como «Postulado»: debe pasar de
+ *   nuevo por el comité, así que puede registrar una ronda aunque ya tuviera pares, y no se le asignan pares
+ *   hasta que esa ronda lo apruebe.
+ * - El comité elige el resultado de una ronda; la página solo sugiere uno a partir del reporte antiplagio y de
+ *   las observaciones (ver resultadoSugerido). Ningún resultado cierra el proceso.
+ * - El artículo puede cambiar de revista en cualquier etapa, las veces que haga falta.
  */
 import type { EstadoArticulo, ResultadoRonda, RondaComite } from '@/types/articulo'
 
@@ -22,12 +21,10 @@ interface ArticuloEnComite {
 const EN_COMITE: readonly EstadoArticulo[] = ['postulado', 'en-revision']
 
 /**
- * The result the page suggests for a round of the initial committee review (RF-06); the decision is
- * the committee's. Matches above the limit → Rechazado (not publishable; the article still stays in
- * review); within the limit and no observations →
- * Aprobado (publishable); within the limit with observations → Requiere ajustes (publishable with
- * observations: the author corrects and another round is registered). The AI percentage never
- * decides.
+ * El resultado que la página sugiere para una ronda de la revisión inicial; la decisión es del comité.
+ * Coincidencias sobre el límite → Rechazado (no publicable; el artículo igual sigue en revisión); dentro del
+ * límite y sin observaciones → Aprobado (publicable); dentro del límite con observaciones → Requiere ajustes
+ * (publicable con observaciones: el autor corrige y se registra otra ronda). El porcentaje de IA nunca decide.
  */
 export function resultadoSugerido(
   coincidencias: number,
@@ -42,7 +39,7 @@ export function ultimaRonda(articulo: ArticuloEnComite): RondaComite | null {
   return articulo.rondasComite[articulo.rondasComite.length - 1] ?? null
 }
 
-/** An article «Postulado» that already has rounds was taken up again and must be reviewed anew. */
+/** Un artículo «Postulado» que ya tiene rondas fue retomado y debe revisarse de nuevo. */
 export function requiereNuevaRevision(articulo: ArticuloEnComite): boolean {
   return articulo.estado === 'postulado' && articulo.rondasComite.length > 0
 }

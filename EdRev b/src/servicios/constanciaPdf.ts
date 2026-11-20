@@ -1,11 +1,9 @@
 /*
- * constanciaPdf — the constancia in PDF (RF-30): the text of the journal's constancia template in
- * use, with its alignment and bold, between the template's header and footer images, and with the
- * signature image where the {{firma}} marker is (a click on it opens an email to the signer when
- * the template has one, as in the constancias the editorial already issues). Besides the peer and the article, the text can use
- * the journal's ISSN and indexations (set in Configuración), the date and the year. No sequence
- * number. Regenerated every time it is sent or downloaded, so it always carries the current
- * indexations (RF-32).
+ * constanciaPdf — la constancia en PDF: el texto de la plantilla de constancia en uso de la revista, con su
+ * alineación y su negrita, entre las imágenes de encabezado y de pie de página de la plantilla, y con la imagen
+ * de la firma donde está la marca {{firma}}. Además del par y el artículo, el texto puede usar el ISSN y las
+ * indexaciones de la revista (se registran en Configuración), la fecha y el año. No lleva consecutivo.
+ * Se genera de nuevo cada vez que se envía o se descarga, así siempre lleva las indexaciones actuales.
  */
 import { PDFDocument, StandardFonts, rgb, type PDFFont, type PDFImage, type PDFPage } from 'pdf-lib'
 import type { Cliente } from '../db.js'
@@ -22,7 +20,6 @@ export interface PlantillaArchivo {
   encabezado: Buffer | null
   pie: Buffer | null
   firma: Buffer | null
-  /** Email the signature links to; null leaves the signature without a link. */
 }
 
 const MESES = [
@@ -35,7 +32,7 @@ export function fechaLarga(d = new Date()): string {
   return `${d.getDate()} de ${MESES[d.getMonth()]} de ${d.getFullYear()}`
 }
 
-/** «A, B, C y D» is written by the Administradora as one text; it goes in as it is. */
+/** «A, B, C y D» lo escribe la Administradora como un solo texto; entra tal cual. */
 export interface ValoresConstancia {
   revista: string
   par: string
@@ -45,7 +42,7 @@ export interface ValoresConstancia {
 }
 
 export function valoresDe(v: ValoresConstancia, fecha = new Date()): Record<string, string> {
-  // REVISTA and PAR are the same texts in capitals, for headings.
+  // REVISTA y PAR son los mismos textos en mayúsculas, para los títulos.
   return { ...v, REVISTA: v.revista.toUpperCase(), PAR: v.par.toUpperCase(), fecha: fechaLarga(fecha), anio: String(fecha.getFullYear()) }
 }
 
@@ -60,11 +57,11 @@ async function incrustar(doc: PDFDocument, datos: Buffer | null): Promise<PDFIma
   try {
     return datos[0] === 0x89 ? await doc.embedPng(datos) : await doc.embedJpg(datos)
   } catch {
-    return null // a damaged image must not stop the constancia
+    return null // una imagen dañada no debe impedir que se genere la constancia
   }
 }
 
-/** A word: its pieces (a bold piece stuck to a normal one, like «título», stays one word). */
+/** Una palabra: sus trozos (un trozo en negrita pegado a uno normal, como «título», sigue siendo una palabra). */
 interface Palabra {
   partes: Array<{ texto: string; negrita: boolean; ancho: number }>
   ancho: number
@@ -80,7 +77,7 @@ export async function dibujarConstancia(p: PlantillaArchivo, valores: Record<str
   const [ancho, alto] = A4
   const anchoTexto = ancho - MARGEN_LATERAL * 2
 
-  /** Fits an image in a box keeping its proportion. */
+  /** Ajusta una imagen a una caja conservando su proporción. */
   const ajustar = (img: PDFImage, maxAncho: number, maxAlto: number) => {
     const k = Math.min(maxAncho / img.width, maxAlto / img.height, 1)
     return { w: img.width * k, h: img.height * k }
@@ -110,7 +107,7 @@ export async function dibujarConstancia(p: PlantillaArchivo, valores: Record<str
   const medir = (t: string, b: boolean) => fuente(b).widthOfTextAtSize(t, TAMANO)
   const espacio = medir(' ', false)
 
-  /** Draws one line at the current y, aligned; `ultima` lines are never stretched. */
+  /** Dibuja una línea en la altura actual, alineada; las líneas `ultima` (final de párrafo) nunca se estiran al justificar. */
   const dibujarLinea = (palabras: Palabra[], alineacion: Alineacion, ultima: boolean) => {
     if (y - TAMANO < abajo) nuevaPagina()
     const suma = palabras.reduce((s, w) => s + w.ancho, 0)
@@ -151,7 +148,7 @@ export async function dibujarConstancia(p: PlantillaArchivo, valores: Record<str
       continue
     }
     for (const linea of parrafo.lineas) {
-      // Words of the line with their bold, then wrapped to the width of the text.
+      // Palabras de la línea con su negrita, y luego se parten al ancho del texto.
       const palabras: Palabra[] = []
       let abierta: Palabra | null = null
       for (const t of linea) {
@@ -191,7 +188,7 @@ export async function dibujarConstancia(p: PlantillaArchivo, valores: Record<str
     }
     y -= ENTRE_PARRAFOS
   }
-  // Without the {{firma}} marker the signature image still shows: at the end of the text, centered.
+  // Sin la marca {{firma}} la imagen de la firma se muestra igual: al final del texto, centrada.
   if (firma && !firmaPuesta) {
     const m = ajustar(firma, 170, 60)
     if (y - m.h < abajo) nuevaPagina()
@@ -201,7 +198,7 @@ export async function dibujarConstancia(p: PlantillaArchivo, valores: Record<str
 }
 
 function rellenarTexto(texto: string, valores: Record<string, string>): string {
-  // {{firma}} stays: it marks where the signature image goes.
+  // {{firma}} se conserva: marca dónde va la imagen de la firma.
   return texto.replace(/\{\{(\w+)\}\}/g, (m, k: string) => (k === 'firma' ? m : (valores[k] ?? '')))
 }
 
@@ -231,7 +228,7 @@ export async function generarConstancia(c: Cliente, d: DatosConstancia): Promise
   )
 }
 
-/** The template as it is now, with sample data: to see how the constancia will look. */
+/** La plantilla como está ahora, con datos de ejemplo: para ver cómo quedará la constancia. */
 export async function vistaPrevia(c: Cliente, idPlantilla: number, cuerpo?: string): Promise<Uint8Array | null> {
   const { rows } = await c.query<FilaPlantilla>(`${CARGA} WHERE p.id_plantilla = $1`, [idPlantilla])
   const f = rows[0]

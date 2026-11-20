@@ -1,5 +1,5 @@
 /*
- * Pruebas del marco institucional de los correos (RF-24, RF-25, RF-31).
+ * Pruebas del marco institucional de los correos.
  */
 import { writeFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'

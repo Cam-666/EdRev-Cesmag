@@ -1,6 +1,6 @@
 /*
- * TarjetaAcceso — white 440 px card (radius 12, elevated shadow) shared by the three access
- * screens: coat of arms + "EdRev Cesmag" wordmark, page title (h1) and subtitle. Covers: HU-28.
+ * TarjetaAcceso — tarjeta blanca de 440 px (radio 12, sombra elevada) que comparten las tres pantallas de
+ * acceso: escudo y nombre «EdRev Cesmag», título de la página (h1) y subtítulo.
  */
 import type { ReactNode } from 'react'
 import { Escudo } from '@/components/common/Escudo'

@@ -1,6 +1,6 @@
 /*
- * Respuesta del par desde el correo — public routes (the peer has no account). The routes only say
- * where each request goes; the rules are in servicios/invitacionesPar. RF-22, RF-15, RF-24.
+ * Respuesta del par desde el correo — rutas públicas (el par no tiene cuenta). Las rutas solo dicen a dónde va
+ * cada petición; las reglas están en servicios/invitacionesPar.
  */
 import { Router } from 'express'
 import * as invitaciones from '../../controladores/invitaciones.js'

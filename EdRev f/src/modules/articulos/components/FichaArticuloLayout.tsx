@@ -1,9 +1,8 @@
 /*
- * FichaArticuloLayout — article sheet shell: header + five routed tabs (Resumen, Revisión del
- * comité, Autores, Pares y evaluación, Historial de correos y cambios) as RF-36 lists them. «Cambiar de revista» is offered
- * at any stage of the article (RF-07). Each datum appears in a single tab. It loads the
- * article once and hands it to the tabs through the outlet context.
- * Covers: RF-36, HU-26 (criterion 3), RF-01/RF-04 (edit).
+ * FichaArticuloLayout — marco de la ficha del artículo: encabezado y cinco pestañas enrutadas (Resumen, Revisión
+ * del comité, Autores, Pares y evaluación, Historial de correos y cambios). «Cambiar de revista» se ofrece en
+ * cualquier etapa del artículo. Cada dato aparece en una sola pestaña. Carga el artículo una vez y se lo entrega
+ * a las pestañas mediante el contexto del outlet.
  */
 import { BotonVolver } from '@/components/common/BotonVolver'
 import { useState } from 'react'
@@ -26,10 +25,10 @@ import { useRevista } from '@/lib/revista/useRevista'
 import type { EstadoArticulo } from '@/types/articulo'
 import type { ResultadoPares } from '@/types/par'
 
-/** States whose process is still open (RF-08). */
+/** Estados cuyo proceso sigue abierto. */
 const ABIERTOS: readonly EstadoArticulo[] = ['postulado', 'en-revision', 'en-evaluacion']
 
-/** The result of the peers is news only while the article is in the state it led to. */
+/** El resultado de los pares solo es novedad mientras el artículo esté en el estado al que condujo. */
 function muestraResultado(resultado: ResultadoPares, estado: EstadoArticulo): boolean {
   if (resultado === 'no-publicable') return estado === 'rechazado'
   if (resultado === 'publicable-con-modificaciones') return estado === 'postulado'

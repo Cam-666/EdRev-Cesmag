@@ -1,10 +1,9 @@
 /*
- * InicioGeneralPage — Inicio (/inicio): summary of both journals and what is pending in each.
- * It is one of the few cross-journal screens (with Informes and Auditoría): it shows both
- * journals side by side, never mixed. Each card is white with a band in its journal's own gradient
- * (data-revista) and its figures in soft neutral blocks, so both cards weigh the same and the colour
- * only marks which journal is which. Every case opens inside its own journal.
- * Covers: RF-37, HU-25.
+ * InicioGeneralPage — Inicio (/inicio): el resumen de las dos revistas y lo que está pendiente en cada una. Es una
+ * de las pocas pantallas de las dos revistas (con Informes y Auditoría): muestra las dos lado a lado, nunca
+ * mezcladas. Cada tarjeta es blanca con una franja del degradado propio de su revista (data-revista) y sus cifras
+ * en bloques neutros suaves, así las dos pesan igual y el color solo marca cuál es cuál. Cada caso se abre dentro
+ * de su propia revista.
  */
 import { useResumen } from '../hooks/usePanel'
 import { EnlaceBoton } from '@/components/common/EnlaceBoton'

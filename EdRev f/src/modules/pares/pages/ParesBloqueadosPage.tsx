@@ -1,8 +1,7 @@
 /*
- * ParesBloqueadosPage — Pares bloqueados (/:revista/pares/bloqueados): peers that receive no new
- * invitations, with the reason (no answer after the 2nd attempt, or does not want to take part)
- * and the date. Only the Administradora can unblock.
- * Covers: RF-15, RF-16, HU-10, HU-11.
+ * ParesBloqueadosPage — Pares bloqueados (/:revista/pares/bloqueados): los pares que no reciben invitaciones
+ * nuevas, con el motivo (no respondió tras el 2.º intento o no desea participar) y la fecha. Solo la
+ * Administradora puede desbloquear.
  */
 import { BotonVolver } from '@/components/common/BotonVolver'
 import { useState } from 'react'

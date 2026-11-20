@@ -1,7 +1,6 @@
 /*
- * MSW handlers for the migrated records to correct (RF-44, HU-32): the list of each journal and
- * the correction, which writes the chosen value in the record, removes it from the list and leaves
- * a trace in the history. Both profiles (RNF-05).
+ * Manejadores MSW de los registros migrados por corregir: el listado de cada revista y la corrección, que escribe
+ * el valor elegido en el registro, lo quita de la lista y deja una huella en el historial. Para ambos perfiles.
  */
 import { http, HttpResponse } from 'msw'
 import { ahoraIso, contexto, error } from './util'

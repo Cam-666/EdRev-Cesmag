@@ -1,9 +1,9 @@
 /*
- * respuestas — the answer of a peer to an invitation (RF-22, RF-15), shared by the screen (the
- * Administradora / Auxiliar registers it) and by the buttons of the invitation mail (the peer
- * answers by itself). «Acepto» takes a place (the article goes to «En evaluación»); «No acepto
- * esta invitación» only closes that invitation; «No desea participar más» also blocks the peer in
- * the common base; «Sin respuesta» is applied by the system after the second attempt (RF-29).
+ * respuestas — la respuesta de un par a una invitación, que comparten la pantalla (la registra la
+ * Administradora o la Auxiliar) y los botones del correo de invitación (el par responde por sí mismo).
+ * «Acepto» ocupa un lugar (el artículo pasa a «En evaluación»); «No acepto esta invitación» solo cierra esa
+ * invitación; «No desea participar más» además bloquea al par en la base común; «Sin respuesta» lo aplica el
+ * sistema tras el segundo intento.
  */
 import { config } from '../config.js'
 import type { Cliente } from '../db.js'
@@ -28,8 +28,8 @@ const ETIQUETA: Record<Respuesta, string> = {
 }
 
 /**
- * Registers the answer. `usuario` is who registers it; null when the peer answered by mail (the
- * history then says so). Throws 409 when the invitation was already answered.
+ * Registra la respuesta. `usuario` es quien la registra; null cuando el par respondió por correo (el historial lo
+ * dice). Lanza 409 si la invitación ya fue respondida.
  */
 export async function aplicarRespuesta(
   c: Cliente,
@@ -49,7 +49,7 @@ export async function aplicarRespuesta(
       throw new ErrorHttp(409, 'El artículo ya tiene tres pares que aceptaron')
     }
     await c.query("UPDATE evaluacion SET estado_par = 'acepto' WHERE id_evaluacion = $1", [id])
-    // RF-22: the article is «En evaluación» when the first peer accepts.
+    // El artículo pasa a «En evaluación» cuando acepta el primer par.
     await c.query(
       "UPDATE articulo SET estado = 'en-evaluacion' WHERE id_articulo = $1 AND estado = 'en-revision'",
       [e.id_articulo],

@@ -1,7 +1,7 @@
 /*
- * TablaCorreosRevista — the journal's sent-mail log: type, recipient, article, date and result
- * (symbol + text, never color alone). A bounced mail offers "Corregir" (fix the address and
- * resend), a failed or queued one "Reintentar", the rest "Ver". Covers: RF-26, RF-27, RF-28, HU-18, HU-20, RNF-12.
+ * TablaCorreosRevista — el registro de correos enviados de la revista: tipo, destinatario, artículo, fecha y
+ * resultado (símbolo y texto, nunca solo color). Un correo rebotado ofrece «Corregir» (corregir la dirección y
+ * reenviar), uno fallido o en cola «Reintentar», los demás «Ver».
  */
 import { ETIQUETA_TIPO_CORREO } from '../config/listas'
 import type { CorreoConArticulo } from '../services/correosService'
@@ -13,7 +13,7 @@ export interface TablaCorreosRevistaProps {
   correos: CorreoConArticulo[]
   cargando: boolean
   vacio: string
-  /** Whether the user may fix and retry (Administradora and Auxiliar). */
+  /** Si el usuario puede corregir y reintentar (Administradora y Auxiliar). */
   puedeReintentar: boolean
   onVer: (correo: CorreoConArticulo) => void
   onCorregir: (correo: CorreoConArticulo) => void

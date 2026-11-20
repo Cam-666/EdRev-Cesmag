@@ -1,6 +1,6 @@
 /*
- * ListaAutoresBorrador — authors chosen so far in the registration form, in order (the first is the main
- * author), each removable. Covers: RF-09, HU-06 (up to seven authors, order kept).
+ * ListaAutoresBorrador — los autores elegidos hasta ahora en el formulario de registro, en orden (el primero es
+ * el autor principal), cada uno con opción de quitarlo.
  */
 import { MAX_AUTORES } from '../config/listas'
 import type { AutorBorrador } from '../hooks/useBorradorArticulo'

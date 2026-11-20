@@ -1,6 +1,6 @@
 /*
- * Pestanas — tablist on Radix Tabs (arrows, Home, End per the WAI-ARIA tabs pattern).
- * Covers: RNF-11; article sheet tabs (RF-36).
+ * Pestanas — lista de pestañas sobre Radix Tabs (flechas, Inicio y Fin según el patrón de pestañas WAI-ARIA).
+ * Se usa en la ficha del artículo.
  */
 import * as Tabs from '@radix-ui/react-tabs'
 import type { ReactNode } from 'react'
@@ -8,7 +8,7 @@ import type { ReactNode } from 'react'
 export interface PestanaDef {
   valor: string
   etiqueta: string
-  /** Optional panel content; omit when the panel is rendered elsewhere (e.g. a router Outlet). */
+  /** Contenido opcional del panel; se omite cuando el panel se dibuja en otro lugar (por ejemplo un Outlet del enrutador). */
   contenido?: ReactNode
 }
 

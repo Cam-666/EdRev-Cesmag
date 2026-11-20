@@ -1,8 +1,8 @@
 /*
- * EntregaModal — marks that a peer delivered the evaluation (done in the OJS, so the mark is
- * manual) with its concept and the date of the evaluation: the constancia is issued only once the
- * evaluation is complete, so both are registered together. Right after saving, the sheet offers to
- * issue the constancia (RF-23). Covers: RF-20, RF-22, RF-23, HU-15, HU-17. Both profiles (RNF-05).
+ * EntregaModal — marca que un par entregó la evaluación (se hace en el OJS, así que la marca es manual) con su
+ * concepto y la fecha de la evaluación: la constancia solo se emite cuando la evaluación está completa, por eso
+ * los dos se registran juntos. Justo después de guardar, la ficha ofrece emitir la constancia.
+ * Para ambos perfiles.
  */
 import { useState } from 'react'
 import { OPCIONES_CONCEPTO } from '../config/listas'
@@ -19,7 +19,7 @@ export interface EntregaModalProps {
   asignacion: AsignacionDetalle
   abierto: boolean
   onCerrar: () => void
-  /** Receives the constancia that can be issued right away. */
+  /** Recibe la constancia que se puede emitir de inmediato. */
   onRegistrada: (constanciaId: string | null) => void
 }
 

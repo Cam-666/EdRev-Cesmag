@@ -1,7 +1,4 @@
-/*
- * useCierrePorInactividad — closes the session after `minutos` without user activity.
- * Covers: RNF-05 (session closes after inactivity), HU-28 (criterion 2).
- */
+/* useCierrePorInactividad — cierra la sesión después de `minutos` sin actividad del usuario. */
 import { useEffect, useRef } from 'react'
 
 const EVENTOS = ['mousemove', 'mousedown', 'keydown', 'scroll', 'touchstart'] as const

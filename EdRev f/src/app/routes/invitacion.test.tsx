@@ -6,7 +6,7 @@ import { montarRuta } from '@/test/montarRuta'
 import type { ArticuloDetalle } from '@/types/articulo'
 import type { ParDetalle } from '@/types/par'
 
-/** A peer of 2026-012 whose invitation is still unanswered, and one that already accepted. */
+/** Un par de 2026-012 cuya invitación sigue sin responder, y uno que ya aceptó. */
 async function asignaciones() {
   const art = await json<ArticuloDetalle>(await llamar('/reep/articulos/2026-012'))
   const invitada = art.asignaciones.find((a) => a.estado === 'invitado' || a.estado === 'segundo-intento')
@@ -21,7 +21,7 @@ describe('answer from the invitation mail (/invitacion)', () => {
     const { user } = montarRuta(`/invitacion?token=${tokenInvitacion(invitada.id, 'acepto')}`)
     expect(await screen.findByRole('heading', { name: 'Aceptar la invitación' })).toBeInTheDocument()
     expect(screen.getAllByText(/Revista Electrónica en Educación y Pedagogía/).length).toBeGreaterThan(0)
-    // Nothing is registered by only opening the link
+    // Con solo abrir el enlace no se registra nada
     const antes = await json<ArticuloDetalle>(await llamar('/reep/articulos/2026-012'))
     expect(antes.asignaciones.find((a) => a.id === invitada.id)?.estado).not.toBe('acepto')
 

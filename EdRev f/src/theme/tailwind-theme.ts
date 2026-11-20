@@ -1,13 +1,13 @@
 /*
- * Tailwind theme built on the CSS variables of ./tokens.css. No raw color values here.
- * Consumed by tailwind.config.ts.
+ * Tema de Tailwind construido sobre las variables CSS de ./tokens.css. Aquí no hay valores de color directos.
+ * Lo consume tailwind.config.ts.
  */
 import type { Config } from 'tailwindcss'
 
 const v = (name: string) => `var(--${name})`
 
 export const tema: NonNullable<Config['theme']> = {
-  // Scale of 4: 4, 8, 12, 16, 20, 24, 32, 40, 48
+  // Escala de 4: 4, 8, 12, 16, 20, 24, 32, 40, 48
   spacing: {
     0: '0px',
     px: '1px',
@@ -108,7 +108,7 @@ export const tema: NonNullable<Config['theme']> = {
     velo: { modal: v('velo-modal'), panel: v('velo-panel') },
   },
   extend: {
-    // fixed layout dimensions from Figma
+    // dimensiones fijas del diseño en Figma
     width: { panel: '240px', acceso: '440px' },
     minWidth: { panel: '240px', 'control-sm': '32px' },
     maxWidth: { acceso: '440px', titulo: v('revista-titulo-ancho') },

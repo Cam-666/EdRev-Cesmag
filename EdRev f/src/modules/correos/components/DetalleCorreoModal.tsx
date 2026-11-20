@@ -1,7 +1,7 @@
 /*
- * DetalleCorreoModal — read-only detail of a logged mail: type, recipient, subject, date and
- * result; for an invitation, also the answer of the peer and how it was given (a button of the
- * mail or registered by a user). Covers: RF-22, RF-26, HU-14, HU-20.
+ * DetalleCorreoModal — detalle de solo lectura de un correo registrado: tipo, destinatario, asunto, fecha y
+ * resultado; para una invitación, también la respuesta del par y cómo se dio (un botón del correo o la registró
+ * un usuario).
  */
 import { ETIQUETA_RESPUESTA_PAR, ETIQUETA_TIPO_CORREO } from '../config/listas'
 import type { CorreoConArticulo } from '../services/correosService'

@@ -1,10 +1,10 @@
 /*
- * Pruebas de administración — RF-12, RF-38, RF-41, RF-45.
+ * Pruebas de administración
  */
 import { describe, expect, it } from 'vitest'
 import { AUXILIAR, como } from './api.js'
 
-describe('plantillas, auditoría, informes y pares por revista (RF-12, RF-38, RF-41, RF-45)', () => {
+describe('plantillas, auditoría, informes y pares por revista', () => {
   it('cada revista tiene sus tres plantillas en uso; se valida el texto', async () => {
     const api = await como()
     const { plantillas } = (await api.get('/plantillas')).body

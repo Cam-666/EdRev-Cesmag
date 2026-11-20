@@ -1,7 +1,4 @@
-/*
- * Casilla — checkbox on Radix Checkbox with a visible label tied by id.
- * Covers: RNF-11; "Mantener la sesión iniciada" (HU-28), data-treatment authorization (RNF-06).
- */
+/* Casilla — casilla de verificación sobre Radix Checkbox, con la etiqueta visible enlazada por id. */
 import * as Checkbox from '@radix-ui/react-checkbox'
 import { useId } from 'react'
 

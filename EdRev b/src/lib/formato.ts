@@ -1,8 +1,9 @@
 /*
- * formato — the light formatting of a template's text, shared by the mail and the constancia PDF.
- * Paragraphs are separated by a blank line. A paragraph may start with [centro], [justificado],
- * [derecha] or [izquierda] (left when absent). **text** is bold. A paragraph that is only
- * {{firma}} becomes the signature image of the constancia. The editor's buttons write this markup.
+ * formato — el formato sencillo del texto de una plantilla, que comparten el correo y el PDF de la constancia.
+ * Los párrafos se separan con una línea en blanco. Un párrafo puede empezar con [centro], [justificado],
+ * [derecha] o [izquierda] (a la izquierda si no tiene). **texto** es negrita. Un párrafo que es solo {{firma}}
+ * se convierte en la imagen de la firma de la constancia. Así se guarda lo que la persona arma en el editor
+ * de la página, que no le muestra estas marcas.
  */
 
 export type Alineacion = 'izquierda' | 'centro' | 'derecha' | 'justificado'
@@ -14,9 +15,9 @@ export interface Tramo {
 
 export interface Parrafo {
   alineacion: Alineacion
-  /** Lines of the paragraph (a single line break inside it starts a new line). */
+  /** Líneas del párrafo (un salto de línea simple dentro del párrafo empieza una línea nueva). */
   lineas: Tramo[][]
-  /** True for the paragraph that is only the {{firma}} marker. */
+  /** Verdadero para el párrafo que es solo la marca {{firma}}. */
   firma: boolean
 }
 
@@ -53,7 +54,7 @@ export function analizar(texto: string): Parrafo[] {
     })
 }
 
-/** The text without the markup, for places that cannot show it. */
+/** El texto sin las marcas, para los lugares que no pueden mostrarlas. */
 export function textoPlano(texto: string): string {
   return analizar(texto)
     .map((p) => p.lineas.map((l) => l.map((t) => t.texto).join('')).join('\n'))
@@ -71,8 +72,8 @@ const CSS_ALINEACION: Record<Alineacion, string> = {
 }
 
 /**
- * The text as HTML for the mail. A paragraph that is only `marca` (the buttons) is put as it is,
- * not wrapped in a paragraph, so the table of buttons stays valid HTML.
+ * El texto como HTML para el correo. Un párrafo que es solo `marca` (los botones) se pone tal cual, sin
+ * envolverlo en un párrafo, para que la tabla de botones siga siendo HTML válido.
  */
 export function aHtml(texto: string, marca?: { marca: string; html: string }): string {
   return analizar(texto)

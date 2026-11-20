@@ -1,7 +1,7 @@
 /*
- * ConceptoModal — registers the concept issued by a peer, chosen from the closed list of the
- * evaluation form (publicable, publicable con modificaciones sustanciales, no publicable). Each
- * peer has its own concept. Covers: RF-20, HU-14. Both profiles (RNF-05).
+ * ConceptoModal — registra el concepto que emitió un par, elegido de la lista cerrada del formato de evaluación
+ * (publicable, publicable con modificaciones sustanciales, no publicable). Cada par tiene su propio concepto.
+ * Para ambos perfiles.
  */
 import { useState } from 'react'
 import { OPCIONES_CONCEPTO } from '../config/listas'

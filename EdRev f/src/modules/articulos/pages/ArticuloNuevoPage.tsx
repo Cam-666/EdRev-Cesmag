@@ -1,10 +1,9 @@
 /*
- * ArticuloNuevoPage — Registrar artículo (/:revista/articulos/nuevo): one form with the data of
- * the article (OJS number, date, title, a single type) and its authors (up to seven, reused from
- * the common directory, order kept). Saving registers the article as Postulado and opens its
- * «Revisión del comité» tab with the round form, where the anti-plagiarism report and the
- * committee result are registered. Warns, without blocking, about a repeated OJS number.
- * Covers: RF-01, RF-02, RF-03, RF-09, RF-10, HU-01, HU-06, HU-07.
+ * ArticuloNuevoPage — Registrar artículo (/:revista/articulos/nuevo): un formulario con los datos del artículo
+ * (número de OJS, fecha, título, un solo tipo) y sus autores (hasta siete, reutilizados del directorio común,
+ * con el orden conservado). Al guardar se registra el artículo como Postulado y se abre su pestaña «Revisión del
+ * comité» con el formulario de ronda, donde se registran el reporte antiplagio y el resultado del comité.
+ * Advierte, sin bloquear, de un número de OJS repetido.
  */
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'

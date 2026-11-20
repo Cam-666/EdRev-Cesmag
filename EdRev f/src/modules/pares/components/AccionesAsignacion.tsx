@@ -1,14 +1,12 @@
 /*
- * AccionesAsignacion — the actions available on an assigned peer, according to its status:
- *   invited / 2nd attempt → register the answer; when the last send bounced or failed, correct the
- *                           address and resend the invitation (RF-28). The 2nd attempt itself is
- *                           automatic (RF-29, D7): there is no reminder;
- *   accepted              → mark the delivery (with date);
- *   delivered             → issue the constancia (offered right after the delivery, RF-23; only once
- *                           the concept and the date are registered, which the delivery asks for);
- *                           once issued, download or resend it (HU-23). The concept can be changed.
- * Both profiles can do all of it (RNF-05).
- * Covers: RF-20, RF-22, RF-23, RF-28, RF-30, RF-32, RF-33, HU-14, HU-17, HU-19, HU-23.
+ * AccionesAsignacion — las acciones disponibles sobre un par asignado, según su estado:
+ * invitado / 2.º intento → registrar la respuesta; cuando el último envío rebotó o falló, corregir la dirección y
+ *                           reenviar la invitación. El 2.º intento es automático: no hay recordatorio;
+ * aceptó                  → marcar la entrega (con fecha);
+ * entregó                 → emitir la constancia (se ofrece justo después de la entrega; solo cuando el
+ *                           concepto y la fecha están registrados, que es lo que pide la entrega);
+ * ya emitida              → descargarla o reenviarla. El concepto se puede cambiar.
+ * Ambos perfiles pueden hacer todo esto.
  */
 import { useState } from 'react'
 import { ConceptoModal } from './ConceptoModal'
@@ -47,7 +45,7 @@ export function AccionesAsignacion({ asignacion }: AccionesAsignacionProps) {
   const sinResponder = asignacion.estado === 'invitado' || asignacion.estado === 'segundo-intento'
   const nombre = asignacion.par.nombre
 
-  // RF-28: the invitation is resent only when the previous send bounced or failed.
+  // La invitación se reenvía solo cuando el envío anterior rebotó o falló.
   const ultimo = asignacion.ultimoCorreo
   const fallo =
     ultimo && !ultimo.atendido && (ultimo.estado === 'rebotado' || ultimo.estado === 'fallido')

@@ -1,9 +1,8 @@
 /*
- * invitacionesPar (servicio) — the answer of the peer from the mail (the peer has no account): the
- * page opened by a button of the invitation mail asks to confirm, then registers the answer by
- * itself: accepts, does not accept this invitation, or does not want to participate any more (the
- * peer is blocked). The link is signed and valid while the invitation has not been answered.
- * RF-22, RF-15, RF-24.
+ * invitacionesPar (servicio) — la respuesta del par desde el correo (el par no tiene cuenta): la página que abre
+ * un botón del correo de invitación le pide confirmar y luego registra la respuesta por sí sola: acepta, no
+ * acepta esta invitación o no desea participar más (el par queda bloqueado). El enlace va firmado y sirve
+ * mientras la invitación no haya sido respondida.
  */
 import { enTransaccion, pool, type Cliente } from '../db.js'
 import { ErrorHttp, siglaDe } from '../lib/http.js'
@@ -31,7 +30,7 @@ async function cargar(c: Cliente, id: number, bloquear = false): Promise<Fila> {
   return rows[0]
 }
 
-/** What the page shows before the peer confirms. */
+/** Lo que muestra la página antes de que el par confirme. */
 export async function datosDeLaInvitacion(token: string) {
   const { idEvaluacion, accion } = leerRespuesta(token)
   const f = await cargar(pool, idEvaluacion)
@@ -45,7 +44,7 @@ export async function datosDeLaInvitacion(token: string) {
   }
 }
 
-/** Registers the answer the peer confirmed. */
+/** Registra la respuesta que el par confirmó. */
 export async function responderDesdeCorreo(token: string) {
   const { idEvaluacion, accion } = leerRespuesta(token)
   await enTransaccion(async (c) => {

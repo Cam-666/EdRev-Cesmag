@@ -1,7 +1,6 @@
 /*
- * redaccion — writes the executive summary of the management report from its figures, in formal
- * Spanish, so the page reads like a report and not like a list of numbers.
- * Covers: RF-38, HU-27.
+ * redaccion — escribe el resumen ejecutivo del informe de gestión a partir de sus cifras, en español formal, para
+ * que la página se lea como un informe y no como una lista de números.
  */
 import type { Informe } from '@/types/panel'
 import { REVISTAS } from '@/types/revista'

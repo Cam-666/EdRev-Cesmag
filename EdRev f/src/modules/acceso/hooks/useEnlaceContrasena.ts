@@ -1,7 +1,7 @@
 import { useMutation, useQuery } from '@tanstack/react-query'
 import { consultarEnlaceApi, definirContrasenaApi } from '../services/accesoService'
 
-/** The activation or recovery link opened from the mail (RF-40, RF-46). */
+/** El enlace de activación o de recuperación que se abre desde el correo. */
 export function useEnlaceContrasena(token: string) {
   return useQuery({
     queryKey: ['acceso', 'enlace', token],

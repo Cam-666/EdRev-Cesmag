@@ -1,6 +1,6 @@
 /*
- * npm run db:init — runs db/01_esquema.sql and db/02_datos_iniciales.sql on the empty database of
- * DATABASE_URL, in one transaction. Same as running both files in pgAdmin's Query Tool.
+ * npm run db:init — ejecuta db/01_esquema.sql y db/02_datos_iniciales.sql sobre la base vacía de
+ * DATABASE_URL, en una sola transacción. Es lo mismo que ejecutar los dos archivos en la Query Tool de pgAdmin.
  */
 import { readFile } from 'node:fs/promises'
 import pg from 'pg'

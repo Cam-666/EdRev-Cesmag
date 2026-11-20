@@ -1,5 +1,5 @@
 /*
- * Pruebas de artículos — RF-01 a RF-08, RF-35, RF-36.
+ * Pruebas de artículos
  */
 import { describe, expect, it } from 'vitest'
 import { AUXILIAR, articuloAprobado, candidato, como } from './api.js'
@@ -15,7 +15,7 @@ async function registrar(revista: 'reep' | 'ire' = 'reep', numero = `A-${Date.no
   })
 }
 
-describe('artículos (RF-01 a RF-08, RF-35, RF-36)', () => {
+describe('artículos', () => {
   it('registra con sus autores y avisa el número de OJS repetido', async () => {
     const r = await registrar('reep', 'OJS-REP-1')
     expect(r.status).toBe(201)
@@ -57,7 +57,7 @@ describe('artículos (RF-01 a RF-08, RF-35, RF-36)', () => {
     expect((await api.post(`/reep/articulos/${body.id}/asignaciones`, par())).status).toBe(201)
   })
 
-  it('cambia de revista en cualquier etapa, con sus pares, y quita la publicación (RF-07)', async () => {
+  it('cambia de revista en cualquier etapa, con sus pares, y quita la publicación', async () => {
     const { body } = await registrar()
     const api = await como()
     expect((await api.post(`/reep/articulos/${body.id}/trasladar`)).body.revista).toBe('ire')
@@ -148,7 +148,7 @@ describe('artículos (RF-01 a RF-08, RF-35, RF-36)', () => {
     const editado = await api.patch(`/reep/autores/${creado.body.id}`, { filiacion: 'Universidad de Nariño', pais: 'Ecuador' })
     expect(editado.body).toMatchObject({ filiacion: 'Universidad de Nariño', pais: 'Ecuador' })
 
-    // Added to an article, the article keeps that affiliation (RF-09).
+    // Al agregarlo a un artículo, el artículo conserva esa filiación.
     const art = await api.post('/reep/articulos', {
       numeroOjs: `F-${Date.now()}`,
       titulo: 'Con autor del directorio',
@@ -158,7 +158,7 @@ describe('artículos (RF-01 a RF-08, RF-35, RF-36)', () => {
     })
     expect(art.body.autores[0]).toMatchObject({ filiacion: 'Universidad de Nariño', pais: 'Ecuador' })
 
-    // An author created inside the article form shows it in the directory too.
+    // Un autor creado dentro del formulario del artículo también aparece en el directorio.
     const nuevo = await api.post('/reep/articulos', {
       numeroOjs: `G-${Date.now()}`,
       titulo: 'Con autor nuevo',

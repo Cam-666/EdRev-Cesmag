@@ -1,8 +1,8 @@
 /*
- * correccionMigracion (servicio) — the migrated records to correct (RF-44, HU-32): the records of
- * the Excel whose free text did not fit the closed lists are loaded with the datum empty and
- * listed; the correction writes the chosen value, removes the record from the list and leaves a
- * trace in the history. The importer itself is servicios/migracion.
+ * correccionMigracion (servicio) — los registros migrados por corregir: los datos del Excel cuyo texto libre
+ * no encajó en las listas cerradas se cargan con el dato vacío y se listan; la corrección escribe el valor
+ * elegido, quita el registro de la lista y deja una huella en el historial. El importador está en
+ * servicios/migracion.
  */
 import { enTransaccion, pool } from '../db.js'
 import { auditar } from '../lib/auditoria.js'

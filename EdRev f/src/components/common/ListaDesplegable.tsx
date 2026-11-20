@@ -1,6 +1,6 @@
 /*
- * ListaDesplegable — select built on Radix Select (keyboard + ARIA handled by the primitive).
- * Covers: RNF-11; used by RF-01 (article type), RF-06 (committee result), RF-20 (par concept).
+ * ListaDesplegable — lista de selección sobre Radix Select (el teclado y ARIA los resuelve la librería).
+ * Se usa para el tipo de artículo, el resultado del comité y el concepto del par.
  */
 import * as Select from '@radix-ui/react-select'
 import { useId } from 'react'
@@ -22,7 +22,7 @@ export interface ListaDesplegableProps {
   error?: string
   disabled?: boolean
   className?: string
-  /** Keeps the label for assistive technology only (e.g. a field inside a table row). */
+  /** Deja la etiqueta solo para lectores de pantalla (por ejemplo, un campo dentro de la fila de una tabla). */
   etiquetaOculta?: boolean
 }
 

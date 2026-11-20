@@ -1,6 +1,6 @@
 /*
- * constancias (controlador) — receives and validates the requests about the constancias and
- * answers; the rules are in servicios/gestionConstancias.
+ * constancias (controlador) — recibe y valida las peticiones sobre las constancias y responde. Las reglas
+ * están en servicios/gestionConstancias.
  */
 import type { Request, Response } from 'express'
 import { z } from 'zod'
@@ -8,7 +8,7 @@ import { idNumerico, idRevista } from '../lib/http.js'
 import { usuarioDe } from '../middlewares/autenticacion.js'
 import * as constancias from '../servicios/gestionConstancias.js'
 
-/** Whether the mail that carries the constancia is the thank-you mail (default) or only the constancia. */
+/** Si el correo que lleva la constancia es el de agradecimiento (lo normal) o solo la constancia. */
 const opciones = z.object({ conAgradecimiento: z.boolean().default(true) })
 
 const revistaDe = (req: Request) => idRevista(req.params.revista)

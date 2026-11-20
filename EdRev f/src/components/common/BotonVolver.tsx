@@ -1,7 +1,6 @@
 /*
- * BotonVolver — "← Volver a …" link above the title of a screen opened from another one
- * (an article from the list, a peer from the base, an author from the directory).
- * It is a link because it navigates. Covers: RNF-11 (usability, HU-07 criterion 4).
+ * BotonVolver — enlace «← Volver a …» sobre el título de una pantalla que se abre desde otra (un artículo
+ * desde el listado, un par desde la base, un autor desde el directorio). Es un enlace porque navega.
  */
 import type { ReactNode } from 'react'
 import { EnlaceBoton } from './EnlaceBoton'

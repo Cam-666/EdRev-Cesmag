@@ -1,7 +1,4 @@
-/*
- * SeccionNavegacion — part of the design-system showcase (development only).
- * Covers: RNF-11, RNF-12.
- */
+/* SeccionNavegacion — parte del muestrario del sistema de diseño (solo desarrollo). */
 import { useState } from 'react'
 import { Seccion } from './Seccion'
 import { DistintivoEstado } from '@/components/common/DistintivoEstado'

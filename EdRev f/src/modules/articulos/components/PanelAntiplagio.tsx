@@ -1,8 +1,7 @@
 /*
- * PanelAntiplagio — "Antiplagio y comité editorial" card of the Resumen tab: both percentages
- * (matches and AI, reported separately), the result of the most recent committee round and the
- * warning above 15 %. The warning never blocks and the AI percentage never triggers it.
- * Covers: RF-05, RF-36, HU-02, HU-04 (criterion 2).
+ * PanelAntiplagio — tarjeta «Antiplagio y comité editorial» de la pestaña Resumen: los dos porcentajes
+ * (coincidencias e IA, por separado), el resultado de la ronda más reciente del comité y el aviso sobre 15 %.
+ * El aviso nunca bloquea y el porcentaje de IA nunca lo dispara.
  */
 import { UMBRAL_COINCIDENCIAS } from '../config/listas'
 import { superaUmbral } from '../config/reglas'

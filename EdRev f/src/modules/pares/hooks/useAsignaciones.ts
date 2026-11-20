@@ -1,7 +1,6 @@
 /*
- * Hooks of the assignment flow: assign an available peer or a new candidate (the server sends
- * the invitation),
- * resend after a bounce or failure, peer's answer, delivery mark and concept. Covers: RF-17, RF-19..RF-29.
+ * Hooks del flujo de asignación: asignar un par disponible o un candidato nuevo (el servidor envía la
+ * invitación), reenviar tras un rebote o fallo, la respuesta del par, la marca de entrega y el concepto.
  */
 import { useMutation } from '@tanstack/react-query'
 import {

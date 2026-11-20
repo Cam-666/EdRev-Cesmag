@@ -1,8 +1,8 @@
 /*
- * informeGestion (servicio) — the figures of the management report of a semester for one journal
- * or both (RF-38, HU-27): articles postulated, approved and rejected, evaluations delivered,
- * constancias issued, average days of evaluation and the distribution of concepts. The same figures
- * are offered as data (the page) and as a PDF document (servicios/informePdf).
+ * informeGestion (servicio) — las cifras del informe de gestión de un semestre, de una revista o de las dos:
+ * artículos postulados, aprobados y rechazados, evaluaciones entregadas, constancias emitidas, días promedio
+ * de evaluación y distribución de conceptos. Las mismas cifras se ofrecen como datos (la página) y como
+ * documento PDF (servicios/informePdf).
  */
 import { pool } from '../db.js'
 import { ErrorHttp } from '../lib/http.js'
@@ -24,7 +24,7 @@ export function periodos() {
   return lista
 }
 
-/** Validates the journal and the period and loads the figures of each journal for the semester. */
+/** Valida la revista y el periodo y carga las cifras de cada revista para el semestre. */
 async function cargar(filtro: string, periodoPedido: string | undefined) {
   if (!['ambas', 'reep', 'ire'].includes(filtro)) throw new ErrorHttp(422, 'Revista no válida')
   const periodo = periodoPedido ?? periodos()[0]?.valor ?? ''
@@ -91,7 +91,7 @@ async function cargar(filtro: string, periodoPedido: string | undefined) {
   return { filtro, periodo, etiquetaPeriodo: p.etiqueta, incluidas }
 }
 
-/** The figures of the report as the page shows them. */
+/** Las cifras del informe tal como las muestra la página. */
 export async function informeDeGestion(filtro: string, periodoPedido: string | undefined) {
   const { periodo, etiquetaPeriodo, incluidas } = await cargar(filtro, periodoPedido)
   const de = (sigla: 'reep' | 'ire') => incluidas.find((r) => r.sigla === sigla)
@@ -100,7 +100,7 @@ export async function informeDeGestion(filtro: string, periodoPedido: string | u
     const ire = de('ire')?.[campo] ?? 0
     return { reep, ire, total: reep + ire }
   }
-  // The total weighs each journal by its evaluations; it is not the mean of the two means.
+  // El total pondera cada revista por sus evaluaciones; no es el promedio de los dos promedios.
   const sumaDias = incluidas.reduce((s, r) => s + r.sumaDias, 0)
   const nEntregadas = incluidas.reduce((s, r) => s + r.entregadas, 0)
   const sumar = (campo: keyof DatosRevista['conceptos']) => incluidas.reduce((s, r) => s + r.conceptos[campo], 0)
@@ -127,7 +127,7 @@ export async function informeDeGestion(filtro: string, periodoPedido: string | u
   }
 }
 
-/** The report as a PDF document: a section with charts per journal, not a capture of the page. */
+/** El informe como documento PDF: una sección con gráficas por revista, no una captura de la página. */
 export async function informeEnPdf(filtro: string, periodoPedido: string | undefined) {
   const { periodo, etiquetaPeriodo, incluidas } = await cargar(filtro, periodoPedido)
   const pdf = await generarInformePdf({ etiquetaPeriodo, revistas: incluidas })

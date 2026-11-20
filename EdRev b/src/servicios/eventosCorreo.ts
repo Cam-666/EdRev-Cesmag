@@ -1,8 +1,8 @@
 /*
- * eventosCorreo (servicio) — what the mail service reports after accepting a mail (RF-27): a hard
- * bounce or an invalid address marks it «rebotado» (correct the address); a soft bounce or a block,
- * «fallido» (retry). D12 keeps no provider id, so the mail is found by its address: the most recent
- * «enviado» one.
+ * eventosCorreo (servicio) — lo que informa el servicio de correo después de aceptar un correo: un rebote duro o
+ * una dirección inválida lo marca «rebotado» (hay que corregir la dirección); un rebote blando o un bloqueo, «fallido»
+ * (se reintenta). El registro no guarda el identificador del proveedor, así que el correo se busca por su
+ * dirección: el «enviado» más reciente.
  */
 import { pool } from '../db.js'
 import { auditar } from '../lib/auditoria.js'

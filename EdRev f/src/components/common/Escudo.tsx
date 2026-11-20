@@ -1,6 +1,6 @@
 /*
- * Escudo — coat of arms of Universidad CESMAG. Decorative by default (alt=""), because the
- * university name is always written next to it; pass `alt` only where it is the sole identifier.
+ * Escudo — el escudo de la Universidad CESMAG. Es decorativo por defecto (alt=""), porque el nombre de la
+ * universidad siempre está escrito a su lado; se pasa `alt` solo donde es el único identificador.
  */
 import escudo from '@/assets/escudo-cesmag.webp'
 import { cn } from '@/lib/cn'

@@ -1,7 +1,7 @@
 /*
- * asignacionesService — HTTP calls to assign peers to an article and follow their answer:
- * assignment of an available peer or a new candidate (the server sends the invitation), resend / reminder, the peer's
- * answer, delivery mark and concept. Covers: RF-17, RF-19..RF-29.
+ * asignacionesService — llamadas HTTP para asignar pares a un artículo y seguir su respuesta: asignación de un par
+ * disponible o de un candidato nuevo (el servidor envía la invitación), reenvío, la respuesta del par, la marca
+ * de entrega y el concepto.
  */
 import { solicitar } from '@/lib/api/cliente'
 import type {
@@ -31,7 +31,7 @@ export function asignarPar(
   })
 }
 
-/** RF-28: resends the invitation after a bounce or a failure (it is not a new attempt). */
+/** Reenvía la invitación tras un rebote o un fallo (no es un intento nuevo). */
 export function reenviarInvitacion(
   revista: Revista,
   asignacionId: string,

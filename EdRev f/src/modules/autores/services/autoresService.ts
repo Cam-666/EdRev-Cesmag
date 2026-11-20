@@ -1,6 +1,6 @@
 /*
- * autoresService — HTTP calls of the common author directory of both journals.
- * Covers: RF-10 (search by name or ORCID, filter by journal), RF-09 (edit the record), RF-11.
+ * autoresService — llamadas HTTP del directorio común de autores de las dos revistas: búsqueda por nombre u
+ * ORCID, filtro por revista, edición de la ficha.
  */
 import { solicitar } from '@/lib/api/cliente'
 import type { ArticuloDeAutor, Autor, DatosAutor } from '@/types/autor'
@@ -8,7 +8,7 @@ import type { Revista } from '@/types/revista'
 
 export interface AutorConTotal extends Autor {
   totalArticulos: number
-  /** Journals where the author has articles. */
+  /** Revistas donde el autor tiene artículos. */
   revistas: Revista[]
 }
 
@@ -17,15 +17,15 @@ export interface RespuestaAutores {
   total: number
 }
 
-/** Filters of the author list; each one that is omitted does not narrow the directory. */
+/** Filtros del listado de autores; cada uno que se omite no restringe el directorio. */
 export interface FiltrosAutores {
-  /** Authors with articles in that journal. */
+  /** Autores con artículos en esa revista. */
   en?: Revista
   pais?: string
-  /** Institution (the last known affiliation). */
+  /** Institución (la última filiación conocida). */
   filiacion?: string
   orcid?: 'con' | 'sin'
-  /** «uno»: a single article; «varios»: two or more. */
+  /** «uno»: un solo artículo; «varios»: dos o más. */
   articulos?: 'uno' | 'varios'
 }
 
@@ -40,7 +40,7 @@ export function buscarAutores(
   return solicitar<RespuestaAutores>(`/${revista}/autores?${params.toString()}`)
 }
 
-/** The countries and institutions present in the directory, to fill the filters. */
+/** Los países e instituciones presentes en el directorio, para llenar los filtros. */
 export function opcionesDeFiltros(revista: Revista): Promise<{ paises: string[]; filiaciones: string[] }> {
   return solicitar(`/${revista}/autores/filtros`)
 }

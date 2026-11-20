@@ -1,8 +1,7 @@
 /*
- * RecuperarEnviadoPage — Revise su correo (/acceso/recuperar/enviado): confirmation with the
- * masked address, link validity and a resend countdown.
- * Covers: RF-46, HU-28 (criterion 2), RNF-11. With the mock API a «Demostración» link opens the
- * page the mail would open.
+ * RecuperarEnviadoPage — Revise su correo (/acceso/recuperar/enviado): confirmación con la dirección enmascarada,
+ * la vigencia del enlace y una cuenta regresiva para reenviar. Con la API simulada un enlace «Demostración» abre
+ * la página que abriría el correo.
  */
 import { Link, Navigate, useLocation } from 'react-router-dom'
 import { POLITICA_ACCESO } from '../config/politicaAcceso'

@@ -1,7 +1,6 @@
 /*
- * ConceptosDelPeriodo — how many peers' concepts were publicable, publicable with changes or not
- * publicable in the period, as count and percentage on ranked bars of one color (text plus the
- * bar, never color alone). Covers: RF-38, HU-14 (count how many articles were publicable).
+ * ConceptosDelPeriodo — cuántos conceptos de pares fueron publicable, publicable con cambios o no publicable en
+ * el periodo, como cantidad y porcentaje en barras ordenadas de un solo color (texto más barra, nunca solo color).
  */
 import { BarraIndicador } from './BarraIndicador'
 import type { Informe } from '@/types/panel'

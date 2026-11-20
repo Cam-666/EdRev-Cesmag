@@ -1,7 +1,4 @@
-/*
- * campos — what each migrated datum is called and which closed list it is corrected with
- * (section 3.1 of the requirements). The peer email is typed. Covers: RF-44.
- */
+/* campos — cómo se llama cada dato migrado y con qué lista cerrada se corrige. El correo del par se escribe. */
 import { TIPOS_ARTICULO } from '@/modules/articulos/config/listas'
 import { OPCIONES_CONCEPTO } from '@/modules/pares/config/listas'
 import { DEFINICIONES_ESTADO } from '@/components/common/DistintivoEstado'
@@ -24,7 +21,7 @@ export const ETIQUETA_CAMPO: Record<CampoPorCorregir, string> = {
   'correo-par': 'Correo del par',
 }
 
-/** Options of the closed list; null when the value is typed (the email). */
+/** Opciones de la lista cerrada; null cuando el valor se escribe (el correo). */
 export const OPCIONES_CAMPO: Record<
   CampoPorCorregir,
   Array<{ valor: string; etiqueta: string }> | null

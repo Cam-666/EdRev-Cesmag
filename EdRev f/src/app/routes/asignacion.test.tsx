@@ -11,7 +11,7 @@ function hoy(): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
 }
 
-/** A new article approved by the committee, ready to receive peers. */
+/** Un artículo nuevo aprobado por el comité, listo para recibir pares. */
 async function articuloNuevo(numero: string, autorId = 'reep-au-3') {
   const r = await llamar('/reep/articulos', {
     metodo: 'POST',
@@ -58,7 +58,7 @@ describe('assigning a peer from the article sheet', () => {
     expect(
       (await screen.findAllByText('El comité editorial aún no ha aprobado el artículo.')).length,
     ).toBeGreaterThan(0)
-    // The button is always there, blocked, with the reason beside it
+    // El botón siempre está, bloqueado, con el motivo al lado
     expect(screen.getByRole('button', { name: 'Asignar par' })).toBeDisabled()
   })
 
@@ -72,7 +72,7 @@ describe('assigning a peer from the article sheet', () => {
     expect(await screen.findByText('Par asignado e invitación enviada')).toBeInTheDocument()
     const lista = await screen.findByRole('list', { name: 'Pares asignados' })
     expect(await within(lista).findByText(nombre)).toBeInTheDocument()
-    // The panel stays open to keep inviting; the assigned peer is no longer available
+    // El panel sigue abierto para seguir invitando; el par asignado ya no está disponible
     await waitFor(() =>
       expect(within(tabla).queryByRole('button', { name: `Asignar a ${nombre}` })).toBeNull(),
     )
@@ -133,7 +133,7 @@ describe('assigning a peer from the article sheet', () => {
   })
 })
 
-describe('bounced invitation (RF-27)', () => {
+describe('bounced invitation', () => {
   it('warns on screen, keeps the assignment and lets the user correct the email and resend', async () => {
     const { user, router } = montarRuta('/reep/articulos/2026-033/pares')
     const panel = await abrirPanel(user)
@@ -146,7 +146,7 @@ describe('bounced invitation (RF-27)', () => {
     await user.click(within(panel).getByRole('button', { name: 'Registrar y enviar invitación' }))
     expect(await screen.findByText('La invitación no se pudo entregar')).toBeInTheDocument()
     expect(screen.getByText(/La dirección par@invalido\.test rebotó/)).toBeInTheDocument()
-    // The assignment was kept
+    // La asignación se conservó
     expect(
       within(await screen.findByRole('list', { name: 'Pares asignados' })).getByText('Par Rebote'),
     ).toBeInTheDocument()
@@ -174,7 +174,7 @@ describe('bounced invitation (RF-27)', () => {
 })
 
 describe('actions on an assigned peer', () => {
-  it('no reminder and no manual resend: only the answer, while the invitation was delivered (D7)', async () => {
+  it('no reminder and no manual resend: only the answer, while the invitation was delivered', async () => {
     montarRuta('/reep/articulos/2026-012/pares', AUXILIAR)
     expect(
       await screen.findByRole('button', { name: /Registrar respuesta de Rodrigo Eraso/ }),
@@ -184,7 +184,7 @@ describe('actions on an assigned peer', () => {
     expect(screen.getAllByText('2.º intento').length).toBeGreaterThan(0)
   })
 
-  it('an issued constancia can be downloaded and resent from the article (HU-23)', async () => {
+  it('an issued constancia can be downloaded and resent from the article', async () => {
     const { user } = montarRuta('/reep/articulos/2026-034/pares')
     const descargar = (
       await screen.findAllByRole('button', { name: /^Descargar constancia de/ })
@@ -218,13 +218,13 @@ describe('actions on an assigned peer', () => {
     )
     const dialogo = await screen.findByRole('dialog', { name: 'Marcar entrega' })
     expect(within(dialogo).getByLabelText('Fecha de evaluación')).toHaveValue(hoy())
-    // The concept is registered together with the date: the constancia comes after the evaluation
+    // El concepto se registra junto con la fecha: la constancia viene después de la evaluación
     await user.click(within(dialogo).getByRole('button', { name: 'Marcar entrega' }))
     expect(await within(dialogo).findByText('Seleccione el concepto del par.')).toBeInTheDocument()
     await elegirOpcion(user, 'Concepto', 'Publicable')
     await user.click(within(dialogo).getByRole('button', { name: 'Marcar entrega' }))
 
-    // RF-23: the constancia is offered right away, with the journal's template and PDF background
+    // La constancia se ofrece de inmediato, con la plantilla y las imágenes de la revista
     const constancia = await screen.findByRole('dialog', {
       name: 'Emitir la constancia de Sandra Liliana Cuasapud',
     })
@@ -239,7 +239,7 @@ describe('actions on an assigned peer', () => {
     ).toBeInTheDocument()
     await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull())
 
-    // The concept can still be changed afterwards
+    // El concepto todavía se puede cambiar después
     expect(
       await screen.findByRole('button', { name: /Cambiar concepto de Sandra Liliana Cuasapud/ }),
     ).toBeInTheDocument()

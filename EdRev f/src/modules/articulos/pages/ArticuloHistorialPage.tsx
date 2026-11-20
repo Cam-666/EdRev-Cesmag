@@ -1,6 +1,6 @@
 /*
- * ArticuloHistorialPage — Historial tab (/:revista/articulos/:id/historial): mails sent for the
- * article and "who changed what". Covers: RF-26, RF-41, HU-20, HU-30.
+ * ArticuloHistorialPage — pestaña Historial (/:revista/articulos/:id/historial): los correos enviados del
+ * artículo y «quién cambió qué».
  */
 import { ListaAuditoria } from '../components/ListaAuditoria'
 import { TablaCorreos } from '../components/TablaCorreos'

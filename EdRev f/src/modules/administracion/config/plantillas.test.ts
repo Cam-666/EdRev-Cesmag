@@ -3,7 +3,7 @@ import { validarPlantilla } from './plantillas'
 const INVITACION = { variables: ['revista', 'par', 'articulo'] }
 const CONSTANCIA = { variables: ['revista', 'par', 'articulo'] }
 
-describe('validarPlantilla (RNF-19)', () => {
+describe('validarPlantilla', () => {
   it('accepts a template that uses its own markers', () => {
     expect(
       validarPlantilla(
@@ -29,7 +29,7 @@ describe('validarPlantilla (RNF-19)', () => {
     expect(validarPlantilla(INVITACION, null, '   ')).toBe('El texto no puede estar vacío.')
   })
 
-  it('the constancia accepts its markers and refuses the unknown ones (RF-30)', () => {
+  it('the constancia accepts its markers and refuses the unknown ones', () => {
     expect(
       validarPlantilla(CONSTANCIA, null, 'HACE CONSTAR QUE {{par}} participó en «{{articulo}}».'),
     ).toBeNull()

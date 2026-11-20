@@ -1,8 +1,8 @@
 /*
- * EncabezadoRevista — 60 px top bar replicating the real journal headers: coat of arms at the
- * left, the journal brand (logo for REEP, wordmark for IRE), and the ISSN pill at the right.
- * The journal palette lives only here and in the ISSN pill. REEP keeps a dark scrim behind the
- * left zone so the white text keeps contrast. Covers: RF-02, RNF-11.
+ * EncabezadoRevista — barra superior de 60 px que replica los encabezados reales de cada revista: el escudo a la
+ * izquierda, la marca de la revista (logo para REEP, nombre en letras para IRE) y la insignia del ISSN a la derecha.
+ * La paleta de la revista vive solo aquí y en la insignia del ISSN. REEP mantiene un velo oscuro detrás de la
+ * zona izquierda para que el texto blanco conserve el contraste.
  */
 import emblema from '@/assets/emblema-ire.webp'
 import { Escudo } from './Escudo'

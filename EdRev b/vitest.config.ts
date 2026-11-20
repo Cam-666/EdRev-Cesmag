@@ -5,7 +5,7 @@ export default defineConfig({
     globalSetup: ['./pruebas/baseDePrueba.ts'],
     setupFiles: ['./pruebas/entorno.ts'],
     include: ['pruebas/**/*.test.ts'],
-    // One database for all files: run them one after the other.
+    // Una sola base de datos para todos los archivos: se ejecutan uno después del otro.
     fileParallelism: false,
     testTimeout: 20000,
   },

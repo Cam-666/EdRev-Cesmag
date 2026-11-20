@@ -1,6 +1,6 @@
 /*
- * panel (controlador) — answers the dashboard of a journal and the home summary; the figures are
- * in servicios/panel.
+ * panel (controlador) — responde el tablero de una revista y el resumen de Inicio. Las cifras están en
+ * servicios/panel.
  */
 import type { Request, Response } from 'express'
 import { idRevista } from '../lib/http.js'

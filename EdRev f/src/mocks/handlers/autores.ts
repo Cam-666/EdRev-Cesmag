@@ -1,7 +1,7 @@
 /*
- * MSW handlers for the common author directory (RF-10): one directory for both journals, searchable
- * by name or ORCID and filterable by journal (`en=reep|ire`, journals where the author has
- * articles). The author record lists all its articles with their journal and state (RF-11).
+ * Manejadores MSW del directorio común de autores: un solo directorio para las dos revistas, con búsqueda por
+ * nombre u ORCID y filtro por revista (`en=reep|ire`, las revistas donde el autor tiene artículos). La ficha del
+ * autor lista todos sus artículos con su revista y su estado.
  */
 import { http, HttpResponse } from 'msw'
 import { autorPorId, autores, baseDe, registrarAutor } from '../db'
@@ -93,7 +93,7 @@ export const handlersAutores = [
       return error(409, 'Ya existe un autor con ese ORCID')
     }
     Object.assign(autor, cambios)
-    // The change is traced in the history of every article of the author, in its journal.
+    // El cambio queda en el historial de cada artículo del autor, en su revista.
     for (const a of articulosDe(autor.id)) {
       const base = baseDe(a.revista)
       base.auditoria.unshift({

@@ -1,6 +1,6 @@
 /*
- * MuestraDiseno — design system showcase (dev-only route /design-system, not part of the product).
- * Covers: RNF-11, RNF-12 (visual verification of states, contrast and focus).
+ * MuestraDiseno — muestrario del sistema de diseño (ruta /design-system, solo en desarrollo; no es parte del
+ * producto). Sirve para revisar a ojo los estados, el contraste y el foco de los componentes.
  */
 import { SeccionControles } from './muestra/SeccionControles'
 import { SeccionDominio } from './muestra/SeccionDominio'

@@ -1,6 +1,6 @@
 /*
- * pares (controlador) — receives and validates the requests about the base of peers and answers;
- * the rules are in servicios/pares.
+ * pares (controlador) — recibe y valida las peticiones sobre la base de pares y responde. Las reglas están en
+ * servicios/pares.
  */
 import type { Request, Response } from 'express'
 import { z } from 'zod'

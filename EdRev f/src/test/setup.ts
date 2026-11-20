@@ -8,17 +8,17 @@ import { server } from '@/mocks/server'
 
 expect.extend(axeMatchers)
 
-// Screens load data through the mock API: give async queries room before failing.
+// Las pantallas cargan datos con la API simulada: se da margen a las consultas asíncronas antes de fallar.
 configure({ asyncUtilTimeout: 4000 })
 
-// jsdom lacks these browser APIs, which Radix primitives (checkbox, select) rely on.
+// jsdom no trae estas APIs del navegador, que necesitan los componentes de Radix (casilla, select).
 class ResizeObserverStub {
   observe() {}
   unobserve() {}
   disconnect() {}
 }
 globalThis.ResizeObserver ??= ResizeObserverStub
-// API-only test files may run in Node (e.g. multipart uploads), where there is no window.
+// Los archivos de pruebas solo de API pueden correr en Node (por ejemplo subidas multipart), donde no hay window.
 const enNavegador = typeof window !== 'undefined'
 if (enNavegador) {
   window.HTMLElement.prototype.scrollIntoView ??= () => {}
@@ -26,7 +26,7 @@ if (enNavegador) {
   window.HTMLElement.prototype.releasePointerCapture ??= () => {}
 }
 
-// Node's fetch needs an absolute URL; MSW matches any host.
+// El fetch de Node necesita una URL absoluta; MSW responde para cualquier servidor.
 vi.stubEnv('VITE_API_URL', 'http://localhost/api')
 
 beforeAll(() => server.listen({ onUnhandledFrame: 'error' }))

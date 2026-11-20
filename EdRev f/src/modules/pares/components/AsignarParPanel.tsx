@@ -1,9 +1,8 @@
 /*
- * AsignarParPanel — «Asignar par evaluador» in the article sheet, once the committee approved the
- * article. Two ways: choose from the peers available in the journal, or register a brand-new
- * candidate (saved in the base). Either way the invitation goes out by itself. The panel stays
- * open to keep inviting while the others answer; the result of each assignment is reported to
- * the sheet. Covers: RF-12, RF-17, RF-19, RF-24, RF-27, HU-13, HU-18.
+ * AsignarParPanel — «Asignar par evaluador» en la ficha del artículo, una vez que el comité aprobó el artículo.
+ * Dos caminos: elegir entre los pares disponibles de la revista o registrar un candidato nuevo (queda en la base).
+ * En ambos la invitación sale sola. El panel queda abierto para seguir invitando mientras los demás responden; el
+ * resultado de cada asignación se informa a la ficha.
  */
 import { useState } from 'react'
 import { FormularioCandidato } from './FormularioCandidato'

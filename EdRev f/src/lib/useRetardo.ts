@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 
-/** Returns `valor` only after it stopped changing for `ms` (to avoid a request per keystroke). */
+/** Devuelve `valor` solo después de que dejó de cambiar durante `ms` (para no hacer una petición por cada tecla). */
 export function useRetardo<T>(valor: T, ms = 300): T {
   const [retardado, setRetardado] = useState(valor)
   useEffect(() => {

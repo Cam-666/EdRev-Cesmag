@@ -1,6 +1,4 @@
-/*
- * auditoria (servicio) — the audit log of both journals with its filters and pagination (RF-41).
- */
+/* auditoria (servicio) — el registro de auditoría de las dos revistas, con sus filtros y su paginación. */
 import { pool } from '../../db.js'
 import { siglaDe } from '../../lib/http.js'
 import { iso } from '../../lib/mapeo.js'

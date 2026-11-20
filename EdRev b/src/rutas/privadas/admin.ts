@@ -1,7 +1,7 @@
 /*
- * Administración — the Administradora's only (RNF-05). The routes only say where each request goes:
- * user accounts (RF-40), each journal's templates (RF-45), the audit log of both journals (RF-41) and
- * the configuration. Validation is in controladores/admin, the rules in servicios/administracion.
+ * Administración — solo de la Administradora. Las rutas solo dicen a dónde va cada petición: cuentas de
+ * usuario, plantillas de cada revista, registro de auditoría de las dos revistas y configuración.
+ * La validación está en controladores/admin y las reglas en servicios/administracion.
  */
 import { Router } from 'express'
 import multer from 'multer'

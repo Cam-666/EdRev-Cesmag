@@ -1,16 +1,15 @@
 /*
- * Artículos — the routes only say where each request goes: list with filters (RF-35), sheet
- * (RF-36), registration with its authors (RF-01, RF-09, RF-10), OJS number warning (RF-03), edition
- * and publication (RF-04), committee rounds (RF-05, RF-06), change of journal (RF-07), closing
- * (RF-08) and the history (RF-26, RF-41). Validation is in controladores/articulos, the rules in
- * servicios/gestionArticulos, autoresArticulo and rondasComite.
+ * Artículos — las rutas solo dicen a dónde va cada petición: listado con filtros, ficha, registro con sus
+ * autores, advertencia de número de OJS repetido, edición y publicación, rondas del comité, cambio de
+ * revista, cierre e historial. La validación está en controladores/articulos y las reglas en
+ * servicios/gestionArticulos, autoresArticulo y rondasComite.
  */
 import { Router } from 'express'
 import * as articulos from '../../controladores/articulos.js'
 
 export const rutasArticulos = Router()
 
-// The fixed paths go before «:id», or they would be read as an id.
+// Las rutas fijas van antes de «:id»; si no, se leerían como un id.
 rutasArticulos.get('/:revista/articulos/anios', articulos.anios)
 rutasArticulos.get('/:revista/articulos/existe', articulos.existeOjs)
 rutasArticulos.get('/:revista/publicaciones', articulos.publicaciones)

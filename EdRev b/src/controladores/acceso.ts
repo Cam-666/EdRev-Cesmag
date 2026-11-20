@@ -1,7 +1,7 @@
 /*
- * acceso (controlador) — receives the login, the recovery request and the password links, and
- * answers with the statuses the screens expect (423 locked, 403 disabled, 401 wrong credentials);
- * the rules are in servicios/acceso.
+ * acceso (controlador) — recibe el ingreso, la solicitud de recuperación y los enlaces de contraseña, y
+ * responde con los códigos que esperan las pantallas (423 bloqueada, 403 inhabilitada, 401 credenciales
+ * incorrectas). Las reglas están en servicios/acceso.
  */
 import type { Request, Response } from 'express'
 import { z } from 'zod'

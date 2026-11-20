@@ -1,7 +1,7 @@
 /*
- * exportar — turns a report into a CSV file that Excel opens (semicolon separated, UTF-8 with BOM
- * so the accents survive). The design shows ".xlsx"; a real workbook needs a spreadsheet library,
- * so this version exports CSV. Covers: RF-38, HU-27 (data in an exportable format).
+ * exportar — convierte un informe en un archivo CSV que abre Excel (separado por punto y coma, UTF-8 con BOM para
+ * que las tildes sobrevivan). El diseño muestra «.xlsx»; un libro de Excel real necesita una librería de hojas de
+ * cálculo, así que esta versión exporta CSV.
  */
 import { csv } from '@/lib/descarga'
 import type { IndicadorRevista, Informe } from '@/types/panel'

@@ -1,6 +1,6 @@
 /*
- * useFiltrosCorreos — mail-log filters (type, result) live in the URL query string, so a filtered
- * view can be linked and reloaded. Covers: RF-26.
+ * useFiltrosCorreos — los filtros del registro de correos (tipo, resultado) viven en la cadena de consulta de la
+ * URL, así una vista filtrada se puede enlazar y recargar.
  */
 import { useSearchParams } from 'react-router-dom'
 import { ESTADOS_CORREO, TIPOS_CORREO } from '../config/listas'

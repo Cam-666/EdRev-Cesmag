@@ -1,7 +1,7 @@
 /*
- * listas — labels of the mail types and results, as the sent-mail log shows them. Covers: RF-26,
- * HU-21 (the log distinguishes the invitation, the 2nd attempt, the resend after a correction and
- * the thank-you mail; results En cola, Enviado, Rebotado, Fallido).
+ * listas — nombres de los tipos y resultados de los correos, como los muestra el registro de correos enviados.
+ * El registro distingue la invitación, el 2.º intento, el reenvío por corrección y el correo de agradecimiento;
+ * los resultados son En cola, Enviado, Rebotado y Fallido.
  */
 import type { EstadoCorreo, RespuestaDelPar, TipoCorreo } from '@/types/historial'
 

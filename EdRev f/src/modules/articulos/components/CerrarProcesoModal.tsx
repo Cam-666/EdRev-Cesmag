@@ -1,8 +1,7 @@
 /*
- * CerrarProcesoModal — closes the process of an article as Aprobado, Rechazado or Archivado.
- * The reason is required and stays in the article's history; approving also registers the volume
- * and number of the publication, together. Everything registered so far is kept.
- * No Figma design for the dialog. Covers: RF-04, RF-08, HU-05.
+ * CerrarProcesoModal — cierra el proceso de un artículo como Aprobado, Rechazado o Archivado. El motivo es
+ * obligatorio y queda en el historial del artículo; aprobar también registra, juntos, el volumen y el número de
+ * la publicación. Todo lo registrado hasta ahora se conserva. No tiene diseño en Figma.
  */
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Controller, useForm, useWatch } from 'react-hook-form'
@@ -32,7 +31,7 @@ export interface CerrarProcesoModalProps {
   onCerrar: () => void
 }
 
-/** Mounted only while open so every opening starts empty. */
+/** Se monta solo mientras está abierto, así cada vez que se abre empieza vacío. */
 export function CerrarProcesoModal(props: CerrarProcesoModalProps) {
   return props.abierto ? <Contenido {...props} /> : null
 }

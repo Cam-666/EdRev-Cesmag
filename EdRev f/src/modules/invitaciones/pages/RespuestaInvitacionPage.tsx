@@ -1,9 +1,9 @@
 /*
- * RespuestaInvitacionPage — the page a button of the invitation mail opens (/invitacion?token=…).
- * The peer has no account: the page says what the button does and asks to confirm (so a mail
- * scanner that opens the link does not answer for the peer). «Acepto» accepts the article; «No acepto
- * esta invitación» only closes this invitation; «No deseo participar más» also stops future
- * invitations. An answered, expired or wrong link says so. Covers: RF-22, RF-15, RF-24, RNF-11.
+ * RespuestaInvitacionPage — la página que abre un botón del correo de invitación (/invitacion?token=…).
+ * El par no tiene cuenta: la página dice qué hace el botón y pide confirmar (así un antivirus de correo que abre
+ * el enlace no responde por el par). «Acepto» acepta el artículo; «No acepto esta invitación» solo cierra esta
+ * invitación; «No deseo participar más» además detiene las invitaciones futuras. Un enlace ya respondido,
+ * vencido o equivocado lo dice.
  */
 import { useSearchParams } from 'react-router-dom'
 import { useConfirmarRespuesta, useInvitacion } from '../hooks/useInvitacion'

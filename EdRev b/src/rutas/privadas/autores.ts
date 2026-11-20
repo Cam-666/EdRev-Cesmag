@@ -1,14 +1,14 @@
 /*
- * Autores — the routes only say where each request goes: the common directory of both journals
- * (RF-10), the author record with all its articles (RF-11), registration and edition. Validation
- * is in controladores/autores, the rules in servicios/autores.
+ * Autores — las rutas solo dicen a dónde va cada petición: el directorio común de las dos revistas, la ficha
+ * del autor con todos sus artículos, el registro y la edición. La validación está en controladores/autores y
+ * las reglas en servicios/autores.
  */
 import { Router } from 'express'
 import * as autores from '../../controladores/autores.js'
 
 export const rutasAutores = Router()
 
-// The fixed path goes before «:id», or it would be read as an id.
+// La ruta fija va antes de «:id»; si no, se leería como un id.
 rutasAutores.get('/:revista/autores/filtros', autores.filtros)
 rutasAutores.get('/:revista/autores', autores.buscar)
 rutasAutores.post('/:revista/autores', autores.registrar)

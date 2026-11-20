@@ -1,6 +1,4 @@
-/*
- * Proveedores — global providers: server-state cache (TanStack Query) and the session.
- */
+/* Proveedores — proveedores globales: la caché de datos del servidor (TanStack Query) y la sesión. */
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { useState } from 'react'
 import type { ReactNode } from 'react'
@@ -9,12 +7,12 @@ import { ErrorApi } from '@/lib/api/cliente'
 import type { Usuario } from '@/types/usuario'
 
 export interface ProveedoresProps {
-  /** Omit to restore the session from storage; pass null/user to force it (tests, demos). */
+  /** Si se omite, la sesión se restaura del almacenamiento; si se pasa null o un usuario, se fuerza (pruebas, demostraciones). */
   usuarioInicial?: Usuario | null
   children: ReactNode
 }
 
-/** Retries once on network/server failures, never on 4xx answers (a 404 will not fix itself). */
+/** Reintenta una vez ante fallas de red o del servidor, nunca ante respuestas 4xx (un 404 no se arregla solo). */
 function reintentar(intentos: number, error: unknown): boolean {
   if (error instanceof ErrorApi && error.estado >= 400 && error.estado < 500) return false
   return intentos < 1

@@ -1,7 +1,6 @@
 /*
- * VistaPreviaConstancia — the constancia as it will be generated: the journal's constancia
- * template written over its PDF background (letterhead, design and signature), with the peer, the
- * article and the journal filled in. No sequence number. Covers: RF-30, HU-22.
+ * VistaPreviaConstancia — la constancia como se va a generar: la plantilla de constancia de la revista con sus
+ * imágenes (membrete, diseño y firma), con el par, el artículo y la revista ya rellenados. No lleva consecutivo.
  */
 import type { VistaConstancia } from '@/types/constancia'
 

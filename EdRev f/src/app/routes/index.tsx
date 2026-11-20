@@ -1,7 +1,4 @@
-/*
- * routes — full route table: public routes, private routes (behind the auth guard) and 404.
- * Covers: RF-02, RNF-05.
- */
+/* routes — la tabla completa de rutas: públicas, privadas (detrás del guardia de sesión) y la 404. */
 import { Navigate } from 'react-router-dom'
 import type { RouteObject } from 'react-router-dom'
 import { NoEncontradaPage } from '../NoEncontradaPage'

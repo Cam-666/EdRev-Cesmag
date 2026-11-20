@@ -1,6 +1,6 @@
 /*
- * ListaRondas — every round of the initial committee review, most recent first, with its result,
- * observations, date and user. Rounds are never overwritten. Covers: RF-07, HU-04 (criterion 1).
+ * ListaRondas — todas las rondas de la revisión inicial del comité, la más reciente primero, con su resultado,
+ * observaciones, fecha y usuario. Las rondas nunca se sobrescriben.
  */
 import { DistintivoEstado } from '@/components/common/DistintivoEstado'
 import { abreviarNombre, formatearFechaHora } from '@/lib/format'

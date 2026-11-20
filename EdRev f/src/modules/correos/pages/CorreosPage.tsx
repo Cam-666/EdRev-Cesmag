@@ -1,8 +1,8 @@
 /*
- * CorreosPage — Correos enviados (/:revista/correos): the journal's sent-mail log with the
- * counters (sent / bounced / failed / queued), a warning for the bounced ones, "Corregir y
- * reenviar" and "Reintentar fallidos" (the mails the service failed and the queue). Nothing is lost: failed sends stay queued for retry (RNF-02).
- * Covers: RF-26, RF-27, RF-28, RNF-02, HU-18, HU-19, HU-20.
+ * CorreosPage — Correos enviados (/:revista/correos): el registro de correos enviados de la revista con los
+ * contadores (enviados / rebotados / fallidos / en cola), un aviso para los rebotados, «Corregir y reenviar» y
+ * «Reintentar fallidos» (los correos que falló el servicio y la cola). No se pierde nada: los envíos fallidos
+ * quedan en cola para reintentarlos.
  */
 import { useState } from 'react'
 import { CorregirCorreoModal } from '../components/CorregirCorreoModal'

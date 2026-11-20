@@ -1,6 +1,6 @@
 /*
- * autores (controlador) — receives and validates the requests about the directory of authors and
- * answers; the rules are in servicios/autores.
+ * autores (controlador) — recibe y valida las peticiones sobre el directorio de autores y responde. Las
+ * reglas están en servicios/autores.
  */
 import type { Request, Response } from 'express'
 import { z } from 'zod'

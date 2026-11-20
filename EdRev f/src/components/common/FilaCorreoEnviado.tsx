@@ -1,7 +1,4 @@
-/*
- * FilaCorreoEnviado — one row of the sent-mail log (<tr>; use inside Tabla's renderFila).
- * Covers: RF-26 (mail log), RF-27 (failures), HU-18, HU-20.
- */
+/* FilaCorreoEnviado — una fila del registro de correos enviados (<tr>; se usa dentro del renderFila de Tabla). */
 import type { ReactNode } from 'react'
 import { DistintivoEstado } from './DistintivoEstado'
 import type { EstadoDistintivo } from './DistintivoEstado'
@@ -10,12 +7,12 @@ import { formatearFechaHora } from '@/lib/format'
 export interface FilaCorreoEnviadoProps {
   tipo: string
   destinatario: string
-  /** OJS number of the article, when the log is not scoped to one article. */
+  /** Número de OJS del artículo, cuando el registro no es de un solo artículo. */
   numeroOjs?: string
-  /** ISO 8601 date-time. */
+  /** Fecha y hora en formato ISO 8601. */
   fechaEnvio: string
   resultado: Extract<EstadoDistintivo, 'en-cola' | 'enviado' | 'rebotado' | 'fallido'>
-  /** A bounced or failed mail already corrected and resent. */
+  /** Un correo rebotado o fallido que ya se corrigió y se reenvió. */
   atendido?: boolean
   accion?: ReactNode
 }

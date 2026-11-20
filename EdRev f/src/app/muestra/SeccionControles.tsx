@@ -1,7 +1,4 @@
-/*
- * SeccionControles — part of the design-system showcase (development only).
- * Covers: RNF-11, RNF-12.
- */
+/* SeccionControles — parte del muestrario del sistema de diseño (solo desarrollo). */
 import { useState } from 'react'
 import { Seccion } from './Seccion'
 import { Boton } from '@/components/common/Boton'

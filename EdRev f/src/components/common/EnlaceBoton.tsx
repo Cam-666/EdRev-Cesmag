@@ -1,7 +1,4 @@
-/*
- * EnlaceBoton — a router link that looks like a button (navigation is a link, not a button).
- * Covers: RNF-11 (links navigate, buttons act).
- */
+/* EnlaceBoton — un enlace del enrutador con aspecto de botón (navegar es un enlace; actuar es un botón). */
 import { Link } from 'react-router-dom'
 import type { LinkProps } from 'react-router-dom'
 import { clasesBoton } from './Boton'

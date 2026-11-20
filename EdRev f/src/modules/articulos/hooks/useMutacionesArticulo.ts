@@ -1,6 +1,4 @@
-/*
- * Mutations over an article. Each one refreshes the cached article queries of the journal.
- */
+/* Mutaciones sobre un artículo. Cada una refresca las consultas de artículos en caché de la revista. */
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import {
   agregarAutorAArticulo,
@@ -59,7 +57,7 @@ export function useRegistrarRonda(id: string) {
   })
 }
 
-/** The article leaves this journal: every article query of both journals is refreshed. */
+/** El artículo sale de esta revista: se refrescan todas las consultas de artículos de las dos revistas. */
 export function useTrasladarArticulo(id: string) {
   const { revista } = useRevista()
   const cliente = useQueryClient()

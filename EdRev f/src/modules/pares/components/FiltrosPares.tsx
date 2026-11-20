@@ -1,7 +1,6 @@
 /*
- * FiltrosPares — filters of the peer base: free-text thematic area with the registered areas as
- * suggestions and clickable chips, university, availability and a name search.
- * Covers: RF-13 (area suggestions), RF-14, HU-08, HU-09.
+ * FiltrosPares — filtros de la base de pares: área temática de texto libre con las áreas registradas como
+ * sugerencias y etiquetas clicables, universidad, disponibilidad y búsqueda por nombre.
  */
 import { useEffect, useState } from 'react'
 import { useAreas, useUniversidades } from '../hooks/usePares'

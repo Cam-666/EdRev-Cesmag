@@ -1,7 +1,6 @@
 /*
- * ComparativoRevistas — indicators side by side for the two journals plus their total. Each
- * journal keeps its own column: numbers are compared, never merged into one list.
- * Covers: RF-38, HU-27.
+ * ComparativoRevistas — los indicadores de las dos revistas lado a lado más su total. Cada revista conserva su
+ * propia columna: los números se comparan, nunca se mezclan en una sola lista.
  */
 import { Tabla } from '@/components/common/Tabla'
 import type { ColumnaTabla } from '@/components/common/Tabla'

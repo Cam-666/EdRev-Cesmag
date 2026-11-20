@@ -1,7 +1,6 @@
 /*
- * FormularioIngreso — login form (also "Reanudar sesión" after an inactivity logout).
- * Shows the failed-attempt counter and the 15-minute lockout returned by the API.
- * Covers: HU-28, RF-39, RNF-05, RNF-11. Lockout and attempt counter have no RF/HU yet (pending).
+ * FormularioIngreso — formulario de ingreso (también «Reanudar sesión» después de un cierre por inactividad).
+ * Muestra el contador de intentos fallidos y el bloqueo de 15 minutos que devuelve la API.
  */
 import { zodResolver } from '@hookform/resolvers/zod'
 import { format, parseISO } from 'date-fns'
@@ -22,7 +21,7 @@ import { ErrorApi } from '@/lib/api/cliente'
 import type { DetalleErrorIngreso } from '@/types/acceso'
 
 export interface FormularioIngresoProps {
-  /** Resume mode after an inactivity logout (button label changes). */
+  /** Modo de reanudar después de un cierre por inactividad (cambia el texto del botón). */
   reanudar?: boolean
   correoInicial?: string
 }

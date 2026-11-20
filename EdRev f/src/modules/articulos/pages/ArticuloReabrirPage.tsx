@@ -1,7 +1,7 @@
 /*
- * ArticuloReabrirPage — Retomar el proceso (/:revista/articulos/:id/reabrir), a modal rendered
- * over the article sheet so it is linkable (the archived row of the list opens it). Administradora
- * only (RNF-05). Covers: RF-08, HU-05.
+ * ArticuloReabrirPage — Retomar el proceso (/:revista/articulos/:id/reabrir), un modal que se dibuja sobre la
+ * ficha del artículo para que se pueda enlazar (la fila de un artículo archivado en el listado lo abre).
+ * Solo para la Administradora.
  */
 import { useNavigate } from 'react-router-dom'
 import { ReabrirArticuloModal } from '../components/ReabrirArticuloModal'

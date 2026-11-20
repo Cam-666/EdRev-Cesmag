@@ -1,7 +1,6 @@
 /*
- * EncabezadoFicha — title block of the article sheet: "OJS · title", type and publication number,
- * and the summary badges (status, anti-plagiarism %, peers assigned). Symbol + text, never color
- * alone. Covers: RF-36, RF-05, RNF-12.
+ * EncabezadoFicha — bloque de título de la ficha del artículo: «OJS · título», tipo y número de publicación, y
+ * las insignias de resumen (estado, % de antiplagio, pares asignados). Símbolo y texto, nunca solo color.
  */
 import type { ReactNode } from 'react'
 import { ETIQUETA_TIPO } from '../config/listas'
@@ -12,13 +11,13 @@ import type { ArticuloDetalle } from '@/types/articulo'
 
 export interface EncabezadoFichaProps {
   articulo: ArticuloDetalle
-  /** Actions on the article, shown beside the title (e.g. "Editar"). */
+  /** Acciones sobre el artículo, que se muestran junto al título (por ejemplo «Editar»). */
   acciones?: ReactNode
 }
 
 export function EncabezadoFicha({ articulo, acciones }: EncabezadoFichaProps) {
   const { coincidencias, asignaciones } = articulo
-  // Only those who accepted (or already delivered) are assigned; a peer who declined does not count.
+  // Solo cuentan los que aceptaron (o ya entregaron); un par que declinó no cuenta.
   const asignados = paresVigentes(asignaciones).length
   const sinResponder = asignaciones.filter(
     (a) => a.estado === 'invitado' || a.estado === 'segundo-intento',

@@ -1,17 +1,17 @@
-/** Active journal. The :revista URL segment is the only source of truth. */
+/** Revista activa. El segmento :revista de la URL es la única fuente de verdad. */
 export type Revista = 'reep' | 'ire'
 
 export interface DatosRevista {
   id: Revista
   modulo: 1 | 2
-  /** Full official name. */
+  /** Nombre oficial completo. */
   nombre: string
-  /** Short name used in navigation. */
+  /** Nombre corto que se usa en la navegación. */
   nombreCorto: string
   issn: string
-  /** Medium printed next to the ISSN, as in the journal header. */
+  /** Medio que se imprime junto al ISSN, como en el encabezado de la revista. */
   medioIssn: string
-  /** Compact title of the top bar (narrow screens, where the logo or wordmark is hidden). */
+  /** Título compacto de la barra superior (pantallas angostas, donde el logo o el nombre en letras se oculta). */
   tituloBarra: string
 }
 

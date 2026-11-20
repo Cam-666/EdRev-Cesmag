@@ -1,10 +1,10 @@
 /*
- * plantillas (servicio) — the templates of each journal (RF-45): a mail (subject and text) or a file
- * (the constancia: a text between a header and a footer image, with the signature image where
- * {{firma}} is). A new template is always blank (the person writes it); only one
- * template of each use is in use per journal; the data a template can bring in depend on its purpose.
- * A template keeps the purpose (`fin`) it was created for, in use or not: a thank-you template is
- * previewed, edited and chosen as a thank-you template.
+ * plantillas (servicio) — las plantillas de cada revista: un correo (asunto y texto) o un archivo (la constancia:
+ * un texto entre una imagen de encabezado y una de pie de página, con la imagen de la firma donde está {{firma}}).
+ * Una plantilla nueva siempre nace en blanco (la persona la escribe). En cada revista solo hay una plantilla en
+ * uso por tipo, y los datos que una plantilla puede traer dependen de su fin.
+ * Cada plantilla conserva el fin (`fin`) para el que se creó, esté en uso o no: una de agradecimiento se
+ * previsualiza, se edita y se elige como de agradecimiento. `tipo` solo dice para qué está en uso hoy.
  */
 import { enTransaccion, pool } from '../../db.js'
 import { ErrorHttp, siglaDe } from '../../lib/http.js'
@@ -17,7 +17,7 @@ export type Uso = 'invitacion' | 'agradecimiento' | 'constancia'
 export type Parte = 'encabezado' | 'pie' | 'firma'
 export const PARTES: readonly Parte[] = ['encabezado', 'pie', 'firma']
 
-/** The data (markers) each use accepts; REVISTA and PAR are the same texts in capitals. */
+/** Los datos (marcas) que acepta cada fin; REVISTA y PAR son los mismos textos en mayúsculas. */
 const VARIABLES: Record<Uso, string[]> = {
   invitacion: ['revista', 'numero', 'par', 'profesion', 'universidad', 'articulo', 'botones'],
   agradecimiento: ['revista', 'par', 'articulo'],
@@ -34,9 +34,9 @@ interface FilaPlantilla {
   id_revista: number
   nombre: string
   clase: 'correo' | 'archivo'
-  /** What the template is for; it does not change. */
+  /** Para qué sirve la plantilla; no cambia. */
   fin: Uso
-  /** What it is used for now (equal to `fin`), or null when it is not in use. */
+  /** Para qué se usa ahora (igual a `fin`), o null si no está en uso. */
   tipo: string | null
   asunto: string | null
   cuerpo: string
@@ -49,7 +49,7 @@ const SELECCION_PLANTILLA = `SELECT id_plantilla, id_revista, nombre, clase, fin
                                     octet_length(encabezado) AS t_encabezado, octet_length(pie) AS t_pie,
                                     octet_length(firma) AS t_firma FROM plantilla`
 
-/** The data a template accepts: those of the purpose it was created for. */
+/** Los datos que acepta una plantilla: los del fin para el que se creó. */
 function variablesDe(p: FilaPlantilla): string[] {
   return VARIABLES[p.fin] ?? []
 }
@@ -84,7 +84,7 @@ async function cargar(id: number): Promise<FilaPlantilla> {
   return rows[0]
 }
 
-/** RF-45: only the markers of the template can be used; none is mandatory. */
+/** Solo se pueden usar las marcas de la plantilla, y ninguna es obligatoria. */
 function validar(permitidos: string[], asunto: string | null, cuerpo: string): void {
   if (!cuerpo.trim()) throw new ErrorHttp(422, 'El texto no puede estar vacío')
   const usados = [...`${asunto ?? ''} ${cuerpo}`.matchAll(/\{\{(\w+)\}\}/g)].map((m) => m[1] ?? '')
@@ -102,7 +102,7 @@ export async function listarPlantillas() {
 export interface DatosNuevaPlantilla {
   revista: 'reep' | 'ire'
   nombre: string
-  /** What it is for: the class follows from it. Without it the class is given. The template is always blank. */
+  /** Para qué sirve: de ahí sale la clase. Sin él, la clase viene dada. La plantilla siempre nace en blanco. */
   uso?: Uso
   clase?: 'correo' | 'archivo'
 }
@@ -130,10 +130,10 @@ export async function crearPlantilla(d: DatosNuevaPlantilla) {
   return plantillaApi(await cargar(id))
 }
 
-/** Chooses what a template is used for in its journal; the one that had that use is released. */
+/** Elige para qué se usa una plantilla en su revista; la que tenía ese uso queda libre. */
 export async function asignarUso(id: number, uso: Uso) {
   const p = await cargar(id)
-  // A template is chosen only for the purpose it was created for.
+  // Una plantilla solo se elige para el fin con el que se creó.
   if (uso !== p.fin) {
     throw new ErrorHttp(409, `Esta plantilla es para ${ETIQUETA_FIN[p.fin]} y no puede usarse para ${ETIQUETA_FIN[uso]}`)
   }
@@ -175,7 +175,7 @@ export function parteDe(valor: unknown): Parte {
   return parte
 }
 
-/** The header, the footer or the signature of a constancia: a PNG or JPG image. */
+/** El encabezado, el pie o la firma de una constancia: una imagen PNG o JPG. */
 export async function subirImagen(id: number, parte: Parte, imagen: Buffer | undefined) {
   const p = await cargar(id)
   if (p.clase !== 'archivo') throw new ErrorHttp(409, 'Solo la plantilla de archivo (la constancia) lleva imágenes')
@@ -193,7 +193,7 @@ export async function quitarImagen(id: number, parte: Parte) {
   return plantillaApi(await cargar(p.id_plantilla))
 }
 
-/** The complete mail (institutional frame included) with sample data, for the text being edited. */
+/** El correo completo (con el marco institucional) con datos de ejemplo, para el texto que se está editando. */
 export async function vistaCorreo(d: {
   revista: 'reep' | 'ire'
   uso: 'invitacion' | 'agradecimiento'
@@ -227,7 +227,7 @@ export async function vistaCorreo(d: {
   }
 }
 
-/** The constancia as the PDF it really is; with `cuerpo` it shows the text being edited, not the saved one. */
+/** La constancia como el PDF que realmente es; con `cuerpo` muestra el texto que se está editando, no el guardado. */
 export async function vistaPdf(id: number, cuerpo?: string): Promise<Uint8Array> {
   const p = await cargar(id)
   if (p.clase !== 'archivo') throw new ErrorHttp(409, 'Solo la plantilla de archivo tiene vista previa en PDF')

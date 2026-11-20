@@ -1,14 +1,13 @@
 /*
- * MenuMovil — on small screens the side panel does not fit: a «Menú» button opens it as a drawer
- * (Radix Dialog: focus trap, Escape and the overlay close it). It closes by itself when the user
- * navigates. Covers: RNF-10, RNF-11 (usable on any screen width, keyboard and screen reader).
+ * MenuMovil — en pantallas pequeñas el panel lateral no cabe: un botón «Menú» lo abre como cajón (Radix Dialog:
+ * atrapa el foco, y Escape o el velo lo cierran). Se cierra solo cuando la persona navega.
  */
 import * as Dialog from '@radix-ui/react-dialog'
 import { useState } from 'react'
 import type { ReactNode } from 'react'
 
 export interface MenuMovilProps {
-  /** Current pathname: the drawer closes when it changes. */
+  /** Ruta actual: el cajón se cierra cuando cambia. */
   ruta: string
   children: ReactNode
 }

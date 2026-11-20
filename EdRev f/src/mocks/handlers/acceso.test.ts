@@ -1,7 +1,6 @@
 /*
- * Password links of the mock API: a new account defines its password with the link it receives
- * (RF-40) and a forgotten one is recovered with another (RF-46). Links last 30 minutes and work
- * once (RNF-04).
+ * Enlaces de contraseña de la API simulada: una cuenta nueva define su contraseña con el enlace que recibe y
+ * una olvidada se recupera con otro. Los enlaces duran 30 minutos y sirven una sola vez.
  */
 import { vi } from 'vitest'
 import { CONTRASENA_DEMO } from '../seed/credenciales'
@@ -20,7 +19,7 @@ function ingresar(correo: string, contrasena: string) {
   })
 }
 
-describe('password links (mock, RF-40, RF-46)', () => {
+describe('password links', () => {
   afterEach(() => vi.useRealTimers())
 
   it('a new account cannot log in until it defines its password with its link', async () => {
@@ -35,7 +34,7 @@ describe('password links (mock, RF-40, RF-46)', () => {
       }),
     )
     expect(creado.enlaceDemo).toMatch(/^\/acceso\/contrasena\?token=/)
-    // The Administradora never knows the password: not even the demo one works
+    // La Administradora nunca conoce la contraseña: ni siquiera sirve la de demostración
     expect((await ingresar(creado.correo, CONTRASENA_DEMO)).status).toBe(401)
 
     const t = token(creado.enlaceDemo)
@@ -50,7 +49,7 @@ describe('password links (mock, RF-40, RF-46)', () => {
     expect((await definir('sinnumeros')).status).toBe(422)
     expect((await definir('Revistas2027')).status).toBe(204)
     expect((await ingresar(creado.correo, 'Revistas2027')).status).toBe(200)
-    // Single use
+    // Un solo uso
     expect((await definir('OtraClave2027')).status).toBe(410)
   })
 

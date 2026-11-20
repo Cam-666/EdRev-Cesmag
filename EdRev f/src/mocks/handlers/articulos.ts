@@ -1,9 +1,8 @@
 /*
- * MSW handlers for articles of a journal: list with filters and pagination, sheet, creation,
- * edition, rounds of the committee review with the anti-plagiarism report, change of journal
- * during that review, history, closing (approved / rejected / archived) and reopening.
- * Covers: RF-01..RF-08, RF-26, RF-35, RF-36, RF-41. Simulates the backend; permissions are
- * enforced here the way the real API will (the frontend guards are only for experience).
+ * Manejadores MSW de los artículos de una revista: listado con filtros y paginación, ficha, creación, edición,
+ * rondas de la revisión del comité con el reporte antiplagio, cambio de revista, historial, cierre (aprobado /
+ * rechazado / archivado) y reapertura. Simulan el backend; los permisos se aplican aquí como los aplicará la API
+ * real (los guardias de la interfaz son solo para la experiencia).
  */
 import { http, HttpResponse } from 'msw'
 import { autorPorId, baseDe, registrarAutor } from '../db'
@@ -126,7 +125,7 @@ function auditar(
 }
 
 export const handlersArticulos = [
-  // The years that have articles (the current one always), newest first.
+  // Los años que tienen artículos (siempre el actual), del más nuevo al más antiguo.
   http.get('*/api/:revista/articulos/anios', ({ params, request }) => {
     const c = contexto(params, request)
     if (!c.ok) return c.respuesta
@@ -192,7 +191,7 @@ export const handlersArticulos = [
     for (const a of c.base.articulos) {
       if (a.publicacion) unicas.set(clavePublicacion(a.publicacion), a.publicacion)
     }
-    // RF-35: from the most recent to the oldest.
+    // Del más reciente al más antiguo.
     const lista = [...unicas.values()]
       .sort(compararPublicaciones)
       .map((p) => ({ valor: clavePublicacion(p), etiqueta: etiquetaPublicacion(p) }))
@@ -296,7 +295,7 @@ export const handlersArticulos = [
     if (ronda.coincidencias === null) {
       return error(422, 'Registre el porcentaje de coincidencias del reporte antiplagio')
     }
-    // The committee chooses the result (RF-06).
+    // El comité elige el resultado.
     if (!RESULTADOS.includes(ronda.resultado)) return error(422, 'Seleccione el resultado')
     const resultado = ronda.resultado
 
@@ -311,7 +310,7 @@ export const handlersArticulos = [
       fecha: ahoraIso(),
       usuario: c.usuario.nombre,
     })
-    // No result closes the process: the article stays in review.
+    // Ningún resultado cierra el proceso: el artículo sigue en revisión.
     articulo.estado = 'en-revision'
     auditar(
       c.base,
@@ -334,15 +333,15 @@ export const handlersArticulos = [
     if (otra.articulos.some((a) => a.id === articulo.id)) {
       return error(409, `Ya existe un artículo con el número ${articulo.id} en la otra revista`)
     }
-    // The article moves with its own records; nothing of the old journal keeps pointing at it.
+    // El artículo se mueve con sus propios registros; nada de la revista anterior sigue apuntando a él.
     const propio = (x: { articuloId: string | null }) => x.articuloId === articulo.id
     c.base.articulos = c.base.articulos.filter((a) => a.id !== articulo.id)
     otra.auditoria.unshift(
       ...c.base.auditoria.filter(propio).map((x) => ({ ...x, revista: destino })),
     )
     c.base.auditoria = c.base.auditoria.filter((x) => !propio(x))
-    // RF-07: at any stage. The evaluations, mails and constancias go along (the peers are a common
-    // base); the volume and number belong to the journal, so they are cleared.
+    // En cualquier etapa. Las evaluaciones, correos y constancias se van con el artículo (los pares son una base
+    // común); el volumen y el número pertenecen a la revista, por eso se borran.
     const asignaciones = c.base.asignaciones.filter(propio)
     const ids = new Set(asignaciones.map((x) => x.id))
     c.base.asignaciones = c.base.asignaciones.filter((x) => !propio(x))
@@ -423,13 +422,13 @@ export const handlersArticulos = [
       }
       articulo.publicacion = cierre.publicacion
     }
-    // RF-08: everything registered so far is kept; only the state changes.
+    // Todo lo registrado hasta ahora se conserva; solo cambia el estado.
     articulo.estado = cierre.estado
     if (cierre.estado === 'archivado') {
       articulo.archivadoEn = ahoraIso()
       articulo.motivoArchivo = cierre.motivo.trim()
     }
-    // The reason stays in the history (D16: no separate notes).
+    // El motivo queda en el historial (no hay notas aparte).
     auditar(
       c.base,
       c.revista,
@@ -450,7 +449,7 @@ export const handlersArticulos = [
     const { motivo, estado } = (await request.json()) as { motivo: string; estado: EstadoArticulo }
     if (!motivo.trim()) return error(422, 'Escriba el motivo de la reapertura')
 
-    // The whole earlier history (peers, concepts, mails, constancias) is kept untouched.
+    // Todo el historial anterior (pares, conceptos, correos, constancias) se conserva intacto.
     articulo.estado = estado
     articulo.archivadoEn = null
     articulo.motivoArchivo = null

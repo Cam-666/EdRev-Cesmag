@@ -1,9 +1,8 @@
 /*
- * MSW handlers for Administración: user accounts, the mail / constancia templates of each journal
- * (edit, create a new one of a class, choose the one in use, upload the header, footer and
- * signature images of the constancia), the ISSN and indexations of each journal, and the
- * cross-journal audit log. Administradora only (RNF-05).
- * Covers: RF-40, RF-41, RNF-07 (credentials are never returned), RNF-19, HU-29, HU-30.
+ * Manejadores MSW de Administración: cuentas de usuario, las plantillas de correo y de constancia de cada revista
+ * (editar, crear una nueva de una clase, elegir la que está en uso, subir las imágenes de encabezado, pie y firma
+ * de la constancia), el ISSN y las indexaciones de cada revista y el registro de auditoría de las dos revistas.
+ * Solo para la Administradora. Nunca devuelven credenciales.
  */
 import { http, HttpResponse } from 'msw'
 import { baseDe, configuracion, plantillas, usuarios } from '../db'
@@ -22,9 +21,9 @@ const FIN_TEXTO: Record<UsoPlantilla, string> = {
 import type { Revista } from '@/types/revista'
 import type { DatosUsuario, Usuario } from '@/types/usuario'
 
-/** Markers every template must keep, or its mail / constancia loses the data it exists for. */
+/** Marcas que toda plantilla debe conservar, o su correo o constancia pierde los datos para los que existe. */
 
-/** Markers each use accepts; a template without a use accepts those of its class. */
+/** Marcas que acepta cada uso; una plantilla sin uso acepta las de su clase. */
 const VARIABLES: Record<UsoPlantilla, string[]> = {
   invitacion: ['revista', 'numero', 'par', 'profesion', 'universidad', 'articulo', 'botones'],
   agradecimiento: ['revista', 'par', 'articulo'],
@@ -110,7 +109,7 @@ export const handlersAdmin = [
       ultimoIngreso: null,
     }
     usuarios().push(nuevo)
-    // RF-40: the Administradora never sets passwords; the user defines one with this link.
+    // La Administradora nunca define contraseñas; el usuario define la suya con este enlace.
     bloquearContrasena(nuevo.id)
     const enlaceDemo = crearEnlace(nuevo.id, 'activacion')
     return HttpResponse.json({ ...nuevo, enlaceDemo }, { status: 201 })
@@ -129,7 +128,7 @@ export const handlersAdmin = [
     ) {
       return error(409, 'Debe quedar al menos una administradora activa')
     }
-    // An account that already entered has activity in the history and cannot disappear from it.
+    // Una cuenta que ya ingresó tiene actividad en el historial y no puede desaparecer de él.
     if (usuario.ultimoIngreso) {
       return error(
         409,
@@ -166,7 +165,7 @@ export const handlersAdmin = [
     if (cambios.correo && !/^[^\s@]+@unicesmag\.edu\.co$/i.test(cambios.correo.trim())) {
       return error(422, 'Use un correo institucional @unicesmag.edu.co')
     }
-    // An inhabilitated account keeps its history: only its status changes (HU-29).
+    // Una cuenta inhabilitada conserva su historial: solo cambia su estado.
     Object.assign(usuario, cambios)
     return HttpResponse.json(usuario)
   }),
@@ -190,7 +189,7 @@ export const handlersAdmin = [
       (p) => p.revista === revista && p.nombre.trim().toLowerCase() === nombre.trim().toLowerCase(),
     )
     if (repetido) return error(409, 'Ya existe una plantilla con ese nombre en esta revista')
-    // A new template is always blank; what it is for does not change and the data it accepts depend on it.
+    // Una plantilla nueva siempre nace en blanco; para qué sirve no cambia y los datos que acepta dependen de ello.
     const id = `${revista}-pl-n${plantillas().length + 1}`
     const fin: UsoPlantilla = uso ?? (clase === 'archivo' ? 'constancia' : 'invitacion')
     const nueva: Plantilla = {
@@ -216,7 +215,7 @@ export const handlersAdmin = [
     const plantilla = plantillas().find((p) => p.id === params.id)
     if (!plantilla) return error(404, 'Plantilla no encontrada')
     const { uso } = (await request.json()) as { uso: UsoPlantilla }
-    // A template is chosen only for the purpose it was created for.
+    // Una plantilla solo se elige para el fin con el que se creó.
     if (uso !== plantilla.fin) {
       return error(409, `Esta plantilla es para ${FIN_TEXTO[plantilla.fin]} y no puede usarse para ${FIN_TEXTO[uso]}`)
     }
@@ -248,7 +247,7 @@ export const handlersAdmin = [
     return new HttpResponse(null, { status: 204 })
   }),
 
-  // RF-45: the constancia template carries a header, a footer and a signature image.
+  // La plantilla de constancia lleva una imagen de encabezado, una de pie de página y una de firma.
   http.post('*/api/plantillas/:id/imagen/:parte', async ({ params, request }) => {
     const c = contextoGlobal(request, 'administrar')
     if (!c.ok) return c.respuesta
@@ -256,7 +255,7 @@ export const handlersAdmin = [
     if (!plantilla) return error(404, 'Plantilla no encontrada')
     const parte = PARTES.find((x) => x === params.parte)
     if (!parte) return error(404, 'Parte de la plantilla no válida')
-    // Only the file template (the constancia) has images; a mail template has none.
+    // Solo la plantilla de archivo (la constancia) tiene imágenes; una plantilla de correo no tiene.
     if (!plantilla.imagenes) return error(409, 'Solo la plantilla de archivo (la constancia) lleva imágenes')
     const archivo = (await request.formData()).get('archivo')
     if (archivo === null || typeof archivo === 'string') return error(422, 'Adjunte la imagen')
@@ -286,7 +285,7 @@ export const handlersAdmin = [
       cuerpo: string
       uso: 'invitacion' | 'agradecimiento'
     }
-    // The title says which mail it is.
+    // El título dice de qué correo se trata.
     const titulo = uso === 'agradecimiento' ? 'Gracias por su evaluación' : 'Invitación a evaluar un artículo'
     return HttpResponse.json({
       html: `<!doctype html><html lang="es"><body><h1>Universidad CESMAG</h1><h2>${titulo}</h2><p>${cuerpo}</p><small>Aviso de datos personales</small></body></html>`,

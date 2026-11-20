@@ -1,6 +1,6 @@
 /*
- * correos (controlador) — receives and validates the requests about the log of mails and answers;
- * the rules are in servicios/registroCorreos.
+ * correos (controlador) — recibe y valida las peticiones sobre el registro de correos y responde. Las reglas
+ * están en servicios/registroCorreos.
  */
 import type { Request, Response } from 'express'
 import { z } from 'zod'

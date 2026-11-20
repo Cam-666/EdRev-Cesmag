@@ -1,12 +1,12 @@
 import { format, parseISO } from 'date-fns'
 import { es } from 'date-fns/locale'
 
-/** Visible date format: dd MMM yyyy (ISO 8601 in data). */
+/** Formato visible de las fechas: dd MMM aaaa (los datos van en ISO 8601). */
 export function formatearFecha(iso: string): string {
   return format(parseISO(iso), 'dd MMM yyyy', { locale: es }).replace('.', '')
 }
 
-/** Visible date + time on a 12-hour clock, e.g. "26 oct · 4:02 p. m.". */
+/** Fecha y hora visibles en reloj de 12 horas, por ejemplo "26 oct · 4:02 p. m.". */
 export function formatearFechaHora(iso: string): string {
   const fecha = parseISO(iso)
   const dia = format(fecha, 'dd MMM', { locale: es }).replace('.', '')
@@ -14,14 +14,14 @@ export function formatearFechaHora(iso: string): string {
   return `${dia} · ${hora} ${fecha.getHours() < 12 ? 'a. m.' : 'p. m.'}`
 }
 
-/** Hides most of the local part of an email: "maria.lopez@x.co" -> "m·····z@x.co". */
+/** Oculta la mayor parte de la parte local de un correo: "maria.lopez@x.co" -> "m·····z@x.co". */
 export function enmascararCorreo(correo: string): string {
   const [local = '', dominio = ''] = correo.split('@')
   if (local.length <= 2) return `${local.charAt(0)}·····@${dominio}`
   return `${local.charAt(0)}·····${local.charAt(local.length - 1)}@${dominio}`
 }
 
-/** mm:ss for countdowns. */
+/** mm:ss para las cuentas regresivas. */
 export function formatearCuenta(segundos: number): string {
   const total = Math.max(0, Math.floor(segundos))
   const mm = String(Math.floor(total / 60)).padStart(2, '0')
@@ -40,7 +40,7 @@ export function abreviarNombre(nombre: string): string {
   return nombre
 }
 
-/** Long date for statements such as "Archivado el 30 de septiembre de 2026". */
+/** Fecha larga para frases como "Archivado el 30 de septiembre de 2026". */
 export function formatearFechaLarga(iso: string): string {
   return format(parseISO(iso), "d 'de' MMMM 'de' yyyy", { locale: es })
 }

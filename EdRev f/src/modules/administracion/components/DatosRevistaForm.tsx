@@ -1,7 +1,7 @@
 /*
- * DatosRevistaForm — the ISSN and the indexations of one journal. They go in its constancia
- * ({{issn}} and {{indexaciones}}), which is generated again every time, so a change here shows in
- * every constancia sent or downloaded from then on. Covers: RF-30, RF-45.
+ * DatosRevistaForm — el ISSN y las indexaciones de una revista. Van en su constancia ({{issn}} y
+ * {{indexaciones}}), que se genera de nuevo cada vez, así un cambio aquí se ve en toda constancia enviada o
+ * descargada desde ese momento.
  */
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useEffect } from 'react'

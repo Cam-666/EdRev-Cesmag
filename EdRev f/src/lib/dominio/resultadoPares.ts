@@ -1,12 +1,11 @@
 /*
- * resultadoPares — what the concepts of the peers decide for an article, shared by the screens and
- * the mock API so what the page shows and what the server does never disagree.
- * Once every peer that holds a place has delivered a real concept and most of them coincide, that
- * concept is the result (with two peers both must coincide; a third settles a disagreement):
- * - «No publicable»: the process is closed and the article is «Rechazado».
- * - «Publicable con modificaciones»: the article goes back to the committee for a new round.
- * - «Publicable»: the article is approved; it needs the volume and number of the publication.
- * Covers: RF-20, RF-21, HU-14.
+ * resultadoPares — lo que deciden los conceptos de los pares para un artículo, compartido por las pantallas y la
+ * API simulada para que lo que muestra la página y lo que hace el servidor nunca se contradigan.
+ * Cuando todos los pares que ocupan un lugar entregaron un concepto real y la mayoría coincide, ese concepto es
+ * el resultado (con dos pares deben coincidir los dos; un tercero resuelve el desacuerdo):
+ * - «No publicable»: el proceso se cierra y el artículo queda «Rechazado».
+ * - «Publicable con modificaciones»: el artículo vuelve al comité para una nueva ronda.
+ * - «Publicable»: el artículo se aprueba; necesita el volumen y el número de la publicación.
  */
 import { PARES_BASE } from './pares'
 import type { ConceptoPar, EstadoAsignacion, ResultadoPares } from '@/types/par'
@@ -29,7 +28,7 @@ export function resultadoDePares(
   return REALES.find((r) => conceptos.filter((c) => c === r).length * 2 > conceptos.length) ?? null
 }
 
-/** Message of the sheet for each result. */
+/** Mensaje de la ficha para cada resultado. */
 export const TEXTO_RESULTADO: Record<ResultadoPares, string> = {
   'no-publicable':
     'Los pares evaluadores calificaron el artículo como no publicable. El proceso se cerró y el artículo quedó rechazado.',

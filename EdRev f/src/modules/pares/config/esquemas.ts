@@ -1,6 +1,4 @@
-/*
- * esquemas — Zod validation of the peers forms. Covers: RF-12, RF-13, RF-16.
- */
+/* esquemas — validación con Zod de los formularios de pares. */
 import { z } from 'zod'
 
 export const esquemaPar = z.object({
@@ -19,7 +17,7 @@ export const esquemaPar = z.object({
 })
 export type ParForm = z.infer<typeof esquemaPar>
 
-/** A new candidate typed while assigning peers to an article (RF-12, RF-19). */
+/** Un candidato nuevo escrito mientras se asignan pares a un artículo. */
 export const esquemaCandidato = esquemaPar
 export type CandidatoForm = z.infer<typeof esquemaCandidato>
 

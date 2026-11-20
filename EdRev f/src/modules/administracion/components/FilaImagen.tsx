@@ -1,7 +1,6 @@
 /*
- * FilaImagen — one image of a template (header, footer, signature, or the footer of a mail): its
- * current file, and the controls to upload a PNG or JPG from the computer or to remove it.
- * Covers: RF-30, RF-45, HU-30.
+ * FilaImagen — una imagen de una plantilla de constancia (encabezado, pie o firma): su archivo actual y los
+ * controles para subir un PNG o JPG desde el computador o quitarlo.
  */
 import { useId, useState } from 'react'
 import { useQuitarImagen, useSubirImagen } from '../hooks/useAdmin'
@@ -25,7 +24,7 @@ export function FilaImagen({
   plantilla: Plantilla
   parte: ParteImagen
   titulo: string
-  /** The image the template has now, if any. */
+  /** La imagen que tiene la plantilla ahora, si la hay. */
   actual: ImagenPlantilla | null
 }) {
   const id = useId()

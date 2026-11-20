@@ -1,8 +1,8 @@
 /*
- * MarcaIre — brand of Revista Investigium IRE inside the top bar, as the journal's own header:
- * "Revista INVESTIGIUM[IRE] | Ciencias Sociales y Humanas" in white with the red "IRE", sitting on
- * the dark part of the gradient (the accent keeps >= 3:1 as large text). Below the xl breakpoint
- * it falls back to a compact white title.
+ * MarcaIre — marca de la Revista Investigium IRE dentro de la barra superior, como el encabezado propio de la
+ * revista: «Revista INVESTIGIUM[IRE] | Ciencias Sociales y Humanas» en blanco con la «IRE» en rojo, sobre la parte
+ * oscura del degradado (el acento conserva un contraste de al menos 3:1 como texto grande). Por debajo del
+ * punto de quiebre xl pasa a un título blanco compacto.
  */
 import { REVISTAS } from '@/types/revista'
 

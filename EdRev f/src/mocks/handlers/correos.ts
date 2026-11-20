@@ -1,8 +1,8 @@
 /*
- * MSW handlers for the sent-mail log of a journal: list with counters, retry (the queue and the
- * mails the service failed) and "corregir y reenviar" (fix the address of the peer and send again
- * as a new mail). Results: en cola, enviado, rebotado, fallido (D12); nothing is lost (RNF-02).
- * Covers: RF-26, RF-27, RF-28, RNF-02. Retrying is allowed to Administradora and Auxiliar.
+ * Manejadores MSW del registro de correos enviados de una revista: listado con contadores, reintento (la cola y los
+ * correos que falló el servicio) y «corregir y reenviar» (corregir la dirección del par y enviar de nuevo como un
+ * correo nuevo). Resultados: en cola, enviado, rebotado, fallido; no se pierde nada. Reintentar está permitido a
+ * la Administradora y a la Auxiliar.
  */
 import { http, HttpResponse } from 'msw'
 import type { SeedRevista } from '../seed/fabrica'
@@ -65,8 +65,8 @@ function auditar(
 }
 
 /**
- * RF-27: a queued or failed mail is sent again as it is (same record, new date). A bounced one
- * needs its address corrected first: that resend is a new mail and the bounced one is «atendido».
+ * Un correo en cola o fallido se envía de nuevo tal cual (mismo registro, fecha nueva). Uno rebotado necesita
+ * primero la dirección corregida: ese reenvío es un correo nuevo y el rebotado queda «atendido».
  */
 function reintentar(
   base: SeedRevista,
@@ -110,7 +110,7 @@ export const handlersCorreos = [
   http.post('*/api/:revista/correos/reintentar-fallidos', ({ params, request }) => {
     const c = contexto(params, request, 'asignar-pares')
     if (!c.ok) return c.respuesta
-    // Failed sends of the mail service and the queue; bounced ones need a corrected address.
+    // Los envíos fallidos del servicio de correo y la cola; los rebotados necesitan una dirección corregida.
     const pendientes = c.base.correos.filter(
       (x) => (x.estado === 'fallido' && !x.atendido) || x.estado === 'en-cola',
     )
@@ -149,7 +149,7 @@ export const handlersCorreos = [
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(nueva.trim()))
       return error(422, 'Escriba un correo válido')
 
-    // The address belongs to the peer: fixing it fixes every later send to that peer.
+    // La dirección es del par: corregirla corrige todos los envíos posteriores a ese par.
     const par = c.base.pares.find(
       (p) => p.correo.toLowerCase() === correo.destinatario.toLowerCase(),
     )
@@ -162,7 +162,7 @@ export const handlersCorreos = [
       'Corrigió el correo del par',
       c.usuario.nombre,
     )
-    // RF-28: the resend is a new mail («Reenvío por corrección»); it is not a new attempt.
+    // El reenvío es un correo nuevo («Reenvío por corrección»); no es un intento nuevo.
     const destinatario = nueva.trim()
     const estado: EstadoCorreo = rebota(destinatario) ? 'rebotado' : 'enviado'
     correo.atendido = true

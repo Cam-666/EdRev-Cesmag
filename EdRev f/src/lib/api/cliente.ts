@@ -1,12 +1,12 @@
 /*
- * cliente — the single HTTP entry point of the frontend. Modules call it from their own
- * services/; no component talks to fetch directly. MSW answers these calls in this stage; with
- * the real backend only MSW is turned off. Authentication (JWT header) is attached here only.
+ * cliente — la única puerta HTTP de la interfaz. Los módulos lo llaman desde sus propios services/; ningún
+ * componente usa fetch directamente. En desarrollo con datos de ejemplo, MSW responde estas llamadas; con el
+ * backend real basta apagar MSW. El encabezado de autenticación (JWT) se agrega solo aquí.
  */
 
 export class ErrorApi extends Error {
   readonly estado: number
-  /** Parsed JSON body of the error response, when there is one. */
+  /** Cuerpo JSON de la respuesta de error, cuando lo hay. */
   readonly cuerpo: unknown
 
   constructor(estado: number, mensaje: string, cuerpo?: unknown) {
@@ -21,17 +21,17 @@ let token: string | null = null
 
 let alExpirar: (() => void) | null = null
 
-/** Registers what to do when the backend rejects the session token (expired or invalid). */
+/** Registra qué hacer cuando el backend rechaza el token de sesión (vencido o inválido). */
 export function alExpirarSesion(manejador: (() => void) | null): void {
   alExpirar = manejador
 }
 
-/** A 401 with a token in use means the session is over; without a token it is just a wrong login. */
+/** Un 401 con un token en uso significa que la sesión terminó; sin token es solo un ingreso con datos incorrectos. */
 function revisarExpiracion(estado: number): void {
   if (estado === 401 && token) alExpirar?.()
 }
 
-/** Sets the bearer token sent with every request (null = signed out). Called only by the session layer. */
+/** Define el token que se envía en cada petición (null = sin sesión). Solo lo llama la capa de sesión. */
 export function establecerToken(nuevo: string | null): void {
   token = nuevo
 }
@@ -49,7 +49,7 @@ async function leerJson(respuesta: Response): Promise<unknown> {
   }
 }
 
-/** A file of the API (e.g. a constancia in PDF), with the same session header. */
+/** Un archivo de la API (por ejemplo una constancia en PDF), con el mismo encabezado de sesión. */
 export async function solicitarArchivo(ruta: string, init: RequestInit = {}): Promise<Blob> {
   const headers = new Headers(init.headers)
   if (token) headers.set('Authorization', `Bearer ${token}`)
@@ -65,7 +65,7 @@ export async function solicitarArchivo(ruta: string, init: RequestInit = {}): Pr
 export async function solicitar<T>(ruta: string, init: RequestInit = {}): Promise<T> {
   const headers = new Headers(init.headers)
   headers.set('Accept', 'application/json')
-  // A FormData body (file upload) sets its own multipart boundary.
+  // Un cuerpo FormData (subida de archivo) define solo su separador multipart.
   if (init.body !== undefined && !(init.body instanceof FormData)) {
     headers.set('Content-Type', 'application/json')
   }

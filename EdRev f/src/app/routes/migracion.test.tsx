@@ -3,7 +3,7 @@ import { axe } from 'vitest-axe'
 import { AUXILIAR } from '@/mocks/seed/usuarios'
 import { montarRuta } from '@/test/montarRuta'
 
-describe('migrated records to correct (/:revista/por-corregir, RF-44)', () => {
+describe('migrated records to correct (/:revista/por-corregir)', () => {
   it('the dashboard announces them and opens the list', async () => {
     const { user, router } = montarRuta('/reep/tablero')
     expect(await screen.findByText('Registros migrados por corregir')).toBeInTheDocument()

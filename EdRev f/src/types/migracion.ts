@@ -1,18 +1,18 @@
 /*
- * Migration of the Excel (RF-42..RF-44, HU-32): the records whose hand-written text did not fit
- * the closed lists of the system are listed to be corrected from the interface.
+ * Migración del Excel: los registros cuyo texto escrito a mano no encajó en las listas cerradas del sistema se
+ * listan para corregirlos desde la interfaz.
  */
 
-/** Which datum of a migrated record has to be corrected. */
+/** Qué dato de un registro migrado hay que corregir. */
 export type CampoPorCorregir = 'tipo-articulo' | 'estado-articulo' | 'concepto' | 'correo-par'
 
 export interface RegistroPorCorregir {
   id: string
   campo: CampoPorCorregir
-  /** What the Excel said (empty when the Excel did not bring the datum). */
+  /** Lo que decía el Excel (vacío cuando el Excel no trajo el dato). */
   valorExcel: string
-  /** The article, evaluation or peer, as the list shows it. */
+  /** El artículo, la evaluación o el par, tal como lo muestra la lista. */
   descripcion: string
-  /** Where the record opens in the app. */
+  /** Dónde se abre el registro en la aplicación. */
   enlace: string
 }

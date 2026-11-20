@@ -1,10 +1,9 @@
 /*
- * FormularioPlantilla — edits one template (subject and text) with the markers it accepts, a
- * live preview filled with sample data, and validation before saving: it may only use its own
- * markers and must keep the required ones. The text can have alignment and bold. The constancia
- * (a file template) has no subject; it carries a header, a footer and a signature image (RF-30).
- * It says what the template is used for (chosen in Configuración) and a template that is not
- * in use can be deleted. Covers: RF-25, RF-30, RF-45.
+ * FormularioPlantilla — edita una plantilla (asunto y texto) con las marcas que acepta, una vista previa en vivo
+ * con datos de ejemplo y la validación antes de guardar: solo puede usar sus propias marcas. El texto puede
+ * tener alineación y negrita. La constancia (plantilla de archivo) no tiene asunto; lleva imágenes de encabezado,
+ * de pie de página y de firma. Dice para qué se usa la plantilla (se elige en Configuración) y una plantilla que
+ * no está en uso se puede eliminar.
  */
 import { useState } from 'react'
 import { DATOS_EJEMPLO, ETIQUETA_USO, validarPlantilla } from '../config/plantillas'
@@ -25,7 +24,7 @@ import { REVISTAS } from '@/types/revista'
 
 export interface FormularioPlantillaProps {
   plantilla: Plantilla
-  /** Called after the template is deleted so the page can choose another one. */
+  /** Se llama después de eliminar la plantilla para que la página elija otra. */
   onEliminada?: () => void
 }
 

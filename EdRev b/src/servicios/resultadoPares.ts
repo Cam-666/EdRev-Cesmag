@@ -1,13 +1,12 @@
 /*
- * resultadoPares — what happens to an article when its peers have delivered their concepts
- * (RF-20, RF-21, RF-30):
- * - «No publicable» from the peers: the process is closed (the article is «Rechazado») and the
- *   constancias of the peers are issued from their evaluations.
- * - «Publicable con modificaciones»: the article goes back to the committee for a new round of
- *   review («Postulado», which is how an article taken up again is handled).
- * - «Publicable»: the article is approved for publication; if it already has volume and number it is
- *   closed as «Aprobado», otherwise the page asks for them (the volume and number are not invented).
- * The registration of the concept calls this after saving it; the history keeps what was done.
+ * resultadoPares — qué le pasa a un artículo cuando sus pares entregaron sus conceptos:
+ * - «No publicable» de los pares: el proceso se cierra (el artículo queda «Rechazado») y se emiten las
+ *   constancias de los pares a partir de sus evaluaciones.
+ * - «Publicable con modificaciones»: el artículo vuelve al comité para una nueva ronda de revisión («Postulado»,
+ *   que es como se maneja un artículo retomado).
+ * - «Publicable»: el artículo se aprueba para publicación; si ya tiene volumen y número se cierra como
+ *   «Aprobado», y si no, la página los pide (no se inventan).
+ * El registro del concepto llama a esta función después de guardarlo; el historial conserva lo que se hizo.
  */
 import type { Cliente } from '../db.js'
 import { auditar } from '../lib/auditoria.js'

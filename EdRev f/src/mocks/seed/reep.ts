@@ -1,6 +1,6 @@
 /*
- * Seed of Revista Electrónica en Educación y Pedagogía (REEP): 20 articles, 25 authors,
- * 15 peers. Education and pedagogy only — nothing of IRE appears here.
+ * Datos de ejemplo de la Revista Electrónica en Educación y Pedagogía (REEP): 20 artículos, 25 autores,
+ * 15 pares. Solo educación y pedagogía — nada de IRE aparece aquí.
  */
 import { construirSeed } from './fabrica'
 import type { SeedRevista } from './fabrica'

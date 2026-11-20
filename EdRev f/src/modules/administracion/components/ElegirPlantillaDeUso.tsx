@@ -1,7 +1,7 @@
 /*
- * ElegirPlantillaDeUso — chooses which template of a journal is used for one purpose (the
- * invitation, the thank-you mail or the constancia). Only the templates created for that purpose are
- * offered; choosing one releases the one used until now. Covers: RF-25, RF-30, RF-45.
+ * ElegirPlantillaDeUso — elige qué plantilla de una revista se usa para un fin (la invitación, el correo de
+ * agradecimiento o la constancia). Solo se ofrecen las plantillas creadas para ese fin; al elegir una, queda
+ * libre la que se usaba hasta ahora.
  */
 import { ETIQUETA_USO } from '../config/plantillas'
 import { useAsignarPlantilla } from '../hooks/useAdmin'
@@ -15,7 +15,7 @@ import { REVISTAS } from '@/types/revista'
 export interface ElegirPlantillaDeUsoProps {
   revista: Revista
   uso: UsoPlantilla
-  /** Every template, of both journals; the component keeps those of its journal and class. */
+  /** Todas las plantillas, de las dos revistas; el componente conserva las de su revista y su fin. */
   plantillas: Plantilla[]
 }
 

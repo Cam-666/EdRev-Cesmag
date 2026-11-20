@@ -1,6 +1,6 @@
 /*
- * correosService — HTTP calls of the sent-mail module: the journal's mail log with counters, retry
- * of failed / queued mails and "corregir y reenviar". Covers: RF-26, RF-27, RF-28, RNF-02.
+ * correosService — llamadas HTTP del módulo de correos enviados: el registro de correos de la revista con
+ * contadores, el reintento de correos fallidos o en cola y «corregir y reenviar».
  */
 import { solicitar } from '@/lib/api/cliente'
 import type { CorreoEnviado, EstadoCorreo, TipoCorreo } from '@/types/historial'
@@ -21,7 +21,7 @@ export interface RespuestaCorreos {
   items: CorreoConArticulo[]
   total: number
   enviados: number
-  /** Bounced and failed mails still waiting for a correction or a retry. */
+  /** Correos rebotados y fallidos que aún esperan una corrección o un reintento. */
   rebotados: number
   fallidos: number
   enCola: number

@@ -1,6 +1,6 @@
 /*
- * constanciasService — HTTP calls of the constancias module: pending and issued lists, preview
- * rendered from the template, issue, issue all pending and reissue. Covers: RF-30..RF-34.
+ * constanciasService — llamadas HTTP del módulo de constancias: listas de pendientes y emitidas, vista previa
+ * armada con la plantilla, emitir, emitir todas las pendientes y reenviar.
  */
 import { solicitar } from '@/lib/api/cliente'
 import type {
@@ -24,7 +24,7 @@ export function obtenerVistaConstancia(
   return solicitar<VistaConstancia>(`/${revista}/constancias/${id(constanciaId)}/vista-previa`)
 }
 
-/** `conAgradecimiento`: the mail carries the journal's thank-you text; otherwise only the constancia. */
+/** `conAgradecimiento`: el correo lleva el texto de agradecimiento de la revista; si no, solo la constancia. */
 export function emitirConstancia(
   revista: Revista,
   constanciaId: string,

@@ -1,8 +1,7 @@
 /*
- * TablaArticulos — article list: OJS number, title, type, evaluations delivered over peers assigned (those who accepted), postulation
- * date and status. The whole row is a link to the sheet; an archived article opens the
- * "Retomar el proceso" dialog over its sheet (as the Figma prototype does).
- * Covers: RF-35, RF-36, RF-08, HU-26, RNF-11.
+ * TablaArticulos — listado de artículos: número de OJS, título, tipo, evaluaciones entregadas sobre pares
+ * asignados (los que aceptaron), fecha de postulación y estado. Toda la fila es un enlace a la ficha; un artículo
+ * archivado abre el diálogo «Retomar el proceso» sobre su ficha (como en el prototipo de Figma).
  */
 import { ETIQUETA_TIPO } from '../config/listas'
 import { DistintivoEstado } from '@/components/common/DistintivoEstado'
@@ -16,7 +15,7 @@ export interface TablaArticulosProps {
   revista: Revista
   articulos: ArticuloListado[]
   cargando: boolean
-  /** Message of the empty state (differs when filters are active). */
+  /** Mensaje del estado vacío (cambia cuando hay filtros activos). */
   vacio: string
 }
 

@@ -1,8 +1,8 @@
 import { useQueryClient } from '@tanstack/react-query'
 
 /**
- * Refreshes the cached peer and article queries of both journals. Assigning, answering or
- * blocking changes both: the peer record and the article sheet.
+ * Refresca las consultas de pares y de artículos de las dos revistas en caché. Asignar, responder o bloquear
+ * cambia las dos: la ficha del par y la ficha del artículo.
  */
 export function useInvalidarPares() {
   const cliente = useQueryClient()

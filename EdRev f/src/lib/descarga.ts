@@ -1,12 +1,12 @@
 /*
- * descarga — starts the browser download of a text file built on the client (the simulated
- * constancia, the report and audit exports). One implementation for every module.
+ * descarga — inicia la descarga en el navegador de un archivo armado en el cliente (los CSV del informe y de la
+ * auditoría). Una sola implementación para todos los módulos.
  */
 export function descargarTexto(nombre: string, texto: string, tipo: string): void {
   descargarArchivo(nombre, new Blob([texto], { type: `${tipo};charset=utf-8` }))
 }
 
-/** Starts the browser download of a file (a Blob from the API or built here). */
+/** Inicia la descarga en el navegador de un archivo (un Blob de la API o armado aquí). */
 export function descargarArchivo(nombre: string, blob: Blob): void {
   const url = URL.createObjectURL(blob)
   const enlace = document.createElement('a')
@@ -20,13 +20,13 @@ export function descargarArchivo(nombre: string, blob: Blob): void {
 
 const BOM = String.fromCharCode(0xfeff)
 
-/** One CSV cell: quoted when it holds a separator, a quote or a line break. */
+/** Una celda de CSV: se entrecomilla cuando tiene un separador, una comilla o un salto de línea. */
 export function celdaCsv(valor: string | number): string {
   const texto = String(valor)
   return /[;"\n]/.test(texto) ? `"${texto.replace(/"/g, '""')}"` : texto
 }
 
-/** Semicolon-separated CSV with a BOM, so Excel (Spanish locale) opens accents correctly. */
+/** CSV separado por punto y coma y con BOM, para que Excel en español abra bien las tildes. */
 export function csv(filas: Array<Array<string | number>>): string {
   return BOM + filas.map((f) => f.map(celdaCsv).join(';')).join('\r\n')
 }

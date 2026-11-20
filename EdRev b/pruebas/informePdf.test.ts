@@ -1,5 +1,5 @@
 /*
- * Pruebas del informe de gestión en PDF (RF-38, HU-27): un documento propio, no una captura.
+ * Pruebas del informe de gestión en PDF: un documento propio, no una captura.
  */
 import { writeFileSync } from 'node:fs'
 import { PDFDocument } from 'pdf-lib'

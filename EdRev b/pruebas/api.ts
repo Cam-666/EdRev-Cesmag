@@ -1,6 +1,4 @@
-/*
- * api — test helper: the Express app in memory (supertest) and a session per profile.
- */
+/* api — ayudas de las pruebas: la aplicación Express en memoria (supertest) y una sesión por perfil. */
 import request from 'supertest'
 import { crearApp } from '../src/app.js'
 
@@ -20,7 +18,7 @@ export async function sesion(cuenta = ADMIN): Promise<string> {
   return r.body.token as string
 }
 
-/** Authorized request as the given account (Administradora by default). */
+/** Petición autenticada como la cuenta indicada (por defecto, la Administradora). */
 export async function como(cuenta = ADMIN) {
   const token = await sesion(cuenta)
   const auth = (r: request.Test) => r.set('Authorization', `Bearer ${token}`)
@@ -36,7 +34,7 @@ export async function como(cuenta = ADMIN) {
 }
 
 let secuencia = 0
-/** An article approved by the committee, ready for peers. */
+/** Un artículo aprobado por el comité, listo para asignarle pares. */
 export async function articuloAprobado(revista: 'reep' | 'ire' = 'reep') {
   const api = await como()
   secuencia += 1

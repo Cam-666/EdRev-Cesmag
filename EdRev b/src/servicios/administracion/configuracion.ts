@@ -1,7 +1,6 @@
 /*
- * configuracion (servicio) — what the Administradora adjusts from the page: the days a peer has to
- * answer (RF-29) and, for each journal, the ISSN and the indexations that go in the constancia
- * ({{issn}}, {{indexaciones}}).
+ * configuracion (servicio) — lo que ajusta la Administradora desde la página: los días que tiene un par para
+ * responder y, de cada revista, el ISSN y las indexaciones que van en la constancia ({{issn}}, {{indexaciones}}).
  */
 import { enTransaccion, pool } from '../../db.js'
 import { auditar } from '../../lib/auditoria.js'

@@ -1,7 +1,6 @@
 /*
- * ReenvioEnlace — "Reenviar el enlace (disponible en 00:45)": resend is locked for a countdown.
- * The countdown is not a live region (it would be announced every second); the result is.
- * Covers: RF-46, RNF-11.
+ * ReenvioEnlace — «Reenviar el enlace (disponible en 00:45)»: el reenvío queda bloqueado durante una cuenta regresiva.
+ * La cuenta regresiva no es una región viva (se anunciaría cada segundo); el resultado sí lo es.
  */
 import { POLITICA_ACCESO } from '../config/politicaAcceso'
 import { useCuentaRegresiva } from '../hooks/useCuentaRegresiva'

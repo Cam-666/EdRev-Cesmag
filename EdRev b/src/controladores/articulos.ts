@@ -1,6 +1,6 @@
 /*
- * articulos (controlador) — receives and validates the requests about the articles and answers;
- * the rules are in servicios/gestionArticulos, servicios/autoresArticulo and servicios/rondasComite.
+ * articulos (controlador) — recibe y valida las peticiones sobre los artículos y responde. Las reglas están
+ * en servicios/gestionArticulos, servicios/autoresArticulo y servicios/rondasComite.
  */
 import type { Request, Response } from 'express'
 import { z } from 'zod'
@@ -43,7 +43,7 @@ const edicion = z.object({
   publicacion: publicacion.nullable().optional(),
 })
 
-// The committee chooses the result of the round (RF-06).
+// El resultado de la ronda lo elige el comité; la página solo sugiere uno.
 const ronda = z.object({
   coincidencias: z
     .number({ error: 'Registre el porcentaje de coincidencias del reporte antiplagio' })

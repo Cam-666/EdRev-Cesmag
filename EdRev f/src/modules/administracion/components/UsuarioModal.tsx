@@ -1,9 +1,8 @@
 /*
- * UsuarioModal — create or edit an account of the dependency (name, institutional email, profile)
- * and enable / disable it. A disabled account cannot log in but keeps its history of actions.
- * The Administradora never sets passwords: a new account receives a link to define its own, which
- * can be sent again while the account has not entered (RF-40).
- * No Figma design for the dialog. Covers: RF-40, HU-29, RNF-05.
+ * UsuarioModal — crea o edita una cuenta de la dependencia (nombre, correo institucional, perfil) y la habilita
+ * o inhabilita. Una cuenta inhabilitada no puede ingresar pero conserva su historial de acciones.
+ * La Administradora nunca define contraseñas: una cuenta nueva recibe un enlace para definir la suya, que se
+ * puede enviar de nuevo mientras la cuenta no haya ingresado. No tiene diseño en Figma.
  */
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Controller, useForm } from 'react-hook-form'
@@ -35,15 +34,15 @@ type Datos = z.infer<typeof esquema>
 export interface UsuarioModalProps {
   abierto: boolean
   onCerrar: () => void
-  /** The account being edited; omit to create one. */
+  /** La cuenta que se edita; se omite para crear una. */
   usuario?: Usuario
-  /** Reports that a password link was sent (`enlaceDemo` only comes from the mock API). */
+  /** Avisa que se envió un enlace de contraseña (`enlaceDemo` solo viene de la API simulada). */
   onEnlaceEnviado?: (correo: string, enlaceDemo?: string) => void
 }
 
 const FORMULARIO = 'formulario-usuario'
 
-/** Mounted only while open so every opening starts from the saved data. */
+/** Se monta solo mientras está abierto, así cada vez que se abre parte de los datos guardados. */
 export function UsuarioModal(props: UsuarioModalProps) {
   return props.abierto ? <Contenido {...props} /> : null
 }

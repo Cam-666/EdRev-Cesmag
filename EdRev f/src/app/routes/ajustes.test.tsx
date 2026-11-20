@@ -60,7 +60,7 @@ describe('Correos enviados', () => {
   it('shows the answer of the peer in the detail of an invitation', async () => {
     const { user } = montarRuta('/reep/correos')
     const filas = await screen.findAllByRole('button', { name: /Ver el correo a/ })
-    // the first invitation of the list: its detail says what the peer answered
+    // la primera invitación del listado: su detalle dice qué respondió el par
     let encontrado = false
     for (const boton of filas) {
       await user.click(boton)
@@ -122,7 +122,7 @@ describe('plantillas: cada una conserva el fin para el que se creó', () => {
     const marco = await screen.findByTitle('Vista previa del correo')
     await waitFor(() => expect(marco).toHaveAttribute('srcdoc', expect.stringContaining('Gracias por su evaluación')))
     expect(marco.getAttribute('srcdoc')).not.toContain('Invitación a evaluar un artículo')
-    // the list says what it is for
+    // la lista dice para qué sirve cada una
     expect(screen.getByRole('combobox', { name: 'Plantilla' })).toHaveTextContent('Gracias de fin de año · Agradecimiento')
   })
 

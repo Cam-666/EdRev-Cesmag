@@ -1,8 +1,7 @@
 /*
- * ParDetallePage — Ficha del par evaluador (/:revista/pares/:id): data, availability, the
- * authorization of data treatment with its date, delivered evaluations, unanswered invitations and
- * every participation with concept and constancia. Edit, block / unblock and assign from here.
- * Covers: RF-15, RF-16, RF-18, RNF-06, HU-23 (constancias visible from the peer's record).
+ * ParDetallePage — Ficha del par evaluador (/:revista/pares/:id): datos, disponibilidad, evaluaciones entregadas,
+ * invitaciones sin responder y cada participación con su concepto y constancia. Desde aquí se edita, se
+ * bloquea o desbloquea y se asigna. Las constancias se ven desde la ficha del par.
  */
 import { BotonVolver } from '@/components/common/BotonVolver'
 import { useState } from 'react'

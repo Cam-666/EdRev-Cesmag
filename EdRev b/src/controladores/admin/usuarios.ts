@@ -1,6 +1,6 @@
 /*
- * usuarios (controlador) — receives and validates the requests about the user accounts (RF-40)
- * and answers; the rules are in servicios/administracion/usuarios.
+ * usuarios (controlador) — recibe y valida las peticiones sobre las cuentas de usuario y responde. Las reglas
+ * están en servicios/administracion/usuarios.
  */
 import type { Request, Response } from 'express'
 import { z } from 'zod'

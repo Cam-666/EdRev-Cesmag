@@ -1,7 +1,6 @@
 /*
- * TablaCorreos — mails sent for this article: type, recipient, date and result (symbol + text).
- * Covers: RF-26, RF-27, HU-18, HU-20 (the log tells invitations, resends, reminders and
- * thank-you mails apart).
+ * TablaCorreos — los correos enviados de este artículo: tipo, destinatario, fecha y resultado (símbolo y texto).
+ * El registro distingue las invitaciones, los reenvíos, los segundos intentos y los correos de agradecimiento.
  */
 import { ETIQUETA_TIPO_CORREO } from '@/modules/correos/config/listas'
 import { FilaCorreoEnviado } from '@/components/common/FilaCorreoEnviado'

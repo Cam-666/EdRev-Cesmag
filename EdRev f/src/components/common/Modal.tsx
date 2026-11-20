@@ -1,7 +1,4 @@
-/*
- * Modal — dialog on Radix Dialog (focus trap, Escape to close, restores focus).
- * Covers: RNF-11 (modals with trapped focus and Escape).
- */
+/* Modal — diálogo sobre Radix Dialog (atrapa el foco, se cierra con Escape y devuelve el foco al cerrarse). */
 import * as Dialog from '@radix-ui/react-dialog'
 import { useRef } from 'react'
 import type { ReactNode } from 'react'
@@ -12,12 +9,12 @@ export interface ModalProps {
   titulo: string
   descripcion: string
   children?: ReactNode
-  /** Footer actions (buttons). */
+  /** Acciones del pie (botones). */
   acciones?: ReactNode
 }
 
 export function Modal({ abierto, onCerrar, titulo, descripcion, children, acciones }: ModalProps) {
-  // The dialog is controlled (no Radix Trigger), so remember who opened it and give focus back.
+  // El diálogo es controlado (sin Radix Trigger), así que se recuerda quién lo abrió para devolverle el foco.
   const previo = useRef<HTMLElement | null>(null)
   return (
     <Dialog.Root open={abierto} onOpenChange={(abrir) => !abrir && onCerrar()}>

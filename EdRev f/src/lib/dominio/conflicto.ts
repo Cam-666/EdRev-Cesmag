@@ -1,11 +1,11 @@
 /*
- * conflicto — conflict-of-interest rule when assigning a peer. Pure, shared by the mock API and
- * the interface. Covers: RF-17, HU-12. A peer of the same institution as an author is refused.
+ * conflicto — regla de conflicto de interés al asignar un par. Es pura y la comparten la API simulada y la
+ * interfaz: se rechaza un par de la misma institución que alguno de los autores.
  */
 import type { Autor } from '@/types/autor'
 import type { ParEvaluador } from '@/types/par'
 
-/** Words that do not tell one institution from another: «Universidad Cesmag» and «Cesmag» are the same. */
+/** Palabras que no distinguen una institución de otra: «Universidad Cesmag» y «Cesmag» son la misma. */
 const GENERICAS = new Set([
   'universidad', 'universitaria', 'universitario', 'univ', 'institucion', 'instituto', 'corporacion',
   'fundacion', 'de', 'del', 'la', 'las', 'los', 'el', 'y', 'e', 'u', 'en', 'sede',
@@ -21,9 +21,8 @@ function palabras(texto: string | null): Set<string> {
 }
 
 /**
- * Whether two names are the same institution: they coincide ignoring case, accents and the generic
- * words (Universidad, de, la…), or all the distinctive words of one are in the other
- * («Cesmag» in «Universidad CESMAG»).
+ * Si dos nombres son la misma institución: coinciden sin importar mayúsculas, tildes ni las palabras genéricas
+ * (Universidad, de, la…), o todas las palabras propias de uno están en el otro («Cesmag» en «Universidad CESMAG»).
  */
 export function mismaUniversidad(a: string | null, b: string | null): boolean {
   const x = palabras(a)
@@ -34,8 +33,8 @@ export function mismaUniversidad(a: string | null, b: string | null): boolean {
 }
 
 /**
- * Authors whose institution is the peer's own: the assignment is refused (RF-17, HU-12). Returns
- * the sentence to show, or null when there is none.
+ * Autores cuya institución es la del par: la asignación se rechaza. Devuelve la frase que se muestra, o null si
+ * no hay conflicto.
  */
 export function mismaInstitucion(
   par: Pick<ParEvaluador, 'universidad'>,

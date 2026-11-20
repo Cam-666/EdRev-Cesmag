@@ -1,5 +1,5 @@
 /*
- * Pruebas de la respuesta del par desde el correo — RF-22, RF-15, RF-24.
+ * Pruebas de la respuesta del par desde el correo
  */
 import jwt from 'jsonwebtoken'
 import request from 'supertest'
@@ -19,7 +19,7 @@ async function invitacion(n: number) {
 const responder = (asignacion: number, accion: AccionCorreo) =>
   request(app).post(url(firmarRespuesta(asignacion, accion)))
 
-describe('respuesta del par desde el correo (RF-22)', () => {
+describe('respuesta del par desde el correo', () => {
   it('«Acepto» registra la aceptación, lleva el artículo a En evaluación y el enlace sirve una vez', async () => {
     const i = await invitacion(1)
     const info = await request(app).get(url(firmarRespuesta(i.asignacion, 'acepto')))

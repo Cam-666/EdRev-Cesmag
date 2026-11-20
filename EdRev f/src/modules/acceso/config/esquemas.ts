@@ -1,6 +1,6 @@
 /*
- * esquemas — Zod validation for the access forms. Covers: HU-28.
- * Messages say how to fix the field, never only that it is wrong.
+ * esquemas — validación con Zod de los formularios de acceso.
+ * Los mensajes dicen cómo corregir el campo, nunca solo que está mal.
  */
 import { z } from 'zod'
 import { POLITICA_ACCESO } from './politicaAcceso'
@@ -23,7 +23,7 @@ export const esquemaRecuperacion = z.object({
   correo: correoInstitucional,
 })
 
-/** New password: at least 8 characters with letters and numbers, typed twice. */
+/** Contraseña nueva: al menos 8 caracteres con letras y números, escrita dos veces. */
 export const esquemaNuevaContrasena = z
   .object({
     contrasena: z

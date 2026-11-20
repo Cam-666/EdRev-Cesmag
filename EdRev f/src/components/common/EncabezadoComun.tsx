@@ -1,6 +1,6 @@
 /*
- * EncabezadoComun — 60 px top bar for the cross-journal modules (Inicio, Informes,
- * Administración). Neutral: it carries no journal palette. Covers: RF-37, RF-38, RF-40.
+ * EncabezadoComun — barra superior de 60 px de los módulos de las dos revistas (Inicio, Informes,
+ * Administración). Es neutra: no lleva la paleta de ninguna revista.
  */
 import { Escudo } from './Escudo'
 

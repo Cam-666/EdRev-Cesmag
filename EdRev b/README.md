@@ -63,7 +63,7 @@ Cuentas iniciales (contraseña `Editorial2026*`, cámbiela antes de la puesta en
 | Enlaces de contraseña (cuenta nueva y recuperación): 30 minutos, un solo uso | Listo |
 | Informe de gestión por revista y semestre, como datos, CSV y documento PDF con gráficas | Listo |
 | Envío de correos en segundo plano (Brevo o simulado) con la constancia en PDF adjunta | Listo |
-| Segundo intento automático y bloqueo «Sin respuesta» tras los días de espera (RF-29) | Listo |
+| Segundo intento automático y bloqueo «Sin respuesta» tras los días de espera | Listo |
 | Descarga de la constancia en PDF (`/:revista/constancias/:id/pdf`) | Listo |
 | Rebotes reales: webhook de Brevo `/api/webhooks/brevo?token=BREVO_WEBHOOK_TOKEN` | Listo |
 | Seguridad: cabeceras (helmet), límite de peticiones, JWT HS256 con secreto fuerte | Listo |
@@ -113,7 +113,7 @@ npm test
 
 Corren contra una base aparte, `edrev_prueba`, que se borra y se vuelve a crear en cada corrida (necesita `DATABASE_ADMIN_URL` en `.env`). La base `edrev` no se toca. Cubren el acceso y la validación del JWT, las rutas públicas y privadas, los artículos y el comité, la asignación de pares y el resultado según sus conceptos, las constancias, los correos y su marco institucional, las plantillas, la auditoría y los informes en PDF.
 
-## Migración del Excel (RF-42 a RF-44)
+## Migración del Excel
 
 ```
 npm run migrar -- reep db/plantilla_migracion.csv --simular   (prueba: no guarda nada)
@@ -127,7 +127,7 @@ Lee la primera hoja de un `.xlsx` o `.csv`; la primera fila son los encabezados.
 - Los artículos cuyo N.º OJS ya existe en la revista se omiten, así que se puede repetir la carga.
 - Si los encabezados del Excel real son distintos, se agregan sus nombres en `ALIAS` de `src/servicios/migracion.ts`.
 
-## Respaldo de la base (RNF-08)
+## Respaldo de la base
 
 ```
 npm run respaldo
@@ -137,8 +137,8 @@ Crea `respaldos/edrev-AAAAMMDD-HHMM.sql` con `pg_dump` y conserva los últimos 1
 
 ## Variables de entorno
 
-Ver `.env.example`. Ninguna credencial va en el código (RNF-07); los valores de la sección 3.2 (umbral, días de
-espera, intentos, máximo de pares) también son variables, para el traslado al servidor de la universidad (RNF-13).
+Ver `.env.example`. Ninguna credencial va en el código; los valores del proceso (umbral, días de espera, intentos, máximo de pares)
+también son variables, para poder trasladar el sistema al servidor de la universidad sin modificarlo.
 
 ## Docker
 

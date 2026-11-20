@@ -1,35 +1,34 @@
 /*
- * permisos — single source of truth for what each profile can do (authorization).
- * Covers: RNF-05, HU-29 (criterion 3), HU-11, HU-16, HU-21, HU-23.
- * The Auxiliar does all the editorial work of both journals; only administration (accounts,
- * templates, audit) is reserved to the Administradora.
+ * permisos — única fuente de verdad de lo que puede hacer cada perfil (autorización).
+ * La Auxiliar hace todo el trabajo editorial de las dos revistas; solo la administración (cuentas, plantillas,
+ * configuración y auditoría) es de la Administradora.
  */
 import type { Perfil } from '@/types/usuario'
 
 export type Accion =
-  /** Register articles, authors, peers and observations. */
+  /** Registrar artículos, autores, pares y observaciones. */
   | 'registrar-datos'
-  /** Assign peers and resend invitations. */
+  /** Asignar pares y reenviar invitaciones. */
   | 'asignar-pares'
-  /** Antiplagio and committee review (RF-05, RF-06). */
+  /** Antiplagio y revisión del comité. */
   | 'registrar-revision'
-  /** Peer concept (RF-20). */
+  /** Concepto del par. */
   | 'registrar-concepto'
-  /** Mark an evaluation as delivered (RF-23). */
+  /** Marcar una evaluación como entregada. */
   | 'marcar-entrega'
-  /** Issue or reissue constancias (RF-30, RF-33). */
+  /** Emitir o volver a emitir constancias. */
   | 'emitir-constancia'
-  /** Block a peer by hand (RF-15). */
+  /** Bloquear un par a mano. */
   | 'bloquear-par'
-  /** Unblock a peer (RF-16). */
+  /** Desbloquear un par. */
   | 'desbloquear-par'
-  /** Register the answer of a peer to the invitation (RF-22). */
+  /** Registrar la respuesta de un par a la invitación. */
   | 'registrar-respuesta'
-  /** Reopen an archived article (RF-08). */
+  /** Reabrir un artículo archivado. */
   | 'reabrir-articulo'
-  /** Close the process of an article as approved, rejected or archived (RF-08). */
+  /** Cerrar el proceso de un artículo como aprobado, rechazado o archivado. */
   | 'cerrar-articulo'
-  /** Accounts, templates, parameters (RF-40, RNF-19). */
+  /** Cuentas, plantillas y parámetros. */
   | 'administrar'
 
 const TODAS: readonly Accion[] = [

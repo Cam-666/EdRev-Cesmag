@@ -1,6 +1,6 @@
 /*
- * TablaParticipaciones — the articles a peer took part in, with status, concept and constancia
- * (symbol + text). Covers: RF-18, HU-23 (constancia visible from the peer's record).
+ * TablaParticipaciones — los artículos en que participó un par, con estado, concepto y constancia (símbolo y
+ * texto). La constancia es visible desde la ficha del par.
  */
 import { ETIQUETA_CONCEPTO } from '@/modules/articulos/config/listas'
 import { DistintivoEstado } from '@/components/common/DistintivoEstado'

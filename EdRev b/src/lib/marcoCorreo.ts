@@ -1,11 +1,11 @@
 /*
- * marcoCorreo — the institutional frame of every mail the system sends (invitation, thank-you,
- * constancia): the header of the Universidad CESMAG with its slogan, a blue band with the
- * dependency and the month, the title of the mail, the text of the template, the contact block, the
- * notice of confidentiality and the personal data notice. Built as tables with inline styles,
- * which is what mail clients read. The shield is an image of the API: it only goes in when the API
- * university publishes on its own site (LOGO_CORREO_URL), so it shows in any mail client; without it
- * the header is the name of the university in letters. Covers: RF-24, RF-25, RF-31, RF-45.
+ * marcoCorreo — el marco institucional de todos los correos que envía el sistema (invitación, agradecimiento,
+ * constancia): el encabezado de la Universidad CESMAG con su lema, una franja azul con la dependencia y el mes,
+ * el título del mensaje, el texto de la plantilla, el bloque de contacto y los avisos de confidencialidad y de
+ * datos personales. Se arma con tablas y estilos en línea, que es lo que leen los clientes de correo.
+ * El escudo es una imagen: en los correos reales sale de LOGO_CORREO_URL (la dirección que la universidad
+ * publica en su sitio), así se ve en cualquier cliente; sin ella el encabezado es el nombre de la universidad
+ * en letras. Las vistas previas de la página lo llevan incrustado, sin depender de la red.
  */
 import { readFileSync } from 'node:fs'
 import { config } from '../config.js'
@@ -27,7 +27,10 @@ const TITULOS = {
 
 export type TipoMarco = keyof typeof TITULOS
 
-/** Whether the API address can be reached from outside this computer (so a mail client can load images). */
+/**
+ * Si la dirección de la API se puede alcanzar desde fuera de este computador (para que un cliente de correo
+ * pueda cargar imágenes).
+ */
 export function apiPublica(url = config.urlApiPublica): boolean {
   try {
     const { protocol, hostname } = new URL(url)
@@ -38,13 +41,13 @@ export function apiPublica(url = config.urlApiPublica): boolean {
   }
 }
 
-/** Address of the shield for a real mail: the university's own, or the API's when it is public. */
+/** Dirección del escudo para un correo real: la de la universidad o, si no hay, la de la API cuando es pública. */
 export function enlaceEscudo(): string | null {
   if (config.urlLogoCorreo) return config.urlLogoCorreo
   return apiPublica() ? `${config.urlApiPublica}/api/imagenes/escudo` : null
 }
 
-/** The shield as a data address, for the previews on screen (no network needed). */
+/** El escudo como dirección de datos, para las vistas previas en pantalla (no necesita red). */
 export function escudoEmbebido(): string {
   const png = readFileSync(new URL('../../assets/escudo-cesmag.png', import.meta.url))
   return `data:image/png;base64,${png.toString('base64')}`
@@ -54,14 +57,14 @@ const esc = (t: string) => t.replace(/&/g, '&amp;').replace(/</g, '&lt;').replac
 
 export interface DatosMarco {
   tipo: TipoMarco
-  /** Name of the journal, as the dependency shows it in the band. */
+  /** Nombre de la revista, tal como la dependencia lo muestra en la franja. */
   revista: string
-  /** Address the mail leaves from; also where the peer can write. */
+  /** Dirección desde la que sale el correo; también donde el par puede escribir. */
   contacto: string
-  /** The text of the template already as HTML (with the buttons, if it has them). */
+  /** El texto de la plantilla ya como HTML (con los botones, si los tiene). */
   contenido: string
   fecha?: Date
-  /** Source of the shield; by default the address of a real mail. The previews pass the embedded one. */
+  /** Origen del escudo; por defecto el de un correo real. Las vistas previas pasan el incrustado. */
   escudo?: string | null
 }
 

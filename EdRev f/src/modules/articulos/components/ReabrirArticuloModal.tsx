@@ -1,7 +1,7 @@
 /*
- * ReabrirArticuloModal — "Retomar el proceso" of an archived article: asks the reason (saved as
- * a dated observation) and the state it returns to, and shows what is kept (authors, peers,
- * antiplagio, observations, constancias). Covers: RF-08, HU-05.
+ * ReabrirArticuloModal — «Retomar el proceso» de un artículo archivado: pide el motivo (se guarda como una
+ * observación con fecha) y el estado al que vuelve, y muestra lo que se conserva (autores, pares, antiplagio,
+ * observaciones, constancias).
  */
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Controller, useForm } from 'react-hook-form'

@@ -1,7 +1,4 @@
-/*
- * SeccionDominio — part of the design-system showcase (development only).
- * Covers: RNF-11, RNF-12.
- */
+/* SeccionDominio — parte del muestrario del sistema de diseño (solo desarrollo). */
 import { Seccion } from './Seccion'
 import { Boton } from '@/components/common/Boton'
 import { ChipAreaTematica } from '@/components/common/ChipAreaTematica'

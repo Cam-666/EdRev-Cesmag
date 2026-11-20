@@ -1,7 +1,4 @@
-/*
- * esquemas — Zod validation of the article forms. Messages say how to fix each field.
- * Covers: RF-01, RF-05, RF-06, RF-07, RF-08, RF-09.
- */
+/* esquemas — validación con Zod de los formularios de artículos. Los mensajes dicen cómo corregir cada campo. */
 import { z } from 'zod'
 import { aNumero } from './reglas'
 
@@ -27,7 +24,7 @@ export type DatosArticuloForm = z.infer<typeof esquemaDatosArticulo>
 
 const entero = (v: string) => /^\d+$/.test(v.trim()) && Number(v) > 0
 
-/** RF-04: volume and number go together (both or neither). */
+/** El volumen y el número van juntos (los dos o ninguno). */
 export const esquemaEdicionArticulo = z
   .object({
     titulo: z.string().trim().min(1, 'Escriba el título del artículo.'),
@@ -70,7 +67,7 @@ export const esquemaReapertura = z.object({
 })
 export type ReaperturaForm = z.infer<typeof esquemaReapertura>
 
-/** RF-08: closing needs a reason; approving also needs the volume and number (HU-05). */
+/** Cerrar exige un motivo; aprobar exige además el volumen y el número. */
 export const esquemaCierre = z
   .object({
     estado: z

@@ -1,21 +1,21 @@
 /*
- * politicaAcceso — access policy values shown in the access screens. RNF-05: the session closes
- * after 30 minutes of inactivity; RF-40 / RF-46 / RNF-04: the activation and recovery links last
- * 30 minutes and work once. The lockout after failed attempts is kept from the design.
+ * politicaAcceso — valores de la política de acceso que muestran las pantallas de acceso: la sesión se cierra tras
+ * 30 minutos de inactividad; los enlaces de activación y de recuperación duran 30 minutos y sirven una sola vez;
+ * y el bloqueo tras intentos fallidos.
  */
 export const POLITICA_ACCESO = {
-  /** Failed attempts before the account is locked. */
+  /** Intentos fallidos antes de bloquear la cuenta. */
   intentosMaximos: 3,
-  /** Lock duration after the last failed attempt. */
+  /** Duración del bloqueo después del último intento fallido. */
   bloqueoMinutos: 15,
-  /** Inactivity after which the session closes (RNF-05). */
+  /** Inactividad después de la cual se cierra la sesión. */
   inactividadMinutos: 30,
-  /** Validity of the activation and recovery links (RF-40, RF-46). */
+  /** Vigencia de los enlaces de activación y de recuperación. */
   enlaceCaducaMinutos: 30,
-  /** Minimum length of a new password. */
+  /** Longitud mínima de una contraseña nueva. */
   contrasenaMinima: 8,
-  /** Wait before the recovery link can be resent. */
+  /** Espera antes de poder reenviar el enlace de recuperación. */
   reenvioSegundos: 45,
-  /** Institutional domain accepted by the login form. */
+  /** Dominio institucional que acepta el formulario de ingreso. */
   dominioInstitucional: '@unicesmag.edu.co',
 } as const

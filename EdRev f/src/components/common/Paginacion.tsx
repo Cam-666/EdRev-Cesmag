@@ -1,17 +1,15 @@
-/*
- * Paginacion — page navigation with "1–6 de 142" summary. Covers: RNF-01 (paginated lists).
- */
+/* Paginacion — navegación entre páginas con el resumen «1–6 de 142». Los listados largos van paginados. */
 import { cn } from '@/lib/cn'
 
 export interface PaginacionProps {
-  /** 1-based current page. */
+  /** Página actual, empezando en 1. */
   pagina: number
   porPagina: number
   total: number
   onCambiar: (pagina: number) => void
 }
 
-/** Pages to show: first, last, and neighbours of the current page; null = ellipsis. */
+/** Páginas que se muestran: la primera, la última y las vecinas de la actual; null = puntos suspensivos. */
 export function paginasVisibles(pagina: number, totalPaginas: number): Array<number | null> {
   const set = new Set<number>([1, totalPaginas, pagina - 1, pagina, pagina + 1])
   const ordenadas = [...set].filter((p) => p >= 1 && p <= totalPaginas).sort((a, b) => a - b)

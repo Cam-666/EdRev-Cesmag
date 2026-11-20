@@ -1,9 +1,8 @@
 /*
- * DefinirContrasenaPage — the page the mail link opens (/acceso/contrasena?token=…): a new account
- * defines its password (RF-40) or a user who forgot it creates a new one (RF-46). The link lasts
- * 30 minutes and works once (RNF-04); an expired, used or wrong link says so and offers a new one.
- * Saving takes the user back to «Iniciar sesión» with the email filled in.
- * Covers: RF-40, RF-46, HU-28 (criterion 2), HU-29 (criterion 1), RNF-04, RNF-11.
+ * DefinirContrasenaPage — la página que abre el enlace del correo (/acceso/contrasena?token=…): una cuenta nueva
+ * define su contraseña o quien la olvidó crea una nueva. El enlace dura 30 minutos y sirve una sola vez; un enlace
+ * vencido, usado o equivocado lo dice y ofrece pedir uno nuevo. Al guardar, lleva a «Iniciar sesión» con el
+ * correo ya escrito.
  */
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useForm } from 'react-hook-form'

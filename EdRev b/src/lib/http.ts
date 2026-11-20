@@ -1,6 +1,6 @@
 /*
- * http — errors with an HTTP status and a message for the user ({ mensaje }, the same body the
- * frontend already reads), and the journal of the URL (reep = 1, ire = 2; D9).
+ * http — errores con código HTTP y un mensaje para el usuario ({ mensaje }, el mismo cuerpo que ya lee la
+ * interfaz), y la revista de la URL (reep = 1, ire = 2).
  */
 export class ErrorHttp extends Error {
   constructor(
@@ -24,7 +24,7 @@ export function siglaDe(id: number): Sigla {
   return id === 1 ? 'reep' : 'ire'
 }
 
-/** Positive integer id from the URL, or 404. */
+/** Número entero positivo de la URL, o 404. */
 export function idNumerico(valor: unknown, que = 'Registro'): number {
   const n = Number(valor)
   if (!Number.isInteger(n) || n <= 0) throw new ErrorHttp(404, `${que} no encontrado`)
@@ -38,7 +38,10 @@ export function sinTildes(texto: string): string {
     .toLowerCase()
 }
 
-/** An integer query value inside [minimo, maximo]; anything else (text, decimals, NaN) is the default. */
+/**
+ * Un valor entero de la consulta dentro de [minimo, maximo]; cualquier otra cosa (texto, decimales, NaN)
+ * queda en el valor por defecto.
+ */
 export function enteroDe(valor: unknown, porDefecto: number, minimo: number, maximo = Number.MAX_SAFE_INTEGER): number {
   const n = Number(valor)
   if (valor === undefined || valor === '' || !Number.isInteger(n)) return porDefecto

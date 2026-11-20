@@ -2,8 +2,8 @@ import type { EstadoArticulo } from './articulo'
 import type { Revista } from './revista'
 
 /**
- * Author record of the common directory of both journals (RF-10): an author who submits again,
- * in either journal, is found by name or ORCID and reused. `revista` is where it was first used.
+ * Ficha de un autor del directorio común de las dos revistas: un autor que vuelve a postular, en cualquiera de
+ * ellas, se encuentra por nombre u ORCID y se reutiliza. `revista` es donde se usó por primera vez.
  */
 export interface Autor {
   id: string
@@ -15,16 +15,16 @@ export interface Autor {
   pais: string
 }
 
-/** An author as listed in an article: the order identifies the main author (first). */
+/** Un autor tal como aparece en un artículo: el orden identifica al autor principal (el primero). */
 export interface AutorDeArticulo extends Autor {
-  /** 1-based position in the article. */
+  /** Posición en el artículo, empezando en 1. */
   orden: number
 }
 
-/** Data typed in the author form (no id yet). */
+/** Datos escritos en el formulario de autor (todavía sin id). */
 export type DatosAutor = Omit<Autor, 'id' | 'revista'>
 
-/** An article of an author, in either journal (RF-11). */
+/** Un artículo de un autor, en cualquiera de las dos revistas. */
 export interface ArticuloDeAutor {
   id: string
   revista: Revista

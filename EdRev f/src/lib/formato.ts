@@ -1,8 +1,7 @@
 /*
- * formato — the light formatting of a template's text (same rules as the server): paragraphs
- * separated by a blank line; a paragraph may start with [centro], [justificado], [derecha] or
- * [izquierda]; **text** is bold. Used by the editor's buttons and by the preview.
- * Covers: RF-25, RF-30, RF-45.
+ * formato — el formato sencillo del texto de una plantilla (las mismas reglas que el servidor): los párrafos se
+ * separan con una línea en blanco; un párrafo puede empezar con [centro], [justificado], [derecha] o [izquierda];
+ * **texto** es negrita. Así se guarda lo que arma el editor, y lo usan los botones del editor y la vista previa.
  */
 
 export type Alineacion = 'izquierda' | 'centro' | 'derecha' | 'justificado'
@@ -48,7 +47,7 @@ export function analizar(texto: string): Parrafo[] {
     })
 }
 
-/** The selected part of the text in bold; if it already is, the bold is removed. */
+/** La parte seleccionada del texto en negrita; si ya lo estaba, se quita la negrita. */
 export function alternarNegrita(
   texto: string,
   inicio: number,
@@ -66,7 +65,7 @@ export function alternarNegrita(
   return { texto: `${antes}**${medio}**${despues}`, inicio: inicio + 2, fin: fin + 2 }
 }
 
-/** Gives the paragraph where the cursor is the chosen alignment (left removes the mark). */
+/** Da al párrafo donde está el cursor la alineación elegida (izquierda quita la marca). */
 export function alinearParrafo(texto: string, posicion: number, alineacion: Alineacion): string {
   const normal = texto.replace(/\r\n/g, '\n')
   const separadores = [...normal.matchAll(/\n[ \t]*\n/g)]
@@ -85,7 +84,7 @@ export function alinearParrafo(texto: string, posicion: number, alineacion: Alin
   return normal.slice(0, inicio) + marca + parrafo + normal.slice(fin)
 }
 
-/** The text without the formatting marks, for places that cannot show them. */
+/** El texto sin las marcas de formato, para los lugares que no pueden mostrarlas. */
 export function textoPlano(texto: string): string {
   return analizar(texto)
     .map((p) => p.lineas.map((l) => l.map((t) => t.texto).join('')).join('\n'))

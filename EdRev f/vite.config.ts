@@ -7,7 +7,7 @@ export default defineConfig({
   build: {
     rolldownOptions: {
       output: {
-        // Split third-party code into stable chunks (better caching, no 500 kB warning).
+        // Separa el código de terceros en paquetes estables (mejor caché, sin la advertencia de 500 kB).
         codeSplitting: {
           groups: [
             {
@@ -29,7 +29,7 @@ export default defineConfig({
     setupFiles: ['./src/test/setup.ts'],
     css: false,
     testTimeout: 15000,
-    // Tests always run against the simulated API, whatever .env.local says for development.
+    // Las pruebas siempre corren contra la API simulada, sin importar lo que diga .env.local para desarrollo.
     env: { VITE_USE_MOCKS: 'true', VITE_API_URL: 'http://localhost/api' },
   },
 })

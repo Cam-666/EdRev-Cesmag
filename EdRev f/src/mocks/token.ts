@@ -1,6 +1,6 @@
 /*
- * token — mock bearer token that carries the user id, so the mock API knows who acts (the real
- * backend reads it from the JWT). Only used while MSW is on.
+ * token — token portador simulado que lleva el id del usuario, para que la API simulada sepa quién actúa (el
+ * backend real lo lee del JWT). Solo se usa mientras MSW está encendido.
  */
 const PREFIJO = 'mock-jwt:'
 

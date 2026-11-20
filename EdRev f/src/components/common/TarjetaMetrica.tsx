@@ -1,7 +1,4 @@
-/*
- * TarjetaMetrica — big number + label (revista dashboard, home, reports).
- * Covers: RF-37 (alerts with count), HU-25.
- */
+/* TarjetaMetrica — un número grande con su etiqueta (tablero de la revista, Inicio, informes). */
 import type { ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 import { cn } from '@/lib/cn'
@@ -9,10 +6,10 @@ import { cn } from '@/lib/cn'
 export interface TarjetaMetricaProps {
   valor: number | string
   etiqueta: string
-  /** Optional link to the list of cases behind the number. */
+  /** Enlace opcional al listado de los casos que hay detrás del número. */
   href?: string
   textoEnlace?: string
-  /** Emphasizes alert cards (pending items) with a warning symbol. */
+  /** Resalta las tarjetas de alerta (pendientes) con un símbolo de advertencia. */
   alerta?: boolean
   detalle?: ReactNode
 }

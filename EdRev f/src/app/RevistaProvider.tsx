@@ -1,6 +1,6 @@
 /*
- * RevistaProvider — exposes the active journal, derived only from the :revista URL segment.
- * Covers: RF-02 (separation by journal).
+ * RevistaProvider — expone la revista activa, que se deduce solo del segmento :revista de la URL.
+ * Así cada pantalla de revista muestra únicamente los datos de la suya.
  */
 import { useMemo } from 'react'
 import type { ReactNode } from 'react'

@@ -1,7 +1,4 @@
-/*
- * TablaAutoresArticulo — authors of the article in the order they were registered; the first one
- * is the main author. Covers: RF-09, HU-06 (up to seven authors, order kept).
- */
+/* TablaAutoresArticulo — los autores del artículo en el orden en que se registraron; el primero es el autor principal. */
 import { Boton } from '@/components/common/Boton'
 import { Tabla } from '@/components/common/Tabla'
 import type { ColumnaTabla } from '@/components/common/Tabla'
@@ -9,7 +6,7 @@ import type { AutorDeArticulo } from '@/types/autor'
 
 export interface TablaAutoresArticuloProps {
   autores: AutorDeArticulo[]
-  /** When provided, each row shows an "Editar" button. */
+  /** Cuando se da, cada fila muestra un botón «Editar». */
   onEditar?: (autor: AutorDeArticulo) => void
 }
 

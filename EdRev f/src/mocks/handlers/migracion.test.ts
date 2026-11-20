@@ -1,6 +1,6 @@
 /*
- * Migrated records to correct (RF-42..RF-44, HU-32): what the Excel brought that does not fit the
- * closed lists is listed per journal and corrected from the interface.
+ * Registros migrados por corregir: lo que trajo el Excel y no encaja en las listas cerradas se lista por revista y
+ * se corrige desde la interfaz.
  */
 import { AUXILIAR } from '../seed/usuarios'
 import { json, llamar } from '@/test/llamarApi'
@@ -15,7 +15,7 @@ const lista = async (revista: 'reep' | 'ire') =>
 const corregir = (revista: 'reep' | 'ire', id: string, valor: string, usuario = AUXILIAR) =>
   llamar(`/${revista}/por-corregir/${id}`, { metodo: 'POST', cuerpo: { valor }, usuario })
 
-describe('migrated records to correct (mock, RF-44)', () => {
+describe('migrated records to correct', () => {
   it('each journal lists its own records, with what the Excel said', async () => {
     const reep = await lista('reep')
     expect(reep.map((r) => [r.campo, r.valorExcel])).toEqual([

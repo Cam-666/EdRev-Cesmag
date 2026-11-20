@@ -1,7 +1,6 @@
 /*
- * Public routes — no session required: the access screens (login, recovery, define password), the
- * page a button of the invitation mail opens, and (in development only) the design-system
- * showcase. Covers: HU-28, RF-39, RF-40, RF-46, RF-22.
+ * Rutas públicas — no exigen sesión: las pantallas de acceso (ingreso, recuperación, definir contraseña), la
+ * página que abre un botón del correo de invitación y, solo en desarrollo, el muestrario del sistema de diseño.
  */
 import type { RouteObject } from 'react-router-dom'
 import { AccesoLayout } from '../AccesoLayout'

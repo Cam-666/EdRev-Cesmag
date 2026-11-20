@@ -1,7 +1,6 @@
 /*
- * autoresArticulo (servicio) — the authors of an article (RF-09, RF-10): linking an author to an
- * article in a given position, reusing the one the directory already has, and adding authors to an
- * article that is already registered (up to seven).
+ * autoresArticulo (servicio) — los autores de un artículo: vincular un autor al artículo en una posición,
+ * reutilizando el que el directorio ya tiene, y agregar autores a un artículo ya registrado (hasta siete).
  */
 import { enTransaccion, type Cliente } from '../db.js'
 import { auditar } from '../lib/auditoria.js'
@@ -16,15 +15,15 @@ export interface AutorNuevo {
   pais: string
 }
 
-/** An author of the directory (by id) or a new one; a new one with a known ORCID is the same person. */
+/** Un autor del directorio (por id) o uno nuevo; uno nuevo con un ORCID ya conocido es la misma persona. */
 export type AutorEntrada = { autorId: string } | { nuevo: AutorNuevo }
 
 export const MAX_AUTORES = 7
 
 /**
- * Links an author to an article in the given position. An existing author (chosen from the
- * directory, or typed with an ORCID the directory already has) is reused: the same ORCID is the
- * same person. The affiliation of the author's latest article is proposed (HU-07).
+ * Vincula un autor a un artículo en la posición dada. Un autor que ya existe (elegido del directorio, o escrito
+ * con un ORCID que el directorio ya tiene) se reutiliza: el mismo ORCID es la misma persona. Se propone la
+ * filiación de su artículo más reciente.
  */
 export async function vincularAutor(c: Cliente, idArticulo: number, a: AutorEntrada, orden: number): Promise<number> {
   let idAutor: number | null = null
@@ -57,7 +56,7 @@ export async function vincularAutor(c: Cliente, idArticulo: number, a: AutorEntr
     'SELECT filiacion, pais FROM articulo_autor WHERE id_autor = $1 ORDER BY id_articulo DESC LIMIT 1',
     [idAutor],
   )
-  // An author registered in the directory with no article yet keeps its own data.
+  // Un autor registrado en el directorio sin artículo todavía conserva sus propios datos.
   const propia = await c.query<{ filiacion: string | null; pais: string | null }>(
     'SELECT filiacion, pais FROM autor WHERE id_autor = $1',
     [idAutor],
@@ -74,7 +73,7 @@ export async function vincularAutor(c: Cliente, idArticulo: number, a: AutorEntr
   return idAutor
 }
 
-/** Adds an author to an article that is already registered, in the next position. */
+/** Agrega un autor a un artículo ya registrado, en la posición siguiente. */
 export async function agregarAutor(revista: number, idArticulo: number, autor: AutorEntrada, actor: number): Promise<void> {
   await enTransaccion(async (c) => {
     await articuloDeRevista(c, revista, idArticulo)

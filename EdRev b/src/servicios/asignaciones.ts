@@ -1,9 +1,8 @@
 /*
- * asignaciones (servicio) — assign a peer once the committee approved the article, choosing an
- * available one or registering a new candidate (RF-19); at most three peers who accepted or
- * delivered; tiebreaker (RF-21); the peer's answer (RF-22); delivery (RF-23) and concept (RF-20);
- * resend only after a bounced or failed send (RF-28). The invitation is recorded «en cola»: the
- * mail service picks it up (servicios/envioCorreos).
+ * asignaciones (servicio) — asignar un par cuando el comité aprobó el artículo, eligiendo uno disponible o
+ * registrando un candidato nuevo; como máximo tres pares que aceptaron o entregaron; el par de desempate; la
+ * respuesta del par; la entrega y el concepto; y el reenvío solo tras un envío rebotado o fallido.
+ * La invitación se registra «en cola»: el servicio de correo la recoge (servicios/envioCorreos).
  */
 import { enTransaccion, pool, type Cliente } from '../db.js'
 import { auditar } from '../lib/auditoria.js'
@@ -20,10 +19,10 @@ import { aplicarResultadoDePares } from './resultadoPares.js'
 
 export type ConceptoPar = 'publicable' | 'publicable-con-modificaciones' | 'no-publicable' | 'pendiente-formato'
 
-/** An available peer of the base (by id) or a new candidate, already validated. */
+/** Un par disponible de la base (por id) o un candidato nuevo, ya validado. */
 export type PartePorAsignar = { parId: string } | { nuevo: DatosPar }
 
-/** The evaluation, checking it belongs to an article of this journal. */
+/** La evaluación, comprobando que pertenece a un artículo de esta revista. */
 async function evaluacionDeRevista(c: Cliente, revista: number, id: number) {
   const { rows } = await c.query<{
     id_evaluacion: number
@@ -56,7 +55,7 @@ export async function asignarPar(revista: number, idArticulo: number, entrada: P
     if ((await ultimaRonda(c, idArticulo)) !== 'aprobado' || !['en-revision', 'en-evaluacion'].includes(articulo.estado)) {
       throw new ErrorHttp(409, 'El comité aún no aprueba el artículo: no se pueden asignar pares')
     }
-    // Two peers per article; a third only when their concepts do not coincide (RF-19, RF-21).
+    // Dos pares por artículo; un tercero solo cuando sus conceptos no coinciden.
     const activos = await c.query<{ estado_par: string; concepto: string | null; es_desempate: boolean }>(
       `SELECT estado_par, concepto, es_desempate FROM evaluacion
         WHERE id_articulo = $1 AND estado_par IN ('invitado','acepto','entrego') ORDER BY fecha_asignacion`,
@@ -93,7 +92,7 @@ export async function asignarPar(revista: number, idArticulo: number, entrada: P
       [idArticulo, par.id_par, regla.desempate],
     )
     const idEvaluacion = rows[0]?.id_evaluacion ?? 0
-    // RF-24: the invitation is queued at once; the mail service sends it.
+    // La invitación queda en cola de inmediato; el servicio de correo la envía.
     await encolar(c, idEvaluacion, 'invitacion', par.correo)
     await auditar(c, {
       usuario: actor,
@@ -112,7 +111,7 @@ export async function asignarPar(revista: number, idArticulo: number, entrada: P
   })
 }
 
-/** The answer of the peer to the invitation, registered by a user (RF-22). */
+/** La respuesta del par a la invitación, registrada por un usuario. */
 export async function responderInvitacion(revista: number, id: number, respuesta: Respuesta, actor: number) {
   return enTransaccion(async (c) => {
     const e = await evaluacionDeRevista(c, revista, id)
@@ -121,7 +120,7 @@ export async function responderInvitacion(revista: number, id: number, respuesta
   })
 }
 
-/** Marks the delivery with its date and, if given, its concept (RF-20, RF-23). */
+/** Marca la entrega con su fecha y, si se da, su concepto. */
 export async function marcarEntrega(
   revista: number,
   id: number,
@@ -138,7 +137,7 @@ export async function marcarEntrega(
     if (datos.fecha < fechaLocal(e.fecha_asignacion)) {
       throw new ErrorHttp(422, 'La fecha de entrega no puede ser anterior a la invitación')
     }
-    // The evaluation is registered with its concept and date; only then can the constancia be issued.
+    // La evaluación se registra con su concepto y su fecha; solo entonces se puede emitir la constancia.
     await c.query(
       "UPDATE evaluacion SET estado_par = 'entrego', fecha_evaluacion = $1, concepto = COALESCE($3, concepto) WHERE id_evaluacion = $2",
       [datos.fecha, id, datos.concepto ? conceptoDb(datos.concepto) : null],
@@ -152,14 +151,14 @@ export async function marcarEntrega(
       revista,
       articulo: e.id_articulo,
     })
-    // The concepts of the peers may decide the article (RF-20).
+    // Los conceptos de los pares pueden decidir el artículo.
     if (datos.concepto) await aplicarResultadoDePares(c, revista, e.id_articulo, actor)
-    // RF-23: the page offers to issue the constancia right away.
+    // La página ofrece emitir la constancia de inmediato.
     return { ...(await asignacionApi(c, e.id_articulo, id)), constanciaId: String(id) }
   })
 }
 
-/** Registers or corrects the concept of a delivered evaluation (RF-20). */
+/** Registra o corrige el concepto de una evaluación entregada. */
 export async function registrarConcepto(revista: number, id: number, concepto: ConceptoPar, actor: number) {
   const e = await evaluacionDeRevista(pool, revista, id)
   if (e.estado_par !== 'entrego') throw new ErrorHttp(409, 'Registre primero la entrega de la evaluación')
@@ -173,12 +172,12 @@ export async function registrarConcepto(revista: number, id: number, concepto: C
     revista,
     articulo: e.id_articulo,
   })
-  // The concepts of the peers may decide the article (RF-20).
+  // Los conceptos de los pares pueden decidir el artículo.
   await aplicarResultadoDePares(pool, revista, e.id_articulo, actor)
   return asignacionApi(pool, e.id_articulo, id)
 }
 
-/** RF-28: only after a bounced or failed send; it is not a new attempt. */
+/** Solo después de un envío rebotado o fallido; no cuenta como un intento nuevo. */
 export async function reenviarInvitacion(revista: number, id: number) {
   const e = await evaluacionDeRevista(pool, revista, id)
   const ultimo = await pool.query<{ resultado: string }>(
@@ -194,7 +193,7 @@ export async function reenviarInvitacion(revista: number, id: number) {
   )
   const p = par.rows[0]
   if (!p) throw new ErrorHttp(404, 'Par evaluador no encontrado')
-  // A new mail (shown as «Reenvío por corrección»); the failed one stays in the log, handled.
+  // Es un correo nuevo (se muestra como «Reenvío por corrección»); el fallido queda en el registro, ya atendido.
   await encolar(pool, id, 'invitacion', p.correo)
   return {
     asignacion: await asignacionApi(pool, e.id_articulo, id),

@@ -116,7 +116,7 @@ describe('dashboards', () => {
 })
 
 describe('reports', () => {
-  it('shows the rejected articles of the period (RF-38)', async () => {
+  it('shows the rejected articles of the period', async () => {
     montarRuta('/informes')
     expect(await screen.findByText('Rechazados')).toBeInTheDocument()
     expect(await screen.findByText('Artículos rechazados')).toBeInTheDocument()
@@ -197,7 +197,7 @@ describe('administration', () => {
     await user.click(screen.getByRole('combobox', { name: 'Plantilla' }))
     await user.click(await screen.findByRole('option', { name: /^Constancia de participación/ }))
     expect(await screen.findByRole('heading', { name: 'Encabezado, pie de página y firma' })).toBeInTheDocument()
-    // The preview is the PDF itself, in a viewer inside the page
+    // La vista previa es el PDF mismo, en un visor dentro de la página
     expect(await screen.findByRole('heading', { name: 'Vista previa de la constancia' })).toBeInTheDocument()
   })
 
@@ -207,7 +207,7 @@ describe('administration', () => {
     const marco = await screen.findByTitle('Vista previa del correo')
     expect(marco.tagName).toBe('IFRAME')
     expect(marco).toHaveAttribute('srcdoc', expect.stringContaining('Universidad CESMAG'))
-    // it follows the text being edited
+    // sigue el texto que se está editando
     const texto = screen.getByLabelText('Texto')
     await user.clear(texto)
     await user.type(texto, 'Un texto nuevo para la invitación.')
@@ -236,7 +236,7 @@ describe('administration', () => {
 
     const lista = await screen.findByRole('combobox', { name: 'Plantilla' })
     await waitFor(() => expect(lista).toHaveTextContent('Invitación en inglés'))
-    // a new template is blank: the person writes it
+    // una plantilla nueva está en blanco: la persona la escribe
     expect(screen.getByLabelText('Texto').textContent).toBe('')
     expect(screen.getByText(/Sin uso asignado/)).toBeInTheDocument()
     expect(screen.queryByText('Invitación en inglés (en uso', { exact: false })).toBeNull()
@@ -264,7 +264,7 @@ describe('administration', () => {
     expect(texto.textContent).toBe('[Universidad del par]')
     await user.click(screen.getByRole('button', { name: 'Nombre del par' }))
     expect(texto.textContent).toBe('[Universidad del par][Nombre del par]')
-    // the preview is the mail with its frame, still without text
+    // la vista previa es el correo con su marco, todavía sin texto
     const marco = await screen.findByTitle('Vista previa del correo')
     expect(marco).toHaveAttribute('srcdoc', expect.stringContaining('Universidad CESMAG'))
   })
@@ -278,7 +278,7 @@ describe('administration', () => {
     expect(screen.getAllByLabelText(/ISSN de/)).toHaveLength(2)
   })
 
-  it('a new account receives the link to define its password (RF-40)', async () => {
+  it('a new account receives the link to define its password', async () => {
     const { user } = montarRuta('/administracion/usuarios')
     await user.click(await screen.findByRole('button', { name: 'Crear usuario' }))
     const dialogo = await screen.findByRole('dialog', { name: 'Crear usuario' })
@@ -294,10 +294,10 @@ describe('administration', () => {
         'Se envió a laura.pena@unicesmag.edu.co el enlace para definir la contraseña.',
       ),
     ).toBeInTheDocument()
-    // The link goes in the mail to the new user, never on this screen
+    // El enlace va en el correo al usuario nuevo, nunca en esta pantalla
     expect(screen.queryByRole('link', { name: /Demostración/ })).toBeNull()
 
-    // While the account has not entered, the link can be sent again
+    // Mientras la cuenta no haya ingresado, el enlace se puede enviar de nuevo
     await user.click(await screen.findByRole('button', { name: 'Editar a Laura Peña' }))
     const edicion = await screen.findByRole('dialog', { name: 'Editar usuario' })
     await user.click(within(edicion).getByRole('button', { name: 'Reenviar enlace' }))
@@ -309,7 +309,7 @@ describe('administration', () => {
     ).toBeInTheDocument()
   })
 
-  it('the audit filter offers the action types of the data model (D13)', async () => {
+  it('the audit filter offers the action types of the data model', async () => {
     const { user } = montarRuta('/administracion/auditoria')
     await user.click(await screen.findByRole('combobox', { name: 'Tipo de acción' }))
     for (const tipo of [

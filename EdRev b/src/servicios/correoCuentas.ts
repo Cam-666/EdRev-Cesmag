@@ -1,9 +1,9 @@
 /*
- * correoCuentas — the mail with the link to define a password: the activation of a new account
- * (RF-40) and the recovery from «¿Olvidó su contraseña?» (RF-46). These mails are not part of an
- * evaluation, so they are not in the mail log of the model; they go straight to the mail service,
- * in the background (RNF-02), from the address in REMITENTE_CUENTAS or, if not set, from the
- * first journal's sender. The link is the app's address (FRONTEND_URL) plus the signed path.
+ * correoCuentas — el correo con el enlace para definir una contraseña: la activación de una cuenta nueva y la
+ * recuperación de «¿Olvidó su contraseña?». Estos correos no son parte de una evaluación, así que no están en
+ * el registro de correos del modelo; van directo al servicio de correo, en segundo plano, desde la dirección de
+ * REMITENTE_CUENTAS o, si no se define, desde el remitente de la primera revista. El enlace es la dirección de
+ * la aplicación (FRONTEND_URL) más la ruta firmada.
  */
 import { config } from '../config.js'
 import { pool } from '../db.js'
@@ -51,7 +51,7 @@ async function enviar(destinatario: string, nombre: string, motivo: MotivoEnlace
   if (!respuesta.ok) console.error(`Brevo ${respuesta.status} al enviar el enlace de contraseña: ${await respuesta.text()}`)
 }
 
-/** Sends the link without making the request wait for the mail service; a failure is only logged. */
+/** Envía el enlace sin hacer esperar a la petición el servicio de correo; si falla, solo se escribe en el registro del servidor. */
 export function enviarEnlaceContrasena(destinatario: string, nombre: string, motivo: MotivoEnlace, ruta: string): void {
   enviar(destinatario, nombre, motivo, ruta).catch((e: unknown) =>
     console.error('Enlace de contraseña no enviado:', (e as Error).message),

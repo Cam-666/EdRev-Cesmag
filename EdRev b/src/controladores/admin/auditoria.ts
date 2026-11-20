@@ -1,6 +1,4 @@
-/*
- * auditoria (controlador) — reads the filters of the audit log (RF-41) and answers.
- */
+/* auditoria (controlador) — lee los filtros del registro de auditoría y responde. */
 import type { Request, Response } from 'express'
 import { enteroDe } from '../../lib/http.js'
 import { listarAuditoria } from '../../servicios/administracion/auditoria.js'

@@ -1,6 +1,6 @@
 /*
- * RutaPorPermiso — authorization guard: renders the nested routes only if the user's profile
- * allows the action; otherwise shows a restricted-access message. Covers: RNF-05, HU-29.
+ * RutaPorPermiso — guardia de autorización: dibuja las rutas anidadas solo si el perfil del usuario permite la
+ * acción; si no, muestra un mensaje de acceso restringido.
  */
 import { Outlet, useOutletContext } from 'react-router-dom'
 import { usePermiso } from '../hooks/usePermiso'
@@ -9,14 +9,14 @@ import { Alerta } from '@/components/common/Alerta'
 
 export interface RutaPorPermisoProps {
   accion: Accion
-  /** Use h2 when the route renders inside a screen that already has its own h1. */
+  /** Usar h2 cuando la ruta se dibuja dentro de una pantalla que ya tiene su propio h1. */
   encabezado?: 'h1' | 'h2'
 }
 
 export function RutaPorPermiso({ accion, encabezado = 'h1' }: RutaPorPermisoProps) {
   const Titulo = encabezado
   const permitido = usePermiso(accion)
-  // Forward the parent's outlet context (e.g. the article of the sheet) to the guarded routes.
+  // Pasa el contexto del outlet del padre (por ejemplo el artículo de la ficha) a las rutas protegidas.
   const contexto = useOutletContext<unknown>()
   if (permitido) return <Outlet context={contexto} />
   return (

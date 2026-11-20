@@ -1,8 +1,7 @@
 /*
- * AuditoriaPage — Registro de auditoría (/administracion/auditoria): who did what and when across
- * the two journals — state changes, edits, sent mails and issued constancias — filterable by
- * journal, user and type, and exportable. It is a cross-journal screen: every row names its journal.
- * Administradora only. Covers: RF-41, HU-30.
+ * AuditoriaPage — Registro de auditoría (/administracion/auditoria): quién hizo qué y cuándo en las dos revistas
+ * (cambios de estado, ediciones, correos enviados y constancias emitidas), con filtros por revista, usuario y
+ * tipo, y exportable. Es una pantalla de las dos revistas: cada fila dice a cuál pertenece. Solo para la Administradora.
  */
 import { useState } from 'react'
 import { ETIQUETA_TIPO_AUDITORIA } from '../config/perfiles'

@@ -1,7 +1,7 @@
 import { useMutation } from '@tanstack/react-query'
 import { solicitarRecuperacionApi } from '../services/accesoService'
 
-/** Password-recovery request. The API always answers 202 so accounts cannot be enumerated. */
+/** Solicitud de recuperación de contraseña. La API siempre responde 202 para que no se pueda averiguar qué cuentas existen. */
 export function useSolicitarRecuperacion() {
   return useMutation({ mutationFn: (correo: string) => solicitarRecuperacionApi(correo) })
 }

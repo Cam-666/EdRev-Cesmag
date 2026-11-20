@@ -1,6 +1,6 @@
 /*
- * AreaTexto — multi-line field with an always-visible label tied by id and its error linked by
- * aria-describedby. Covers: RNF-11 (labels associated to fields, errors linked to their field).
+ * AreaTexto — campo de varias líneas con la etiqueta siempre visible, enlazada por id, y su error enlazado con
+ * aria-describedby.
  */
 import { useId } from 'react'
 import type { ComponentPropsWithRef } from 'react'

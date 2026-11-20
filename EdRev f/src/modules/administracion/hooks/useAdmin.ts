@@ -1,6 +1,6 @@
 /*
- * Hooks of Administración. Account, template and audit data is shared by the dependency (not
- * per journal), so the cache keys carry no journal. Covers: RF-40, RF-41, RNF-19.
+ * Hooks de Administración. Los datos de cuentas, plantillas y auditoría son de la dependencia (no de una
+ * revista), por eso las claves de la caché no llevan revista.
  */
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
@@ -110,7 +110,7 @@ export function useQuitarImagen() {
   })
 }
 
-/** Builds the constancia PDF of the template with sample data and opens it in a new tab. */
+/** Arma el PDF de la constancia de la plantilla con datos de ejemplo y lo abre en una pestaña nueva. */
 export function useVistaPreviaPlantilla() {
   return useMutation({
     mutationFn: async (id: string) => {

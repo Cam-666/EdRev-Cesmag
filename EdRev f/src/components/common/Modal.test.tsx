@@ -32,7 +32,7 @@ describe('Modal', () => {
     expect(dialogo).toHaveAccessibleDescription('Confirme el motivo del desbloqueo.')
     expect(await axe(baseElement)).toHaveNoViolations()
 
-    // Tab cycles within the dialog
+    // Tab da vueltas dentro del diálogo
     for (let i = 0; i < 6; i++) {
       await user.tab()
       expect(dialogo).toContainElement(document.activeElement as HTMLElement)

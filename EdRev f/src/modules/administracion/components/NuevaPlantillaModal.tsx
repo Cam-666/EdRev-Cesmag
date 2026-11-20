@@ -1,7 +1,7 @@
 /*
- * NuevaPlantillaModal — creates a new template of a journal: a free name and what it is for (the
- * invitation, the thank-you mail or the constancia). It is created blank: the person writes it and,
- * once it has text, chooses it in Configuración. No Figma design for the dialog. Covers: RNF-19, RF-25, RF-30, RF-45.
+ * NuevaPlantillaModal — crea una plantilla nueva de una revista: un nombre libre y para qué sirve (la invitación,
+ * el correo de agradecimiento o la constancia). Se crea en blanco: la persona la escribe y, cuando tiene texto,
+ * la elige en Configuración. No tiene diseño en Figma.
  */
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Controller, useForm } from 'react-hook-form'
@@ -30,13 +30,13 @@ export interface NuevaPlantillaModalProps {
   revista: Revista
   abierto: boolean
   onCerrar: () => void
-  /** Receives the created template so the screen can open it for editing. */
+  /** Recibe la plantilla creada para que la pantalla la abra y se pueda editar. */
   onCreada: (plantilla: Plantilla) => void
 }
 
 const FORMULARIO = 'formulario-nueva-plantilla'
 
-/** Mounted only while open so every opening starts empty. */
+/** Se monta solo mientras está abierto, así cada vez que se abre empieza vacío. */
 export function NuevaPlantillaModal(props: NuevaPlantillaModalProps) {
   return props.abierto ? <Contenido {...props} /> : null
 }

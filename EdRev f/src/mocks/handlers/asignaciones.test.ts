@@ -4,7 +4,7 @@ import type { ArticuloDetalle } from '@/types/articulo'
 import type { HistorialArticulo } from '@/types/historial'
 import type { ParDetalle, ParListado, ResultadoAsignacion } from '@/types/par'
 
-/** Today as yyyy-MM-dd (an invitation is dated now, so a delivery cannot be earlier). */
+/** Hoy como aaaa-mm-dd (una invitación lleva la fecha de ahora, así que una entrega no puede ser anterior). */
 function hoy(): string {
   const d = new Date()
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
@@ -17,7 +17,7 @@ interface ListaPares {
   totalBloqueados: number
 }
 
-/** A new article; by default the committee approves it so it can receive peers (RF-19). */
+/** Un artículo nuevo; por defecto el comité lo aprueba para que pueda recibir pares. */
 async function articuloNuevo(
   revista: 'reep' | 'ire',
   numero: string,
@@ -40,7 +40,7 @@ async function articuloNuevo(
   return articulo
 }
 
-/** A round of the committee with the result the committee chooses (approved by default). */
+/** Una ronda del comité con el resultado que el comité elige (aprobada por defecto). */
 function ronda(revista: 'reep' | 'ire', id: string, resultado = 'aprobado') {
   return llamar(`/${revista}/articulos/${id}/rondas`, {
     metodo: 'POST',
@@ -48,13 +48,13 @@ function ronda(revista: 'reep' | 'ire', id: string, resultado = 'aprobado') {
   })
 }
 
-/** Peers that can be assigned to the article: not blocked and with no evaluation in progress. */
+/** Pares que se pueden asignar al artículo: no bloqueados y sin evaluación en curso. */
 async function disponibles(revista: 'reep' | 'ire', articuloId: string): Promise<ParListado[]> {
   const r = await llamar(`/${revista}/pares?estado=asignables&articulo=${articuloId}&porPagina=50`)
   return (await json<ListaPares>(r)).items
 }
 
-/** Assigns a brand-new candidate (saved in the base and invited); the seed has few free peers. */
+/** Asigna un candidato nuevo (se guarda en la base y se invita); los datos de ejemplo tienen pocos pares libres. */
 async function candidato(articuloId: string, n: number): Promise<ResultadoAsignacion> {
   const r = await llamar(`/reep/articulos/${articuloId}/asignaciones`, {
     metodo: 'POST',
@@ -127,7 +127,7 @@ describe('peers API (mock)', () => {
   it('marks «Misma institución» with the article authors and does not offer those peers', async () => {
     const sinArticulo = await json<ListaPares>(await llamar('/reep/pares?porPagina=50'))
 
-    // 2026-034 has an author from Universidad Mariana: a Mariana peer cannot be assigned there.
+    // 2026-034 tiene un autor de la Universidad Mariana: allí no se puede asignar un par de Mariana.
     const conArticulo = await json<ListaPares>(
       await llamar('/reep/pares?porPagina=50&articulo=2026-034'),
     )
@@ -135,7 +135,7 @@ describe('peers API (mock)', () => {
     expect(mariana?.estado).toBe('misma-institucion')
     const sinContexto = sinArticulo.items.find((p) => p.universidad === 'Universidad Mariana')
     expect(sinContexto?.estado).toBe('disponible')
-    // ... and it is not offered among the peers that can be assigned.
+    // ... y no se ofrece entre los pares que se pueden asignar.
     const asignables = await json<ListaPares>(
       await llamar('/reep/pares?estado=asignables&porPagina=50&articulo=2026-034'),
     )
@@ -156,7 +156,7 @@ describe('peers API (mock)', () => {
     expect(par.profesion).toBe('Magíster en Educación')
     expect((await llamar('/reep/pares', { metodo: 'POST', cuerpo })).status).toBe(409)
 
-    // The base is common: the new peer is also in the other journal
+    // La base es común: el par nuevo también está en la otra revista
     const enIre = await json<ListaPares>(await llamar('/ire/pares?estado=todos&q=gomez'))
     expect(enIre.items.some((p) => p.correo === cuerpo.correo)).toBe(true)
   })
@@ -167,7 +167,7 @@ describe('peers API (mock)', () => {
     expect(par.evaluacionesEntregadas).toBeGreaterThan(0)
     expect(par.participaciones.length).toBeGreaterThan(0)
     expect(par.participaciones.every((x) => x.numeroOjs && x.titulo)).toBe(true)
-    // the same record opens from the other journal, with the journal of each participation
+    // la misma ficha se abre desde la otra revista, con la revista de cada participación
     expect((await llamar('/ire/pares/reep-par-1')).status).toBe(200)
     expect(par.participaciones.every((x) => x.revista === 'reep' || x.revista === 'ire')).toBe(true)
   })
@@ -194,7 +194,7 @@ describe('peers API (mock)', () => {
   })
 })
 
-describe('the base of peers is common (mock, RF-12)', () => {
+describe('the base of peers is common', () => {
   it('a repeated email is refused in either journal; there is no «other journal» lookup any more', async () => {
     const ire = await json<ListaPares>(await llamar('/ire/pares?estado=bloqueados&porPagina=50'))
     const existente = ire.items[0]
@@ -268,7 +268,7 @@ describe('assignment and invitation (mock)', () => {
     expect(enEvaluacion.estado).toBe('en-evaluacion')
   })
 
-  it('the invitation carries the request number, the profession and the university (RF-25)', async () => {
+  it('the invitation carries the request number, the profession and the university', async () => {
     await llamar('/plantillas/reep-invitacion', {
       metodo: 'PUT',
       cuerpo: {
@@ -353,7 +353,7 @@ describe('assignment and invitation (mock)', () => {
     const articulo = await articuloNuevo('reep', '2026-042', 'reep-au-3')
     const a = await candidato(articulo.id, 1)
     const b = await candidato(articulo.id, 2)
-    // Two peers (invited): the article does not take a third
+    // Dos pares (invitados): el artículo no toma un tercero
     const tercero = await llamar(`/reep/articulos/${articulo.id}/asignaciones`, {
       metodo: 'POST',
       cuerpo: { nuevo: { nombre: 'Tercero', correo: 'tercero.42@x.co', universidad: 'Universidad X', area: 'A' } },
@@ -361,7 +361,7 @@ describe('assignment and invitation (mock)', () => {
     expect(tercero.status).toBe(409)
     expect((await json<{ mensaje: string }>(tercero)).mensaje).toContain('2 pares evaluadores')
 
-    // One does not accept this invitation: not blocked, and its place is free again
+    // Uno no acepta esta invitación: no se bloquea y su lugar queda libre otra vez
     await responder(a.asignacion.id, 'no-acepto')
     const primero = await json<ParDetalle>(await llamar(`/reep/pares/${a.par.id}`))
     expect(primero.bloqueo).toBeNull()
@@ -376,7 +376,7 @@ describe('assignment and invitation (mock)', () => {
     expect(r.status).not.toBe(404)
   })
 
-  it('a bounced address keeps the assignment so it can be fixed and resent (RF-27)', async () => {
+  it('a bounced address keeps the assignment so it can be fixed and resent', async () => {
     const articulo = await articuloNuevo('reep', '2026-044', 'reep-au-3')
     const r = await json<ResultadoAsignacion>(
       await llamar(`/reep/articulos/${articulo.id}/asignaciones`, {
@@ -402,7 +402,7 @@ describe('assignment and invitation (mock)', () => {
       await llamar(`/reep/asignaciones/${r.asignacion.id}/reenviar`, { metodo: 'POST' }),
     )
     expect(reenvio.correo.estado).toBe('enviado')
-    // RF-28: the resend after a correction is not a new attempt, and it is allowed only once
+    // El reenvío tras una corrección no es un intento nuevo, y se permite solo una vez
     expect(reenvio.asignacion.intento).toBe(r.asignacion.intento)
     expect(
       (await llamar(`/reep/asignaciones/${r.asignacion.id}/reenviar`, { metodo: 'POST' })).status,
@@ -413,7 +413,7 @@ describe('assignment and invitation (mock)', () => {
     expect(h.correos.map((x) => x.estado)).toEqual(expect.arrayContaining(['rebotado', 'enviado']))
   })
 
-  it('the invitation cannot be resent by hand unless the send bounced or failed (RF-28, D7)', async () => {
+  it('the invitation cannot be resent by hand unless the send bounced or failed', async () => {
     const articulo = await articuloNuevo('reep', '2026-045', 'reep-au-3')
     const [par] = await disponibles('reep', articulo.id)
     if (!par) throw new Error('no available peer')
@@ -422,7 +422,7 @@ describe('assignment and invitation (mock)', () => {
       metodo: 'POST',
     })
     expect(reenvio.status).toBe(409)
-    // «Sin respuesta» only after the (automatic) second attempt
+    // «Sin respuesta» solo después del segundo intento (automático)
     expect((await responder(r.asignacion.id, 'sin-respuesta')).status).toBe(409)
   })
 

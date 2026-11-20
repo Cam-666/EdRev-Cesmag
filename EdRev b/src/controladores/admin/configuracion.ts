@@ -1,6 +1,6 @@
 /*
- * configuracion (controlador) — receives and validates what the Administradora adjusts (RF-29,
- * RF-45) and answers; the rules are in servicios/administracion/configuracion.
+ * configuracion (controlador) — recibe y valida lo que ajusta la Administradora (días de espera, ISSN e
+ * indexaciones) y responde. Las reglas están en servicios/administracion/configuracion.
  */
 import type { Request, Response } from 'express'
 import { z } from 'zod'

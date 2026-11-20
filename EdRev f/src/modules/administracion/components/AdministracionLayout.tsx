@@ -1,7 +1,6 @@
 /*
- * AdministracionLayout — "Administración del sistema" with routed tabs
- * (Usuarios, Plantillas, Auditoría, Configuración). Migration is out of scope in this version.
- * Covers: RF-29, RF-40, RF-41, RNF-19, RNF-05, HU-29, HU-30.
+ * AdministracionLayout — «Administración del sistema» con pestañas enrutadas (Usuarios, Plantillas,
+ * Auditoría, Configuración).
  */
 import { Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { Pestanas } from '@/components/common/Pestanas'

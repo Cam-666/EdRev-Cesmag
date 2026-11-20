@@ -1,5 +1,5 @@
 /*
- * Pruebas del reintento automático de los correos fallidos — RF-27, RF-28.
+ * Pruebas del reintento automático de los correos fallidos
  */
 import { describe, expect, it } from 'vitest'
 import { pool } from '../src/db.js'
@@ -24,7 +24,7 @@ async function fallar(id: number) {
   await pool.query("UPDATE correo SET resultado = 'fallido', fecha_envio = now() - interval '1 hour' WHERE id_correo = $1", [id])
 }
 
-describe('reintento automático de correos fallidos (RF-27)', () => {
+describe('reintento automático de correos fallidos', () => {
   it('vuelve a poner en cola el correo fallido y deja de insistir tras el máximo de fallos', async () => {
     const { id } = await articuloAprobado()
     const p = await candidato(id, 1)

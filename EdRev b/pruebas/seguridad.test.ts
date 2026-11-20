@@ -1,6 +1,5 @@
 /*
- * Pruebas de la separación entre rutas públicas y privadas y de la validación del JWT (RNF-04,
- * RNF-05): firma, expiración, algoritmo y secreto seguro.
+ * Pruebas de la separación entre rutas públicas y privadas y de la validación del JWT: firma, expiración, algoritmo y secreto seguro.
  */
 import jwt from 'jsonwebtoken'
 import request from 'supertest'

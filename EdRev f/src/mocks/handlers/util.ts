@@ -1,6 +1,6 @@
 /*
- * Helpers shared by the mock handlers: journal from the URL, acting user from the token,
- * permission check and error responses.
+ * Ayudas que comparten los manejadores de la API simulada: la revista de la URL, el usuario que actúa según el
+ * token, la comprobación de permisos y las respuestas de error.
  */
 import { format } from 'date-fns'
 import { HttpResponse } from 'msw'
@@ -32,7 +32,7 @@ type Contexto =
   | { ok: true; revista: Revista; base: SeedRevista; usuario: Usuario }
   | { ok: false; respuesta: Response }
 
-/** Validates the journal segment and the session; optionally the permission needed. */
+/** Valida el segmento de la revista y la sesión; opcionalmente, el permiso necesario. */
 export function contexto(
   params: Record<string, string | readonly string[] | undefined>,
   request: Request,
@@ -53,7 +53,7 @@ export function contexto(
 
 type ContextoGlobal = { ok: true; usuario: Usuario } | { ok: false; respuesta: Response }
 
-/** Session (and optionally a permission) for endpoints that are not scoped to one journal. */
+/** Sesión (y opcionalmente un permiso) para los endpoints que no son de una sola revista. */
 export function contextoGlobal(request: Request, accion?: Accion): ContextoGlobal {
   const id = idUsuarioDeAutorizacion(request.headers.get('Authorization'))
   const usuario = usuarios().find((u) => u.id === id && u.estado === 'activo')

@@ -110,12 +110,12 @@ describe('articles API (mock)', () => {
     expect(creado.estado).toBe('postulado')
     expect(creado.autores.map((a) => a.orden)).toEqual([1, 2])
     expect(creado.autores[0]?.nombre).toBe('María Fernanda Ruano')
-    // The new author joins the common directory of both journals (RF-10)
+    // El autor nuevo entra al directorio común de las dos revistas
     const total = async (ruta: string) =>
       ((await (await llamar(ruta)).json()) as { total: number }).total
     expect(await total('/reep/autores?q=rivera')).toBe(1)
     expect(await total('/ire/autores?q=rivera')).toBe(1)
-    // …and the journal filter shows it only where it has articles
+    // …y el filtro de revista lo muestra solo donde tiene artículos
     expect(await total('/ire/autores?q=rivera&en=reep')).toBe(1)
     expect(await total('/reep/autores?q=rivera&en=ire')).toBe(0)
   })
@@ -144,7 +144,7 @@ describe('articles API (mock)', () => {
     expect((await ronda({ ...base, coincidencias: null })).status).toBe(422)
     expect((await ronda({ ...base, resultado: 'otro' })).status).toBe(422)
 
-    // The committee chooses the result of each round
+    // El comité elige el resultado de cada ronda
     const primera = await ronda({ ...base }, AUXILIAR)
     expect(primera.status).toBe(201)
     const tras1 = (await primera.json()) as ArticuloDetalle
@@ -200,13 +200,13 @@ describe('articles API (mock)', () => {
       tipo: 'traslado',
       accion: 'Cambió el artículo de Educación y Pedagogía a Investigium IRE',
     })
-    // …and back again
+    // …y de vuelta
     expect((await llamar('/ire/articulos/2026-021/trasladar', { metodo: 'POST' })).status).toBe(200)
     expect((await llamar('/reep/articulos/2026-021')).status).toBe(200)
   })
 
-  it('an article changes journal at any stage: with peers, approved and published (RF-07)', async () => {
-    // 2026-034 has peers assigned; a published article is taken from the list by its issue.
+  it('an article changes journal at any stage: with peers, approved and published', async () => {
+    // 2026-034 tiene pares asignados; un artículo publicado se toma del listado por su edición.
     const conPares = await llamar('/reep/articulos/2026-034/trasladar', { metodo: 'POST' })
     expect(conPares.status).toBe(200)
     const movido = (await conPares.json()) as ArticuloDetalle

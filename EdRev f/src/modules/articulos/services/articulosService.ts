@@ -1,7 +1,6 @@
 /*
- * articulosService — HTTP calls of the articles module. Every call carries the journal in the
- * URL: there is no way to ask for data without saying which journal. Covers: RF-01..RF-08,
- * RF-26, RF-35, RF-36.
+ * articulosService — llamadas HTTP del módulo de artículos. Toda llamada lleva la revista en la URL: no hay forma
+ * de pedir datos sin decir de qué revista.
  */
 import { solicitar } from '@/lib/api/cliente'
 import type {
@@ -34,14 +33,14 @@ export function listarArticulos(revista: Revista, f: FiltrosArticulos): Promise<
   return solicitar<RespuestaListado>(`/${revista}/articulos?${q.toString()}`)
 }
 
-/** Issues used by the journal's articles, most recent first (RF-35). */
+/** Ediciones que usan los artículos de la revista, la más reciente primero. */
 export function listarPublicaciones(
   revista: Revista,
 ): Promise<Array<{ valor: string; etiqueta: string }>> {
   return solicitar<Array<{ valor: string; etiqueta: string }>>(`/${revista}/publicaciones`)
 }
 
-/** Years of management that have articles, newest first (the current one always). */
+/** Años de gestión que tienen artículos, el más nuevo primero (siempre el actual). */
 export function listarAnios(revista: Revista): Promise<number[]> {
   return solicitar<number[]>(`/${revista}/articulos/anios`)
 }
@@ -94,7 +93,7 @@ export function registrarRonda(
   })
 }
 
-/** Moves the article to the other journal while it is in the committee review (RF-07). */
+/** Pasa el artículo a la otra revista, en cualquier etapa. */
 export function trasladarArticulo(revista: Revista, id: string): Promise<ArticuloDetalle> {
   return solicitar<ArticuloDetalle>(`/${revista}/articulos/${encodeURIComponent(id)}/trasladar`, {
     method: 'POST',
@@ -105,7 +104,7 @@ export function obtenerHistorial(revista: Revista, id: string): Promise<Historia
   return solicitar<HistorialArticulo>(`/${revista}/articulos/${encodeURIComponent(id)}/historial`)
 }
 
-/** Closes the process as approved, rejected or archived, with its reason (RF-08). */
+/** Cierra el proceso como aprobado, rechazado o archivado, con su motivo. */
 export function cerrarArticulo(
   revista: Revista,
   id: string,

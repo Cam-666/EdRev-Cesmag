@@ -1,8 +1,8 @@
 /*
- * almacenSesion — keeps the session across reloads of the same tab: the profile (never the
- * password) and the session token, which the backend needs on every request. Storage can be
- * blocked, so every access is guarded. Only sessionStorage, which the browser clears when the tab
- * is closed: the system offers no "keep me signed in" (RNF-05, D15).
+ * almacenSesion — conserva la sesión entre recargas de la misma pestaña: el perfil (nunca la contraseña) y el
+ * token de sesión, que el backend necesita en cada petición. El almacenamiento puede estar bloqueado, por eso
+ * cada acceso va protegido. Solo se usa sessionStorage, que el navegador borra al cerrar la pestaña: el sistema
+ * no ofrece «mantener la sesión iniciada».
  */
 import type { Usuario } from '@/types/usuario'
 
@@ -26,7 +26,7 @@ export function guardarSesion(usuario: Usuario, token?: string): void {
     window.sessionStorage.setItem(CLAVE, JSON.stringify(usuario))
     if (token) window.sessionStorage.setItem(CLAVE_TOKEN, token)
   } catch {
-    /* storage unavailable: the session just will not survive a reload */
+    /* almacenamiento no disponible: la sesión simplemente no sobrevivirá a una recarga */
   }
 }
 
@@ -55,6 +55,6 @@ export function borrarSesion(): void {
     window.sessionStorage.removeItem(CLAVE_TOKEN)
     window.localStorage.removeItem(CLAVE)
   } catch {
-    /* ignore */
+    /* se ignora */
   }
 }

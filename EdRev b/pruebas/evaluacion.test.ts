@@ -1,5 +1,5 @@
 /*
- * Pruebas de asignación, evaluación, constancias y correos — RF-19 a RF-34.
+ * Pruebas de asignación, evaluación, constancias y correos
  */
 import { fechaLocal } from '../src/lib/fechas.js'
 import { describe, expect, it } from 'vitest'
@@ -7,7 +7,7 @@ import { articuloAprobado, candidato, como } from './api.js'
 
 const hoy = () => fechaLocal()
 
-describe('asignación, evaluación, constancias y correos (RF-19 a RF-34)', () => {
+describe('asignación, evaluación, constancias y correos', () => {
   it('un artículo archivado y retomado como «Postulado» pasa de nuevo por el comité antes de tener pares', async () => {
     const api = await como()
     const art = await articuloAprobado()
@@ -16,7 +16,7 @@ describe('asignación, evaluación, constancias y correos (RF-19 a RF-34)', () =
     expect((await api.post(`/reep/articulos/${art.id}/reabrir`, { estado: 'postulado', motivo: 'Se retoma' })).status).toBe(200)
     const nuevo = { nuevo: { nombre: 'Otro', profesion: '', correo: `o${Date.now()}@x.co`, universidad: 'U', area: 'A' } }
     expect((await api.post(`/reep/articulos/${art.id}/asignaciones`, nuevo)).status).toBe(409)
-    // it already had a peer, and still the committee can register a new round
+    // ya tenía un par, y aun así el comité puede registrar una ronda nueva
     const ronda = await api.post(`/reep/articulos/${art.id}/rondas`, { coincidencias: 5, atribuidoIa: 1, resultado: 'aprobado', observacion: '' })
     expect(ronda.status).toBe(201)
     expect((await api.post(`/reep/articulos/${art.id}/asignaciones`, nuevo)).status).toBe(201)
@@ -159,7 +159,7 @@ describe('asignación, evaluación, constancias y correos (RF-19 a RF-34)', () =
     expect(mio.tipo).toBe('constancia')
   })
 
-  it('el desempate se marca cuando los dos primeros conceptos se contradicen (RF-21)', async () => {
+  it('el desempate se marca cuando los dos primeros conceptos se contradicen', async () => {
     const { id } = await articuloAprobado()
     const api = await como()
     for (const [n, concepto] of [[1, 'publicable'], [2, 'no-publicable']] as const) {

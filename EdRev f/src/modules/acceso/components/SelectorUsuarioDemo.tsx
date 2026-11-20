@@ -1,7 +1,6 @@
 /*
- * SelectorUsuarioDemo — DEMO ONLY (no design in Figma): switches the mock user so the profile
- * permissions (Administradora vs Auxiliar) can be shown. Hidden when mocks are off.
- * Covers: RNF-05, HU-29 (criterion 3).
+ * SelectorUsuarioDemo — SOLO PARA DEMOSTRACIÓN (no tiene diseño en Figma): cambia el usuario simulado para poder
+ * mostrar los permisos de cada perfil (Administradora y Auxiliar). Se oculta cuando los datos de ejemplo están apagados.
  */
 import { useSesion } from '../hooks/useSesion'
 import { ListaDesplegable } from '@/components/common/ListaDesplegable'

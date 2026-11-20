@@ -45,7 +45,7 @@ describe('login (/acceso)', () => {
       'placeholder',
       'nombre.apellido@unicesmag.edu.co',
     )
-    // RNF-05 / D15: there is no "keep me signed in"
+    // no existe «mantener la sesión iniciada»
     expect(screen.queryByRole('checkbox', { name: /Mantener la sesión/ })).toBeNull()
     expect(screen.getByRole('link', { name: '¿Olvidó su contraseña?' })).toHaveAttribute(
       'href',
@@ -121,7 +121,7 @@ describe('login (/acceso)', () => {
   })
 })
 
-describe('session expiry (RNF-05)', () => {
+describe('session expiry', () => {
   afterEach(() => vi.useRealTimers())
 
   it('closes the session after 30 minutes of inactivity and offers to resume', async () => {
@@ -217,7 +217,7 @@ describe('password recovery', () => {
   })
 })
 
-describe('defining a password from the mail link (RF-40, RF-46)', () => {
+describe('defining a password from the mail link', () => {
   afterEach(() => vi.useRealTimers())
 
   it('recovery: the link opens the form, validates it and the new password works', async () => {

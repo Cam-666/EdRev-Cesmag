@@ -1,6 +1,6 @@
 /*
- * npm run db:crear — creates the database named in DATABASE_URL (if it does not exist), connecting
- * to the maintenance database of DATABASE_ADMIN_URL. Same as «Create › Database» in pgAdmin.
+ * npm run db:crear — crea la base de datos que nombra DATABASE_URL (si no existe), conectándose a la base de
+ * mantenimiento de DATABASE_ADMIN_URL. Es lo mismo que «Create › Database» en pgAdmin.
  */
 import pg from 'pg'
 

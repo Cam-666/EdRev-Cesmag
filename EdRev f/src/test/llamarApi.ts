@@ -1,6 +1,6 @@
 /*
- * llamarApi — test helper: calls the mock API directly (through MSW) as a given user, to test
- * the rules of the simulated backend without rendering any screen.
+ * llamarApi — ayuda de pruebas: llama directamente a la API simulada (a través de MSW) como un usuario dado, para
+ * probar las reglas del backend simulado sin dibujar ninguna pantalla.
  */
 import { ADMINISTRADORA } from '@/mocks/seed/usuarios'
 import { tokenMock } from '@/mocks/token'
@@ -12,7 +12,7 @@ export interface OpcionesLlamada {
   usuario?: Usuario | null
   metodo?: string
   cuerpo?: unknown
-  /** A body sent as is (e.g. a multipart upload), with its own content type. */
+  /** Un cuerpo que se envía tal cual (por ejemplo una subida multipart), con su propio tipo de contenido. */
   cuerpoCrudo?: { cuerpo: string; tipo: string }
 }
 
@@ -37,7 +37,7 @@ export async function json<T>(respuesta: Response): Promise<T> {
 
 const CRLF = String.fromCharCode(13, 10)
 
-/** A multipart/form-data body with one file field, as a browser sends an upload. */
+/** Un cuerpo multipart/form-data con un campo de archivo, como lo envía un navegador al subir un archivo. */
 export function multipart(campo: string, nombre: string, tipo: string, contenido: string) {
   const limite = 'limite-de-prueba'
   return {

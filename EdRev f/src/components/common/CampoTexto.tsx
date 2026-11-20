@@ -1,6 +1,6 @@
 /*
- * CampoTexto — text input with always-visible label tied by id and error via aria-describedby.
- * Covers: RNF-11 (labels associated to fields, error messages linked to their field), RNF-12.
+ * CampoTexto — campo de texto con la etiqueta siempre visible, enlazada por id, y el error enlazado con
+ * aria-describedby.
  */
 import { useId } from 'react'
 import type { ComponentPropsWithRef, ReactNode } from 'react'
@@ -12,11 +12,11 @@ export interface CampoTextoProps extends Omit<ComponentPropsWithRef<'input'>, 'i
   etiqueta: string
   ayuda?: string
   error?: string
-  /** Control aligned to the right of the label (e.g. the "Mostrar" password toggle). */
+  /** Control alineado a la derecha de la etiqueta (por ejemplo el botón «Mostrar» de la contraseña). */
   accionEtiqueta?: ReactNode
-  /** Control placed inside the box, at its right end (e.g. the eye of a password). */
+  /** Control puesto dentro de la caja, en su extremo derecho (por ejemplo el ojo de la contraseña). */
   accionInterna?: ReactNode
-  /** Keeps the label for assistive technology only (e.g. a field inside a table row). */
+  /** Deja la etiqueta solo para lectores de pantalla (por ejemplo, un campo dentro de la fila de una tabla). */
   etiquetaOculta?: boolean
 }
 

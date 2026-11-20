@@ -1,10 +1,10 @@
 /*
- * app — the Express application. The order says what is public and what is private:
- *   1. security headers, CORS for the frontend, JSON;
- *   2. rutas/publicas — no session (login, the peer's answer from the mail, public images);
- *   3. middlewares/autenticacion — validates the JWT (signature, expiry) and loads the user;
- *   4. rutas/privadas — everything else, behind the session;
- *   5. middlewares/errores — 404 and the error handler, which answers { mensaje }.
+ * app — la aplicación Express. El orden de lo que se monta define qué es público y qué es privado:
+ * 1. cabeceras de seguridad, CORS para la interfaz y JSON;
+ * 2. rutas/publicas — sin sesión (ingreso, la respuesta del par desde el correo, imágenes públicas);
+ * 3. middlewares/autenticacion — valida el JWT (firma, vencimiento) y carga al usuario;
+ * 4. rutas/privadas — todo lo demás, detrás de la sesión;
+ * 5. middlewares/errores — el 404 y el manejador de errores, que responde { mensaje }.
  */
 import cors from 'cors'
 import { rateLimit } from 'express-rate-limit'
@@ -21,7 +21,7 @@ export function crearApp() {
   app.set('trust proxy', 1)
   app.use(helmet())
   app.use(cors({ origin: config.origenes }))
-  // Brute force on the login and the password links (the screens also lock after 3 attempts).
+  // Freno a la fuerza bruta en el ingreso y en los enlaces de contraseña (las pantallas además se bloquean tras 3 intentos).
   app.use(['/api/auth'], rateLimit({ windowMs: 15 * 60_000, limit: 100, standardHeaders: true, legacyHeaders: false }))
   app.use(express.json({ limit: '1mb' }))
 

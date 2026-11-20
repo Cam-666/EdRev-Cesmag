@@ -1,8 +1,8 @@
 /*
- * textoRico — converts the stored text of a template (with [centro], **bold** and {{markers}}, see
- * lib/formato) to what the editor shows and back. The editor is a box where the text is seen as it
- * will look (centered, in bold…), and the data appear with plain names between brackets, so nobody
- * has to write marks by hand. Covers: RF-25, RF-30, RF-45, RNF-11.
+ * textoRico — convierte el texto guardado de una plantilla (con [centro], **negrita** y {{marcas}}, ver
+ * lib/formato) en lo que muestra el editor, y de vuelta. El editor es un recuadro donde el texto se ve como va
+ * a quedar (centrado, en negrita…) y los datos aparecen con nombres sencillos entre corchetes, así nadie tiene
+ * que escribir marcas a mano.
  */
 import { aGuardado, aVisible } from './datosPlantilla'
 import { analizar } from './formato'
@@ -26,7 +26,7 @@ const DE_CSS: Record<string, Alineacion> = {
 
 const escapar = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
 
-/** The stored text as the HTML the editor shows: one paragraph per block, bold in <strong>. */
+/** El texto guardado como el HTML que muestra el editor: un párrafo por bloque y la negrita en <strong>. */
 export function aHtmlEditable(guardado: string): string {
   const parrafos = analizar(guardado)
   if (parrafos.length === 0) return '<p data-alineacion="izquierda"><br></p>'
@@ -55,7 +55,7 @@ function esNegrita(e: HTMLElement): boolean {
   return peso === 'bold' || peso === 'bolder' || Number(peso) >= 600
 }
 
-/** The text of a node as stored: bold between **, line breaks as \n. */
+/** El texto de un nodo tal como se guarda: la negrita entre **, los saltos de línea como \n. */
 function enLinea(nodo: Node): string {
   let s = ''
   nodo.childNodes.forEach((hijo) => {
@@ -75,7 +75,7 @@ function enLinea(nodo: Node): string {
   return s
 }
 
-/** The alignment a paragraph of the box has (left when it has none). */
+/** La alineación que tiene un párrafo del recuadro (a la izquierda si no tiene). */
 export function alineacionDe(e: HTMLElement): Alineacion {
   const dicha = e.dataset.alineacion
   if (dicha === 'centro' || dicha === 'derecha' || dicha === 'justificado' || dicha === 'izquierda') return dicha
@@ -92,7 +92,7 @@ function parrafoGuardado(texto: string, alineacion: Alineacion): string | null {
   return alineacion === 'izquierda' ? limpio : `[${alineacion}]${limpio}`
 }
 
-/** What the editor shows, as the stored text: [centro], **bold** and {{markers}}. */
+/** Lo que muestra el editor, como texto guardado: [centro], **negrita** y {{marcas}}. */
 export function deEditable(raiz: HTMLElement): string {
   const parrafos: string[] = []
   let suelto = ''

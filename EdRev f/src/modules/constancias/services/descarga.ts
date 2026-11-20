@@ -1,6 +1,6 @@
 /*
- * descarga — download of a constancia: the PDF of the backend, or (simulated API) a printable
- * HTML page with the same content: letterhead, the rendered text and the signature. Covers: RF-32 (download when the peer asks for it).
+ * descarga — descarga de una constancia: el PDF del backend o, con la API simulada, una página HTML imprimible con
+ * el mismo contenido: membrete, el texto armado y la firma.
  */
 import { solicitarArchivo } from '@/lib/api/cliente'
 import { descargarArchivo, descargarTexto } from '@/lib/descarga'
@@ -46,8 +46,8 @@ export function nombreArchivo(par: string): string {
 }
 
 /**
- * Downloads a constancia (RF-32): with the real API, the PDF it generates over the journal's
- * background; with the simulated API, a printable HTML page with the same content.
+ * Descarga una constancia: con la API real, el PDF que ella genera con las imágenes de la plantilla; con la API
+ * simulada, una página HTML imprimible con el mismo contenido.
  */
 export async function descargarConstancia(
   revista: Revista,

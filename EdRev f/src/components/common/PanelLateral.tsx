@@ -1,10 +1,9 @@
 /*
- * PanelLateral — 240 px side navigation. Common modules (Inicio, Informes, Autores, Pares
- * evaluadores, Administración: authors and peers are one directory for both journals), then the two
- * journals as collapsible groups with their own submodules. A click on a journal opens its group and another click closes it
- * (no navigation); the group of the active journal opens by itself and its name is emphasised.
- * The current item is highlighted and does not navigate.
- * Covers: RF-02, RF-36 (entry points), RNF-11 (nav landmark, keyboard, focus ring on dark).
+ * PanelLateral — navegación lateral de 240 px. Primero los módulos comunes (Inicio, Informes, Autores, Pares
+ * evaluadores, Administración: autores y pares son un solo directorio para las dos revistas) y luego las dos
+ * revistas como grupos que se pliegan, con sus propios submódulos. Un clic en una revista abre su grupo y otro
+ * clic lo cierra (sin navegar); el grupo de la revista activa se abre solo y su nombre se resalta.
+ * El elemento actual se resalta y no navega.
  */
 import * as Collapsible from '@radix-ui/react-collapsible'
 import { useState } from 'react'
@@ -21,19 +20,19 @@ export interface UsuarioPanel {
 }
 
 export interface PanelLateralProps {
-  /** Active journal (open group) or null on the common modules. */
+  /** Revista activa (grupo abierto) o null en los módulos comunes. */
   revistaActiva: Revista | null
-  /** Current pathname, used to highlight the current item. */
+  /** Ruta actual, para resaltar el elemento actual. */
   rutaActual: string
   usuario: UsuarioPanel
   onCerrarSesion: () => void
-  /** False hides the Administración module (the Auxiliar has no access to it). */
+  /** Si es falso, oculta el módulo Administración (la Auxiliar no tiene acceso). */
   mostrarAdministracion?: boolean
-  /** Extra classes: the layout hides it on small screens and the mobile menu shows it. */
+  /** Clases adicionales: el marco lo oculta en pantallas pequeñas y el menú móvil lo muestra. */
   className?: string
 }
 
-/** Prefix that keeps a common module highlighted on its inner screens (a record, the blocked list). */
+/** Prefijo que mantiene resaltado un módulo común en sus pantallas internas (una ficha, la lista de bloqueados). */
 const MODULOS_COMUNES = [
   { etiqueta: 'Inicio', ruta: '/inicio', prefijo: undefined },
   { etiqueta: 'Informes', ruta: '/informes', prefijo: undefined },
@@ -56,7 +55,7 @@ interface ItemNavProps {
   etiqueta: string
   ruta: string
   rutaActual: string
-  /** Prefix that keeps the item highlighted on its sub-routes (defaults to its own route). */
+  /** Prefijo que mantiene resaltado el elemento en sus subrutas (por defecto, su propia ruta). */
   prefijo?: string
   className?: string
 }
@@ -65,7 +64,7 @@ function ItemNav({ etiqueta, ruta, rutaActual, prefijo, className }: ItemNavProp
   const exacto = rutaActual === ruta
   const dentro = rutaActual.startsWith(`${prefijo ?? ruta}/`)
   if (exacto) {
-    // Current page: highlighted, not a link.
+    // Página actual: resaltada, no es un enlace.
     return (
       <span
         aria-current="page"
@@ -97,7 +96,7 @@ export function PanelLateral({
   const [abiertos, setAbiertos] = useState<ReadonlySet<Revista>>(
     () => new Set(revistaActiva ? [revistaActiva] : []),
   )
-  // Entering a journal (by link or URL) opens its group; the user can still close it.
+  // Al entrar a una revista (por enlace o por dirección) se abre su grupo; la persona aún puede cerrarlo.
   const [revistaPrevia, setRevistaPrevia] = useState(revistaActiva)
   if (revistaPrevia !== revistaActiva) {
     setRevistaPrevia(revistaActiva)

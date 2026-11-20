@@ -1,7 +1,7 @@
 /*
- * publicacion — volume and number of the journal issue where an approved article is published
- * (RF-04). They are always registered together; the list filter orders them from the most recent
- * to the oldest (RF-35). Shared by the screens and the mock API.
+ * publicacion — volumen y número de la edición de la revista donde se publica un artículo aprobado. Siempre se
+ * registran juntos; el filtro del listado los ordena del más reciente al más antiguo. Lo comparten las
+ * pantallas y la API simulada.
  */
 import type { Publicacion } from '@/types/articulo'
 
@@ -9,12 +9,12 @@ export function etiquetaPublicacion(p: Publicacion): string {
   return `Vol. ${p.volumen} n.º ${p.numero}`
 }
 
-/** Value of the list filter, e.g. "10-2". */
+/** Valor del filtro del listado, por ejemplo "10-2". */
 export function clavePublicacion(p: Publicacion): string {
   return `${p.volumen}-${p.numero}`
 }
 
-/** Most recent first. */
+/** El más reciente primero. */
 export function compararPublicaciones(a: Publicacion, b: Publicacion): number {
   return b.volumen - a.volumen || b.numero - a.numero
 }

@@ -1,7 +1,8 @@
 /*
- * AppLayout — shell for every screen except access: side panel, top bar, main landmark and
- * skip link. On small screens the side panel opens from «Menú» (RNF-10). data-revista on the root rewrites the journal CSS variables; only the top bar and
- * ISSN pill consume them. When printed (for example the report saved as PDF) only the content shows. Covers: RF-02, RNF-11 (skip link, landmarks).
+ * AppLayout — marco de todas las pantallas excepto las de acceso: panel lateral, barra superior, zona principal
+ * y enlace para saltar al contenido. En pantallas pequeñas el panel lateral se abre desde «Menú».
+ * El atributo data-revista de la raíz cambia las variables CSS de color de la revista; solo la barra superior y
+ * la insignia del ISSN las usan. Al imprimir (por ejemplo el informe guardado como PDF) solo se muestra el contenido.
  */
 import { Outlet, useLocation } from 'react-router-dom'
 import { useRevistaOpcional } from '@/lib/revista/useRevista'
@@ -31,7 +32,7 @@ export function AppLayout() {
     mostrarAdministracion: puede(usuario.perfil, 'administrar'),
   }
 
-  // RNF-05: the session closes after a period of inactivity.
+  // La sesión se cierra tras un periodo de inactividad.
   useCierrePorInactividad(POLITICA_ACCESO.inactividadMinutos, () => cerrarSesion('inactividad'))
 
   return (

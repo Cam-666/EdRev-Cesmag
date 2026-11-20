@@ -1,8 +1,8 @@
 /*
- * Rutas públicas — the only ones that answer without a session (login and password links, the
- * answer of a peer from the mail, the mail service's events and the public images of the mails).
- * Anything that is not listed here is private: see rutas/privadas. Each of these routes protects
- * itself in its own way (a signed, single-use token, a signature or a limit of requests).
+ * Rutas públicas — las únicas que responden sin sesión (ingreso y enlaces de contraseña, la respuesta de un par
+ * desde el correo, los eventos del servicio de correo y las imágenes públicas de los correos). Lo que no esté
+ * listado aquí es privado: ver rutas/privadas. Cada una se protege a su manera (un token firmado de un solo
+ * uso, una firma o un límite de peticiones).
  */
 import { Router } from 'express'
 import { rateLimit } from 'express-rate-limit'
@@ -14,17 +14,17 @@ import { rutasWebhooks } from './webhooks.js'
 export const rutasPublicas = Router()
 
 rutasPublicas.use(rutasAcceso)
-// The mail service's events are public too: a token protects them and a limit of requests slows guessing.
+// Los eventos del servicio de correo también son públicos: los protege un token y un límite de peticiones frena los intentos de adivinarlo.
 rutasPublicas.use(
   '/webhooks',
   rateLimit({ windowMs: 15 * 60_000, limit: 600, standardHeaders: true, legacyHeaders: false }),
 )
 rutasPublicas.use(rutasWebhooks)
-// The peer answers from the mail without an account: public, with a limit of requests.
+// El par responde desde el correo sin tener cuenta: ruta pública, con límite de peticiones.
 rutasPublicas.use(
   '/invitaciones',
   rateLimit({ windowMs: 15 * 60_000, limit: 200, standardHeaders: true, legacyHeaders: false }),
 )
 rutasPublicas.use(rutasInvitaciones)
-// The footer image of the mails is requested by the mail client of the peer (signed address).
+// El cliente de correo del par pide las imágenes públicas (el escudo).
 rutasPublicas.use(rutasImagenes)

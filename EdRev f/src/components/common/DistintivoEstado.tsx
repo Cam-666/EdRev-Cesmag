@@ -1,12 +1,11 @@
 /*
- * DistintivoEstado — status badge. Always symbol + text, never color alone.
- * Covers: RNF-12 (independence of color), RF-22 (par status), RF-26 (mail result).
- * Base set: the 8 states of the design. Extras: assignment and mail variants (decision 5).
+ * DistintivoEstado — insignia de estado. Siempre símbolo y texto, nunca solo color.
+ * Conjunto base: los 8 estados del diseño. Extras: las variantes de asignación y de correo.
  */
 import { cn } from '@/lib/cn'
 
 export type EstadoDistintivo =
-  // The eight base states
+  // Los ocho estados base
   | 'postulado'
   | 'en-revision'
   | 'en-evaluacion'
@@ -15,22 +14,22 @@ export type EstadoDistintivo =
   | 'archivado'
   | 'bloqueado'
   | 'pendiente'
-  // Committee round result (RF-06)
+  // Resultado de una ronda del comité
   | 'ajustes'
-  // Assignment status (RF-22)
+  // Estado de una asignación
   | 'invitado'
   | 'segundo-intento'
   | 'acepto'
   | 'no-acepto'
   | 'sin-respuesta'
   | 'entrego'
-  // Peer availability
+  // Disponibilidad del par
   | 'disponible'
   | 'misma-institucion'
-  // Account status
+  // Estado de una cuenta
   | 'activo'
   | 'inhabilitado'
-  // Constancia / mail result
+  // Resultado de una constancia o de un correo
   | 'emitida'
   | 'enviado'
   | 'rebotado'

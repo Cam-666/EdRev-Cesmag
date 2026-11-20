@@ -1,7 +1,4 @@
-/*
- * FormularioRecuperar — request a password-recovery link. The answer never reveals whether the
- * account exists. Covers: RF-46, HU-28 (criterion 2), RNF-11.
- */
+/* FormularioRecuperar — solicita un enlace para recuperar la contraseña. La respuesta nunca revela si la cuenta existe. */
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useForm } from 'react-hook-form'
 import { Link } from 'react-router-dom'
@@ -14,7 +11,7 @@ import { Boton } from '@/components/common/Boton'
 import { CampoTexto } from '@/components/common/CampoTexto'
 
 export interface FormularioRecuperarProps {
-  /** `enlaceDemo` only comes from the mock API (the real link arrives by mail). */
+  /** `enlaceDemo` solo viene de la API simulada (el enlace real llega por correo). */
   onEnviado: (correo: string, enlaceDemo?: string) => void
 }
 

@@ -1,7 +1,7 @@
 /*
- * Hooks of the constancias module. Issuing touches many views (the constancias lists, the mail
- * log, the dashboard alert, the peer record and the article history), so every mutation refreshes
- * all of them for the active journal. Covers: RF-30..RF-34.
+ * Hooks del módulo de constancias. Emitir toca muchas vistas (las listas de constancias, el registro de correos,
+ * la alerta del tablero, la ficha del par y el historial del artículo), por eso cada mutación las refresca todas
+ * para la revista activa.
  */
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
@@ -32,7 +32,7 @@ export function useConstancias() {
   })
 }
 
-/** The constancia rendered from the template; enabled only when one is selected. */
+/** La constancia armada con la plantilla; solo se activa cuando hay una seleccionada. */
 export function useVistaConstancia(constanciaId: string | null) {
   const { revista } = useRevista()
   return useQuery({

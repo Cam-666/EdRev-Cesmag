@@ -1,7 +1,6 @@
 /*
- * AgregarAutorModal — adds an author (an existing record or a new one) to an article, up to the
- * limit of seven. No Figma design for the dialog; it reuses the step-2 author form.
- * Covers: RF-09, RF-10, HU-06, HU-07.
+ * AgregarAutorModal — agrega un autor (uno existente o uno nuevo) a un artículo, hasta el límite de siete.
+ * No tiene diseño en Figma; reutiliza el formulario de autor del paso 2.
  */
 import { MAX_AUTORES } from '../config/listas'
 import { useAgregarAutor } from '../hooks/useMutacionesArticulo'

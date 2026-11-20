@@ -1,6 +1,6 @@
 /*
- * esquemas — Zod validation of the author form. Covers: RF-09 (name, ORCID, email, affiliation,
- * country). The email is required by RF-09 although the Figma form does not show it.
+ * esquemas — validación con Zod del formulario de autor: nombre, ORCID, correo, filiación y país. El correo es
+ * obligatorio aunque el formulario de Figma no lo muestre.
  */
 import { z } from 'zod'
 

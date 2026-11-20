@@ -1,11 +1,10 @@
 /*
- * ConfiguracionPage — Configuración (/administracion/configuracion), in two tabs:
- *  - Correos: the days a peer has to answer an invitation (after that time the system sends the 2nd
- *    attempt by itself and, if it is not answered either, blocks the peer) and, for each journal,
- *    which template is the invitation and which is the thank-you mail.
- *  - Constancias: for each journal, which template is its constancia and its ISSN and indexations,
- *    which go in the constancia.
- * Administradora only. Covers: RF-29, RF-15, RF-30, RF-45, RNF-05, RNF-18.
+ * ConfiguracionPage — Configuración (/administracion/configuracion), en dos pestañas:
+ * - Correos: los días que tiene un par para responder una invitación (pasado ese tiempo el sistema envía solo el
+ *   2.º intento y, si tampoco se responde, bloquea al par) y, de cada revista, qué plantilla es la invitación y
+ *   cuál el correo de agradecimiento.
+ * - Constancias: de cada revista, qué plantilla es su constancia y su ISSN e indexaciones, que van en la constancia.
+ * Solo para la Administradora.
  */
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useEffect } from 'react'

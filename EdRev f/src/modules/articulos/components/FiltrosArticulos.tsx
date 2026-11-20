@@ -1,7 +1,6 @@
 /*
- * FiltrosArticulos — search, status, year of management, publication number and postulation date
- * range. An article still open from a previous year counts in the current year (anio filter).
- * Covers: RF-35, HU-26 (filters by status, publication number and date range).
+ * FiltrosArticulos — búsqueda, estado, año de gestión, número de publicación y rango de fechas de postulación.
+ * Un artículo abierto de un año anterior cuenta en el año actual (filtro anio).
  */
 import { useEffect, useState } from 'react'
 import { ESTADOS_FILTRO } from '../config/listas'

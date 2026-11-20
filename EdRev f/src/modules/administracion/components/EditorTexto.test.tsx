@@ -17,7 +17,7 @@ function Prueba({ inicial = '', alCambiar }: { inicial?: string; alCambiar: (t: 
   )
 }
 
-/** Selects `inicio`..`fin` of the first text of the first paragraph, as the person does with the mouse. */
+/** Selecciona de `inicio` a `fin` del primer texto del primer párrafo, como lo hace la persona con el ratón. */
 function seleccionar(caja: HTMLElement, inicio: number, fin: number) {
   const texto = caja.querySelector('p')?.firstChild
   if (!texto) throw new Error('sin texto')
@@ -48,7 +48,7 @@ describe('EditorTexto: the formatting is applied in the box, not written as mark
     expect(caja.querySelector('strong')?.textContent).toBe('mundo')
     expect(caja.textContent).toBe('Hola mundo cruel')
     expect(cambios.at(-1)).toBe('Hola **mundo** cruel')
-    // and it is taken out the same way
+    // y se quita de la misma manera
     seleccionar(caja, 0, 0)
     const fuerte = caja.querySelector('strong')?.firstChild
     const r = document.createRange()

@@ -6,5 +6,5 @@ export interface RevistaContextValue {
   datos: DatosRevista
 }
 
-/** null outside the journal modules (/inicio, /informes, /administracion, access screens). */
+/** null fuera de los módulos de revista (/inicio, /informes, /administracion y las pantallas de acceso). */
 export const RevistaContext = createContext<RevistaContextValue | null>(null)

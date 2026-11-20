@@ -1,8 +1,7 @@
 /*
- * AlertasTablero — the two alerts the dependency flagged as priority, each with its count and the
- * first cases: peers that have not answered the invitation, and delivered evaluations whose
- * constancia is pending. Each one opens the full list of its cases.
- * Covers: RF-37, HU-25, RF-34, RNF-12.
+ * AlertasTablero — las dos alertas que la dependencia marcó como prioridad, cada una con su cantidad y los
+ * primeros casos: pares que no han respondido la invitación y evaluaciones entregadas cuya constancia está
+ * pendiente. Cada una abre el listado completo de sus casos.
  */
 import { DistintivoEstado } from '@/components/common/DistintivoEstado'
 import { EnlaceBoton } from '@/components/common/EnlaceBoton'
@@ -18,7 +17,7 @@ export interface AlertasTableroProps {
   revista: Revista
   sinResponder: CasoSinResponder[]
   constanciasPendientes: CasoConstanciaPendiente[]
-  /** Whether the user may issue constancias (shows the "Emitir" links). */
+  /** Si el usuario puede emitir constancias (muestra los enlaces «Emitir»). */
   puedeEmitir: boolean
 }
 

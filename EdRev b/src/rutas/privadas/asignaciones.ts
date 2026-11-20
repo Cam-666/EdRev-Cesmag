@@ -1,8 +1,7 @@
 /*
- * Asignación y evaluación — the routes only say where each request goes: assign a peer to an
- * approved article (RF-19), the peer's answer (RF-22), delivery (RF-23), concept (RF-20) and the
- * resend after a bounced or failed send (RF-28). Validation is in controladores/asignaciones, the
- * rules in servicios/asignaciones.
+ * Asignación y evaluación — las rutas solo dicen a dónde va cada petición: asignar un par a un artículo
+ * aprobado, la respuesta del par, la entrega, el concepto y el reenvío tras un envío rebotado o fallido.
+ * La validación está en controladores/asignaciones y las reglas en servicios/asignaciones.
  */
 import { Router } from 'express'
 import * as asignaciones from '../../controladores/asignaciones.js'

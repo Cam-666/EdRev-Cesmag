@@ -1,6 +1,4 @@
-/*
- * NoEncontradaPage — 404 for unknown URLs.
- */
+/* NoEncontradaPage — página 404 para las direcciones que no existen. */
 import { Link } from 'react-router-dom'
 
 export function NoEncontradaPage() {

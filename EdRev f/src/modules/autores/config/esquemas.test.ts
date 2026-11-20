@@ -8,7 +8,7 @@ const BASE = {
   pais: 'Colombia',
 }
 
-describe('esquemaAutor — ORCID is optional (RF-09)', () => {
+describe('esquemaAutor — ORCID is optional', () => {
   it('accepts an author without ORCID', () => {
     expect(esquemaAutor.safeParse(BASE).success).toBe(true)
   })

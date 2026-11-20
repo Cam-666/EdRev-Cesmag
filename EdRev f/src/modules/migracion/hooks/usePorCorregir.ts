@@ -10,7 +10,7 @@ export function usePorCorregir() {
   })
 }
 
-/** A correction changes the record, its journal's lists and the dashboard counters. */
+/** Una corrección cambia el registro, las listas de su revista y los contadores del tablero. */
 export function useCorregirRegistro() {
   const { revista } = useRevista()
   const cliente = useQueryClient()

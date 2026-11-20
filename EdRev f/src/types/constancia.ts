@@ -3,7 +3,7 @@ import type { Revista } from './revista'
 
 export type OrigenConstancia = 'sistema' | 'migrado'
 
-/** Row of the constancias screen: a delivered evaluation with its constancia status. */
+/** Fila de la pantalla de constancias: una evaluación entregada con el estado de su constancia. */
 export interface FilaConstancia {
   id: string
   asignacionId: string
@@ -11,9 +11,9 @@ export interface FilaConstancia {
   origen: OrigenConstancia
   par: { id: string; nombre: string; correo: string }
   articulo: { id: string; numeroOjs: string; titulo: string }
-  /** ISO 8601 date-time of the delivery. */
+  /** Fecha y hora ISO 8601 de la entrega. */
   fechaEntrega: string
-  /** ISO 8601 date-time; null while pending. */
+  /** Fecha y hora ISO 8601; null mientras esté pendiente. */
   fechaEmision: string | null
 }
 
@@ -23,21 +23,21 @@ export interface RespuestaConstancias {
 }
 
 /**
- * The constancia rendered from the institutional template (RF-30): only the peer's name and the
- * article title change; the letterhead and the signature are fixed. It carries no sequence number.
+ * La constancia armada con la plantilla institucional: solo cambian el nombre del par y el título del artículo;
+ * el membrete y la firma son fijos. No lleva consecutivo.
  */
 export interface VistaConstancia {
   universidad: string
   revista: string
   cuerpo: string
   firma: string
-  /** File name of the journal's PDF background the text is written on (RF-30). */
+  /** Descripción de las imágenes de la plantilla de la revista sobre las que se escribe el texto. */
   fondo: string | null
 }
 
 export interface ResultadoEmision {
   constancia: FilaConstancia
-  /** The thank-you mail that carries the constancia (RF-31). */
+  /** El correo de agradecimiento que lleva la constancia. */
   correo: { estado: EstadoCorreo; destinatario: string }
 }
 

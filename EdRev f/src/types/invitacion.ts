@@ -1,19 +1,19 @@
 /*
- * Invitation answered from the mail — the three buttons of the invitation: accept, do not accept
- * this invitation, do not want to participate any more. Covers: RF-22, RF-15.
+ * Invitación respondida desde el correo — los tres botones de la invitación: acepto, no acepto esta invitación y
+ * no deseo participar más.
  */
 import type { Revista } from './revista'
 
 export type AccionCorreo = 'acepto' | 'no-acepto' | 'no-desea'
 
-/** What the confirmation page shows for the link the peer opened. */
+/** Lo que muestra la página de confirmación para el enlace que abrió el par. */
 export interface InvitacionCorreo {
   accion: AccionCorreo
-  /** Name of the journal. */
+  /** Nombre de la revista. */
   revista: string
   sigla: Revista
   articulo: string
   par: string
-  /** The invitation already has an answer: the link no longer applies. */
+  /** La invitación ya tiene una respuesta: el enlace ya no aplica. */
   respondida: boolean
 }

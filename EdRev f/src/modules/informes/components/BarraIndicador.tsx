@@ -1,7 +1,6 @@
 /*
- * BarraIndicador — one horizontal bar of the report charts: a native <progress> (so it keeps its
- * meaning without color), thin, with rounded ends, in the color of its series. It prints in color.
- * Covers: RF-38, HU-27, RNF-11.
+ * BarraIndicador — una barra horizontal de las gráficas del informe: un <progress> nativo (así conserva su
+ * significado sin color), delgada, con los extremos redondeados, en el color de su serie. Se imprime a color.
  */
 import { cn } from '@/lib/cn'
 
@@ -17,7 +16,7 @@ export interface BarraIndicadorProps {
   valor: number
   maximo: number
   serie: SerieInforme
-  /** Accessible reading of the bar, e.g. "Aprobaciones de Educación y Pedagogía: 4". */
+  /** Lectura accesible de la barra, por ejemplo «Aprobaciones de Educación y Pedagogía: 4». */
   etiqueta: string
 }
 

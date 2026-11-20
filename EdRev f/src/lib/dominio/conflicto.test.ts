@@ -5,7 +5,7 @@ const AUTORES = [
   { nombre: 'Diego Fernando Erazo', filiacion: 'Universidad CESMAG' },
 ]
 
-describe('mismaInstitucion (RF-17): the assignment is refused', () => {
+describe('mismaInstitucion: the assignment is refused', () => {
   it('names the author whose institution is the peer own', () => {
     expect(mismaInstitucion({ universidad: 'Universidad CESMAG' }, AUTORES)).toBe(
       'El par pertenece a Universidad CESMAG, la misma institución del autor Diego Fernando Erazo: no se puede asignar a este artículo.',

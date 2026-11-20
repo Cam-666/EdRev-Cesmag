@@ -1,6 +1,6 @@
 /*
- * Seed users — the three accounts of the dependency shown in the design (Administración).
- * Covers: RF-40, HU-29. Used by the mock login and the user selector.
+ * Usuarios de ejemplo — las tres cuentas de la dependencia que muestra el diseño (Administración). Las usan el
+ * ingreso simulado y el selector de usuario.
  */
 import type { Usuario } from '@/types/usuario'
 

@@ -1,7 +1,6 @@
 /*
- * ArticulosPage — Artículos (/:revista/articulos): the journal's article list with filters by
- * status, publication number and postulation date range, search and pagination.
- * Covers: RF-35, RF-02, RNF-01, HU-26.
+ * ArticulosPage — Artículos (/:revista/articulos): el listado de artículos de la revista con filtros por estado,
+ * número de publicación y rango de fechas de postulación, búsqueda y paginación.
  */
 import { FiltrosArticulos } from '../components/FiltrosArticulos'
 import { TablaArticulos } from '../components/TablaArticulos'

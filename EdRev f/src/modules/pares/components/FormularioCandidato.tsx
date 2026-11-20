@@ -1,7 +1,7 @@
 /*
- * FormularioCandidato — registers a brand-new candidate while assigning peers: name, profession,
- * email, university and thematic area (suggesting the ones already registered). Saving stores the peer in
- * the common base of peers and sends the invitation right away. Covers: RF-12, RF-13, RF-19, RF-24.
+ * FormularioCandidato — registra un candidato nuevo mientras se asignan pares: nombre, profesión, correo,
+ * universidad y área temática (sugiere las ya registradas). Al guardar, el par queda en la base común de pares
+ * y la invitación se envía de inmediato.
  */
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useForm } from 'react-hook-form'

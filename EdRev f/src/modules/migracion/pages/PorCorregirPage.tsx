@@ -1,10 +1,9 @@
 /*
- * PorCorregirPage — Registros migrados por corregir (/:revista/por-corregir): the records loaded
- * from the Excel whose hand-written text did not fit the closed lists of the system (a type,
- * state or concept) or that came without a datum the system needs (the peer email, asked before
- * inviting again). Each one shows what the Excel said and is corrected right there; corrected
- * records leave the list and the change stays in the history. Opened from the dashboard.
- * Covers: RF-42, RF-43, RF-44, HU-32.
+ * PorCorregirPage — Registros migrados por corregir (/:revista/por-corregir): los registros cargados del Excel
+ * cuyo texto escrito a mano no encajó en las listas cerradas del sistema (un tipo, estado o concepto) o que
+ * llegaron sin un dato que el sistema necesita (el correo del par, que se pide antes de volver a invitarlo).
+ * Cada uno muestra lo que decía el Excel y se corrige ahí mismo; los registros corregidos salen de la lista y el
+ * cambio queda en el historial. Se abre desde el tablero.
  */
 import { useState } from 'react'
 import { Link } from 'react-router-dom'

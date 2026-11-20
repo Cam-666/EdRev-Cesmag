@@ -1,8 +1,7 @@
 /*
- * ParesPage — Pares evaluadores (/:revista/pares): the journal's own peer base, searchable by
- * thematic area and university, with the availability of each peer. Peers are assigned from the
- * article sheet (Pares y evaluación).
- * Covers: RF-12, RF-13, RF-14, RF-15, RF-17, RNF-06, HU-08, HU-09.
+ * ParesPage — Pares evaluadores (/:revista/pares): la base de pares, que es común a las dos revistas, con
+ * búsqueda por área temática y universidad, y la disponibilidad de cada par. Los pares se asignan desde la ficha
+ * del artículo (Pares y evaluación).
  */
 import { useState } from 'react'
 import { FiltrosPares } from '../components/FiltrosPares'

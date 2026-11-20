@@ -1,8 +1,4 @@
-/*
- * FilaParAsignado — assigned par in the article sheet: order, status, concept, delivery date.
- * Covers: RF-19 (ordered assignment), RF-20 (concept), RF-21 (tiebreak), RF-22 (status),
- *         RF-23 (delivery mark), HU-13.
- */
+/* FilaParAsignado — un par asignado en la ficha del artículo: orden, estado, concepto y fecha de entrega. */
 import type { ReactNode } from 'react'
 import { DistintivoEstado } from './DistintivoEstado'
 import type { EstadoDistintivo } from './DistintivoEstado'
@@ -14,11 +10,11 @@ export interface FilaParAsignadoProps {
   universidad: string
   estado: EstadoDistintivo
   concepto?: string | null
-  /** ISO 8601 date. */
+  /** Fecha en formato ISO 8601. */
   fechaEntrega?: string | null
   esDesempate?: boolean
   constanciaEmitida?: boolean
-  /** Row actions (resend invitation, mark delivery, register concept…). */
+  /** Acciones de la fila (reenviar la invitación, marcar la entrega, registrar el concepto…). */
   acciones?: ReactNode
 }
 

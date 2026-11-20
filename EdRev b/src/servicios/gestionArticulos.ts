@@ -1,8 +1,7 @@
 /*
- * gestionArticulos (servicio) — the life of an article: the list with filters (RF-35), the OJS
- * number warning (RF-03), registration with its authors (RF-01, RF-09, RF-10), edition and
- * publication (RF-04), change of journal (RF-07), closing and reopening (RF-08) and the history of
- * mails and changes (RF-26, RF-41). The sheet itself is built by servicios/articulos.
+ * gestionArticulos (servicio) — la vida de un artículo: el listado con filtros, la advertencia de número de OJS
+ * repetido, el registro con sus autores, la edición y la publicación, el cambio de revista, el cierre y la
+ * reapertura, y el historial de correos y cambios. La ficha la arma servicios/articulos.
  */
 import { enTransaccion, pool } from '../db.js'
 import { auditar } from '../lib/auditoria.js'
@@ -21,9 +20,9 @@ export interface Publicacion {
 }
 
 /**
- * Year of management: the year of the postulation, except for an article whose process is still
- * open (Postulado, En revisión, En evaluación) from a previous year, which passes by itself to the
- * current year's list; its postulation date does not change.
+ * Año de gestión: el año de la postulación, salvo en un artículo cuyo proceso sigue abierto (Postulado, En
+ * revisión, En evaluación) de un año anterior, que pasa solo al listado del año actual; su fecha de postulación
+ * no cambia.
  */
 const ANIO_GESTION = `(CASE WHEN a.estado IN ('postulado','en-revision','en-evaluacion')
                               AND EXTRACT(YEAR FROM a.fecha_postulacion) < EXTRACT(YEAR FROM CURRENT_DATE)
@@ -60,8 +59,8 @@ export async function listarArticulos(revista: number, f: FiltrosListado) {
     filtros.push(sql.replace('?', `$${valores.length}`))
   }
   if (f.q?.trim()) {
-    // Search by title without accents, or by OJS number (HU-26).
-    // The wildcards of LIKE written by the user are literal characters, not patterns.
+    // Búsqueda por título sin tildes, o por número de OJS.
+    // Los comodines de LIKE que escriba el usuario son caracteres literales, no patrones.
     valores.push(sinTildes(f.q.trim()).replace(/[\\%_]/g, '\\$&'))
     const p = `$${valores.length}`
     filtros.push(
@@ -113,7 +112,7 @@ export async function listarArticulos(revista: number, f: FiltrosListado) {
   }
 }
 
-/** RF-03: a repeated OJS number is warned, never blocked. */
+/** Un número de OJS repetido se advierte, nunca se bloquea. */
 export async function existeNumeroOjs(revista: number, numero: string) {
   const { rows } = await pool.query<{ id_articulo: number }>(
     'SELECT id_articulo FROM articulo WHERE id_revista = $1 AND numero_ojs = $2 LIMIT 1',
@@ -139,7 +138,7 @@ export interface DatosNuevoArticulo {
   autores: AutorEntrada[]
 }
 
-/** Registers the article with its authors, in order; returns its id. */
+/** Registra el artículo con sus autores, en orden; devuelve su id. */
 export async function registrarArticulo(revista: number, datos: DatosNuevoArticulo, actor: number): Promise<number> {
   return enTransaccion(async (c) => {
     const { rows } = await c.query<{ id_articulo: number }>(
@@ -195,12 +194,12 @@ export async function editarArticulo(revista: number, id: number, cambios: Cambi
   })
 }
 
-/** RF-07: at any stage; returns the journal it now belongs to. */
+/** En cualquier etapa; devuelve la revista a la que ahora pertenece. */
 export async function trasladarArticulo(revista: number, id: number, actor: number): Promise<number> {
   const destino = revista === 1 ? 2 : 1
   await enTransaccion(async (c) => {
-    // The peers are a common base, so the evaluations go along. The volume and number belong to the
-    // journal, so they are cleared (the history says which one it was).
+    // Los pares son una base común, así que las evaluaciones se van con el artículo. El volumen y el número
+    // pertenecen a la revista, por eso se borran (el historial dice cuál era).
     const a = await articuloDeRevista(c, revista, id)
     await c.query('UPDATE articulo SET id_revista = $1, volumen = NULL, numero = NULL WHERE id_articulo = $2', [destino, id])
     const publicacion =
@@ -273,7 +272,7 @@ export async function reabrirArticulo(
   })
 }
 
-/** The mails and the changes of the article (RF-26, RF-41). */
+/** Los correos y los cambios del artículo. */
 export async function historialArticulo(revista: number, id: number) {
   await articuloDeRevista(pool, revista, id)
   const correos = await pool.query<FilaCorreo>(`${SELECCION_CORREOS} WHERE e.id_articulo = $1`, [id])

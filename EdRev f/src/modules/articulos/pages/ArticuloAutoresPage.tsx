@@ -1,6 +1,6 @@
 /*
- * ArticuloAutoresPage — Autores tab (/:revista/articulos/:id/autores): the article's authors in
- * order, "3 de 7", add and edit. Covers: RF-09, RF-36, HU-06.
+ * ArticuloAutoresPage — pestaña Autores (/:revista/articulos/:id/autores): los autores del artículo en orden,
+ * «3 de 7», agregar y editar.
  */
 import { useState } from 'react'
 import { AgregarAutorModal } from '../components/AgregarAutorModal'

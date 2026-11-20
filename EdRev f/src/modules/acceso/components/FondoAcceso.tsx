@@ -1,9 +1,9 @@
 /*
- * FondoAcceso — composite background of the access screens, a single replaceable component:
- *   1. aerial photo of the CESMAG campus (src/assets/fondo-cesmag.jpg),
- *   2. institutional gradient blue -> red in multiply blend at 90 %,
- *   3. vertical darkening for text contrast.
- * Purely decorative (aria-hidden). Covers: HU-28 (access screens).
+ * FondoAcceso — fondo compuesto de las pantallas de acceso, un solo componente reemplazable:
+ * 1. foto aérea del campus de CESMAG (src/assets/fondo-cesmag.jpg),
+ * 2. degradado institucional azul -> rojo con mezcla multiplicar al 90 %,
+ * 3. oscurecimiento vertical para el contraste del texto.
+ * Es puramente decorativo (aria-hidden).
  */
 import fondo from '@/assets/fondo-cesmag.jpg'
 

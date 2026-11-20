@@ -1,8 +1,7 @@
 /*
- * ListaParesDisponibles — peers of the journal that can be assigned to the article: not blocked
- * and with no evaluation in progress (invited or accepted). Searchable by name, area or university;
- * Peers of the same institution as an author are not offered. «Asignar» sends the invitation right away.
- * Covers: RF-14, RF-17, RF-19, RF-24, HU-09 (criterion 4), HU-12, HU-13.
+ * ListaParesDisponibles — los pares que se pueden asignar al artículo: no bloqueados y sin evaluación en curso
+ * (invitado o aceptó). Se busca por nombre, área o universidad. No se ofrecen pares de la misma institución que
+ * algún autor. «Asignar» envía la invitación de inmediato.
  */
 import { useState } from 'react'
 import { usePares } from '../hooks/usePares'
@@ -18,7 +17,7 @@ import type { ParListado } from '@/types/par'
 
 export interface ListaParesDisponiblesProps {
   articuloId: string
-  /** Id of the peer being assigned right now (its button shows the spinner). */
+  /** Id del par que se está asignando en este momento (su botón muestra el indicador de carga). */
   asignando: string | null
   onAsignar: (par: ParListado) => void
 }

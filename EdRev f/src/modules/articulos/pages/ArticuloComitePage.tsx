@@ -1,11 +1,9 @@
 /*
- * ArticuloComitePage — «Revisión del comité» tab (/:revista/articulos/:id/comite): the rounds of
- * the initial committee review and the form to register a new one with the anti-plagiarism report.
- * The committee chooses the result (the form suggests one): Aprobado takes the user straight to the
- * assignment of peers; Rechazado and Requiere ajustes do not close the process: the article stays in
- * review and waits for another round (no limit).
- * After registering an article the user lands here with the form open (?registrar=1).
- * Covers: RF-05, RF-06, RF-07, HU-01 (criterion 5), HU-02, HU-03, HU-04.
+ * ArticuloComitePage — pestaña «Revisión del comité» (/:revista/articulos/:id/comite): las rondas de la revisión
+ * inicial del comité y el formulario para registrar una nueva con el reporte antiplagio. El comité elige el
+ * resultado (el formulario sugiere uno): Aprobado lleva al usuario directo a la asignación de pares; Rechazado y
+ * Requiere ajustes no cierran el proceso: el artículo sigue en revisión y espera otra ronda (sin límite).
+ * Al registrar un artículo, la persona llega aquí con el formulario abierto (?registrar=1).
  */
 import { useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'

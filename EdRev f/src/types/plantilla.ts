@@ -1,17 +1,17 @@
 import type { Revista } from './revista'
 
-/** What a template is used for. Each journal has exactly one template in use per use (RF-45). */
+/** Para qué se usa una plantilla. Cada revista tiene exactamente una plantilla en uso por cada uso. */
 export type UsoPlantilla = 'invitacion' | 'agradecimiento' | 'constancia'
 
-/** A template is a mail (subject and text) or a file (the constancia: text, header, footer, signature). */
+/** Una plantilla es un correo (asunto y texto) o un archivo (la constancia: texto, encabezado, pie y firma). */
 export type ClasePlantilla = 'correo' | 'archivo'
 
-/** The images of a file template. */
+/** Las imágenes de una plantilla de archivo. */
 export type ParteImagen = 'encabezado' | 'pie' | 'firma'
 
 export interface ImagenPlantilla {
   nombre: string
-  /** Size in bytes. */
+  /** Tamaño en bytes. */
   tamano: number
 }
 
@@ -19,28 +19,28 @@ export type ImagenesPlantilla = Record<ParteImagen, ImagenPlantilla | null>
 
 export interface Plantilla {
   id: string
-  /** Each journal has its own templates (RF-45). */
+  /** Cada revista tiene sus propias plantillas. */
   revista: Revista
-  /** What it is used for in its journal now; null while it is not in use. */
+  /** Para qué se usa ahora en su revista; null mientras no está en uso. */
   uso: UsoPlantilla | null
-  /** What it was created for (invitation, thank-you or constancia); it does not change. */
+  /** Para qué se creó (invitación, agradecimiento o constancia); no cambia. */
   fin: UsoPlantilla
   clase: ClasePlantilla
   nombre: string
-  /** Mail subject; the constancia has none. */
+  /** Asunto del correo; la constancia no tiene. */
   asunto: string | null
   cuerpo: string
-  /** Markers that may appear, e.g. {{revista}}, {{par}}, {{articulo}}. */
+  /** Marcas que pueden aparecer, por ejemplo {{revista}}, {{par}}, {{articulo}}. */
   variables: string[]
-  /** True when it is the template its journal sends for its use (it has one). */
+  /** Verdadero cuando es la plantilla que su revista envía para su uso (tiene uno). */
   enUso: boolean
-  /** Header, footer and signature images; only the file template (constancia) has them. */
+  /** Imágenes de encabezado, pie y firma; solo las tiene la plantilla de archivo (la constancia). */
   imagenes: ImagenesPlantilla | null
 }
 
 /**
- * A new template: a free name and what it is for. It is always blank (the person writes it); it
- * is chosen in Configuración once it has text. Without a purpose its class is given.
+ * Una plantilla nueva: un nombre libre y para qué sirve. Siempre nace en blanco (la persona la escribe) y se elige
+ * en Configuración cuando ya tiene texto. Sin un fin, se indica su clase.
  */
 export interface DatosNuevaPlantilla {
   revista: Revista
@@ -49,7 +49,7 @@ export interface DatosNuevaPlantilla {
   clase?: ClasePlantilla
 }
 
-/** Address the mails of a journal leave from: configured in the mail service, not on screen. */
+/** Dirección desde la que salen los correos de una revista: se configura en el servicio de correo, no en pantalla. */
 export interface CuentaRemitente {
   revista: Revista
   remitente: string

@@ -1,7 +1,4 @@
-/*
- * ListaAuditoria — "Cambios": every state change, edit, mail and constancia of the
- * article with its user and date. Covers: RF-41, HU-30 (criterion 2).
- */
+/* ListaAuditoria — «Cambios»: todo cambio de estado, edición, correo y constancia del artículo, con su usuario y fecha. */
 import { abreviarNombre, formatearFechaHora } from '@/lib/format'
 import type { EntradaAuditoria } from '@/types/historial'
 

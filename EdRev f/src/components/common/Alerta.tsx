@@ -1,6 +1,6 @@
 /*
- * Alerta — inline message with symbol + text (info, warning, error, success).
- * Covers: RNF-12, RF-05 (antiplagio warning), RF-17 (conflict warning), RF-27 (send failure).
+ * Alerta — mensaje en línea con símbolo y texto (información, advertencia, error, éxito). Se usa, por ejemplo,
+ * para el aviso de coincidencias del antiplagio, el de conflicto de interés y el de fallo de envío.
  */
 import type { ReactNode } from 'react'
 import { cn } from '@/lib/cn'
@@ -11,7 +11,7 @@ export interface AlertaProps {
   tipo: TipoAlerta
   titulo?: string
   children: ReactNode
-  /** Optional action (button or link) aligned to the right. */
+  /** Acción opcional (botón o enlace) alineada a la derecha. */
   accion?: ReactNode
   className?: string
 }

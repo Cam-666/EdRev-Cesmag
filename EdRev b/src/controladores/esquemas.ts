@@ -1,6 +1,6 @@
 /*
- * esquemas — validation schemas shared by more than one controller (the data of a peer is asked
- * when the peer is registered from the base and when it is a new candidate of an article).
+ * esquemas — esquemas de validación que usa más de un controlador (los datos de un par se piden igual al
+ * registrarlo desde la base y al crearlo como candidato nuevo de un artículo).
  */
 import { z } from 'zod'
 import { CORREO_VALIDO } from '../lib/http.js'

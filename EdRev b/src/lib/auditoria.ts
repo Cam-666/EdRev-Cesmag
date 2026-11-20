@@ -1,6 +1,6 @@
 /*
- * auditoria — who did what and when (RF-41). The readable sentence and the journal / article of
- * context go in `detalle`, so the article history and Administración › Auditoría can filter.
+ * auditoria — quién hizo qué y cuándo. La frase legible y la revista / artículo de contexto van en `detalle`
+ * (JSON), para que el historial del artículo y Administración › Auditoría puedan filtrar por ellos.
  */
 import type { Cliente } from '../db.js'
 

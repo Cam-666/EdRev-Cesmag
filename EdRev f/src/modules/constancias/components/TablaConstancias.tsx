@@ -1,9 +1,8 @@
 /*
- * TablaConstancias — the two lists of the constancias screen.
- *   pendientes: delivered evaluations with no constancia yet (peer, article, delivery date and
- *               origin "Migrado" / "Sistema"), each with an "Emitir" button that opens its preview.
- *   emitidas:   issued ones with "Descargar" and, for the Administradora, "Reenviar".
- * Covers: RF-32, RF-33, RF-34, HU-23, HU-24.
+ * TablaConstancias — las dos listas de la pantalla de constancias.
+ * pendientes: evaluaciones entregadas que aún no tienen constancia (par, artículo, fecha de entrega y origen
+ *             «Migrado» / «Sistema»), cada una con un botón «Emitir» que abre su vista previa.
+ * emitidas:   las ya emitidas con «Descargar» y, para la Administradora, «Reenviar».
  */
 import { DistintivoEstado } from '@/components/common/DistintivoEstado'
 import { Boton } from '@/components/common/Boton'
@@ -28,10 +27,10 @@ const PAR: ColumnaTabla<FilaConstancia> = {
 export interface TablaPendientesProps {
   filas: FilaConstancia[]
   cargando: boolean
-  /** Constancia whose preview is open. */
+  /** Constancia cuya vista previa está abierta. */
   seleccionada: string | null
   onElegir: (fila: FilaConstancia) => void
-  /** Whether the user may issue (RNF-05). */
+  /** Si el usuario puede emitir. */
   puedeEmitir: boolean
 }
 
@@ -89,7 +88,7 @@ export interface TablaEmitidasProps {
   filas: FilaConstancia[]
   cargando: boolean
   onDescargar: (fila: FilaConstancia) => void
-  /** Reissue is reserved to the Administradora (HU-23 criterion 3); null hides the button. */
+  /** Reenviar es solo de la Administradora; null oculta el botón. */
   onReenviar: ((fila: FilaConstancia) => void) | null
 }
 

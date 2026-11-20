@@ -1,7 +1,6 @@
 /*
- * DatosArticulo — "Datos del artículo" card of the Resumen tab: OJS number, journal, type,
- * publication number, postulation date and status. Each datum lives only in this tab.
- * Covers: RF-01, RF-04, RF-36.
+ * DatosArticulo — tarjeta «Datos del artículo» de la pestaña Resumen: número de OJS, revista, tipo, número de
+ * publicación, fecha de postulación y estado. Cada dato vive solo en esta pestaña.
  */
 import { ETIQUETA_TIPO } from '../config/listas'
 import { DistintivoEstado } from '@/components/common/DistintivoEstado'

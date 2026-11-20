@@ -1,7 +1,6 @@
 /*
- * AccesoLayout — shell for the three access screens (no side panel): composite background,
- * institutional heading at the top and the journals line at the bottom. The card itself is
- * rendered by each page. Covers: HU-28.
+ * AccesoLayout — marco de las tres pantallas de acceso (sin panel lateral): fondo compuesto, encabezado
+ * institucional arriba y la línea de las revistas abajo. La tarjeta la dibuja cada página.
  */
 import { Outlet } from 'react-router-dom'
 import { Escudo } from '@/components/common/Escudo'

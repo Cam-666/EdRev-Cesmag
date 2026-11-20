@@ -1,9 +1,8 @@
 /*
- * Pruebas de los ajustes de noviembre: agregar autores a un artículo (RF-09, RF-10), pares que ya
- * están en el sistema (RF-12, RF-15), el concepto antes de la constancia (RF-20, RF-30), las
- * universidades sin duplicados por mayúsculas (RF-14), la respuesta del par en el correo (RF-26)
- * las imágenes de las plantillas (RF-45), los pares asignados que de verdad aceptaron y el
- * resultado del artículo según los conceptos de los pares (RF-20, RF-21).
+ * Pruebas de varios ajustes del proceso: agregar autores a un artículo, pares que ya están en el sistema,
+ * el concepto antes de la constancia, universidades sin duplicados por mayúsculas, la respuesta del par
+ * desde el correo, las imágenes de las plantillas, los pares asignados que de verdad aceptaron y el
+ * resultado del artículo según los conceptos de los pares.
  */
 import request from 'supertest'
 import { describe, expect, it } from 'vitest'
@@ -222,7 +221,7 @@ describe('las plantillas de correo no llevan imágenes', () => {
   })
 })
 
-/** Peers that accept and deliver with the given concepts, one after the other. */
+/** Pares que aceptan y entregan con los conceptos dados, uno después del otro. */
 async function evaluar(articulo: string, conceptos: string[], desde: number) {
   const api = await como()
   for (const [i, concepto] of conceptos.entries()) {

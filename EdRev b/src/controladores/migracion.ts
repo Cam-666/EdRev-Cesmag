@@ -1,6 +1,6 @@
 /*
- * migracion (controlador) — receives and validates the corrections of the migrated records and
- * answers; the rules are in servicios/correccionMigracion.
+ * migracion (controlador) — recibe y valida las correcciones de los registros migrados y responde. Las reglas
+ * están en servicios/correccionMigracion.
  */
 import type { Request, Response } from 'express'
 import { z } from 'zod'

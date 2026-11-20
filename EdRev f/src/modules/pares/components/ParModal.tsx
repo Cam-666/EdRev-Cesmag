@@ -1,7 +1,6 @@
 /*
- * ParModal — register a peer, or edit one (e.g. to correct a bounced email). Area suggests the
- * registered ones to avoid duplicated names; an email already in the other journal is announced. No Figma design for the dialog.
- * Covers: RF-12, RF-13, RF-27 (correct the email), D10 (no data authorization).
+ * ParModal — registra un par o edita uno (por ejemplo para corregir un correo rebotado). El área sugiere las ya
+ * registradas para evitar nombres duplicados; si el correo ya existe, se avisa. No tiene diseño en Figma.
  */
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useForm } from 'react-hook-form'
@@ -19,7 +18,7 @@ import type { ParEvaluador } from '@/types/par'
 export interface ParModalProps {
   abierto: boolean
   onCerrar: () => void
-  /** The peer being edited; omit to register a new one. */
+  /** El par que se edita; se omite para registrar uno nuevo. */
   par?: Pick<ParEvaluador, 'id' | 'nombre' | 'profesion' | 'correo' | 'universidad' | 'area'>
   onGuardado?: (id: string) => void
 }
@@ -27,8 +26,8 @@ export interface ParModalProps {
 const FORMULARIO = 'formulario-par'
 
 /**
- * The content is mounted only while the dialog is open, so every opening starts with a clean form
- * (and a clean mutation state) instead of what was typed the previous time.
+ * El contenido se monta solo mientras el diálogo está abierto, así cada vez que se abre empieza con un formulario
+ * limpio (y un estado de mutación limpio) en lugar de lo que se escribió la vez anterior.
  */
 export function ParModal(props: ParModalProps) {
   return props.abierto ? <ContenidoParModal {...props} /> : null

@@ -1,7 +1,7 @@
 /*
- * configuracion — values the Administradora adjusts from the page (Administración › Configuración).
- * For now: the days a peer has to answer an invitation (RF-29, RF-15). The saved value wins; while
- * none is saved, the server's DIAS_ESPERA_RESPUESTA applies (initial value: 5 days).
+ * configuracion — valores que la Administradora ajusta desde la página (Administración › Configuración).
+ * Por ahora: los días que tiene un par para responder una invitación. Gana el valor guardado; mientras no haya
+ * uno, rige DIAS_ESPERA_RESPUESTA del servidor (valor inicial: 5 días).
  */
 import { config } from '../config.js'
 import type { Cliente } from '../db.js'

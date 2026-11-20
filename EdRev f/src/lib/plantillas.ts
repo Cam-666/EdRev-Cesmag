@@ -1,8 +1,7 @@
 /*
- * plantillas — marker handling shared by the mock API and the template editor: finding the
- * {{markers}} of a text and filling them in. Unknown markers stay visible when filling, so a
- * mistake in a template is noticed in the preview instead of being silently dropped.
- * Covers: RNF-19 (templates editable without touching code), RF-25, RF-30.
+ * plantillas — manejo de marcas que comparten la API simulada y el editor de plantillas: encontrar las
+ * {{marcas}} de un texto y rellenarlas. Las marcas desconocidas quedan visibles al rellenar, para que un error
+ * en una plantilla se note en la vista previa en lugar de desaparecer sin avisar.
  */
 
 export function marcadores(texto: string): string[] {

@@ -1,5 +1,5 @@
 /*
- * Pruebas de las plantillas de archivo (la constancia) y del formato del texto — RF-30, RF-45.
+ * Pruebas de las plantillas de archivo (la constancia) y del formato del texto
  */
 import request from 'supertest'
 import { describe, expect, it } from 'vitest'
@@ -63,7 +63,7 @@ describe('plantillas de archivo (constancia)', () => {
     expect(lista.filter((p) => p.revista === 'ire' && p.uso === 'agradecimiento')).toHaveLength(1)
     expect(lista.find((p) => p.id === antes.id)?.uso).toBeNull()
     expect((await api.delete(`/plantillas/${correo.id}`)).status).toBe(409)
-    // the previous one goes back and the other can be removed
+    // la anterior vuelve a quedar en uso y la otra se puede eliminar
     await api.post(`/plantillas/${antes.id}/asignar`, { uso: 'agradecimiento' })
     expect((await api.delete(`/plantillas/${correo.id}`)).status).toBe(204)
     expect((await api.delete(`/plantillas/${correo.id}`)).status).toBe(404)
@@ -79,7 +79,7 @@ describe('plantillas de archivo (constancia)', () => {
     expect(c.variables).toContain('botones')
     await api.put(`/plantillas/${c.id}`, { asunto: 'Hola', cuerpo: '{{par}} {{articulo}}\n\n{{botones}}' })
     expect((await api.post(`/plantillas/${c.id}/asignar`, { uso: 'invitacion' })).status).toBe(200)
-    // leave the journal as it was
+    // dejar la revista como estaba
     const base = (await api.get('/plantillas')).body.plantillas.find(
       (p: { revista: string; nombre: string }) => p.revista === 'reep' && p.nombre === 'Invitación a evaluar',
     )
@@ -100,7 +100,7 @@ describe('plantillas de archivo (constancia)', () => {
     const quitada = await api.delete(`/plantillas/${id}/imagen/firma`)
     expect(quitada.body.imagenes.firma).toBeNull()
     const correo = (await api.get('/plantillas')).body.plantillas.find((p: { clase: string }) => p.clase === 'correo')
-    // A mail template carries no images at all
+    // Una plantilla de correo no lleva imágenes
     for (const parte of ['encabezado', 'pie', 'firma']) {
       expect((await api.subir(`/plantillas/${correo.id}/imagen/${parte}`, PNG, 'a.png')).status).toBe(409)
     }

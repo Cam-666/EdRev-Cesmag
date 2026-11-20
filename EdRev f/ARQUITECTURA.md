@@ -60,7 +60,7 @@ app  →  modules  →  components/common · lib · types · theme
 | Rutas públicas / privadas | `app/routes/publicas.tsx` · `privadas.tsx` | Qué requiere sesión y qué no.                     |
 | Guarda de autenticación   | `modules/acceso/components/RutaPrivada`    | Sin sesión redirige a `/acceso`.                  |
 | Guarda de autorización    | `modules/acceso/components/RutaPorPermiso` | Bloquea según el perfil.                          |
-| Permisos por perfil       | `modules/acceso/config/permisos.ts`        | Única tabla perfil → acciones (RNF-05).           |
+| Permisos por perfil       | `modules/acceso/config/permisos.ts`        | Única tabla perfil → acciones.           |
 | Cliente HTTP              | `lib/api/cliente.ts`                       | Único punto que adjunta el token `Authorization`. |
 
 ## Backend (fuera del alcance de esta etapa)
@@ -72,7 +72,7 @@ Cuando exista el backend, las recomendaciones de la revisión se aplican así; e
   expiración y rol/permisos** del usuario (no basta con recibir el token).
 - `middlewares/` (autenticación, validación del JWT, errores, permisos), `controllers/`, `services/`, `models/`.
 - El control de acceso del frontend es solo de experiencia de usuario: **la autorización real la hace el
-  backend** en cada petición (RNF-05, RNF-04).
+  backend** en cada petición.
 
 ## Marca y recursos gráficos
 
@@ -124,7 +124,7 @@ use «Reenviar invitación».
   multipart); las plantillas de correo no llevan imágenes. Configuración también guarda los días de espera, el
   ISSN y las indexaciones de cada revista.
 - Las plantillas son estado compartido del mock (`mocks/db.ts`); cambiarlas afecta los siguientes envíos sin
-  tocar código (RNF-19). La cuenta remitente de cada revista no se edita en pantalla: es configuración del
+  tocar código. La cuenta remitente de cada revista no se edita en pantalla: es configuración del
   servicio de correo (remitente verificado en Brevo) y sus credenciales nunca viajan al frontend.
 
 ## Permisos, acciones de pantalla y pares (ajustes previos a la fase 7)
@@ -148,7 +148,7 @@ use «Reenviar invitación».
    rondas y sin sobrescribir. El resultado lo elige el comité en una lista y la pantalla solo sugiere uno
    (`resultadoSugerido`). Ninguna ronda cierra el proceso: con Rechazado o Requiere ajustes el artículo sigue
    en revisión y sin pares; solo Aprobado lleva a la asignación de pares. Reglas en `lib/dominio/comite.ts`.
-3. **Cambiar de revista**: botón en la ficha, en cualquier etapa y las veces que haga falta (RF-07); el
+3. **Cambiar de revista**: botón en la ficha, en cualquier etapa y las veces que haga falta; el
    artículo conserva sus pares, correos y constancias, y se borran su volumen y número. Queda en el historial
    («Cambio de revista»).
 4. **Asignar par** (pestaña «Pares y evaluación»): solo si la ronda más reciente es Aprobado. Dos caminos:
@@ -177,21 +177,21 @@ lateral queda fijo al desplazar el contenido.
 
 ## Fase 7: alineación con las decisiones del modelo de datos v3.8
 
-- Sin «Mantener la sesión iniciada» (D15, RNF-05): la sesión vive solo en la pestaña (sessionStorage).
-- Sin casilla de autorización de datos del par (D10).
-- Correos (RF-26 a RF-29, D7, D12): tipos Invitación · 2.º intento · Reenvío por corrección · Agradecimiento con
+- Sin «Mantener la sesión iniciada»: la sesión vive solo en la pestaña (sessionStorage).
+- Sin casilla de autorización de datos del par.
+- Correos: tipos Invitación · 2.º intento · Reenvío por corrección · Agradecimiento con
   constancia; resultados En cola · Enviado · Rebotado · Fallido. No hay recordatorio: el 2.º intento es
   automático. «Reenviar invitación» solo aparece cuando el último envío rebotó o falló (no cuenta como intento);
   «Corregir y reenviar» crea un correo nuevo y deja el anterior como atendido; «Reintentar fallidos» reenvía
   los fallidos y la cola. Cada correo pertenece a una evaluación (`asignacionId`).
-- Sin pestaña Observaciones (D16): la ficha tiene las cinco pestañas de RF-36 y los motivos de cierre, reapertura
+- Sin pestaña Observaciones: la ficha tiene las cinco pestañas de la ficha y los motivos de cierre, reapertura
   y cambios quedan en el Historial.
-- Auditoría con los tipos de acción de la sección 5 (D13), incluidos Respuesta del par, Envío de correo,
+- Auditoría con los tipos de acción de la sección 5, incluidos Respuesta del par, Envío de correo,
   Desbloqueo, Cierre del proceso, Migración y Eliminación.
-- Informe con artículos rechazados (RF-38) y el concepto «Pendiente formato de evaluación» (D14).
-- La constancia emitida se descarga y se reenvía también desde la ficha del artículo (HU-23).
+- Informe con artículos rechazados y el concepto «Pendiente formato de evaluación».
+- La constancia emitida se descarga y se reenvía también desde la ficha del artículo.
 
-## Fase 8: cuentas y contraseñas (RF-40, RF-46, HU-28, HU-29, RNF-04)
+## Fase 8: cuentas y contraseñas
 
 - `/acceso/contrasena?token=…` (`DefinirContrasenaPage`): la página que abre el enlace del correo. Sirve para
   definir la contraseña de una cuenta nueva y para crear una nueva tras «¿Olvidó su contraseña?». Pide la
@@ -202,7 +202,7 @@ lateral queda fijo al desplazar el contenido.
 - La API simulada devuelve `enlaceDemo` para que la demostración abra el enlace que llegaría por correo; la
   API real no lo devuelve. Cada cuenta tiene su contraseña en el mock; las de la semilla usan la de demostración.
 
-## Fase 9: migración del Excel (RF-42 a RF-44, HU-32)
+## Fase 9: migración del Excel
 
 - `modules/migracion`: «Registros migrados por corregir» (`/:revista/por-corregir`). Lista lo que el Excel trajo y
   no encaja en las listas cerradas (tipo y estado del artículo, concepto del par) o lo que no trajo y el
@@ -217,12 +217,12 @@ lateral queda fijo al desplazar el contenido.
 
 ## Fase 10: revisión final
 
-- Pantallas pequeñas (RNF-10): por debajo de 1024 px el panel lateral se abre desde «Menú» como un cajón (Radix
+- Pantallas pequeñas: por debajo de 1024 px el panel lateral se abre desde «Menú» como un cajón (Radix
   Dialog: foco atrapado, Escape y el velo lo cierran) y se cierra solo al navegar. Las tablas se desplazan en
   horizontal y el contenido reduce su margen.
 - Estados: toda pantalla que consulta datos usa `EstadoConsulta` (cargando, error con «Reintentar») y sus tablas
   tienen texto de vacío; las pestañas de la ficha reciben el artículo ya cargado por `FichaArticuloLayout`.
-- Paginación (RNF-01): artículos, pares, correos y auditoría.
+- Paginación: artículos, pares, correos y auditoría.
 - Pruebas (`fase10.test.tsx`): las 20 pantallas principales sin violaciones de accesibilidad con sus datos
   cargados, el menú móvil y el recorrido completo del artículo (registro, comité, candidato nuevo, aceptación,
   entrega y constancia).

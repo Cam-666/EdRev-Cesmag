@@ -1,6 +1,4 @@
-/*
- * Mutations over the peer base: register, edit, block and unblock. Covers: RF-12, RF-15, RF-16.
- */
+/* Mutaciones sobre la base de pares: registrar, editar, bloquear y desbloquear. */
 import { useMutation } from '@tanstack/react-query'
 import { bloquearPar, desbloquearPar, editarPar, registrarPar } from '../services/paresService'
 import { useInvalidarPares } from './useInvalidarPares'

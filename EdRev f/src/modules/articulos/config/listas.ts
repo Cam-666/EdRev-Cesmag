@@ -1,7 +1,7 @@
 /*
- * listas — closed lists and thresholds of the articles module.
- * Covers: RF-01 (article types), RF-05 (15 % threshold), RF-06 (committee round results), RF-09 (max
- * authors), RF-35 (page size). Texts are the ones of the dependency's format.
+ * listas — listas cerradas y umbrales del módulo de artículos: tipos de artículo, umbral del 15 % de coincidencias,
+ * resultados de una ronda del comité, máximo de autores y tamaño de página. Los textos son los del formato de la
+ * dependencia.
  */
 import type { EstadoArticulo, ResultadoRonda, TipoArticulo } from '@/types/articulo'
 import type { ConceptoPar } from '@/types/par'
@@ -23,7 +23,7 @@ export const ETIQUETA_TIPO: Record<TipoArticulo, string> = {
   revision: 'Revisión',
 }
 
-/** Results of a round of the initial committee review (RF-06), in the dependency's words. */
+/** Resultados de una ronda de la revisión inicial del comité, con las palabras de la dependencia. */
 export const RESULTADOS_RONDA: Array<{ valor: ResultadoRonda; etiqueta: string }> = [
   { valor: 'aprobado', etiqueta: 'Aprobado' },
   { valor: 'ajustes', etiqueta: 'Requiere ajustes' },
@@ -45,13 +45,13 @@ export const ESTADOS_FILTRO: EstadoArticulo[] = [
   'archivado',
 ]
 
-/** States an archived article can go back to when it is reopened (HU-05). */
+/** Estados a los que puede volver un artículo archivado cuando se reabre. */
 export const ESTADOS_REAPERTURA: Array<{ valor: 'en-revision' | 'postulado'; etiqueta: string }> = [
   { valor: 'en-revision', etiqueta: 'En revisión del comité' },
   { valor: 'postulado', etiqueta: 'Postulado' },
 ]
 
-/** Concept of a peer, as the article sheet and the peer history print it. */
+/** Concepto de un par, tal como lo imprimen la ficha del artículo y el historial del par. */
 export const ETIQUETA_CONCEPTO: Record<ConceptoPar, string> = {
   publicable: 'Publicable',
   'publicable-con-modificaciones': 'Con modificaciones',

@@ -1,15 +1,14 @@
 /*
- * envioCorreos — sends the queued mails (RNF-02: in the background, never blocking the page).
- * Every few seconds it takes the mails «en cola», builds them with the journal's template in use
- * (RF-25, RF-31; the thank-you mail carries the constancia in PDF) and sends them through Brevo
- * from the journal's sender address. The result is recorded: «enviado», «rebotado» (the address does
- * not exist) or «fallido» (the service failed). A failed mail is queued again by itself after a
- * few minutes, up to REINTENTOS_CORREO times (RF-27); after that it waits for the manual retry.
+ * envioCorreos — envía los correos en cola, en segundo plano (nunca bloquea la página). Cada pocos segundos toma
+ * los correos «en cola», los arma con la plantilla en uso de la revista (el de agradecimiento lleva la constancia
+ * en PDF adjunta) y los envía por Brevo desde la dirección remitente de la revista. Se registra el resultado:
+ * «enviado», «rebotado» (la dirección no existe) o «fallido» (falló el servicio). Un correo fallido vuelve solo
+ * a la cola pasados unos minutos, hasta REINTENTOS_CORREO veces; después espera el reintento manual.
  *
- * Modes (env CORREO_MODO):
- *  - brevo     → real sending; needs BREVO_API_KEY and senders verified in Brevo.
- *  - simulado  → nothing leaves; the mails are marked «enviado» (demo without a mail account).
- *  - apagado   → the mails stay «en cola» (default if nothing is configured).
+ * Modos (variable CORREO_MODO):
+ * - brevo     → envío real; necesita BREVO_API_KEY y remitentes verificados en Brevo.
+ * - simulado  → no sale nada; los correos se marcan «enviado» (demostración sin cuenta de correo).
+ * - apagado   → los correos quedan «en cola» (es lo que ocurre si no se configura nada).
  */
 import { config } from '../config.js'
 import { pool, type Cliente } from '../db.js'
@@ -19,7 +18,7 @@ import { marcoInstitucional } from '../lib/marcoCorreo.js'
 import { ACCIONES_CORREO, botonesHtml, enlaceRespuesta, MARCA_BOTONES } from '../lib/respuestas.js'
 import { generarConstancia } from './constanciaPdf.js'
 
-/** The mail that only delivers the constancia (no thank-you template): a fixed, short text. */
+/** El correo que solo entrega la constancia (sin plantilla de agradecimiento): un texto fijo y corto. */
 const TEXTO_SOLO_CONSTANCIA =
   'Apreciado(a) {{par}}:\n\nAdjuntamos su constancia como par evaluador del artículo «{{articulo}}».\n\nDependencia de Editorial'
 
@@ -73,7 +72,7 @@ async function enviarBrevo(p: Pendiente, asunto: string, html: string, adjunto?:
   if (respuesta.ok) return 'enviado'
   const detalle = await respuesta.text()
   console.error(`Brevo ${respuesta.status}: ${detalle}`)
-  // A malformed or nonexistent address is «rebotado» (correct it); anything else, «fallido».
+  // Una dirección mal escrita o inexistente es «rebotado» (hay que corregirla); cualquier otra falla es «fallido».
   return respuesta.status === 400 && /email/i.test(detalle) ? 'rebotado' : 'fallido'
 }
 
@@ -101,7 +100,7 @@ async function procesar(): Promise<void> {
       botones: MARCA_BOTONES,
     }
     const solo = p.tipo === 'constancia'
-    // Without the template of its use the mail would leave empty (and an invitation without buttons).
+    // Sin la plantilla de su uso el correo saldría vacío (y una invitación sin botones); se marca fallido y se avisa en el registro.
     if (!solo && !p.cuerpo) {
       console.error(`Sin plantilla en uso para ${p.tipo} de ${p.revista}: el correo ${p.id_correo} no se envía`)
       await pool.query("UPDATE correo SET resultado = 'fallido', fecha_envio = now() WHERE id_correo = $1", [p.id_correo])
@@ -110,7 +109,7 @@ async function procesar(): Promise<void> {
     }
     const asunto = rellenar(p.asunto ?? (solo ? 'Constancia de participación · {{revista}}' : 'Editorial · {{revista}}'), v)
     const texto = rellenar(p.cuerpo ?? (solo ? TEXTO_SOLO_CONSTANCIA : ''), v)
-    // The buttons of the invitation (acepto / no acepto / no desea) replace the {{botones}} marker.
+    // Los botones de la invitación (acepto / no acepto / no desea) reemplazan la marca {{botones}}.
     const botones = p.tipo === 'invitacion' ? botonesHtml(p.id_evaluacion) : ''
     const html = marcoInstitucional({
       tipo: p.tipo,
@@ -146,7 +145,7 @@ async function procesar(): Promise<void> {
   await reencolarFallidos(pool)
 }
 
-/** Each failure leaves a «fallo» trace of the mail; the traces are the attempts already made. */
+/** Cada falla deja una huella «fallo» del correo; las huellas son los intentos ya hechos. */
 export async function registrarFallo(c: Cliente, idCorreo: number, revista: number, articulo: number): Promise<void> {
   await auditar(c, {
     usuario: null,
@@ -160,9 +159,9 @@ export async function registrarFallo(c: Cliente, idCorreo: number, revista: numb
 }
 
 /**
- * RF-27: the mails the service failed go back to the queue after `minutos` minutes, unless they
- * already failed `maximo` times (then they wait for the manual retry) or a newer mail of the same
- * kind replaced them (corrected address, RF-28). Returns how many.
+ * Los correos que falló el servicio vuelven a la cola pasados `minutos` minutos, salvo que ya hayan fallado
+ * `maximo` veces (entonces esperan el reintento manual) o que un correo más nuevo del mismo tipo los haya
+ * reemplazado (dirección corregida). Devuelve cuántos.
  */
 export async function reencolarFallidos(
   c: Cliente,
@@ -182,7 +181,7 @@ export async function reencolarFallidos(
   return rowCount ?? 0
 }
 
-/** Starts the background sender (no-op when CORREO_MODO is «apagado»). */
+/** Arranca el envío en segundo plano (no hace nada si CORREO_MODO es «apagado»). */
 export function iniciarEnvioCorreos(): void {
   if (modo() === 'apagado') {
     console.log('Envío de correos apagado: quedan «En cola» (CORREO_MODO=brevo o simulado para enviarlos).')

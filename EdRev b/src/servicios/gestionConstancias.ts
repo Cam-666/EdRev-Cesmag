@@ -1,8 +1,8 @@
 /*
- * gestionConstancias (servicio) — the constancias of the evaluations: pending and issued (RF-34),
- * the preview with the journal's constancia template in use (RF-30), issuing one or all the
- * pending ones, which queues the thank-you mail that carries it (RF-31), reissuing one already
- * issued (RF-33) and the download (RF-32). The PDF itself is drawn by servicios/constanciaPdf.
+ * gestionConstancias (servicio) — las constancias de las evaluaciones: pendientes y emitidas, la vista previa con
+ * la plantilla de constancia en uso de la revista, emitir una o todas las pendientes (lo que encola el correo de
+ * agradecimiento que la lleva), volver a emitir una ya emitida y la descarga. El PDF lo dibuja
+ * servicios/constanciaPdf.
  */
 import { enTransaccion, pool, type Cliente } from '../db.js'
 import { auditar } from '../lib/auditoria.js'
@@ -57,7 +57,7 @@ async function entrega(c: Cliente, revista: number, id: number): Promise<FilaEnt
   return rows[0]
 }
 
-/** Issues (or reissues) a constancia: marks it and queues the mail that delivers it to the peer. */
+/** Emite (o vuelve a emitir) una constancia: la marca y encola el correo que se la entrega al par. */
 async function emitir(
   c: Cliente,
   revista: number,
@@ -67,7 +67,7 @@ async function emitir(
   conAgradecimiento: boolean,
 ) {
   if (!f.correo) throw new ErrorHttp(422, `${f.nombre} no tiene correo: regístrelo antes de enviar la constancia`)
-  // The constancia is issued once the evaluation is complete: concept and date registered.
+  // La constancia se emite cuando la evaluación está completa: concepto y fecha registrados.
   if (!reemision) {
     const evaluada = await c.query<{ concepto: string | null; fecha_evaluacion: string | null }>(
       'SELECT concepto, fecha_evaluacion FROM evaluacion WHERE id_evaluacion = $1',
@@ -102,7 +102,7 @@ export async function listarConstancias(revista: number) {
   }
 }
 
-/** The text of the constancia with the data of this evaluation, as the page previews it. */
+/** El texto de la constancia con los datos de esta evaluación, como lo previsualiza la página. */
 export async function vistaPreviaConstancia(revista: number, id: number) {
   const f = await entrega(pool, revista, id)
   const { rows } = await pool.query<{ revista: string; cuerpo: string; plantilla: string; issn: string | null; indexaciones: string | null }>(
@@ -120,21 +120,21 @@ export async function vistaPreviaConstancia(revista: number, id: number) {
   return {
     universidad: 'UNIVERSIDAD CESMAG',
     revista: p.revista,
-    // The text without its formatting marks; the PDF carries the alignment, the bold and the images.
+    // El texto sin sus marcas de formato; el PDF lleva la alineación, la negrita y las imágenes.
     cuerpo: textoPlano(p.cuerpo.replace(/\{\{(\w+)\}\}/g, (m, clave: string) => (clave === 'firma' ? '' : (valores[clave] ?? m)))),
     firma: `${firma.rows[0]?.nombre ?? 'Administradora'} · Dependencia de Editorial`,
     fondo: `Encabezado, pie y firma de «${p.plantilla}»`,
   }
 }
 
-/** RF-32: the PDF is generated again from the registered data; it is not stored. */
+/** El PDF se genera de nuevo con los datos registrados; no se guarda el archivo. */
 export async function descargarConstancia(revista: number, id: number) {
   const f = await entrega(pool, revista, id)
   const pdf = await generarConstancia(pool, { par: f.nombre, articulo: f.titulo, idRevista: revista })
   return { pdf, nombre: `constancia-${f.id_evaluacion}.pdf` }
 }
 
-/** Issues every pending constancia, one by one; those that cannot be issued are counted. */
+/** Emite todas las constancias pendientes, una por una; las que no se pueden emitir se cuentan aparte. */
 export async function emitirPendientes(revista: number, actor: number, conAgradecimiento: boolean) {
   const { rows } = await pool.query<FilaEntrega>(`${SELECCION} AND NOT e.constancia_emitida`, [revista])
   const resultados = []
@@ -143,7 +143,7 @@ export async function emitirPendientes(revista: number, actor: number, conAgrade
     try {
       resultados.push(await enTransaccion((c) => emitir(c, revista, actor, f, false, conAgradecimiento)))
     } catch (e) {
-      // A known reason (no email, concept missing) is told to the user; anything else is a system error.
+      // Un motivo conocido (falta el correo o el concepto) se le dice al usuario; cualquier otra cosa es un error del sistema.
       if (!(e instanceof ErrorHttp)) console.error('Constancia no emitida:', e)
       motivos.push({ par: f.nombre, motivo: e instanceof ErrorHttp ? e.message : 'Error del sistema' })
     }

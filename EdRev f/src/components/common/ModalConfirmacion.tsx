@@ -1,7 +1,7 @@
 /*
- * ModalConfirmacion — asks for confirmation before an action that cannot be undone (for example,
- * deleting an account or a template). The confirm button is the destructive action; Cancel is the
- * safe way out. Built on Modal (focus trap, Escape). Covers: RNF-11, RNF-19.
+ * ModalConfirmacion — pide confirmación antes de una acción que no se puede deshacer (por ejemplo, eliminar una
+ * cuenta o una plantilla). El botón de confirmar es la acción destructiva; Cancelar es la salida segura.
+ * Se construye sobre Modal (foco atrapado, Escape).
  */
 import type { ReactNode } from 'react'
 import { Alerta } from './Alerta'
@@ -14,10 +14,10 @@ export interface ModalConfirmacionProps {
   onConfirmar: () => void
   titulo: string
   descripcion: string
-  /** Label of the destructive button, e.g. «Eliminar cuenta». */
+  /** Texto del botón destructivo, por ejemplo «Eliminar cuenta». */
   etiquetaConfirmar: string
   cargando?: boolean
-  /** Message of the failed attempt, shown inside the dialog. */
+  /** Mensaje del intento fallido, que se muestra dentro del diálogo. */
   error?: string | null
   children?: ReactNode
 }

@@ -63,7 +63,7 @@ describe('peer base (/pares)', () => {
 })
 
 describe('registering a peer', () => {
-  it('validates the fields; no data-treatment authorization is asked (D10)', async () => {
+  it('validates the fields; no data-treatment authorization is asked', async () => {
     const { user } = montarRuta('/pares')
     await user.click(await screen.findByRole('button', { name: 'Registrar par' }))
     const dialogo = await screen.findByRole('dialog', { name: 'Registrar par evaluador' })
@@ -88,7 +88,7 @@ describe('registering a peer', () => {
     await user.type(screen.getByRole('searchbox', { name: 'Buscar por nombre o correo' }), 'gomez')
     expect(await screen.findByText('Marta Lucía Gómez')).toBeInTheDocument()
 
-    // Same email again: the API refuses it and the dialog says why
+    // El mismo correo otra vez: la API lo rechaza y el diálogo dice por qué
     await user.click(screen.getByRole('button', { name: 'Registrar par' }))
     const otro = await screen.findByRole('dialog', { name: 'Registrar par evaluador' })
     await user.type(within(otro).getByLabelText('Nombre'), 'Otra Persona')
@@ -104,7 +104,7 @@ describe('registering a peer', () => {
     ).toBeInTheDocument()
     unmount()
 
-    // The base is common: the new peer is also in the other journal
+    // La base es común: el par nuevo también está en la otra revista
     const { user: otraSesion } = montarRuta('/pares')
     await screen.findByText('31 pares · base común de las dos revistas')
     await otraSesion.type(
@@ -146,7 +146,7 @@ describe('blocked peers (/pares/bloqueados)', () => {
     expect(await screen.findByText('8 pares no reciben nuevas invitaciones')).toBeInTheDocument()
     expect(screen.getAllByText('No desea participar', { selector: 'td' }).length).toBeGreaterThan(0)
     expect(screen.getAllByText('Sin respuesta · 2.º intento').length).toBeGreaterThan(0)
-    // One way back only: the «Volver a pares evaluadores» link above the title
+    // Un solo camino de regreso: el enlace «Volver a pares evaluadores» sobre el título
     expect(screen.queryByRole('link', { name: 'Volver a la base' })).toBeNull()
     expect(screen.getByRole('link', { name: 'Volver a pares evaluadores' })).toHaveAttribute(
       'href',

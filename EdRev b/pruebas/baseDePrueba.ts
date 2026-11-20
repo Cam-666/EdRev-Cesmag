@@ -1,7 +1,7 @@
 /*
- * baseDePrueba — global setup of the backend tests: (re)creates the database «edrev_prueba» with
- * db/01_esquema.sql and db/02_datos_iniciales.sql, so the tests never touch the real «edrev».
- * Uses DATABASE_ADMIN_URL of .env to create it.
+ * baseDePrueba — preparación global de las pruebas del servidor: crea de nuevo la base «edrev_prueba»
+ * con db/01_esquema.sql y db/02_datos_iniciales.sql, para que las pruebas nunca toquen la base real «edrev».
+ * Para crearla usa DATABASE_ADMIN_URL del .env.
  */
 import { readFile } from 'node:fs/promises'
 import pg from 'pg'

@@ -3,7 +3,7 @@ import { listarArticulos, listarAnios, listarPublicaciones } from '../services/a
 import { useRevista } from '@/lib/revista/useRevista'
 import type { FiltrosArticulos } from '@/types/articulo'
 
-/** Article list of the active journal (RF-35). The journal is part of the cache key. */
+/** Listado de artículos de la revista activa. La revista forma parte de la clave de la caché. */
 export function useArticulos(filtros: FiltrosArticulos) {
   const { revista } = useRevista()
   return useQuery({

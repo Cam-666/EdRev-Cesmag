@@ -1,7 +1,7 @@
 /*
- * ImagenesConstancia — the header, the footer and the signature of a constancia template: images
- * (PNG or JPG) uploaded from the computer. The signature goes where the text has {{firma}}. A
- * button shows the constancia as a PDF with sample data. Covers: RF-30, RF-45, HU-30.
+ * ImagenesConstancia — el encabezado, el pie de página y la firma de una plantilla de constancia: imágenes (PNG o
+ * JPG) que se suben desde el computador. La firma va donde el texto tiene {{firma}}; si no la tiene, va al final.
+ * Un botón muestra la constancia como PDF con datos de ejemplo.
  */
 import { useId } from 'react'
 import { FilaImagen } from './FilaImagen'

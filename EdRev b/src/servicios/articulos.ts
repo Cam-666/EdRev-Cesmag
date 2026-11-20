@@ -1,6 +1,6 @@
 /*
- * articulos — the article sheet as the page shows it (RF-36): data and anti-plagiarism, committee
- * rounds, authors in order and the peers with their state, concept, constancia and last mail.
+ * articulos — la ficha del artículo tal como la muestra la página: datos y antiplagio, rondas del comité,
+ * autores en orden y los pares con su estado, concepto, constancia y último correo.
  */
 import type { Cliente } from '../db.js'
 import { ErrorHttp, siglaDe } from '../lib/http.js'
@@ -53,7 +53,7 @@ export async function autoresDe(c: Cliente, idArticulo: number) {
   return rows
 }
 
-/** Evaluations of an article with the state the page shows («2.º intento» is derived, D7). */
+/** Evaluaciones de un artículo con el estado que muestra la página («2.º intento» se deduce de los correos). */
 export async function evaluacionesDe(c: Cliente, idArticulo: number) {
   const { rows } = await c.query<{
     id_evaluacion: number
@@ -169,13 +169,13 @@ export async function detalleArticulo(c: Cliente, idRevista: number, idArticulo:
       orden: x.orden,
     })),
     asignaciones,
-    /** What the concepts of the peers decide, once they all delivered (RF-20); null while open. */
+    /** Lo que deciden los conceptos de los pares, cuando todos entregaron; null mientras esté abierto. */
     resultadoPares: conceptoApi(await resultadoDeLosPares(c, idArticulo)),
     migrado: migrado.rows[0]?.migrado ?? false,
   }
 }
 
-/** RF-06 / RF-19: the most recent round decides; peers only after «aprobado». */
+/** Decide la ronda más reciente del comité: solo después de «aprobado» se pueden asignar pares. */
 export async function ultimaRonda(c: Cliente, idArticulo: number): Promise<string | null> {
   const { rows } = await c.query<{ resultado: string }>(
     `SELECT resultado FROM revision_inicial_comite WHERE id_articulo = $1

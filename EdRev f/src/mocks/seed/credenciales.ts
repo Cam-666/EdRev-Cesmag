@@ -1,5 +1,5 @@
 /*
- * Demo credentials — every seed user shares this password in the mock backend only.
- * Never a real secret: the real backend stores hashed passwords (RNF-04).
+ * Credenciales de demostración — todos los usuarios de ejemplo comparten esta contraseña solo en el backend
+ * simulado. Nunca es un secreto real: el backend real guarda las contraseñas cifradas.
  */
 export const CONTRASENA_DEMO = 'Editorial2026*'

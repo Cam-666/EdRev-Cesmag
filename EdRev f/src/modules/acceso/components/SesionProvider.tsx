@@ -1,7 +1,7 @@
 /*
- * SesionProvider — the only place that holds who is logged in. Authentication state lives here;
- * guards and hooks read it, screens never touch it directly.
- * Covers: HU-28, RF-39, RNF-05. In production this wraps the JWT session of the backend.
+ * SesionProvider — el único lugar que sabe quién ha ingresado. El estado de autenticación vive aquí; los
+ * guardias y los hooks lo leen, las pantallas nunca lo tocan directamente. En producción envuelve la sesión JWT
+ * del backend.
  */
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import type { ReactNode } from 'react'
@@ -15,16 +15,16 @@ import type { MotivoCierre, RespuestaIngreso } from '@/types/acceso'
 import type { Usuario } from '@/types/usuario'
 
 export interface SesionProviderProps {
-  /** Omit to restore the session from storage; pass null/user to force it (tests, demos). */
+  /** Si se omite, la sesión se restaura del almacenamiento; si se pasa null o un usuario, se fuerza (pruebas, demostraciones). */
   usuarioInicial?: Usuario | null
   children: ReactNode
 }
 
 export function SesionProvider({ usuarioInicial, children }: SesionProviderProps) {
-  // While MSW is on, a restored or forced session gets the matching mock token. With the real
-  // backend the token saved with the session is restored; a profile without its token cannot make
-  // any request, so that session is discarded and the user signs in again. Runs once, before any
-  // child fetches.
+  // Mientras MSW está encendido, una sesión restaurada o forzada recibe el token simulado que le corresponde. Con
+  // el backend real se restaura el token guardado con la sesión; un perfil sin su token no puede hacer ninguna
+  // petición, así que esa sesión se descarta y la persona vuelve a ingresar. Se ejecuta una vez, antes de que
+  // cualquier hijo consulte datos.
   const [inicial] = useState(() => {
     let u = usuarioInicial !== undefined ? usuarioInicial : leerSesion()
     if (u && mocksActivos()) establecerToken(tokenMock(u.id))
@@ -60,7 +60,7 @@ export function SesionProvider({ usuarioInicial, children }: SesionProviderProps
     [usuario],
   )
 
-  // The backend rejected the token: the session expired, so the user is taken to the login.
+  // El backend rechazó el token: la sesión venció, así que se lleva a la persona al ingreso.
   useEffect(() => {
     if (!usuario) return
     alExpirarSesion(() => cerrarSesion('inactividad'))

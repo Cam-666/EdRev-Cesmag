@@ -1,7 +1,7 @@
 /*
- * MarcaReep — brand of Revista Electrónica en Educación y Pedagogía inside the top bar: the real
- * journal logo, centred over the light part of the gradient (as in the journal's own header).
- * Below the xl breakpoint it falls back to the compact white title on the dark left zone.
+ * MarcaReep — marca de la Revista Electrónica en Educación y Pedagogía dentro de la barra superior: el logo real
+ * de la revista, centrado sobre la parte clara del degradado (como en el encabezado propio de la revista).
+ * Por debajo del punto de quiebre xl pasa al título blanco compacto sobre la zona izquierda oscura.
  */
 import logo from '@/assets/logo-reep.webp'
 import { REVISTAS } from '@/types/revista'

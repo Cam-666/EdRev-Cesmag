@@ -1,8 +1,8 @@
 /*
- * autores (servicio) — the common directory of both journals (RF-10): search by name or ORCID,
- * filter by the journals where the author has articles, the author record with all its articles
- * (RF-11), registration and edition. The affiliation and country shown are the last known ones:
- * those typed in the author form or in the most recent article (each article keeps its own, RF-09).
+ * autores (servicio) — el directorio común de las dos revistas: búsqueda por nombre u ORCID, filtro por las
+ * revistas donde el autor tiene artículos, la ficha del autor con todos sus artículos, el registro y la edición.
+ * La filiación y el país que se muestran son los últimos conocidos: los escritos en el formulario del autor o
+ * los del artículo más reciente (cada artículo conserva los suyos).
  */
 import { pool } from '../db.js'
 import { ErrorHttp, siglaDe, sinTildes } from '../lib/http.js'
@@ -52,7 +52,7 @@ export interface DatosAutor {
   pais?: string
 }
 
-/** The countries and institutions that exist in the directory, for the filters of the list. */
+/** Los países e instituciones que existen en el directorio, para los filtros del listado. */
 export async function filtrosDelDirectorio() {
   const { rows } = await pool.query<{ filiacion: string | null; pais: string | null }>(
     `SELECT filiacion, pais FROM (${SELECCION}) t`,
@@ -65,7 +65,7 @@ export async function filtrosDelDirectorio() {
 export interface FiltrosAutores {
   q: string
   limite: number
-  /** Journal where the author has articles. */
+  /** Revista donde el autor tiene artículos. */
   en: 1 | 2 | null
   pais: string
   filiacion: string

@@ -7,39 +7,39 @@ export type TipoArticulo = 'investigacion' | 'reflexion' | 'revision'
 export type EstadoArticulo =
   'postulado' | 'en-revision' | 'en-evaluacion' | 'aprobado' | 'rechazado' | 'archivado'
 
-/** Result of a round of the initial committee review (RF-06): closed list of three. */
+/** Resultado de una ronda de la revisión inicial del comité: lista cerrada de tres. */
 export type ResultadoRonda = 'aprobado' | 'rechazado' | 'ajustes'
 
 /**
- * One round of the initial committee review. There is no limit of rounds: with «Requiere
- * ajustes» the author corrects and another round is registered; rounds are never overwritten.
+ * Una ronda de la revisión inicial del comité. No hay límite de rondas: con «Requiere ajustes» el autor corrige y
+ * se registra otra ronda; las rondas nunca se sobrescriben.
  */
 export interface RondaComite {
   id: string
-  /** 1, 2, 3… in the order they were registered. */
+  /** 1, 2, 3… en el orden en que se registraron. */
   numero: number
   resultado: ResultadoRonda
   observacion: string
-  /** ISO 8601 date-time. */
+  /** Fecha y hora ISO 8601. */
   fecha: string
   usuario: string
 }
 
-/** Volume and number of the journal issue (RF-04): they go together. */
+/** Volumen y número de la edición de la revista: van juntos. */
 export interface Publicacion {
   volumen: number
   numero: number
 }
 
-/** Closing the process of an article (RF-08): the reason stays in its history. */
+/** Cierre del proceso de un artículo: el motivo queda en su historial. */
 export interface CierreArticulo {
   estado: Extract<EstadoArticulo, 'aprobado' | 'rechazado' | 'archivado'>
   motivo: string
-  /** Required when it is approved (HU-05, criterion 2). */
+  /** Obligatorio cuando se aprueba. */
   publicacion: Publicacion | null
 }
 
-/** Stored article. `id` is the OJS number; authors are ordered ids (first = main author). */
+/** Artículo guardado. `id` es el número de OJS; los autores son ids ordenados (el primero = autor principal). */
 export interface Articulo {
   id: string
   revista: Revista
@@ -47,22 +47,22 @@ export interface Articulo {
   titulo: string
   tipo: TipoArticulo
   estado: EstadoArticulo
-  /** ISO 8601 date. */
+  /** Fecha ISO 8601. */
   fechaPostulacion: string
-  /** Volume and number where the approved article will be published, always together (RF-04). */
+  /** Volumen y número donde se publicará el artículo aprobado, siempre juntos. */
   publicacion: Publicacion | null
-  /** Anti-plagiarism report, registered in the committee review (RF-05); null until then. */
+  /** Reporte antiplagio, registrado en la revisión del comité; null hasta entonces. */
   coincidencias: number | null
-  /** Percentage attributed to AI; never a cause of rejection. */
+  /** Porcentaje atribuido a IA; nunca es causa de rechazo. */
   atribuidoIa: number | null
-  /** Rounds of the initial committee review, oldest first (RF-06, RF-07). */
+  /** Rondas de la revisión inicial del comité, la más antigua primero. */
   rondasComite: RondaComite[]
   autoresIds: string[]
   archivadoEn: string | null
   motivoArchivo: string | null
 }
 
-/** Row of the article list. */
+/** Fila del listado de artículos. */
 export interface ArticuloListado {
   id: string
   numeroOjs: string
@@ -71,7 +71,7 @@ export interface ArticuloListado {
   estado: EstadoArticulo
   fechaPostulacion: string
   publicacion: Publicacion | null
-  /** Peers that delivered their evaluation, over the peers assigned (those who accepted). */
+  /** Pares que entregaron su evaluación, sobre los pares asignados (los que aceptaron). */
   paresEntregaron: number
   paresAsignados: number
 }
@@ -85,24 +85,24 @@ export interface FiltrosArticulos {
   q?: string
   estado?: EstadoArticulo
   publicacion?: string
-  /** Year of management: an open article from a previous year counts in the current one. */
+  /** Año de gestión: un artículo abierto de un año anterior cuenta en el actual. */
   anio?: number
-  /** ISO dates, inclusive range over the postulation date (HU-26). */
+  /** Fechas ISO, rango inclusivo sobre la fecha de postulación. */
   desde?: string
   hasta?: string
-  /** Only articles with peers that have not answered the invitation (dashboard alert, HU-25). */
+  /** Solo los artículos con pares que no han respondido la invitación (alerta del tablero). */
   sinResponder?: boolean
   pagina: number
   porPagina: number
 }
 
-/** Article sheet payload: the article with its authors and assigned peers resolved. */
+/** Datos de la ficha del artículo: el artículo con sus autores y pares asignados ya resueltos. */
 export interface ArticuloDetalle extends Omit<Articulo, 'autoresIds'> {
   autores: AutorDeArticulo[]
   asignaciones: AsignacionDetalle[]
-  /** What the concepts of the peers decide (RF-20); null while they have not all delivered. */
+  /** Lo que deciden los conceptos de los pares; null mientras no hayan entregado todos. */
   resultadoPares: ResultadoPares | null
-  /** Loaded from the Excel by the migration (RF-42). */
+  /** Cargado del Excel por la migración. */
   migrado: boolean
 }
 
@@ -111,7 +111,7 @@ export interface NuevoArticulo {
   titulo: string
   tipo: TipoArticulo
   fechaPostulacion: string
-  /** Existing author ids or brand-new authors, in order. */
+  /** Ids de autores existentes o autores nuevos, en orden. */
   autores: Array<{ autorId: string } | { nuevo: DatosAutor }>
 }
 
@@ -121,11 +121,11 @@ export interface EdicionArticulo {
   publicacion?: Publicacion | null
 }
 
-/** A new round of the committee review, with the anti-plagiarism percentages (RF-05, RF-06). */
+/** Una ronda nueva de la revisión del comité, con los porcentajes del antiplagio. */
 export interface NuevaRonda {
   coincidencias: number | null
   atribuidoIa: number | null
-  /** The result the committee chooses (the page only suggests one). */
+  /** El resultado que elige el comité (la página solo sugiere uno). */
   resultado: ResultadoRonda
   observacion: string
 }

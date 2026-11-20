@@ -1,7 +1,7 @@
 import type { EstadoAsignacion } from './par'
 import type { Revista } from './revista'
 
-/** Pending case of the alert "pares sin responder" (RF-37). */
+/** Caso pendiente de la alerta «pares sin responder». */
 export interface CasoSinResponder {
   asignacionId: string
   articuloId: string
@@ -20,14 +20,14 @@ export interface CasoConstanciaPendiente {
   fechaEntrega: string
 }
 
-/** Dashboard of one journal: the two alerts the dependency flagged as priority, plus counters. */
+/** Tablero de una revista: las dos alertas que la dependencia marcó como prioridad, más contadores. */
 export interface Tablero {
   fecha: string
   enEvaluacion: number
   aprobados: number
   sinResponder: CasoSinResponder[]
   constanciasPendientes: CasoConstanciaPendiente[]
-  /** Migrated records still waiting for a correction (RF-44). */
+  /** Registros migrados que aún esperan una corrección. */
   porCorregir: number
 }
 
@@ -40,7 +40,7 @@ export interface ResumenRevista {
   porCorregir: number
 }
 
-/** Home screen across both journals (the only place allowed to show both, RF-37). */
+/** Pantalla de Inicio de las dos revistas (el único lugar autorizado a mostrar ambas). */
 export interface ResumenGeneral {
   fecha: string
   revistas: ResumenRevista[]

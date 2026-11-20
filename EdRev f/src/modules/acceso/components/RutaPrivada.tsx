@@ -1,7 +1,6 @@
 /*
- * RutaPrivada — guard for every route that needs authentication (frontend counterpart of the
- * backend's auth middleware). Without a session it redirects to /acceso, remembering the origin.
- * Covers: HU-28, RF-39, RNF-05.
+ * RutaPrivada — guardia de toda ruta que exige autenticación (la contraparte en la interfaz del middleware de
+ * autenticación del backend). Sin sesión redirige a /acceso, recordando de dónde venía.
  */
 import { Navigate, Outlet, useLocation } from 'react-router-dom'
 import { useSesion } from '../hooks/useSesion'

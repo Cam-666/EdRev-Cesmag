@@ -1,7 +1,6 @@
 /*
- * TablaPares — the journal's peers with university, area, delivered evaluations and availability
- * (blocked peers are marked, never hidden by color alone). The whole row opens the peer record.
- * Covers: RF-12, RF-14, RF-15, RF-17, HU-09.
+ * TablaPares — los pares de la base con universidad, área, evaluaciones entregadas y disponibilidad (los pares
+ * bloqueados se marcan, nunca se esconden solo con color). La fila completa abre la ficha del par.
  */
 import { DistintivoEstado } from '@/components/common/DistintivoEstado'
 import { Tabla } from '@/components/common/Tabla'

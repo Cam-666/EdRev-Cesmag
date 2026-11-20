@@ -7,7 +7,7 @@ export function usePeriodos() {
   return useQuery({ queryKey: ['informes', 'periodos'], queryFn: listarPeriodos })
 }
 
-/** Downloads the report of the period as a PDF document. */
+/** Descarga el informe del periodo como documento PDF. */
 export function useDescargarInformePdf() {
   return useMutation({
     mutationFn: async ({ revista, periodo }: { revista: FiltroRevistaInforme; periodo: string }) => {
@@ -17,7 +17,7 @@ export function useDescargarInformePdf() {
   })
 }
 
-/** The report of a period; stays disabled until a period is chosen. */
+/** El informe de un periodo; queda desactivado hasta que se elige un periodo. */
 export function useInforme(revista: FiltroRevistaInforme, periodo: string | null) {
   return useQuery({
     queryKey: ['informes', revista, periodo],

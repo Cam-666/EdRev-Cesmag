@@ -1,7 +1,6 @@
 /*
- * CampoContrasena — password field with an eye toggle inside the box, at its right end: closed
- * eye while the password is hidden, open eye while it is shown.
- * Covers: RNF-11 (label, error linked to the field), HU-28.
+ * CampoContrasena — campo de contraseña con un ojo para mostrarla u ocultarla dentro de la caja, en el extremo
+ * derecho: ojo cerrado mientras la contraseña está oculta, abierto mientras se ve.
  */
 import { useState } from 'react'
 import type { ComponentPropsWithRef } from 'react'

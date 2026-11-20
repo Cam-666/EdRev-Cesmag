@@ -1,12 +1,10 @@
-/*
- * ChipAreaTematica — thematic area chip, optionally removable. Covers: RF-13.
- */
+/* ChipAreaTematica — etiqueta de un área temática, que se puede quitar. */
 import { cn } from '@/lib/cn'
 
 export interface ChipAreaTematicaProps {
   area: string
   onQuitar?: () => void
-  /** Makes the chip a toggle button (used to filter by area). */
+  /** Convierte la etiqueta en un botón de alternancia (se usa para filtrar por área). */
   onSeleccionar?: () => void
   seleccionada?: boolean
   className?: string

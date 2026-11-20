@@ -1,13 +1,12 @@
 /*
- * ArticuloParesPage — Pares y evaluación tab (/:revista/articulos/:id/pares): assigned peers in
- * order with status, concept, delivery date and their actions. «Asignar par» is always on the page
- * for those who may assign; it is blocked, with the reason beside it, while the committee has not
- * approved the article or when the article already has its two peers. Once the committee approved
- * the article it opens the assignment panel (choose an available peer or register a new
- * candidate); the committee review lands here with it open (?asignar=1). An article has two
- * peers: with two (invited, accepted or delivered) no more are searched, and a third is allowed only
- * when their concepts do not coincide. Each assignment reports the invitation, a bounce or a warning.
- * Covers: RF-17, RF-19..RF-24, RF-27, RF-28, HU-13..HU-19.
+ * ArticuloParesPage — pestaña Pares y evaluación (/:revista/articulos/:id/pares): los pares asignados en orden,
+ * con su estado, concepto, fecha de entrega y acciones. «Asignar par» está siempre en la página para quien puede
+ * asignar; se bloquea, con el motivo al lado, mientras el comité no haya aprobado el artículo o cuando el artículo
+ * ya tiene sus dos pares. Cuando el comité aprobó el artículo abre el panel de asignación (elegir un par
+ * disponible o registrar un candidato nuevo); la revisión del comité llega aquí con el panel abierto (?asignar=1).
+ * Un artículo tiene dos pares: con dos (invitados, que aceptaron o que entregaron) no se buscan más, y un
+ * tercero se permite solo cuando sus conceptos no coinciden. Cada asignación informa la invitación, un rebote o
+ * una advertencia.
  */
 import { useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
@@ -34,7 +33,7 @@ export function ArticuloParesPage() {
   const aprobado = puedeAsignarPares(articulo)
   const puedeAsignar = permiso && aprobado && regla.puede
   const abierto = puedeAsignar && params.get('asignar') === '1'
-  // Why the button is blocked, shown beside it (a blocked button alone does not explain itself).
+  // Por qué está bloqueado el botón, mostrado a su lado (un botón bloqueado solo no se explica solo).
   const motivoBloqueo =
     requiereNuevaRevision(articulo) && articulo.resultadoPares === 'publicable-con-modificaciones'
       ? 'Los pares ya evaluaron el artículo; el comité editorial debe revisar si los autores lo corrigieron.'

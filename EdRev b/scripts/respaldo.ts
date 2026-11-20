@@ -1,12 +1,12 @@
 /*
- * respaldo — copy of the database (RNF-08): runs pg_dump on DATABASE_URL and saves the file in
- * `respaldos/` as edrev-AAAAMMDD-HHMM.sql, keeping only the last RESPALDOS_A_CONSERVAR (14).
+ * respaldo — copia de seguridad de la base de datos: ejecuta pg_dump sobre DATABASE_URL y guarda el archivo en
+ * `respaldos/` como edrev-AAAAMMDD-HHMM.sql, conservando solo los últimos RESPALDOS_A_CONSERVAR (14).
  *
- *   npm run respaldo
+ * npm run respaldo
  *
- * Needs pg_dump: on the PATH or in PG_DUMP_RUTA (Windows example:
- * C:\Program Files\PostgreSQL\18\bin\pg_dump.exe). To restore: psql -d edrev -f respaldos/<archivo>.sql
- * Schedule it with the Windows Task Scheduler or cron (see the README).
+ * Necesita pg_dump: en el PATH o en PG_DUMP_RUTA (ejemplo en Windows:
+ * C:\Program Files\PostgreSQL\18\bin\pg_dump.exe). Para restaurar: psql -d edrev -f respaldos/<archivo>.sql
+ * Se programa con el Programador de tareas de Windows o con cron (ver el README).
  */
 import { execFileSync } from 'node:child_process'
 import { mkdirSync, readdirSync, rmSync } from 'node:fs'

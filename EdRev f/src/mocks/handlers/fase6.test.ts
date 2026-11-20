@@ -47,7 +47,7 @@ function aprobar(id: string) {
   })
 }
 
-/** Invites a new candidate to 2026-033 (approved) and returns the subject of that invitation. */
+/** Invita a un candidato nuevo a 2026-033 (aprobado) y devuelve el asunto de esa invitación. */
 async function asuntoDeLaInvitacion(n = 1): Promise<string> {
   await llamar('/reep/articulos/2026-033/asignaciones', {
     metodo: 'POST',
@@ -142,7 +142,7 @@ describe('constancias API (mock)', () => {
     const despues = await json<RespuestaConstancias>(await llamar('/reep/constancias'))
     expect(despues.pendientes).toHaveLength(0)
     expect(despues.emitidas).toHaveLength(antes.emitidas.length + antes.pendientes.length)
-    // The other journal is untouched
+    // La otra revista no se toca
     const ire = await json<RespuestaConstancias>(await llamar('/ire/constancias'))
     expect(ire.pendientes.length).toBeGreaterThan(0)
   })
@@ -165,7 +165,7 @@ describe('constancias API (mock)', () => {
     expect(h.auditoria.some((a) => a.accion === 'Reemitió una constancia')).toBe(true)
   })
 
-  it('a delivered evaluation with no constancia record shows up as pending (RF-34)', async () => {
+  it('a delivered evaluation with no constancia record shows up as pending', async () => {
     const a = await json<ArticuloDetalle>(
       await llamar('/reep/articulos', {
         metodo: 'POST',
@@ -216,7 +216,7 @@ describe('constancias API (mock)', () => {
   })
 })
 
-describe('templates API (mock, RF-45)', () => {
+describe('templates API', () => {
   it('each journal has its own three templates, one in use per use; Administradora only', async () => {
     expect((await llamar('/plantillas', { usuario: AUXILIAR })).status).toBe(403)
     const d = await json<DatosPlantillas>(await llamar('/plantillas'))
@@ -229,7 +229,7 @@ describe('templates API (mock, RF-45)', () => {
       'ire-constancia',
     ])
     expect(d.plantillas.every((p) => p.enUso)).toBe(true)
-    // Only the constancia (a file template) carries header, footer and signature images
+    // Solo la constancia (una plantilla de archivo) lleva imágenes de encabezado, pie y firma
     expect(d.plantillas.filter((p) => p.imagenes).map((p) => p.id)).toEqual([
       'reep-constancia',
       'ire-constancia',
@@ -302,7 +302,7 @@ describe('templates API (mock, RF-45)', () => {
     expect(nueva).toMatchObject({ revista: 'reep', uso: null, enUso: false })
     expect(nueva.cuerpo).toBe('') // a new template is blank
     expect((await llamar('/plantillas', { metodo: 'POST', cuerpo: datos })).status).toBe(409)
-    // The same name is fine in the other journal
+    // El mismo nombre está bien en la otra revista
     const enIre = await llamar('/plantillas', {
       metodo: 'POST',
       cuerpo: { ...datos, revista: 'ire' },
@@ -333,7 +333,7 @@ describe('templates API (mock, RF-45)', () => {
     )
     const d = await json<DatosPlantillas>(await llamar('/plantillas'))
     const enUso = d.plantillas.filter((p) => p.uso === 'invitacion' && p.enUso).map((p) => p.id)
-    // One in use per journal: the IRE one did not change
+    // Una en uso por revista: la de IRE no cambió
     expect(enUso).toEqual(['ire-invitacion', nueva.id])
   })
 
@@ -362,7 +362,7 @@ describe('templates API (mock, RF-45)', () => {
 })
 
 describe('sent-mail API (mock)', () => {
-  it('lists the journal log with the four results, counters and filters (RF-26, D12)', async () => {
+  it('lists the journal log with the four results, counters and filters', async () => {
     const r = await json<RespuestaCorreos>(await llamar('/reep/correos?porPagina=100'))
     expect(r.total).toBe(r.items.length)
     expect(r.rebotados).toBeGreaterThan(0)
@@ -430,7 +430,7 @@ describe('sent-mail API (mock)', () => {
       ),
     ).toBe(true)
     expect(lista.rebotados).toBe(0)
-    // Already handled: it cannot be corrected twice
+    // Ya atendido: no se puede corregir dos veces
     expect(
       (
         await llamar(`/reep/correos/${rebotado.id}/corregir`, {
@@ -476,7 +476,7 @@ describe('dashboards API (mock)', () => {
     expect(r.revistas[0]?.sinResponder).toBe(reep.sinResponder.length)
   })
 
-  it('the article list can be narrowed to those with peers that have not answered (HU-25)', async () => {
+  it('the article list can be narrowed to those with peers that have not answered', async () => {
     const t = await json<Tablero>(await llamar('/reep/tablero'))
     const lista = await json<RespuestaListado>(
       await llamar('/reep/articulos?sinResponder=1&porPagina=50'),
@@ -493,7 +493,7 @@ describe('dashboards API (mock)', () => {
     const soloReep = await json<Informe>(await llamar('/informes?revista=reep&periodo=2026-2'))
     expect(soloReep.postulados.ire).toBe(0)
     expect(soloReep.postulados.total).toBe(todas.postulados.reep)
-    // RF-38: approved and rejected articles, each journal in its own column
+    // Artículos aprobados y rechazados, cada revista en su propia columna
     expect(todas.rechazados.total).toBe(todas.rechazados.reep + todas.rechazados.ire)
     const c = todas.conceptos
     expect(c.publicable + c.conModificaciones + c.noPublicable).toBeLessThanOrEqual(

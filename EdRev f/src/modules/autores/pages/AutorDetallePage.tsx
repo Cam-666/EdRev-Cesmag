@@ -1,8 +1,7 @@
 /*
- * AutorDetallePage — ficha del autor (/:revista/autores/:id): the full record of an author of the
- * common directory and all its articles, with their journal and state; each article opens in its
- * own journal. «Volver a autores» returns to the directory.
- * Covers: RF-11, HU-07 (criterion 4), RF-09 (edit the record).
+ * AutorDetallePage — ficha del autor (/:revista/autores/:id): la ficha completa de un autor del directorio común
+ * y todos sus artículos, con su revista y su estado; cada artículo se abre en su propia revista.
+ * «Volver a autores» regresa al directorio.
  */
 import { useState } from 'react'
 import { useParams } from 'react-router-dom'

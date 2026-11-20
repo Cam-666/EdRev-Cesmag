@@ -9,7 +9,7 @@ export function useSesion(): SesionContextValue {
   return valor
 }
 
-/** Current user inside private routes (the guard guarantees there is one). */
+/** Usuario actual dentro de las rutas privadas (el guardia garantiza que hay uno). */
 export function useUsuarioActual(): Usuario {
   const { usuario } = useSesion()
   if (!usuario) throw new Error('useUsuarioActual used outside a private route')

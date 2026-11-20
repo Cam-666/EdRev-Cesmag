@@ -1,8 +1,8 @@
 /*
- * registroCorreos (servicio) — the log of the mails of each journal with its counters and filters
- * (RF-26), the retry of the mails the service failed and of the queue (RF-27), and «corregir y
- * reenviar» of a bounced or failed one: the peer's address is fixed and a new mail is queued
- * (RF-28). The queue itself and the sending are in servicios/correos and servicios/envioCorreos.
+ * registroCorreos (servicio) — el registro de correos de cada revista con sus contadores y filtros, el reintento
+ * de los correos que falló el servicio y de los que siguen en cola, y «corregir y reenviar» uno rebotado o
+ * fallido: se corrige la dirección del par y se encola un correo nuevo. La cola y el envío están en
+ * servicios/correos y servicios/envioCorreos.
  */
 import { enTransaccion, pool } from '../db.js'
 import { auditar } from '../lib/auditoria.js'
@@ -34,7 +34,7 @@ export async function listarCorreos(revista: number, f: FiltrosCorreos) {
   }
 }
 
-/** RF-27: every failed or queued mail is queued again as it is (same record, new date). */
+/** Todo correo fallido o en cola vuelve a encolarse tal cual (mismo registro, fecha nueva). */
 export async function reintentarPendientes(revista: number) {
   const pendientes = (await correosDeRevista(revista)).filter(
     (c) => (c.estado === 'fallido' && !c.atendido) || c.estado === 'en-cola',
@@ -43,7 +43,7 @@ export async function reintentarPendientes(revista: number) {
     `UPDATE correo SET resultado = 'en-cola', fecha_envio = now() WHERE id_correo = ANY ($1::int[])`,
     [pendientes.map((c) => Number(c.id))],
   )
-  // Until the mail service is connected nothing leaves the queue: none is reported as sent.
+  // Mientras el servicio de correo no esté conectado nada sale de la cola: ninguno se reporta como enviado.
   return { reintentados: pendientes.length, enviados: 0, siguenFallando: 0 }
 }
 
@@ -57,7 +57,7 @@ export async function reintentarCorreo(revista: number, id: number) {
   return { estado: 'en-cola' }
 }
 
-/** Fixes the address of the peer and queues a new mail of the same kind to it. */
+/** Corrige la dirección del par y encola hacia ella un correo nuevo del mismo tipo. */
 export async function corregirYReenviar(revista: number, id: number, nuevoCorreo: string, actor: number) {
   const correo = (await correosDeRevista(revista)).find((c) => c.id === String(id))
   if (!correo) throw new ErrorHttp(404, 'Correo no encontrado')

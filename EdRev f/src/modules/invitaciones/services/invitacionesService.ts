@@ -1,6 +1,6 @@
 /*
- * invitacionesService — public calls of the page a mail button opens: what the link is for and
- * the confirmation that registers the answer. Covers: RF-22, RF-15.
+ * invitacionesService — llamadas públicas de la página que abre un botón del correo: para qué sirve el enlace y
+ * la confirmación que registra la respuesta.
  */
 import { solicitar } from '@/lib/api/cliente'
 import type { AccionCorreo, InvitacionCorreo } from '@/types/invitacion'

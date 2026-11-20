@@ -1,16 +1,16 @@
 /*
- * PantallaVacia — temporary placeholder for screens not built yet. Shows which phase builds it and
- * which requirements it must cover (traceability). Removed screen by screen as phases land.
+ * PantallaVacia — marcador temporal para pantallas que aún no están construidas. Indica en qué fase se
+ * construye y qué requisitos debe cubrir. Se retira pantalla por pantalla a medida que se construyen.
  */
 import { Alerta } from './Alerta'
 
 export interface PantallaVaciaProps {
   titulo: string
-  /** Build phase (1–7) in which this screen is implemented. */
+  /** Fase de construcción (1–7) en la que se implementa esta pantalla. */
   fase: number
-  /** RF / RNF / HU identifiers from the v2 documents. */
+  /** Identificadores de los documentos de requisitos. */
   requisitos: string[]
-  /** Use h2 when a parent layout already provides the page h1 (e.g. article sheet tabs). */
+  /** Usar h2 cuando un marco superior ya da el h1 de la página (por ejemplo las pestañas de la ficha del artículo). */
   encabezado?: 'h1' | 'h2'
 }
 

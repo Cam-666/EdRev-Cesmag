@@ -1,11 +1,9 @@
 /*
- * EmitirConstanciaModal — issues the constancia of a peer from the article sheet, right after the
- * delivery is registered or later from the peer's actions. It shows the constancia as it will be
- * generated (the journal's constancia template over its PDF background) and «Emitir y enviar»
- * sends it to the peer. The option «Emitir con correo de agradecimiento» (marked by default) makes
- * the mail carry the journal's thank-you text; unmarked, only the constancia is sent.
- * «Más tarde» leaves it pending in Constancias.
- * Covers: RF-23, RF-30, RF-31, HU-17 (criterion 3), HU-22 (criterion 4).
+ * EmitirConstanciaModal — emite la constancia de un par desde la ficha del artículo, justo después de registrar
+ * la entrega o más tarde desde las acciones del par. Muestra la constancia como se va a generar (la plantilla de
+ * constancia de la revista con sus imágenes) y «Emitir y enviar» se la envía al par. La opción «Emitir con
+ * correo de agradecimiento» (marcada por defecto) hace que el correo lleve el texto de agradecimiento de la
+ * revista; sin marcar, solo se envía la constancia. «Más tarde» la deja pendiente en Constancias.
  */
 import { useState } from 'react'
 import { VistaPreviaConstancia } from './VistaPreviaConstancia'
@@ -20,7 +18,7 @@ import { mensajeDeApi } from '@/lib/api/errores'
 export interface EmitirConstanciaModalProps {
   constanciaId: string | null
   nombrePar: string
-  /** Line under the title, e.g. "Entrega registrada." right after marking the delivery. */
+  /** Línea bajo el título, por ejemplo «Entrega registrada.» justo después de marcar la entrega. */
   aviso?: string
   onCerrar: () => void
   onEmitida: (mensaje: string) => void

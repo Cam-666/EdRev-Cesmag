@@ -1,7 +1,7 @@
 /*
- * useFiltrosPares — peer list filters (area, university, availability, search) live in the URL
- * query string, together with the article being worked on (`articulo`), so the "Asignar" links
- * keep their context. Covers: RF-14, HU-09.
+ * useFiltrosPares — los filtros del listado de pares (área, universidad, disponibilidad, búsqueda) viven en la
+ * cadena de consulta de la URL, junto con el artículo en el que se trabaja (`articulo`), así los enlaces
+ * «Asignar» conservan su contexto.
  */
 import { useSearchParams } from 'react-router-dom'
 import type { FiltroEstadoPares, FiltrosPares } from '../services/paresService'

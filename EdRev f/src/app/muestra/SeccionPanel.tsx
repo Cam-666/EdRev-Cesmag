@@ -1,7 +1,4 @@
-/*
- * SeccionPanel — part of the design-system showcase (development only).
- * Covers: RNF-11, RNF-12.
- */
+/* SeccionPanel — parte del muestrario del sistema de diseño (solo desarrollo). */
 import { Seccion } from './Seccion'
 import { PanelLateral } from '@/components/common/PanelLateral'
 

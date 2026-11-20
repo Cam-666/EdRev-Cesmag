@@ -1,7 +1,7 @@
 /*
- * VistaPreviaConstancia — the constancia of a template as the PDF it really is, in a viewer inside
- * the page: header, text with sample data, signature and footer. It is built by the server from the
- * text being edited and the images uploaded, a moment after the last change. Covers: RF-30, RF-45.
+ * VistaPreviaConstancia — la constancia de una plantilla como el PDF que realmente es, en un visor dentro de la
+ * página: encabezado, texto con datos de ejemplo, firma y pie de página. La arma el servidor con el texto que se
+ * está editando y las imágenes subidas, un momento después del último cambio.
  */
 import { useQuery } from '@tanstack/react-query'
 import { useEffect, useMemo, useState } from 'react'
@@ -12,7 +12,7 @@ import type { Plantilla } from '@/types/plantilla'
 
 export interface VistaPreviaConstanciaProps {
   plantilla: Plantilla
-  /** The stored text being edited (with its markers). */
+  /** El texto guardado que se está editando (con sus marcas). */
   cuerpo: string
 }
 
@@ -22,7 +22,7 @@ export function VistaPreviaConstancia({ plantilla, cuerpo }: VistaPreviaConstanc
     const t = setTimeout(() => setTexto(cuerpo), 500)
     return () => clearTimeout(t)
   }, [cuerpo])
-  // The images and the template change what the PDF shows: they are part of the key.
+  // Las imágenes y la plantilla cambian lo que muestra el PDF: forman parte de la clave.
   const imagenes = JSON.stringify(plantilla.imagenes)
   const consulta = useQuery({
     queryKey: ['admin', 'vista-pdf', plantilla.id, texto, imagenes],

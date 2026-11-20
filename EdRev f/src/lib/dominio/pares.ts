@@ -1,12 +1,9 @@
 /*
- * pares — rules about the places of the peers of an article, shared by the screens and the mock API.
- * - Only peers who accepted or delivered take one of the three places; those who decline or do
- *   not answer do not (RF-19).
- * - A peer is available when it is not blocked and has no evaluation in progress (invited or
- *   accepted) in its journal (RF-19, HU-13).
- * - An article is evaluated by two peers: once it has two (invited, accepted or delivered) no more
- *   are searched, and a third is allowed only when the concepts of the two do not coincide.
- * Covers: RF-19, RF-21, HU-13.
+ * pares — reglas sobre los lugares de los pares de un artículo, que comparten las pantallas y la API simulada.
+ * - Solo los pares que aceptaron o entregaron ocupan uno de los tres lugares; los que declinan o no responden no.
+ * - Un par está disponible cuando no está bloqueado y no tiene una evaluación en curso (invitado o aceptó).
+ * - Un artículo lo evalúan dos pares: cuando ya tiene dos (invitados, que aceptaron o que entregaron) no se
+ *   buscan más, y un tercero se permite solo cuando los conceptos de los dos no coinciden.
  */
 import type { ConceptoPar, EstadoAsignacion } from '@/types/par'
 
@@ -28,7 +25,7 @@ interface AsignacionRegla {
   esDesempate: boolean
 }
 
-/** A peer that holds a place of the article: invited, accepted or delivered. */
+/** Un par que ocupa un lugar del artículo: invitado, aceptó o entregó. */
 export function activa(a: { estado: EstadoAsignacion }): boolean {
   return a.estado !== 'no-acepto' && a.estado !== 'sin-respuesta'
 }
@@ -39,7 +36,7 @@ const CONCEPTOS_REALES: readonly ConceptoPar[] = [
   'no-publicable',
 ]
 
-/** Two delivered, real and different concepts. */
+/** Dos conceptos entregados, reales y distintos. */
 export function conceptosDifieren(a: AsignacionRegla | undefined, b: AsignacionRegla | undefined): boolean {
   return (
     a?.estado === 'entrego' &&
@@ -53,17 +50,17 @@ export function conceptosDifieren(a: AsignacionRegla | undefined, b: AsignacionR
 }
 
 export interface ReglaPares {
-  /** Places taken (invited, accepted or delivered). */
+  /** Lugares ocupados (invitado, aceptó o entregó). */
   lugares: number
-  /** Whether another peer can be assigned. */
+  /** Si se puede asignar otro par. */
   puede: boolean
-  /** The next peer would be the tiebreaker (the two concepts do not coincide). */
+  /** El siguiente par sería el de desempate (los dos conceptos no coinciden). */
   desempate: boolean
-  /** Why no more peers are assigned, when `puede` is false. */
+  /** Por qué no se asignan más pares, cuando `puede` es falso. */
   motivo: string | null
 }
 
-/** `asignaciones` in assignment order (a peer who declined or did not answer holds no place). */
+/** `asignaciones` en orden de asignación (un par que declinó o no respondió no ocupa lugar). */
 export function reglaPares(asignaciones: AsignacionRegla[]): ReglaPares {
   const activos = asignaciones.filter(activa)
   const lugares = activos.length

@@ -1,9 +1,8 @@
 /*
- * ConstanciasPage — Constancias (/:revista/constancias): pending and issued constancias of the
- * journal. "Emitir" opens the preview rendered from the template; "Emitir y enviar" generates the
- * document and sends it attached to the thank-you mail, leaving a trace in Correos enviados.
- * "Emitir pendientes" does the same for all of them. Issuing and reissuing are Administradora-only.
- * Covers: RF-30, RF-31, RF-32, RF-33, RF-34, HU-21..HU-24, RNF-05.
+ * ConstanciasPage — Constancias (/:revista/constancias): las constancias pendientes y emitidas de la revista.
+ * «Emitir» abre la vista previa armada con la plantilla; «Emitir y enviar» genera el documento y lo envía adjunto
+ * al correo de agradecimiento, dejando huella en Correos enviados. «Emitir pendientes» hace lo mismo con todas.
+ * Emitir y reenviar son solo de la Administradora.
  */
 import { cn } from '@/lib/cn'
 import { useState } from 'react'

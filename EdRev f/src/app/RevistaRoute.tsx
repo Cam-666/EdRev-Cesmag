@@ -1,7 +1,6 @@
 /*
- * RevistaRoute — layout route for /:revista/*. Validates the segment (reep | ire), redirecting
- * to /inicio otherwise, and provides the journal to everything below it.
- * Covers: RF-02.
+ * RevistaRoute — ruta de marco para /:revista/*. Valida el segmento (reep | ire), redirigiendo a /inicio si no
+ * lo es, y entrega la revista a todo lo que está debajo.
  */
 import { Navigate, Outlet, useParams } from 'react-router-dom'
 import { RevistaProvider } from './RevistaProvider'

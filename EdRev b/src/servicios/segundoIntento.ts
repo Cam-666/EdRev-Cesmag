@@ -1,11 +1,10 @@
 /*
- * segundoIntento — RF-29 / RF-15 / D7: if a peer does not answer within the waiting days, the
- * invitation is sent again by itself as the second attempt; if the second one is not answered
- * either, the evaluation goes to «Sin respuesta» and the peer is blocked with that reason.
- * Only invitations that were actually sent count as attempts (a resend after a correction does not
- * add an attempt, RF-28, because it replaces a failed one). Runs every minute.
- * The waiting days come from Administración › Configuración (decimals are accepted, e.g. 0.002 ≈ 3 minutes,
- * to show it in a demo through the API).
+ * segundoIntento — si un par no responde dentro de los días de espera, la invitación se envía de nuevo sola como
+ * segundo intento; si el segundo tampoco se responde, la evaluación pasa a «Sin respuesta» y el par queda
+ * bloqueado con ese motivo. Solo cuentan como intento las invitaciones que de verdad se enviaron (un reenvío
+ * tras corregir la dirección no suma un intento, porque reemplaza uno fallido). Se ejecuta cada minuto.
+ * Los días de espera salen de Administración › Configuración (se aceptan decimales: 0.002 ≈ 3 minutos, para
+ * mostrarlo en una demostración a través de la API).
  */
 import { config } from '../config.js'
 import { diasEspera } from './configuracion.js'

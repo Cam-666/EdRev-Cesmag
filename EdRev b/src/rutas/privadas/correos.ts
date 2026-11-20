@@ -1,7 +1,7 @@
 /*
- * Correos enviados — the routes only say where each request goes: the log of each journal with its
- * counters (RF-26), the retry of failed mails (RF-27) and «corregir y reenviar» (RF-28). Validation
- * is in controladores/correos, the rules in servicios/registroCorreos.
+ * Correos enviados — las rutas solo dicen a dónde va cada petición: el registro de cada revista con sus
+ * contadores, el reintento de los correos fallidos y «corregir y reenviar». La validación está en
+ * controladores/correos y las reglas en servicios/registroCorreos.
  */
 import { Router } from 'express'
 import * as correos from '../../controladores/correos.js'

@@ -1,9 +1,9 @@
 /*
- * MSW handlers for authentication: login with attempt counter and 15-minute lockout, password
- * recovery (always answers 202 so accounts cannot be enumerated) and the password links: the one
- * a new account receives (RF-40) and the recovery one (RF-46). A link lasts 30 minutes and works
- * once (RNF-04). Each account has its own password; a new one cannot log in until it defines it.
- * Covers: HU-28, HU-29, RF-39, RF-40, RF-46. Simulates the backend; the frontend only sees HTTP.
+ * Manejadores MSW del acceso: ingreso con contador de intentos y bloqueo de 15 minutos, recuperación de
+ * contraseña (siempre responde 202 para que no se pueda averiguar qué cuentas existen) y los enlaces de
+ * contraseña: el que recibe una cuenta nueva y el de recuperación. Un enlace dura 30 minutos y sirve una sola
+ * vez. Cada cuenta tiene su propia contraseña; una cuenta nueva no puede ingresar hasta definirla.
+ * Simulan el backend; la interfaz solo ve HTTP.
  */
 import { http, HttpResponse } from 'msw'
 import { CONTRASENA_DEMO } from '../seed/credenciales'
@@ -29,11 +29,11 @@ interface Enlace {
 const intentos = new Map<string, number>()
 const bloqueos = new Map<string, number>()
 const enlaces = new Map<string, Enlace>()
-/** Passwords set through a link; the seed accounts use the demo password until then. */
+/** Contraseñas definidas con un enlace; mientras tanto las cuentas de ejemplo usan la contraseña de demostración. */
 const contrasenas = new Map<string, string>()
 let secuencia = 0
 
-/** Clears the in-memory counters, links and passwords (used between tests). */
+/** Borra los contadores, enlaces y contraseñas en memoria (se usa entre pruebas). */
 export function reiniciarEstadoAcceso(): void {
   intentos.clear()
   bloqueos.clear()
@@ -42,11 +42,11 @@ export function reiniciarEstadoAcceso(): void {
   secuencia = 0
 }
 
-/** Issues a single-use link to define a password and returns its path in the app. */
+/** Emite un enlace de un solo uso para definir una contraseña y devuelve su ruta en la aplicación. */
 export function crearEnlace(usuarioId: string, motivo: MotivoEnlace): string {
   secuencia += 1
   const token = `${motivo.slice(0, 3)}-${secuencia}-${Date.now().toString(36)}`
-  // Any earlier link of the same account stops working.
+  // Cualquier enlace anterior de la misma cuenta deja de servir.
   for (const e of enlaces.values()) if (e.usuarioId === usuarioId) e.usado = true
   enlaces.set(token, {
     usuarioId,
@@ -57,7 +57,7 @@ export function crearEnlace(usuarioId: string, motivo: MotivoEnlace): string {
   return `/acceso/contrasena?token=${encodeURIComponent(token)}`
 }
 
-/** A new account gets a random password nobody knows until its owner defines one (RF-40). */
+/** Una cuenta nueva recibe una contraseña aleatoria que nadie conoce hasta que su dueño define la suya. */
 export function bloquearContrasena(usuarioId: string): void {
   contrasenas.set(usuarioId, `sin-definir-${Math.random().toString(36).slice(2)}`)
 }
@@ -117,7 +117,7 @@ export const handlersAcceso = [
     return HttpResponse.json({ usuario, token: tokenMock(usuario.id) })
   }),
 
-  // RF-46: always 202, whether or not the account exists.
+  // Siempre 202, exista o no la cuenta.
   http.post('*/api/auth/recuperar', async ({ request }) => {
     const { correo } = (await request.json()) as { correo: string }
     const usuario = usuarios().find(

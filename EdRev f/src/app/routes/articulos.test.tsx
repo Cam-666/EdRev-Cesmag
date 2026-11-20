@@ -37,7 +37,7 @@ describe('article list (/:revista/articulos)', () => {
     expect(enlace).toHaveAttribute('href', '/reep/articulos/2026-007/reabrir')
   })
 
-  it('filters by postulation date range (HU-26) and shows the empty state', async () => {
+  it('filters by postulation date range and shows the empty state', async () => {
     montarRuta('/reep/articulos?desde=2026-10-25&hasta=2026-10-31')
     expect(
       await screen.findByRole('link', { name: 'Abrir el artículo 2026-033' }),
@@ -115,11 +115,11 @@ describe('article registration (one form, then the committee review)', () => {
     await user.type(screen.getByLabelText('Título'), 'Narrativas docentes e identidad profesional')
     await elegirOpcion(user, 'Tipo de artículo', 'Investigación')
 
-    // Saving without authors is refused
+    // Guardar sin autores se rechaza
     await user.click(screen.getByRole('button', { name: 'Guardar artículo' }))
     expect(await screen.findByText(/Agregue al menos un autor/)).toBeInTheDocument()
 
-    // Existing author of the common directory: search by name, data fills in, read-only
+    // Autor existente del directorio común: se busca por nombre, los datos se llenan y quedan de solo lectura
     await user.type(screen.getByLabelText('Buscar ficha existente'), 'Sandra')
     await user.click(await screen.findByRole('button', { name: /Sandra Milena Córdoba/ }))
     expect(screen.getByLabelText('Nombre completo')).toHaveValue('Sandra Milena Córdoba')
@@ -128,7 +128,7 @@ describe('article registration (one form, then the committee review)', () => {
     expect(await screen.findByText('1 de 7')).toBeInTheDocument()
     expect(screen.getByText('Principal')).toBeInTheDocument()
 
-    // A brand-new author
+    // Un autor nuevo
     await user.type(screen.getByLabelText('Nombre completo'), 'Laura Sofía Rivera')
     await user.type(screen.getByLabelText('Correo electrónico'), 'laura.rivera@umariana.edu.co')
     await user.type(screen.getByLabelText('ORCID (opcional)'), '0000-0001-2345-6789')
@@ -246,7 +246,7 @@ describe('article sheet', () => {
     expect(screen.queryByText(/no coinciden/)).toBeNull()
   })
 
-  it('has no «Observaciones» tab: the sheet has the five tabs of RF-36 (D16)', async () => {
+  it('has no «Observaciones» tab: the sheet has five tabs', async () => {
     montarRuta('/reep/articulos/2026-034')
     const pestanas = await screen.findAllByRole('tab')
     expect(pestanas.map((t) => t.textContent)).toEqual([
@@ -299,7 +299,7 @@ describe('article sheet', () => {
   })
 })
 
-describe('closing the process (RF-08)', () => {
+describe('closing the process', () => {
   it('approving asks for the reason and the volume and number together', async () => {
     const { user } = montarRuta('/reep/articulos/2026-034')
     await user.click(await screen.findByRole('button', { name: 'Cerrar proceso' }))
@@ -308,7 +308,7 @@ describe('closing the process (RF-08)', () => {
     await user.click(within(dialogo).getByRole('button', { name: 'Cerrar el proceso' }))
     expect(await within(dialogo).findByText('Escriba el motivo del cierre.')).toBeInTheDocument()
     await user.type(within(dialogo).getByLabelText('Motivo'), 'Los pares lo consideran publicable.')
-    // The article already had Vol. 10 n.º 2: it comes filled in; without the volume it is refused
+    // El artículo ya tenía Vol. 10 n.º 2: viene lleno; sin el volumen se rechaza
     const volumen = within(dialogo).getByLabelText('Volumen')
     expect(volumen).toHaveValue('10')
     await user.clear(volumen)
@@ -363,28 +363,28 @@ describe('committee review (/comite)', () => {
     expect(await screen.findByText('Escriba un número entre 0 y 100.')).toBeInTheDocument()
     expect(screen.getByText('Seleccione el resultado del comité.')).toBeInTheDocument()
 
-    // The page only suggests a result; the committee chooses it
+    // La página solo sugiere un resultado; lo elige el comité
     await user.clear(coincidencias)
     await user.type(coincidencias, '21')
     expect(
       await screen.findByText('Sugerencia: Rechazado (no publicable)'),
     ).toBeInTheDocument()
     expect(screen.getByText(/superan el 15 % aceptado/)).toBeInTheDocument()
-    // within the limit and with observations the suggestion changes
+    // dentro del límite y con observaciones la sugerencia cambia
     await user.clear(coincidencias)
     await user.type(coincidencias, '11')
     await user.type(screen.getByLabelText('Observaciones del comité'), 'Ajustar el método.')
     expect(
       await screen.findByText('Sugerencia: Requiere ajustes (publicable con observaciones)'),
     ).toBeInTheDocument()
-    // nothing is chosen for the committee: the choice stays empty until it picks one
+    // nada se elige por el comité: la elección queda vacía hasta que escoja
     await elegirOpcion(user, 'Resultado del comité', 'Requiere ajustes')
     await user.click(screen.getByRole('button', { name: 'Guardar ronda' }))
     expect(await screen.findByText(/Ronda registrada: Requiere ajustes/)).toBeInTheDocument()
     const lista = screen.getByRole('list', { name: 'Rondas de la revisión del comité' })
     expect(within(lista).getByText('Ajustar el método.')).toBeInTheDocument()
 
-    // Second round: approved, so it goes straight to the assignment of peers
+    // Segunda ronda: aprobada, así que pasa directo a la asignación de pares
     await user.click(await screen.findByRole('button', { name: 'Registrar ronda' }))
     await screen.findByRole('heading', { name: 'Ronda 2 de la revisión del comité' })
     expect(await screen.findByText('Sugerencia: Aprobado (publicable)')).toBeInTheDocument()
@@ -409,10 +409,10 @@ describe('committee review (/comite)', () => {
     await user.click(screen.getByRole('button', { name: 'Guardar ronda' }))
     expect(await screen.findByText(/Ronda registrada: Rechazado/)).toBeInTheDocument()
     expect(screen.getByText(/El artículo sigue en revisión/)).toBeInTheDocument()
-    // the process is not closed: another round can be registered
+    // el proceso no se cierra: se puede registrar otra ronda
     expect(await screen.findByRole('button', { name: 'Registrar ronda' })).toBeInTheDocument()
 
-    // the committee approves a round although the report does not: it goes on to the peers
+    // el comité aprueba una ronda aunque el reporte no: pasa a los pares
     await user.click(screen.getByRole('button', { name: 'Registrar ronda' }))
     const otra = await screen.findByLabelText('Coincidencias (%)')
     await user.clear(otra)
@@ -481,7 +481,7 @@ describe('reopening an archived article (/reabrir)', () => {
     )
     await user.click(within(dialogo).getByRole('button', { name: 'Retomar' }))
     await waitFor(() => expect(router.state.location.pathname).toBe('/reep/articulos/2026-007'))
-    // The navigation commits in a low-priority transition: wait for the dialog to be gone.
+    // La navegación se confirma en una transición de baja prioridad: se espera a que el diálogo desaparezca.
     await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull(), { timeout: 10000 })
     expect((await screen.findAllByText('En revisión')).length).toBeGreaterThan(0)
 
@@ -489,7 +489,7 @@ describe('reopening an archived article (/reabrir)', () => {
     expect(
       await screen.findByText(/Retomó el proceso: El autor escribió el 2 de noviembre/),
     ).toBeInTheDocument()
-    // The earlier history is kept
+    // El historial anterior se conserva
     expect(screen.getByText('Archivó el artículo')).toBeInTheDocument()
   })
 

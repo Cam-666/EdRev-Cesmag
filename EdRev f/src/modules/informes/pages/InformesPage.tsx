@@ -1,12 +1,10 @@
 /*
- * InformesPage — Informe de gestión (/informes): management report of a period (semester) for one
- * journal or both, laid out as a document: heading, executive summary, key figures, charts, the
- * comparative table and the notes on how each figure is counted. It can be saved as a PDF (a
- * document built by the server, with a section and charts per journal, not a capture of this
- * screen) or exported as CSV. The report is shown as soon as the
- * journal or the period changes. It is a cross-journal screen: in "Ambas" each journal keeps its
- * own column and color. Open to both profiles.
- * Covers: RF-38, HU-27.
+ * InformesPage — Informe de gestión (/informes): el informe de gestión de un periodo (semestre) de una revista o
+ * de las dos, armado como documento: título, resumen ejecutivo, cifras clave, gráficas, la tabla comparativa y las
+ * notas de cómo se cuenta cada cifra. Se puede guardar como PDF (un documento que arma el servidor, con una
+ * sección y gráficas por revista, no una captura de esta pantalla) o exportar como CSV. El informe se muestra en
+ * cuanto cambia la revista o el periodo. Es una pantalla de las dos revistas: en «Ambas» cada revista conserva su
+ * propia columna y color. Abierto a ambos perfiles.
  */
 import { format } from 'date-fns'
 import { useState } from 'react'

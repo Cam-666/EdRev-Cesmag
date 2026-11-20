@@ -1,4 +1,4 @@
-/** Roles of the system (RNF-05). Peers and authors never log in. */
+/** Perfiles del sistema. Los pares y los autores nunca ingresan. */
 export type Perfil = 'administrador' | 'auxiliar'
 
 export interface Usuario {
@@ -7,7 +7,7 @@ export interface Usuario {
   correo: string
   perfil: Perfil
   estado: 'activo' | 'inhabilitado'
-  /** ISO 8601 date-time of the last access. */
+  /** Fecha y hora ISO 8601 del último ingreso. */
   ultimoIngreso: string | null
 }
 
@@ -16,7 +16,7 @@ export const ETIQUETA_PERFIL: Record<Perfil, string> = {
   auxiliar: 'Auxiliar',
 }
 
-/** Data to create or edit an account (RF-40). */
+/** Datos para crear o editar una cuenta. */
 export interface DatosUsuario {
   nombre: string
   correo: string

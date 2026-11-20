@@ -1,7 +1,6 @@
 /*
- * RegistrarAutorModal — registers a new author in the common directory of both journals. No Figma design
- * for the dialog; it reuses the author form (without the existing-record search).
- * Covers: RF-09, RF-10.
+ * RegistrarAutorModal — registra un autor nuevo en el directorio común de las dos revistas. No tiene diseño en
+ * Figma; reutiliza el formulario de autor (sin la búsqueda de registros existentes).
  */
 import { FormularioAutor } from './FormularioAutor'
 import { useRegistrarAutor } from '../hooks/useAutores'
