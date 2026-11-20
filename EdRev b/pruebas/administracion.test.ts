@@ -31,6 +31,13 @@ describe('plantillas, auditoría, informes y pares por revista', () => {
     expect((await api.delete(`/usuarios/${creada.body.id}`)).status).toBe(404)
     const yo = (await api.get('/usuarios')).body.find((u: { correo: string }) => u.correo === 'maria.mendoza@unicesmag.edu.co')
     expect((await api.delete(`/usuarios/${yo.id}`)).status).toBe(409)
+    // Una cuenta con actividad registrada no se elimina: se responde con el aviso y no con un error del servidor.
+    const aux = await como(AUXILIAR)
+    expect((await aux.post('/reep/pares', { nombre: 'Par de la Auxiliar', correo: `aux${Date.now()}@x.co`, universidad: 'U', area: 'A' })).status).toBe(201)
+    const cuentaAux = (await api.get('/usuarios')).body.find((u: { correo: string }) => u.correo === 'andrea.villota@unicesmag.edu.co')
+    const rechazo = await api.delete(`/usuarios/${cuentaAux.id}`)
+    expect(rechazo.status).toBe(409)
+    expect(rechazo.body.mensaje).toContain('inhabilítela')
   })
 
   it('la auditoría filtra por tipo y el informe suma ambas revistas', async () => {

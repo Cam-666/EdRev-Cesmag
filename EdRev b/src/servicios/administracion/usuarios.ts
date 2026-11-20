@@ -99,7 +99,8 @@ export async function eliminarUsuario(id: number, actor: number): Promise<void> 
     if (actual.rol === 'administrador' && actual.activo) await exigirOtraAdministradora(c, id)
     // Una cuenta con actividad en el registro de auditoría no puede desaparecer sin romper ese historial.
     await c.query('DELETE FROM usuario WHERE id_usuario = $1', [id]).catch((e: { code?: string }) => {
-      if (e.code === '23503')
+      // El historial está protegido con ON DELETE RESTRICT, que PostgreSQL informa como 23001 (y como 23503 con NO ACTION).
+      if (e.code === '23001' || e.code === '23503')
         throw new ErrorHttp(409, 'La cuenta tiene actividad registrada y no se puede eliminar; inhabilítela en su lugar')
       throw e
     })
