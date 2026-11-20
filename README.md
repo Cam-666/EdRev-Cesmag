@@ -204,7 +204,7 @@ Comandos útiles: `docker compose ps` (estado), `docker compose logs -f api` (re
 `docker compose restart api` (reiniciar), `docker compose down` (apagar; los datos se conservan en el volumen `datos`)
 y `docker compose down -v` (apagar **y borrar** la base). Para cambiar una variable del `.env`, edítelo y ejecute
 `docker compose up -d`. En producción ponga `ENLACE_DEMO=false` y `CORREO_MODO=brevo` (ver la sección de Brevo).
-Respaldo de la base: `docker compose exec db pg_dump -U edrev edrev > respaldo.sql`.
+Respaldo de la base: `docker compose exec -T db pg_dump -U edrev edrev > respaldo.sql` (el `-T` evita que la terminal altere el archivo).
 
 ## Migración de los datos del Excel
 

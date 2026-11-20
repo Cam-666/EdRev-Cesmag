@@ -145,11 +145,11 @@ también son variables, para poder trasladar el sistema al servidor de la univer
 En la raíz del repositorio está `docker-compose.yml` con la base, la API y el frontend:
 
 ```bash
-docker compose up --build
+docker compose up -d --build
 ```
 
-Frontend en `http://localhost:8080`, API en `http://localhost:3000/api`, PostgreSQL en el puerto `5433` (para no
-chocar con el local). La primera vez la base se crea sola con `db/01_esquema.sql` y `db/02_datos_iniciales.sql`.
+Todo se abre en `http://localhost:8080`: nginx entrega la interfaz y reenvía `/api` a la API (la API no publica puerto
+propio). PostgreSQL solo es visible desde el propio servidor, en `127.0.0.1:5433` (para no chocar con el local). La primera vez la base se crea sola con `db/01_esquema.sql` y `db/02_datos_iniciales.sql`.
 Claves por variables: `DB_PASSWORD`, `JWT_SECRET` (**obligatoria**: cadena aleatoria de 32 caracteres o más; sin ella
 el compose no arranca), `CORREO_MODO`, `BREVO_API_KEY`, `ENLACE_DEMO`, `FRONTEND_URL`, `API_PUBLICA_URL` y
 `ZONA_HORARIA` (en un `.env` junto al compose). Requiere Docker Desktop instalado.
