@@ -23,6 +23,9 @@ const TITULOS = {
   invitacion: 'Invitación a evaluar un artículo',
   agradecimiento: 'Gracias por su evaluación',
   constancia: 'Constancia de participación',
+  // Correos de la cuenta (no son de una evaluación): el enlace para definir la contraseña.
+  activacion: 'Active su cuenta',
+  recuperacion: 'Recupere su contraseña',
 } as const
 
 export type TipoMarco = keyof typeof TITULOS
