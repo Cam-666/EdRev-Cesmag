@@ -43,7 +43,7 @@ export const config = {
   // Public address of the shield shown in the header of the mails: the one the university publishes
   // on its own site, so it shows in any mail client even when this system runs on a local computer.
   urlLogoCorreo: process.env.LOGO_CORREO_URL ?? 'https://www.unicesmag.edu.co/recursos/uploads/2022/04/Escudos_2-2-300x300.png',
-  /** Public address of the API, for the images of the mails (the footer image of a template). */
+  /** Public address of the API: the mails take the shield from it when LOGO_CORREO_URL is not set. */
   urlApiPublica: (process.env.API_PUBLICA_URL ?? `http://localhost:${process.env.PORT ?? 3000}`).replace(/\/$/, ''),
   jwtHoras: numero('JWT_HORAS', 8),
   /** Time zone of the dependency: what «today» means for a delivery date. */

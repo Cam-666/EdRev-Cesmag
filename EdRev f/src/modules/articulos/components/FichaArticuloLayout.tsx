@@ -1,7 +1,7 @@
 /*
  * FichaArticuloLayout — article sheet shell: header + five routed tabs (Resumen, Revisión del
  * comité, Autores, Pares y evaluación, Historial de correos y cambios) as RF-36 lists them. «Cambiar de revista» is offered
- * while the article is in the committee review (RF-07). Each datum appears in a single tab. It loads the
+ * at any stage of the article (RF-07). Each datum appears in a single tab. It loads the
  * article once and hands it to the tabs through the outlet context.
  * Covers: RF-36, HU-26 (criterion 3), RF-01/RF-04 (edit).
  */
