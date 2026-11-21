@@ -47,6 +47,14 @@ async function candidatoApi(articulo: string, n: number) {
   )
 }
 
+/** La invitación se revisa en una ventana antes de asignar: se espera a que carguen las plantillas y se envía. */
+export async function enviarInvitacion(user: { click: (e: Element) => Promise<void> }) {
+  const ventana = await screen.findByRole('dialog', { name: /^Invitar a / })
+  const boton = within(ventana).getByRole('button', { name: 'Asignar y enviar invitación' })
+  await waitFor(() => expect(boton).toBeEnabled())
+  await user.click(boton)
+}
+
 async function abrirPanel(user: { click: (e: Element) => Promise<void> }) {
   await user.click(await screen.findByRole('button', { name: 'Asignar par' }))
   return screen.findByRole('region', { name: 'Asignar par evaluador' })
@@ -69,6 +77,7 @@ describe('assigning a peer from the article sheet', () => {
     const boton = (await within(tabla).findAllByRole('button', { name: /^Asignar a / }))[0]
     const nombre = (boton?.textContent ?? '').replace(/^Asignar a /, '')
     await user.click(boton as HTMLElement)
+    await enviarInvitacion(user)
     expect(await screen.findByText('Par asignado e invitación enviada')).toBeInTheDocument()
     const lista = await screen.findByRole('list', { name: 'Pares asignados' })
     expect(await within(lista).findByText(nombre)).toBeInTheDocument()
@@ -96,6 +105,7 @@ describe('assigning a peer from the article sheet', () => {
     await user.type(within(panel).getByLabelText('Universidad'), 'Universidad Externa de Prueba')
     await user.type(within(panel).getByLabelText('Área temática'), 'Educación rural')
     await user.click(within(panel).getByRole('button', { name: 'Registrar y enviar invitación' }))
+    await enviarInvitacion(user)
     expect(
       await screen.findByText(/Se envió la invitación a Marta Lucía Gómez/),
     ).toBeInTheDocument()
@@ -117,7 +127,8 @@ describe('assigning a peer from the article sheet', () => {
     await user.type(within(panel).getByLabelText('Universidad'), 'Universidad CESMAG')
     await user.type(within(panel).getByLabelText('Área temática'), 'Educación rural')
     await user.click(within(panel).getByRole('button', { name: 'Registrar y enviar invitación' }))
-    expect(await screen.findByText(/la misma institución del autor/)).toBeInTheDocument()
+    await enviarInvitacion(user)
+    expect((await screen.findAllByText(/la misma institución del autor/)).length).toBeGreaterThan(0)
   })
 
   it('the committee review hands over with the panel open, and the Auxiliar can assign', async () => {
@@ -144,6 +155,7 @@ describe('bounced invitation', () => {
     await user.type(within(panel).getByLabelText('Universidad'), 'Universidad del Valle')
     await user.type(within(panel).getByLabelText('Área temática'), 'Educación rural')
     await user.click(within(panel).getByRole('button', { name: 'Registrar y enviar invitación' }))
+    await enviarInvitacion(user)
     expect(await screen.findByText('La invitación no se pudo entregar')).toBeInTheDocument()
     expect(screen.getByText(/La dirección par@invalido\.test rebotó/)).toBeInTheDocument()
     // La asignación se conservó
@@ -300,6 +312,7 @@ describe('actions on an assigned peer', () => {
     await user.click(
       (await within(tabla).findAllByRole('button', { name: /^Asignar a / }))[0] as HTMLElement,
     )
+    await enviarInvitacion(user)
     expect(await screen.findByText('Par asignado e invitación enviada')).toBeInTheDocument()
     const lista = screen.getByRole('list', { name: 'Pares asignados' })
     const tercero = (await within(lista).findAllByRole('listitem'))[2] as HTMLElement

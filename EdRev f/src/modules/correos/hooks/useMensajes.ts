@@ -3,9 +3,33 @@
  * revista desde la que sale el mensaje (ahí aparece como «Mensaje»).
  */
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { enviarMensaje, listarPlantillasDeMensaje, vistaPreviaMensaje } from '../services/mensajesService'
+import {
+  enviarMensaje,
+  listarPlantillasDeEnvio,
+  listarPlantillasDeMensaje,
+  vistaCorreoDeEnvio,
+  vistaPreviaMensaje,
+} from '../services/mensajesService'
+import type { FinEnvio } from '../services/mensajesService'
 import type { DestinoMensaje } from '@/types/mensaje'
 import type { Revista } from '@/types/revista'
+
+export function usePlantillasDeEnvio(revista: Revista, fin: FinEnvio, activo: boolean) {
+  return useQuery({
+    queryKey: ['correos', revista, 'plantillas-envio', fin],
+    queryFn: () => listarPlantillasDeEnvio(revista, fin),
+    enabled: activo,
+  })
+}
+
+export function useVistaCorreoDeEnvio(revista: Revista, fin: FinEnvio, cuerpo: string | null) {
+  return useQuery({
+    queryKey: ['correos', revista, 'vista-envio', fin, cuerpo],
+    queryFn: () => vistaCorreoDeEnvio(revista, fin, cuerpo ?? ''),
+    enabled: cuerpo !== null,
+    placeholderData: (anterior) => anterior,
+  })
+}
 
 export function usePlantillasDeMensaje(revista: Revista, activo: boolean) {
   return useQuery({

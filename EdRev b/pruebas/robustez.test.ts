@@ -64,16 +64,14 @@ describe('«hoy» en la zona de la dependencia', () => {
 })
 
 describe('plantillas y constancias', () => {
-  it('una plantilla en uso para un fin no se puede asignar a otro', async () => {
+  it('los correos automáticos tienen siempre su plantilla en uso, una por tipo en cada revista', async () => {
     const api = await como()
-    const lista = (await api.get('/plantillas')).body.plantillas as Array<{ id: string; revista: string; uso: string | null }>
-    const invitacion = lista.find((p) => p.revista === 'reep' && p.uso === 'invitacion')
-    const r = await api.post(`/plantillas/${invitacion?.id}/asignar`, { uso: 'agradecimiento' })
-    expect(r.status).toBe(409)
-    expect(r.body.mensaje).toContain('es para la invitación a evaluar')
-    // y sigue en uso como invitación
-    const despues = (await api.get('/plantillas')).body.plantillas as Array<{ id: string; uso: string | null }>
-    expect(despues.find((p) => p.id === invitacion?.id)?.uso).toBe('invitacion')
+    const lista = (await api.get('/plantillas')).body.plantillas as Array<{ revista: string; uso: string | null }>
+    for (const revista of ['reep', 'ire']) {
+      for (const uso of ['invitacion', 'agradecimiento', 'constancia']) {
+        expect(lista.filter((p) => p.revista === revista && p.uso === uso)).toHaveLength(1)
+      }
+    }
   })
 
   it('al emitir todas las pendientes, las que no se pueden emitir dicen por qué', async () => {

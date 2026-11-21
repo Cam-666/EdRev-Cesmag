@@ -48,42 +48,46 @@ describe('formato del texto', () => {
 })
 
 describe('plantillas: constancia permanente y correos de uso editable', () => {
-  it('una plantilla nueva solo pide el nombre y nace como correo libre; la constancia no se crea', async () => {
+  it('una plantilla nueva pide revista, nombre y para qué es; nace en blanco y no es la predeterminada', async () => {
     const api = await como()
     const nombre = `Otro correo ${Date.now()}`
-    const correo = await api.post('/plantillas', { revista: 'reep', nombre })
+    const correo = await api.post('/plantillas', { revista: 'reep', nombre, fin: 'agradecimiento' })
     expect(correo.status).toBe(201)
-    expect(correo.body).toMatchObject({ clase: 'correo', fin: 'mensaje', uso: null, enUso: false, imagenes: null, cuerpo: '' })
-    expect((await api.post('/plantillas', { revista: 'reep', nombre })).status).toBe(409) // el nombre no se repite
-    // la constancia de cada revista es única: no se puede crear otra
-    expect((await api.post('/plantillas', { revista: 'reep', nombre: 'Otra constancia', uso: 'constancia' })).status).toBe(409)
-    expect((await api.post('/plantillas', { revista: 'reep', nombre: 'Otro archivo', clase: 'archivo' })).status).toBe(409)
+    expect(correo.body).toMatchObject({ clase: 'correo', fin: 'agradecimiento', uso: null, enUso: false, imagenes: null, cuerpo: '' })
+    expect((await api.post('/plantillas', { revista: 'reep', nombre, fin: 'agradecimiento' })).status).toBe(409) // el nombre no se repite
+    expect((await api.post('/plantillas', { revista: 'reep', nombre: '   ', fin: 'mensaje' })).status).toBe(422)
+    // hay que decir para qué es, y la constancia no se crea: ya existe una por revista
+    expect((await api.post('/plantillas', { revista: 'reep', nombre: `Sin fin ${Date.now()}` })).status).toBe(422)
+    expect((await api.post('/plantillas', { revista: 'reep', nombre: `Otra constancia ${Date.now()}`, fin: 'constancia' })).status).toBe(422)
     await api.delete(`/plantillas/${correo.body.id}`)
   })
 
-  it('el uso de una plantilla de correo se cambia al editarla, salvo el de la que está en uso y el de la constancia', async () => {
+  it('cada revista tiene su invitación, agradecimiento y constancia predeterminados; la predeterminada no se elimina y se puede cambiar', async () => {
     const api = await como()
-    const nueva = (await api.post('/plantillas', { revista: 'ire', nombre: `Uso cambiante ${Date.now()}` })).body
-    // libre: no acepta los botones de la invitación ni el número de solicitud
-    expect((await api.put(`/plantillas/${nueva.id}`, { asunto: 'Hola', cuerpo: '{{nombre}}\n\n{{botones}}' })).status).toBe(422)
-    // al pasarla a invitación sí los acepta (y deja de aceptar {{nombre}})
-    const inv = await api.put(`/plantillas/${nueva.id}`, { asunto: 'Hola', cuerpo: '{{par}} {{articulo}}\n\n{{botones}}', fin: 'invitacion' })
-    expect(inv.status).toBe(200)
-    expect(inv.body).toMatchObject({ fin: 'invitacion', uso: null })
-    expect(inv.body.variables).toContain('botones')
-    expect((await api.put(`/plantillas/${nueva.id}`, { asunto: 'Hola', cuerpo: '{{nombre}}', fin: 'invitacion' })).status).toBe(422)
-    // y de vuelta a libre
-    const libre = await api.put(`/plantillas/${nueva.id}`, { asunto: 'Hola', cuerpo: 'Estimado(a) {{nombre}}', fin: 'mensaje' })
-    expect(libre.body.fin).toBe('mensaje')
-    // la que está en uso no cambia de uso: los correos automáticos se quedarían sin plantilla
-    const enUso = (await api.get('/plantillas')).body.plantillas.find((p: { revista: string; uso: string }) => p.revista === 'ire' && p.uso === 'agradecimiento')
-    const r = await api.put(`/plantillas/${enUso.id}`, { asunto: enUso.asunto, cuerpo: enUso.cuerpo, fin: 'mensaje' })
-    expect(r.status).toBe(409)
-    expect(r.body.mensaje).toContain('primero marque otra')
-    // la constancia no cambia de uso
-    const c = await constancia(api, 'ire')
-    expect((await api.put(`/plantillas/${c.id}`, { asunto: null, cuerpo: c.cuerpo, fin: 'mensaje' })).status).toBe(409)
-    await api.delete(`/plantillas/${nueva.id}`)
+    for (const revista of ['reep', 'ire']) {
+      const lista = (await api.get('/plantillas')).body.plantillas as Array<{ id: string; revista: string; fin: string; enUso: boolean; uso: string | null }>
+      for (const fin of ['invitacion', 'agradecimiento', 'constancia']) {
+        expect(lista.filter((p) => p.revista === revista && p.fin === fin && p.enUso)).toHaveLength(1)
+      }
+      for (const p of lista.filter((x) => x.revista === revista && x.enUso)) expect((await api.delete(`/plantillas/${p.id}`)).status).toBe(409)
+    }
+    const original = (await api.get('/plantillas')).body.plantillas.find((p: { revista: string; fin: string; enUso: boolean }) => p.revista === 'reep' && p.fin === 'invitacion' && p.enUso)
+    const otra = (await api.post('/plantillas', { revista: 'reep', nombre: `Invitación breve ${Date.now()}`, fin: 'invitacion' })).body
+    // en blanco no puede ser la predeterminada; con texto sí, y la anterior pasa a ser una más
+    expect((await api.post(`/plantillas/${otra.id}/predeterminada`)).status).toBe(422)
+    expect((await api.put(`/plantillas/${otra.id}`, { asunto: 'Invitación · {{revista}}', cuerpo: 'Hola {{par}}, ¿evalúa «{{articulo}}»?{{botones}}' })).status).toBe(200)
+    const marcada = await api.post(`/plantillas/${otra.id}/predeterminada`)
+    expect(marcada.status).toBe(200)
+    expect(marcada.body).toMatchObject({ enUso: true, fin: 'invitacion' })
+    const lista = (await api.get('/plantillas')).body.plantillas as Array<{ id: string; revista: string; fin: string; enUso: boolean }>
+    expect(lista.filter((p) => p.revista === 'reep' && p.fin === 'invitacion' && p.enUso).map((p) => p.id)).toEqual([otra.id])
+    // la constancia y los mensajes no tienen predeterminada
+    const constanciaReep = lista.find((p) => p.revista === 'reep' && p.fin === 'constancia')!
+    expect((await api.post(`/plantillas/${constanciaReep.id}/predeterminada`)).status).toBe(409)
+    // se deja todo como estaba
+    expect((await api.post(`/plantillas/${original.id}/predeterminada`)).status).toBe(200)
+    expect((await api.delete(`/plantillas/${otra.id}`)).status).toBe(204)
+    expect((await api.delete(`/plantillas/${otra.id}`)).status).toBe(404)
   })
 
   it('la constancia es permanente: siempre está en uso y no se elimina, pero se edita', async () => {
@@ -91,54 +95,26 @@ describe('plantillas: constancia permanente y correos de uso editable', () => {
     for (const revista of ['reep', 'ire']) {
       const c = await constancia(api, revista)
       expect(c).toMatchObject({ clase: 'archivo', uso: 'constancia' })
-      const borrar = await api.delete(`/plantillas/${c.id}`)
-      expect(borrar.status).toBe(409)
-      expect(borrar.body.mensaje).toContain('permanente')
+      expect((await api.delete(`/plantillas/${c.id}`)).status).toBe(409)
     }
     const c = await constancia(api)
     expect((await api.put(`/plantillas/${c.id}`, { asunto: null, cuerpo: `${c.cuerpo}\n\nNota` })).status).toBe(200)
     await restaurar(api, c)
   })
 
-  it('la plantilla se elige para su fin: reemplaza a la anterior, no sirve para otro fin y una plantilla en uso no se elimina', async () => {
+  it('los datos que acepta una plantilla dependen de su fin: {{botones}} solo sirve en la invitación y {{nombre}} en los mensajes', async () => {
     const api = await como()
-    const correo = (await api.post('/plantillas', { revista: 'ire', nombre: 'Recordatorio amable', uso: 'agradecimiento' })).body
-    expect(correo).toMatchObject({ fin: 'agradecimiento', uso: null })
-    const antes = (await api.get('/plantillas')).body.plantillas.find(
-      (p: { revista: string; uso: string }) => p.revista === 'ire' && p.uso === 'agradecimiento',
-    )
-    await api.put(`/plantillas/${correo.id}`, { asunto: 'Hola', cuerpo: '{{par}} {{articulo}}' })
-    // es de agradecimiento: no sirve como constancia ni como invitación
-    expect((await api.post(`/plantillas/${correo.id}/asignar`, { uso: 'constancia' })).status).toBe(409)
-    expect((await api.post(`/plantillas/${correo.id}/asignar`, { uso: 'invitacion' })).status).toBe(409)
-    const ok = await api.post(`/plantillas/${correo.id}/asignar`, { uso: 'agradecimiento' })
-    expect(ok.body).toMatchObject({ uso: 'agradecimiento', enUso: true })
-    const lista = (await api.get('/plantillas')).body.plantillas as Array<{ id: string; revista: string; uso: string | null }>
-    expect(lista.filter((p) => p.revista === 'ire' && p.uso === 'agradecimiento')).toHaveLength(1)
-    expect(lista.find((p) => p.id === antes.id)?.uso).toBeNull()
-    expect((await api.delete(`/plantillas/${correo.id}`)).status).toBe(409)
-    // la anterior vuelve a quedar en uso y la otra se puede eliminar
-    await api.post(`/plantillas/${antes.id}/asignar`, { uso: 'agradecimiento' })
-    expect((await api.delete(`/plantillas/${correo.id}`)).status).toBe(204)
-    expect((await api.delete(`/plantillas/${correo.id}`)).status).toBe(404)
-  })
-
-  it('los datos que acepta una plantilla dependen de su fin: {{botones}} solo sirve en la invitación', async () => {
-    const api = await como()
-    const gracias = (await api.post('/plantillas', { revista: 'reep', nombre: 'Gracias con botones', uso: 'agradecimiento' })).body
+    const lista = (await api.get('/plantillas')).body.plantillas as Array<{ id: string; revista: string; fin: string; variables: string[]; asunto: string | null; cuerpo: string }>
+    const invitacion = lista.find((p) => p.revista === 'reep' && p.fin === 'invitacion')!
+    const gracias = lista.find((p) => p.revista === 'reep' && p.fin === 'agradecimiento')!
+    expect(invitacion.variables).toContain('botones')
     expect(gracias.variables).not.toContain('botones')
     expect((await api.put(`/plantillas/${gracias.id}`, { asunto: 'Hola', cuerpo: '{{par}}\n\n{{botones}}' })).status).toBe(422)
-    await api.delete(`/plantillas/${gracias.id}`)
-    const c = (await api.post('/plantillas', { revista: 'reep', nombre: 'Con botones', uso: 'invitacion' })).body
-    expect(c.variables).toContain('botones')
-    await api.put(`/plantillas/${c.id}`, { asunto: 'Hola', cuerpo: '{{par}} {{articulo}}\n\n{{botones}}' })
-    expect((await api.post(`/plantillas/${c.id}/asignar`, { uso: 'invitacion' })).status).toBe(200)
-    // dejar la revista como estaba
-    const base = (await api.get('/plantillas')).body.plantillas.find(
-      (p: { revista: string; nombre: string }) => p.revista === 'reep' && p.nombre === 'Invitación a evaluar',
-    )
-    await api.post(`/plantillas/${base.id}/asignar`, { uso: 'invitacion' })
-    await api.delete(`/plantillas/${c.id}`)
+    const m = (await api.post('/plantillas', { revista: 'reep', nombre: `Datos ${Date.now()}`, fin: 'mensaje' })).body
+    expect(m.variables).toContain('nombre')
+    expect(m.variables).not.toContain('botones')
+    expect((await api.put(`/plantillas/${m.id}`, { asunto: 'Hola', cuerpo: '{{par}}' })).status).toBe(422)
+    await api.delete(`/plantillas/${m.id}`)
   })
 
   it('sube el encabezado, el pie y la firma como imagen, y no acepta otra cosa', async () => {
@@ -183,7 +159,7 @@ describe('plantillas: constancia permanente y correos de uso editable', () => {
 
   it('una plantilla nueva queda en blanco, sin imágenes ni firma', async () => {
     const api = await como()
-    const c = (await api.post('/plantillas', { revista: 'ire', nombre: `Correo en blanco ${Date.now()}` })).body
+    const c = (await api.post('/plantillas', { revista: 'ire', nombre: `Correo en blanco ${Date.now()}`, fin: 'mensaje' })).body
     expect(c).toMatchObject({ cuerpo: '', asunto: '', imagenes: null })
     expect(c).not.toHaveProperty('correoFirma')
     const ok = await api.put(`/plantillas/${c.id}`, { asunto: 'Hola', cuerpo: 'Estimado(a) {{nombre}}' })
@@ -227,24 +203,19 @@ describe('ISSN e indexaciones de cada revista (Configuración)', () => {
   })
 })
 
-describe('crear una plantilla eligiendo para qué sirve', () => {
-  it('nace en blanco, aunque ya haya una en uso, y no hereda su texto ni sus imágenes', async () => {
+describe('una plantilla nueva y la constancia', () => {
+  it('nace en blanco y no hereda el texto de las que ya existen', async () => {
     const api = await como()
-    const enUso = (await api.get('/plantillas')).body.plantillas.find(
-      (p: { revista: string; uso: string | null }) => p.revista === 'reep' && p.uso === 'invitacion',
+    const invitacion = (await api.get('/plantillas')).body.plantillas.find(
+      (p: { revista: string; fin: string }) => p.revista === 'reep' && p.fin === 'invitacion',
     )
-    expect(enUso.cuerpo).not.toBe('')
-    const nombre = `Invitación de prueba ${Date.now()}`
-    const r = await api.post('/plantillas', { revista: 'reep', nombre, uso: 'invitacion' })
+    expect(invitacion.cuerpo).not.toBe('')
+    const r = await api.post('/plantillas', { revista: 'reep', nombre: `Mensaje de prueba ${Date.now()}`, fin: 'mensaje' })
     expect(r.status).toBe(201)
-    expect(r.body).toMatchObject({ clase: 'correo', fin: 'invitacion', uso: null, cuerpo: '', asunto: '' })
-    // en blanco no se puede elegir; con texto sí, y entonces la anterior queda libre
-    expect((await api.post(`/plantillas/${r.body.id}/asignar`, { uso: 'invitacion' })).status).toBe(422)
-    expect((await api.put(`/plantillas/${r.body.id}`, { asunto: 'Asunto', cuerpo: 'Texto {{par}}' })).status).toBe(200)
-    expect((await api.post(`/plantillas/${r.body.id}/asignar`, { uso: 'invitacion' })).status).toBe(200)
-    const lista = (await api.get('/plantillas')).body.plantillas
-    expect(lista.find((p: { id: string }) => p.id === enUso.id).uso).toBeNull()
-    await api.post(`/plantillas/${enUso.id}/asignar`, { uso: 'invitacion' })
+    expect(r.body).toMatchObject({ clase: 'correo', fin: 'mensaje', uso: null, cuerpo: '', asunto: '' })
+    // y la invitación predeterminada sigue siendo la misma
+    const despues = (await api.get('/plantillas')).body.plantillas.find((p: { id: string }) => p.id === invitacion.id)
+    expect(despues).toMatchObject({ uso: 'invitacion', enUso: true, cuerpo: invitacion.cuerpo })
     await api.delete(`/plantillas/${r.body.id}`)
   })
 
@@ -271,13 +242,25 @@ describe('crear una plantilla eligiendo para qué sirve', () => {
     expect([width, height]).toEqual([612, 792])
   })
 
-  it('una plantilla en blanco no se puede elegir y el mensaje lo explica', async () => {
+})
+
+describe('actualización de plantillas viejas', () => {
+  it('una invitación que sobra sigue siendo una invitación: se ofrece al asignar un par, sin ser la predeterminada', async () => {
+    const { pool } = await import('../src/db.js')
+    const { asegurarEsquema } = await import('../src/esquema.js')
+    const nombre = `Sobrante ${Date.now()}`
+    await pool.query(
+      `INSERT INTO plantilla (id_revista, nombre, clase, fin, asunto, cuerpo)
+       VALUES (1, $1, 'correo', 'invitacion', 'Hola {{par}}', 'Estimado(a) {{par}}: evalúe «{{articulo}}».{{botones}}')`,
+      [nombre],
+    )
+    await asegurarEsquema(pool)
     const api = await como()
-    const c = await api.post('/plantillas', { revista: 'ire', nombre: `En blanco ${Date.now()}`, uso: 'invitacion' })
-    expect(c.body.fin).toBe('invitacion')
-    const r = await api.post(`/plantillas/${c.body.id}/asignar`, { uso: 'invitacion' })
-    expect(r.status).toBe(422)
-    expect(r.body.mensaje).toContain('aún no tiene texto')
-    await api.delete(`/plantillas/${c.body.id}`)
+    const p = (await api.get('/plantillas')).body.plantillas.find((x: { nombre: string }) => x.nombre === nombre)
+    expect(p).toMatchObject({ fin: 'invitacion', enUso: false, asunto: 'Hola {{par}}' })
+    const ofrecidas = (await api.get('/reep/correos/plantillas?fin=invitacion')).body as Array<{ id: string; predeterminada: boolean }>
+    expect(ofrecidas[0]?.predeterminada).toBe(true) // la predeterminada sale primero
+    expect(ofrecidas.map((x) => x.id)).toContain(p.id)
+    await api.delete(`/plantillas/${p.id}`)
   })
 })

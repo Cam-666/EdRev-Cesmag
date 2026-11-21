@@ -81,9 +81,7 @@ describe('enviar un correo a mano (Enviar correo)', () => {
     expect(sinCorreo.status).toBe(409)
   })
 
-  it('una plantilla de mensaje no se puede marcar «en uso» y sus datos son los de la persona', async () => {
-    const asignar = await llamar('/plantillas/reep-mensaje/asignar', { metodo: 'POST', cuerpo: { uso: 'mensaje' } })
-    expect(asignar.status).toBe(409)
+  it('una plantilla de mensaje no tiene «en uso» y sus datos son los de la persona', async () => {
     const lista = await json<{ plantillas: Array<{ id: string; variables: string[]; enUso: boolean }> }>(await llamar('/plantillas'))
     const mensaje = lista.plantillas.find((p) => p.id === 'reep-mensaje')
     expect(mensaje?.enUso).toBe(false)

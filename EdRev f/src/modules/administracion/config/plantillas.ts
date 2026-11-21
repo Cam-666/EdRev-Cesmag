@@ -1,63 +1,47 @@
 /*
- * plantillas — clases y usos de una plantilla y la validación antes de guardarla. Una plantilla solo puede usar los
- * datos de su propio fin; ninguno es obligatorio.
+ * plantillas — los textos que ve la persona en Plantillas y la validación antes de guardar. Hay dos listas:
+ * los tres textos AUTOMÁTICOS de cada revista (la invitación al par, el agradecimiento y la constancia), que solo
+ * se editan, y los MENSAJES que escribe la dependencia, que se crean y se eliminan. Una plantilla solo puede usar los
+ * datos de su propio tipo; ninguno es obligatorio.
  */
 import { ETIQUETA_DATO } from '@/lib/datosPlantilla'
 import { marcadores } from '@/lib/plantillas'
-import type { ClasePlantilla, FinPlantilla, Plantilla, UsoPlantilla } from '@/types/plantilla'
+import type { FinPlantilla, Plantilla } from '@/types/plantilla'
 
-export const CLASES_PLANTILLA: Array<{ valor: ClasePlantilla; etiqueta: string }> = [
-  { valor: 'correo', etiqueta: 'Correo' },
-  { valor: 'archivo', etiqueta: 'Archivo' },
+/** Los cuatro grupos de plantillas de cada revista, con su nombre y para qué sirven, en palabras sencillas. */
+export const GRUPOS: Array<{ fin: FinPlantilla; nombre: string; descripcion: string }> = [
+  {
+    fin: 'invitacion',
+    nombre: 'Invitación al par evaluador',
+    descripcion:
+      'Se envía cuando usted asigna un par a un artículo. Puede haber varias: al asignar se escoge cuál usar y sale elegida «la habitual».',
+  },
+  {
+    fin: 'agradecimiento',
+    nombre: 'Agradecimiento al par evaluador',
+    descripcion:
+      'Se envía junto con la constancia cuando usted la emite. Puede haber varias: al emitir se escoge cuál usar y sale elegida «la habitual».',
+  },
+  {
+    fin: 'constancia',
+    nombre: 'Constancia de participación',
+    descripcion: 'Es el documento PDF que recibe el par por haber evaluado un artículo. Hay una sola por revista: solo se edita.',
+  },
+  {
+    fin: 'mensaje',
+    nombre: 'Mensajes libres',
+    descripcion:
+      'Los que usted escribe y envía cuando quiera, con el botón «Enviar correo» en la ficha de un par evaluador o de un autor.',
+  },
 ]
 
-export const ETIQUETA_USO: Record<UsoPlantilla, string> = {
-  invitacion: 'Invitación a evaluar',
-  agradecimiento: 'Agradecimiento',
-  constancia: 'Constancia de participación',
-}
-
-/**
- * Cómo se llama cada tipo de plantilla y qué hace, en palabras sencillas (se usa al crear una plantilla y al
- * mostrar para qué sirve).
- */
-export const ETIQUETA_FIN: Record<FinPlantilla, string> = {
-  invitacion: 'Correo de invitación',
-  agradecimiento: 'Correo de agradecimiento',
-  constancia: 'Constancia',
-  mensaje: 'Correo libre',
-}
-
+/** Lo que dice el formulario de cada tipo de plantilla. */
 export const EXPLICACION_FIN: Record<FinPlantilla, string> = {
-  invitacion: 'Se envía sola al par cuando usted lo asigna a un artículo.',
-  agradecimiento: 'Se envía sola, junto con la constancia, cuando usted emite la constancia.',
-  constancia: 'Es el documento PDF de la constancia que recibe el par. Siempre está en uso: solo se edita.',
+  invitacion: 'Es la invitación que recibe el par cuando usted lo asigna a un artículo. Al asignar se puede escoger entre las invitaciones de la revista.',
+  agradecimiento: 'Es el correo de agradecimiento que acompaña a la constancia. Al emitir la constancia se puede escoger entre los agradecimientos de la revista.',
+  constancia: 'Este es el documento PDF de la constancia que recibe el par.',
   mensaje: 'Sirve para escribirle a un par o a un autor cuando usted quiera, desde su ficha, con el botón «Enviar correo».',
 }
-
-/**
- * Los datos que acepta cada uso (los mismos que valida el servidor). Al cambiar el uso de una plantilla en la
- * pantalla, el editor ofrece los datos del uso elegido antes de guardar.
- */
-export const VARIABLES_POR_FIN: Record<FinPlantilla, string[]> = {
-  invitacion: ['revista', 'numero', 'par', 'profesion', 'universidad', 'articulo', 'botones'],
-  agradecimiento: ['revista', 'par', 'articulo'],
-  constancia: ['revista', 'REVISTA', 'par', 'PAR', 'articulo', 'issn', 'indexaciones', 'fecha', 'anio', 'firma'],
-  mensaje: ['revista', 'nombre', 'universidad', 'profesion', 'fecha', 'anio'],
-}
-
-/** Los correos para los que puede servir una plantilla de correo; la plantilla de archivo es la constancia. */
-export const USOS_CORREO: Array<{ valor: Exclude<UsoPlantilla, 'constancia'>; etiqueta: string }> = [
-  { valor: 'invitacion', etiqueta: 'Invitación a evaluar' },
-  { valor: 'agradecimiento', etiqueta: 'Agradecimiento' },
-]
-
-/** El menú «Uso» de una plantilla de correo (la constancia no cambia de uso y no aparece). */
-export const USOS_DE_CORREO: Array<{ valor: Exclude<FinPlantilla, 'constancia'>; etiqueta: string }> = [
-  { valor: 'invitacion', etiqueta: 'Correo de invitación' },
-  { valor: 'agradecimiento', etiqueta: 'Correo de agradecimiento' },
-  { valor: 'mensaje', etiqueta: 'Correo libre' },
-]
 
 /** Devuelve el primer problema encontrado como frase, o null cuando la plantilla es válida. */
 export function validarPlantilla(

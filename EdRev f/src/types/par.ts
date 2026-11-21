@@ -1,3 +1,4 @@
+import type { EleccionCorreo } from './plantilla'
 import type { EstadoCorreo, TipoCorreo } from './historial'
 import type { Revista } from './revista'
 
@@ -138,5 +139,5 @@ export interface CandidatoPar {
 }
 
 /** Cuerpo de una asignación: un par de la base, o un candidato nuevo que se guarda primero en la base. */
-export type DatosAsignacion = { parId: string } | { nuevo: CandidatoPar }
+export type DatosAsignacion = ({ parId: string } | { nuevo: CandidatoPar }) & EleccionCorreo
 

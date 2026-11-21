@@ -6,15 +6,17 @@
  * revista; sin marcar, solo se envía la constancia. «Más tarde» la deja pendiente en Constancias.
  */
 import { useState } from 'react'
+import { OpcionAgradecimiento } from './OpcionAgradecimiento'
 import { VistaPdfConstancia } from './VistaPdfConstancia'
 import { VistaPreviaConstancia } from './VistaPreviaConstancia'
 import { useEmitirConstancia, useVistaConstancia } from '../hooks/useConstancias'
 import { Alerta } from '@/components/common/Alerta'
 import { Boton } from '@/components/common/Boton'
-import { Casilla } from '@/components/common/Casilla'
 import { EstadoConsulta } from '@/components/common/EstadoConsulta'
 import { Modal } from '@/components/common/Modal'
 import { mensajeDeApi } from '@/lib/api/errores'
+import { useRevista } from '@/lib/revista/useRevista'
+import { useEleccionCorreo } from '@/modules/correos/hooks/useEleccionCorreo'
 
 export interface EmitirConstanciaModalProps {
   constanciaId: string | null
@@ -25,7 +27,12 @@ export interface EmitirConstanciaModalProps {
   onEmitida: (mensaje: string) => void
 }
 
-export function EmitirConstanciaModal({
+/** Se monta solo mientras está abierta, así cada vez empieza con el agradecimiento habitual y sin cambios. */
+export function EmitirConstanciaModal(props: EmitirConstanciaModalProps) {
+  return props.constanciaId !== null ? <Contenido {...props} /> : null
+}
+
+function Contenido({
   constanciaId,
   nombrePar,
   aviso,
@@ -35,11 +42,13 @@ export function EmitirConstanciaModal({
   const vista = useVistaConstancia(constanciaId)
   const emitir = useEmitirConstancia()
   const [conAgradecimiento, setConAgradecimiento] = useState(true)
+  const { revista } = useRevista()
+  const gracias = useEleccionCorreo(revista, 'agradecimiento')
 
   function confirmar() {
     if (!constanciaId) return
     emitir.mutate(
-      { constanciaId, conAgradecimiento },
+      { constanciaId, conAgradecimiento, eleccion: conAgradecimiento ? gracias.eleccion : undefined },
       {
         onSuccess: ({ correo }) => {
           onEmitida(
@@ -56,7 +65,7 @@ export function EmitirConstanciaModal({
   return (
     <Modal
       ancho="amplio"
-      abierto={constanciaId !== null}
+      abierto
       onCerrar={onCerrar}
       titulo={`Emitir la constancia de ${nombrePar}`}
       descripcion={aviso ?? 'La constancia se enviará por correo al par evaluador.'}
@@ -65,7 +74,11 @@ export function EmitirConstanciaModal({
           <Boton variante="neutro" onClick={onCerrar}>
             Más tarde
           </Boton>
-          <Boton cargando={emitir.isPending} disabled={!vista.data} onClick={confirmar}>
+          <Boton
+            cargando={emitir.isPending}
+            disabled={!vista.data || (conAgradecimiento && !gracias.eleccion)}
+            onClick={confirmar}
+          >
             Emitir y enviar
           </Boton>
         </>
@@ -90,11 +103,7 @@ export function EmitirConstanciaModal({
             <VistaPreviaConstancia vista={vista.data} />
           ))}
       </EstadoConsulta>
-      <Casilla
-        etiqueta="Emitir con correo de agradecimiento"
-        marcada={conAgradecimiento}
-        onCambio={setConAgradecimiento}
-      />
+      <OpcionAgradecimiento marcada={conAgradecimiento} onCambio={setConAgradecimiento} estado={gracias} />
     </Modal>
   )
 }

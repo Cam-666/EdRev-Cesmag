@@ -154,7 +154,10 @@ CREATE TABLE correo (
   destinatario  VARCHAR(150) NOT NULL,
   fecha_envio   TIMESTAMPTZ  NOT NULL DEFAULT now(),
   resultado     VARCHAR(8)   NOT NULL DEFAULT 'en-cola'
-                  CHECK (resultado IN ('en-cola','enviado','rebotado','fallido'))
+                  CHECK (resultado IN ('en-cola','enviado','rebotado','fallido')),
+  id_plantilla  SMALLINT     REFERENCES plantilla ON DELETE SET NULL,  -- la plantilla elegida al enviar (NULL: la predeterminada)
+  asunto_propio VARCHAR(300),                                         -- asunto y texto editados solo para este envío
+  cuerpo_propio TEXT
 );
  
 -- 4b. Registros migrados del Excel cuyo texto libre no encajó en las listas del sistema

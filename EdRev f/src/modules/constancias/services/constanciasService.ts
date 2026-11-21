@@ -9,6 +9,7 @@ import type {
   ResultadoEmisionMasiva,
   VistaConstancia,
 } from '@/types/constancia'
+import type { EleccionCorreo } from '@/types/plantilla'
 import type { Revista } from '@/types/revista'
 
 const id = (valor: string) => encodeURIComponent(valor)
@@ -29,20 +30,22 @@ export function emitirConstancia(
   revista: Revista,
   constanciaId: string,
   conAgradecimiento: boolean,
+  eleccion?: EleccionCorreo,
 ): Promise<ResultadoEmision> {
   return solicitar<ResultadoEmision>(`/${revista}/constancias/${id(constanciaId)}/emitir`, {
     method: 'POST',
-    body: JSON.stringify({ conAgradecimiento }),
+    body: JSON.stringify({ conAgradecimiento, ...eleccion }),
   })
 }
 
 export function emitirPendientes(
   revista: Revista,
   conAgradecimiento: boolean,
+  eleccion?: EleccionCorreo,
 ): Promise<ResultadoEmisionMasiva> {
   return solicitar<ResultadoEmisionMasiva>(`/${revista}/constancias/emitir-pendientes`, {
     method: 'POST',
-    body: JSON.stringify({ conAgradecimiento }),
+    body: JSON.stringify({ conAgradecimiento, ...eleccion }),
   })
 }
 

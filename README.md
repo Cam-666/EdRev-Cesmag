@@ -139,7 +139,7 @@ revise en **Correos enviados** que la invitación quede «Enviado». Si no llega
 | El correo queda **En cola** | `CORREO_MODO` está en `apagado` o no se ha reiniciado la API. |
 | **Fallido** y en la consola `Brevo 4xx` | Brevo rechazó el envío: clave API mala, remitente sin verificar o tope diario. El mensaje de Brevo sale en la consola. Los fallidos se reintentan solos unas veces y luego con «Reintentar fallidos». |
 | **Rebotado** | La dirección del par no existe. Se corrige con «Corregir y reenviar». |
-| «Sin plantilla en uso» en la consola | La revista no tiene plantilla elegida para ese correo: se elige en Administración › Configuración. |
+| «Sin plantilla en uso» en la consola | La revista no tiene una plantilla habitual con texto para ese correo: se escribe en Administración › Plantillas. |
 | Los correos salen sin escudo | `LOGO_CORREO_URL` no es alcanzable desde Internet. |
 
 ## Cómo funciona por dentro (para soporte)
@@ -150,11 +150,14 @@ revise en **Correos enviados** que la invitación quede «Enviado». Si no llega
   `src/servicios/segundoIntento.ts`.
 - **Capas de la API:** ruta → controlador (valida la petición) → servicio (reglas de negocio y SQL). Las rutas públicas
   (ingreso, respuesta del par, webhook, escudo) están separadas de las privadas, que exigen sesión.
-- **Plantillas:** cada revista tiene las suyas. Una plantilla conserva el tipo para el que se creó (`fin`: invitación,
-  agradecimiento, constancia o mensaje). Las tres primeras se envían solas y la que está en uso se marca con el botón
-  «Usar esta plantilla» de la propia plantilla (ya no hay que ir a Configuración). Las de **mensaje** nunca están «en
-  uso»: se eligen al pulsar **Enviar correo** en la ficha de un par o de un autor. Las nuevas nacen en blanco. El
-  texto se guarda con marcas sencillas (`{{par}}`, `[centro]`, `**negrita**`) que el editor de la página oculta.
+- **Plantillas:** cada revista tiene las suyas, y cada una sirve para algo fijo que se elige al crearla (`fin`:
+  invitación, agradecimiento, constancia o mensaje libre). De invitación y de agradecimiento puede haber varias: una es
+  «la habitual» (`plantilla.tipo`, sale elegida de entrada) y quien asigna un par o emite una constancia puede escoger
+  otra, o cambiar el texto solo para ese envío, en la ventana que muestra el correo. La elección se guarda con el correo
+  (`correo.id_plantilla`, `asunto_propio`, `cuerpo_propio`) y la usan el envío, el segundo intento y el reenvío. La
+  constancia es una por revista y solo se edita. Las de **mensaje** se eligen al pulsar **Enviar correo** en la ficha de
+  un par o de un autor. Las nuevas nacen en blanco. El texto se guarda con marcas sencillas (`{{par}}`, `[centro]`,
+  `**negrita**`) que el editor de la página oculta.
 - **Mensajes a mano:** un correo que la dependencia le escribe a un par o a un autor se guarda en la tabla `mensaje`
   (no en `correo`, que es de las evaluaciones), sale desde la revista elegida y aparece en «Correos enviados» como
   «Mensaje». Ver `src/servicios/mensajes.ts`.

@@ -20,13 +20,19 @@ interface Vencida {
   nombre: string
   correo: string | null
   enviados: number
+  id_plantilla: number | null
+  asunto_propio: string | null
+  cuerpo_propio: string | null
 }
 
-async function revisar(): Promise<void> {
+export async function revisar(): Promise<void> {
   const dias = await diasEspera(pool)
   const { rows } = await pool.query<Vencida>(
     `SELECT e.id_evaluacion, e.id_articulo, a.id_revista, p.id_par, p.nombre, p.correo,
-            count(c.*) FILTER (WHERE c.resultado = 'enviado')::int AS enviados
+            count(c.*) FILTER (WHERE c.resultado = 'enviado')::int AS enviados,
+            (array_agg(c.id_plantilla ORDER BY c.id_correo DESC))[1] AS id_plantilla,
+            (array_agg(c.asunto_propio ORDER BY c.id_correo DESC))[1] AS asunto_propio,
+            (array_agg(c.cuerpo_propio ORDER BY c.id_correo DESC))[1] AS cuerpo_propio
        FROM evaluacion e
        JOIN articulo a ON a.id_articulo = e.id_articulo
        JOIN par_evaluador p ON p.id_par = e.id_par
@@ -40,7 +46,12 @@ async function revisar(): Promise<void> {
   for (const v of rows) {
     await enTransaccion(async (c) => {
       if (v.enviados < config.intentosAntesBloqueo && v.correo) {
-        await encolar(c, v.id_evaluacion, 'invitacion', v.correo)
+        // Cada intento usa la misma plantilla (y el mismo texto, si se editó) que eligió quien asignó al par.
+        await encolar(c, v.id_evaluacion, 'invitacion', v.correo, {
+          plantillaId: v.id_plantilla ?? undefined,
+          asunto: v.asunto_propio ?? undefined,
+          cuerpo: v.cuerpo_propio ?? undefined,
+        })
         await auditar(c, {
           usuario: null,
           tabla: 'evaluacion',

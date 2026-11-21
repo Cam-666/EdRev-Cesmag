@@ -217,21 +217,23 @@ describe('constancias API (mock)', () => {
 })
 
 describe('templates API', () => {
-  it('each journal has its own three automatic templates plus a message template; Administradora only', async () => {
+  it('each journal has its own templates for each use; Administradora only', async () => {
     expect((await llamar('/plantillas', { usuario: AUXILIAR })).status).toBe(403)
     const d = await json<DatosPlantillas>(await llamar('/plantillas'))
-    expect(d.plantillas.map((p) => p.id)).toEqual([
+    expect(d.plantillas.filter((p) => p.revista === 'reep').map((p) => p.id)).toEqual([
       'reep-invitacion',
       'reep-agradecimiento',
       'reep-constancia',
+      'reep-invitacion-breve',
+      'reep-agradecimiento-breve',
       'reep-mensaje',
-      'ire-invitacion',
-      'ire-agradecimiento',
-      'ire-constancia',
-      'ire-mensaje',
     ])
-    // las tres automáticas están en uso; la de mensaje nunca lo está (se elige al enviar un correo)
-    expect(d.plantillas.filter((p) => p.fin !== 'mensaje').every((p) => p.enUso)).toBe(true)
+    // por cada revista, una invitación, un agradecimiento y una constancia son los habituales; las demás no lo son
+    for (const revista of ['reep', 'ire']) {
+      for (const fin of ['invitacion', 'agradecimiento', 'constancia']) {
+        expect(d.plantillas.filter((p) => p.revista === revista && p.fin === fin && p.enUso)).toHaveLength(1)
+      }
+    }
     expect(d.plantillas.filter((p) => p.fin === 'mensaje').every((p) => !p.enUso)).toBe(true)
     // Solo la constancia (una plantilla de archivo) lleva imágenes de encabezado, pie y firma
     expect(d.plantillas.filter((p) => p.imagenes).map((p) => p.id)).toEqual([
@@ -292,69 +294,62 @@ describe('templates API', () => {
     )
   })
 
-  it('a new template only needs a name: it is a free mail, its use is changed when editing and it is chosen afterwards', async () => {
-    const datos = { revista: 'reep', nombre: 'Invitación breve' }
+  it('a new template asks for its journal, a name and what it is for; it is blank and its use never changes', async () => {
+    const datos = { revista: 'reep', nombre: 'Invitación formal', fin: 'invitacion' }
     expect(
       (await llamar('/plantillas', { metodo: 'POST', usuario: AUXILIAR, cuerpo: datos })).status,
     ).toBe(403)
     expect(
       (await llamar('/plantillas', { metodo: 'POST', cuerpo: { ...datos, nombre: ' ' } })).status,
     ).toBe(422)
+    // hay que decir para qué es, y la constancia no se crea
+    expect((await llamar('/plantillas', { metodo: 'POST', cuerpo: { revista: 'reep', nombre: 'Sin uso' } })).status).toBe(422)
+    expect((await llamar('/plantillas', { metodo: 'POST', cuerpo: { ...datos, nombre: 'Otra', fin: 'constancia' } })).status).toBe(422)
     const r = await llamar('/plantillas', { metodo: 'POST', cuerpo: datos })
     expect(r.status).toBe(201)
     const nueva = await json<Plantilla>(r)
-    expect(nueva).toMatchObject({ revista: 'reep', uso: null, enUso: false, fin: 'mensaje', clase: 'correo' })
+    expect(nueva).toMatchObject({ revista: 'reep', uso: null, enUso: false, fin: 'invitacion', clase: 'correo' })
     expect(nueva.cuerpo).toBe('') // a new template is blank
     expect((await llamar('/plantillas', { metodo: 'POST', cuerpo: datos })).status).toBe(409)
     // El mismo nombre está bien en la otra revista
-    const enIre = await llamar('/plantillas', {
-      metodo: 'POST',
-      cuerpo: { ...datos, revista: 'ire' },
-    })
+    const enIre = await llamar('/plantillas', { metodo: 'POST', cuerpo: { ...datos, revista: 'ire' } })
     expect(enIre.status).toBe(201)
 
-    // el uso se cambia al editarla: como invitación acepta {{par}} y {{articulo}}; como libre no
-    const comoLibre = await llamar(`/plantillas/${nueva.id}`, {
+    // una invitación acepta {{par}} y {{articulo}}; {{nombre}} es de los mensajes
+    const conNombre = await llamar(`/plantillas/${nueva.id}`, {
       metodo: 'PUT',
-      cuerpo: { asunto: 'Invitación · {{revista}}', cuerpo: 'Hola {{par}}' },
+      cuerpo: { asunto: 'Hola · {{revista}}', cuerpo: 'Hola {{nombre}}' },
     })
-    expect(comoLibre.status).toBe(422)
-    const comoInvitacion = await llamar(`/plantillas/${nueva.id}`, {
+    expect(conNombre.status).toBe(422)
+    const bien = await llamar(`/plantillas/${nueva.id}`, {
       metodo: 'PUT',
-      cuerpo: {
-        asunto: 'Invitación · {{revista}}',
-        cuerpo: 'Hola {{par}}, ¿evalúa «{{articulo}}»?',
-        fin: 'invitacion',
-      },
+      cuerpo: { asunto: 'Hola · {{revista}}', cuerpo: 'Hola {{par}}, ¿evalúa «{{articulo}}»?', fin: 'mensaje' },
     })
-    expect(comoInvitacion.status).toBe(200)
-    expect((await json<Plantilla>(comoInvitacion)).fin).toBe('invitacion')
-    expect(await asuntoDeLaInvitacion()).toBe(
-      'Invitación a evaluar un artículo · Revista Electrónica en Educación y Pedagogía',
-    )
+    expect(bien.status).toBe(200)
+    // el fin nunca cambia, aunque se envíe
+    expect((await json<Plantilla>(bien)).fin).toBe('invitacion')
 
-    expect(
-      (await llamar(`/plantillas/${nueva.id}/asignar`, { metodo: 'POST', cuerpo: { uso: 'constancia' } }))
-        .status,
-    ).toBe(409)
-    expect(
-      (await llamar(`/plantillas/${nueva.id}/asignar`, { metodo: 'POST', cuerpo: { uso: 'invitacion' } }))
-        .status,
-    ).toBe(200)
-    expect(await asuntoDeLaInvitacion(2)).toBe(
-      'Invitación · Revista Electrónica en Educación y Pedagogía',
-    )
+    // se deja como la habitual: la anterior pasa a ser una más
+    const marcada = await llamar(`/plantillas/${nueva.id}/predeterminada`, { metodo: 'POST' })
+    expect(marcada.status).toBe(200)
     const d = await json<DatosPlantillas>(await llamar('/plantillas'))
-    const enUso = d.plantillas.filter((p) => p.uso === 'invitacion' && p.enUso).map((p) => p.id)
-    // Una en uso por revista: la de IRE no cambió
-    expect(enUso).toEqual(['ire-invitacion', nueva.id])
+    expect(d.plantillas.filter((p) => p.revista === 'reep' && p.fin === 'invitacion' && p.enUso).map((p) => p.id)).toEqual([nueva.id])
+    // y no se elimina mientras es la habitual
+    expect((await llamar(`/plantillas/${nueva.id}`, { metodo: 'DELETE' })).status).toBe(409)
+    await llamar('/plantillas/reep-invitacion/predeterminada', { metodo: 'POST' })
+    expect((await llamar(`/plantillas/${nueva.id}`, { metodo: 'DELETE' })).status).toBe(204)
+    // la constancia y los mensajes no tienen habitual; una en blanco tampoco puede serlo
+    expect((await llamar('/plantillas/reep-constancia/predeterminada', { metodo: 'POST' })).status).toBe(409)
+    expect((await llamar('/plantillas/reep-mensaje/predeterminada', { metodo: 'POST' })).status).toBe(409)
+    const blanca = await json<Plantilla>(await llamar('/plantillas', { metodo: 'POST', cuerpo: { revista: 'reep', nombre: 'En blanco', fin: 'agradecimiento' } }))
+    expect((await llamar(`/plantillas/${blanca.id}/predeterminada`, { metodo: 'POST' })).status).toBe(422)
   })
 
-  it('a template in use cannot be deleted; one without use can', async () => {
+  it('the habitual template cannot be deleted; the others can', async () => {
     const creada = await json<Plantilla>(
       await llamar('/plantillas', {
         metodo: 'POST',
-        cuerpo: { revista: 'ire', nombre: 'Para eliminar' },
+        cuerpo: { revista: 'ire', nombre: 'Para eliminar', fin: 'mensaje' },
       }),
     )
     expect((await llamar('/plantillas/ire-invitacion', { metodo: 'DELETE' })).status).toBe(409)
@@ -362,26 +357,18 @@ describe('templates API', () => {
     expect((await llamar(`/plantillas/${creada.id}`, { metodo: 'DELETE' })).status).toBe(404)
   })
 
-  it('the constancia of each journal is permanent: it cannot be created again nor deleted, and its use does not change', async () => {
-    for (const cuerpo of [
-      { revista: 'ire', nombre: 'Constancia 2027', clase: 'archivo' },
-      { revista: 'ire', nombre: 'Constancia 2028', uso: 'constancia' },
-    ]) {
-      expect((await llamar('/plantillas', { metodo: 'POST', cuerpo })).status).toBe(409)
-    }
-    const borrar = await llamar('/plantillas/ire-constancia', { metodo: 'DELETE' })
-    expect(borrar.status).toBe(409)
-    const cambiar = await llamar('/plantillas/ire-constancia', {
-      metodo: 'PUT',
-      cuerpo: { asunto: null, cuerpo: '{{par}}', fin: 'mensaje' },
-    })
-    expect(cambiar.status).toBe(409)
-    // y la que está en uso como invitación no cambia de uso
-    const enUso = await llamar('/plantillas/ire-invitacion', {
-      metodo: 'PUT',
-      cuerpo: { asunto: 'Hola', cuerpo: 'Hola {{par}}', fin: 'mensaje' },
-    })
-    expect(enUso.status).toBe(409)
+  it('the constancia is permanent: it is only edited', async () => {
+    expect((await llamar('/plantillas/ire-constancia', { metodo: 'DELETE' })).status).toBe(409)
+    // una plantilla nueva nunca es una constancia
+    expect((await llamar('/plantillas', { metodo: 'POST', cuerpo: { revista: 'ire', nombre: 'Constancia 2027', fin: 'constancia' } })).status).toBe(422)
+  })
+
+  it('the editorial staff gets the templates to choose from when sending: the habitual one first', async () => {
+    const lista = await json<Array<{ id: string; predeterminada: boolean }>>(await llamar('/reep/correos/plantillas?fin=invitacion', { usuario: AUXILIAR }))
+    expect(lista[0]).toMatchObject({ id: 'reep-invitacion', predeterminada: true })
+    expect(lista.map((p) => p.id)).toContain('reep-invitacion-breve')
+    expect((await llamar('/ire/correos/plantillas?fin=invitacion')).status).toBe(200)
+    expect((await llamar('/reep/correos/plantillas?fin=mensaje')).status).toBe(422)
   })
 })
 

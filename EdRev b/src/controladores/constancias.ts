@@ -9,11 +9,21 @@ import { usuarioDe } from '../middlewares/autenticacion.js'
 import * as constancias from '../servicios/gestionConstancias.js'
 
 /** Si el correo que lleva la constancia es el de agradecimiento (lo normal) o solo la constancia. */
-const opciones = z.object({ conAgradecimiento: z.boolean().default(true) })
+const opciones = z.object({
+  conAgradecimiento: z.boolean().default(true),
+  // La plantilla de agradecimiento elegida y, si se editó, su texto solo para este envío.
+  plantillaId: z.string().optional(),
+  asunto: z.string().max(300).optional(),
+  cuerpo: z.string().optional(),
+})
 
 const revistaDe = (req: Request) => idRevista(req.params.revista)
 const constanciaDe = (req: Request) => idNumerico(req.params.id, 'Constancia')
-const conAgradecimiento = (req: Request) => opciones.parse(req.body ?? {}).conAgradecimiento
+/** Lo que pide la petición: si lleva agradecimiento y la elección de plantilla. */
+function envioDe(req: Request) {
+  const { conAgradecimiento, plantillaId, ...texto } = opciones.parse(req.body ?? {})
+  return { con: conAgradecimiento, eleccion: { ...texto, plantillaId: plantillaId ? idNumerico(plantillaId, 'Plantilla') : undefined } }
+}
 
 export async function listar(req: Request, res: Response): Promise<void> {
   res.json(await constancias.listarConstancias(revistaDe(req)))
@@ -31,13 +41,16 @@ export async function pdf(req: Request, res: Response): Promise<void> {
 }
 
 export async function emitirPendientes(req: Request, res: Response): Promise<void> {
-  res.json(await constancias.emitirPendientes(revistaDe(req), usuarioDe(req).id, conAgradecimiento(req)))
+  const { con, eleccion } = envioDe(req)
+  res.json(await constancias.emitirPendientes(revistaDe(req), usuarioDe(req).id, con, eleccion))
 }
 
 export async function emitir(req: Request, res: Response): Promise<void> {
-  res.json(await constancias.emitirConstancia(revistaDe(req), constanciaDe(req), usuarioDe(req).id, conAgradecimiento(req)))
+  const { con, eleccion } = envioDe(req)
+  res.json(await constancias.emitirConstancia(revistaDe(req), constanciaDe(req), usuarioDe(req).id, con, eleccion))
 }
 
 export async function reenviar(req: Request, res: Response): Promise<void> {
-  res.json(await constancias.reenviarConstancia(revistaDe(req), constanciaDe(req), usuarioDe(req).id, conAgradecimiento(req)))
+  const { con, eleccion } = envioDe(req)
+  res.json(await constancias.reenviarConstancia(revistaDe(req), constanciaDe(req), usuarioDe(req).id, con, eleccion))
 }

@@ -9,10 +9,8 @@ import type { EntradaAuditoria, TipoAuditoria } from '@/types/historial'
 import type {
   DatosNuevaPlantilla,
   DatosPlantillas,
-  FinPlantilla,
   ParteImagen,
   Plantilla,
-  UsoPlantilla,
 } from '@/types/plantilla'
 import type { Revista } from '@/types/revista'
 import type { DatosUsuario, Usuario } from '@/types/usuario'
@@ -115,22 +113,19 @@ export function vistaPdfConstancia(id: string, cuerpo: string): Promise<Blob> {
   })
 }
 
-/** Hace que esta plantilla sea la que su revista envía para un uso; la que tenía ese uso queda libre. */
-export function asignarPlantilla(id: string, uso: UsoPlantilla): Promise<Plantilla> {
-  return solicitar<Plantilla>(`/plantillas/${encodeURIComponent(id)}/asignar`, {
-    method: 'POST',
-    ...json({ uso }),
-  })
+/** Deja la plantilla como la habitual de su revista: la que sale elegida al asignar un par o emitir una constancia. */
+export function marcarPredeterminada(id: string): Promise<Plantilla> {
+  return solicitar<Plantilla>(`/plantillas/${encodeURIComponent(id)}/predeterminada`, { method: 'POST' })
 }
 
-/** Elimina una plantilla que no está en uso. */
+/** Elimina una plantilla que no es la habitual de su revista. */
 export function eliminarPlantilla(id: string): Promise<void> {
   return solicitar<undefined>(`/plantillas/${encodeURIComponent(id)}`, { method: 'DELETE' })
 }
 
 export function guardarPlantilla(
   id: string,
-  datos: { asunto: string | null; cuerpo: string; fin?: FinPlantilla },
+  datos: { asunto: string | null; cuerpo: string },
 ): Promise<Plantilla> {
   return solicitar<Plantilla>(`/plantillas/${encodeURIComponent(id)}`, {
     method: 'PUT',

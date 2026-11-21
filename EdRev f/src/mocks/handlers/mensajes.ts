@@ -58,7 +58,41 @@ function datosDe(revista: Revista, p: Persona): Record<string, string> {
   }
 }
 
+/** Las plantillas de invitación o de agradecimiento con texto, la predeterminada primero (como el servidor real). */
+function deEnvio(revista: Revista, fin: string | null) {
+  return plantillas()
+    .filter((p) => p.revista === revista && p.fin === fin && p.cuerpo.trim())
+    .sort((a, b) => Number(b.enUso) - Number(a.enUso) || a.nombre.localeCompare(b.nombre))
+}
+
 export const handlersMensajes = [
+  http.get('*/api/:revista/correos/plantillas', ({ params, request }) => {
+    const c = contexto(params, request)
+    if (!c.ok) return c.respuesta
+    const fin = new URL(request.url).searchParams.get('fin')
+    if (fin !== 'invitacion' && fin !== 'agradecimiento') return error(422, 'Indique si es una invitación o un agradecimiento')
+    return HttpResponse.json(
+      deEnvio(c.revista, fin).map((p) => ({
+        id: p.id,
+        nombre: p.nombre,
+        predeterminada: p.enUso,
+        asunto: p.asunto ?? '',
+        cuerpo: p.cuerpo,
+        variables: p.variables,
+      })),
+    )
+  }),
+
+  http.post('*/api/:revista/correos/vista-previa', async ({ params, request }) => {
+    const c = contexto(params, request)
+    if (!c.ok) return c.respuesta
+    const { fin, cuerpo } = (await request.json()) as { fin: string; cuerpo: string }
+    const titulo = fin === 'agradecimiento' ? 'Gracias por su evaluación' : 'Invitación a evaluar un artículo'
+    return HttpResponse.json({
+      html: `<!doctype html><html lang="es"><body><h1>Universidad CESMAG</h1><h2>${titulo}</h2><p>${cuerpo}</p><small>Aviso de datos personales</small></body></html>`,
+    })
+  }),
+
   http.get('*/api/:revista/mensajes/plantillas', ({ params, request }) => {
     const c = contexto(params, request)
     if (!c.ok) return c.respuesta

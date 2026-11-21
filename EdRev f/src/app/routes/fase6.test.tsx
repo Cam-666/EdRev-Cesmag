@@ -2,7 +2,7 @@ import { screen, waitFor, within } from '@testing-library/react'
 import { axe } from 'vitest-axe'
 import { AUXILIAR } from '@/mocks/seed/usuarios'
 import { json, llamar } from '@/test/llamarApi'
-import { montarRuta } from '@/test/montarRuta'
+import { elegirOpcion, montarRuta } from '@/test/montarRuta'
 
 describe('constancias screen', () => {
   it('previews a pending constancia, issues it and leaves the mail in Correos enviados', async () => {
@@ -171,8 +171,7 @@ describe('administration', () => {
   it('rejects a constancia template with an unknown marker and shows the error', async () => {
     const { user } = montarRuta('/administracion/plantillas')
     await screen.findByRole('heading', { level: 2, name: 'Plantillas' })
-    await user.click(await screen.findByRole('combobox', { name: 'Plantilla' }))
-    await user.click(await screen.findByRole('option', { name: /^Constancia de participación/ }))
+    await user.click(await screen.findByRole('button', { name: 'Editar Constancia de participación' }))
     const texto = await screen.findByLabelText('Texto')
     await user.clear(texto)
     await user.type(texto, 'HACE CONSTAR QUE [[Número de la solicitud] evaluó.')
@@ -183,8 +182,7 @@ describe('administration', () => {
 
   it('each journal has its own templates; the constancia shows its header, footer and signature', async () => {
     const { user } = montarRuta('/administracion/plantillas')
-    await user.click(await screen.findByRole('combobox', { name: 'Plantilla' }))
-    await user.click(await screen.findByRole('option', { name: /^Constancia de participación/ }))
+    await user.click(await screen.findByRole('button', { name: 'Editar Constancia de participación' }))
     expect(await screen.findByRole('heading', { name: 'Encabezado, pie de página y firma' })).toBeInTheDocument()
     expect(screen.getByLabelText('Imagen de encabezado')).toHaveAttribute(
       'accept',
@@ -192,10 +190,10 @@ describe('administration', () => {
     )
     expect(screen.getByRole('button', { name: 'Ver archivo en PDF' })).toBeInTheDocument()
 
-    await user.click(screen.getByRole('combobox', { name: 'Revista' }))
+    await user.click(screen.getByRole('button', { name: /Volver a las plantillas/ }))
+    await user.click(await screen.findByRole('combobox', { name: 'Revista' }))
     await user.click(await screen.findByRole('option', { name: 'Investigium IRE' }))
-    await user.click(screen.getByRole('combobox', { name: 'Plantilla' }))
-    await user.click(await screen.findByRole('option', { name: /^Constancia de participación/ }))
+    await user.click(await screen.findByRole('button', { name: 'Editar Constancia de participación' }))
     expect(await screen.findByRole('heading', { name: 'Encabezado, pie de página y firma' })).toBeInTheDocument()
     // La vista previa es el PDF mismo, en un visor dentro de la página
     expect(await screen.findByRole('heading', { name: 'Vista previa de la constancia' })).toBeInTheDocument()
@@ -203,6 +201,7 @@ describe('administration', () => {
 
   it('the preview of a mail template is the mail itself, with its header, not a plain text', async () => {
     const { user } = montarRuta('/administracion/plantillas')
+    await user.click(await screen.findByRole('button', { name: 'Editar Invitación a evaluar' }))
     expect(await screen.findByRole('heading', { name: 'Vista previa del correo' })).toBeInTheDocument()
     const marco = await screen.findByTitle('Vista previa del correo')
     expect(marco.tagName).toBe('IFRAME')
@@ -216,63 +215,53 @@ describe('administration', () => {
 
   it('shows only the templates: no sender account box and no credentials', async () => {
     montarRuta('/administracion/plantillas')
-    await screen.findByRole('combobox', { name: 'Plantilla' })
+    await screen.findByRole('heading', { level: 3, name: 'Mensajes libres' })
     expect(screen.queryByRole('heading', { name: /Cuenta remitente/ })).toBeNull()
     expect(screen.queryByDisplayValue('editorial.eyp@gmail.com')).toBeNull()
     expect(screen.queryByLabelText(/contraseña/i)).toBeNull()
   })
 
-  it('creates a new template without a use, and the Administradora can delete it', async () => {
+  it('creates a message with just a name, edits it, and the Administradora can delete it', async () => {
     const { user } = montarRuta('/administracion/plantillas')
     await user.click(await screen.findByRole('button', { name: 'Nueva plantilla' }))
     const dialogo = await screen.findByRole('dialog', { name: 'Nueva plantilla' })
     await user.click(within(dialogo).getByRole('button', { name: 'Crear plantilla' }))
-    expect(
-      await within(dialogo).findByText('Escriba el nombre de la plantilla.'),
-    ).toBeInTheDocument()
+    expect(await within(dialogo).findByText('Escriba el nombre de la plantilla.')).toBeInTheDocument()
     await user.type(within(dialogo).getByLabelText('Nombre'), 'Invitación en inglés')
+    await elegirOpcion(user, '¿Para qué es?', 'Mensaje libre para un par o un autor')
     await user.click(within(dialogo).getByRole('button', { name: 'Crear plantilla' }))
     await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull())
 
-    const lista = await screen.findByRole('combobox', { name: 'Plantilla' })
-    await waitFor(() => expect(lista).toHaveTextContent('Invitación en inglés'))
-    // una plantilla nueva está en blanco: la persona la escribe
+    // se abre para escribirla: nace en blanco y sin nada más que elegir
+    expect(await screen.findByRole('heading', { level: 3, name: /Invitación en inglés/ })).toBeInTheDocument()
     expect(screen.getByLabelText('Texto').textContent).toBe('')
-    // por omisión es un mensaje para enviar a mano: se explica y no se marca «en uso»
     expect(screen.getByText(/Sirve para escribirle a un par o a un autor/)).toBeInTheDocument()
     expect(screen.queryByRole('button', { name: 'Usar esta plantilla' })).toBeNull()
-    expect(screen.queryByText('Invitación en inglés (en uso', { exact: false })).toBeNull()
 
-    await user.click(screen.getByRole('button', { name: 'Eliminar plantilla' }))
+    await user.click(screen.getByRole('button', { name: /Volver a las plantillas/ }))
+    await user.click(await screen.findByRole('button', { name: /Eliminar\s+Invitación en inglés/ }))
     const confirmar = await screen.findByRole('dialog', { name: 'Eliminar plantilla' })
     await user.click(within(confirmar).getByRole('button', { name: 'Eliminar plantilla' }))
     await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull())
-    await waitFor(() => expect(screen.getByRole('combobox', { name: 'Plantilla' })).not.toHaveTextContent('Invitación en inglés'))
+    await waitFor(() => expect(screen.queryByText('Invitación en inglés')).toBeNull())
   })
 
-  it('a new template is blank, has no «use now» option, and the data are inserted with a button', async () => {
+  it('a new message is blank and the data are inserted with a button', async () => {
     const { user } = montarRuta('/administracion/plantillas')
     await user.click(await screen.findByRole('button', { name: 'Nueva plantilla' }))
     const dialogo = await screen.findByRole('dialog', { name: 'Nueva plantilla' })
     expect(within(dialogo).queryByRole('checkbox')).toBeNull()
-    // al crearla solo se pide el nombre
-    expect(within(dialogo).queryByRole('combobox')).toBeNull()
     await user.type(within(dialogo).getByLabelText('Nombre'), 'Invitación renovada')
+    await elegirOpcion(user, '¿Para qué es?', 'Mensaje libre para un par o un autor')
     await user.click(within(dialogo).getByRole('button', { name: 'Crear plantilla' }))
     await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull())
-    // el uso se elige después, en la propia plantilla (empieza como correo libre)
-    expect(await screen.findByRole('combobox', { name: 'Uso de la plantilla' })).toHaveTextContent('Correo libre')
-    expect(screen.queryByRole('button', { name: 'Usar esta plantilla' })).toBeNull()
-    await user.click(screen.getByRole('combobox', { name: 'Uso de la plantilla' }))
-    await user.click(await screen.findByRole('option', { name: 'Correo de invitación' }))
-    expect(await screen.findByRole('button', { name: 'Usar esta plantilla' })).toBeInTheDocument()
 
-    const texto = screen.getByLabelText('Texto')
+    const texto = await screen.findByLabelText('Texto')
     expect(texto.textContent).toBe('')
     await user.click(screen.getByRole('button', { name: 'Universidad del par' }))
     expect(texto.textContent).toBe('[Universidad del par]')
-    await user.click(screen.getByRole('button', { name: 'Nombre del par' }))
-    expect(texto.textContent).toBe('[Universidad del par][Nombre del par]')
+    await user.click(screen.getByRole('button', { name: 'Nombre del destinatario' }))
+    expect(texto.textContent).toBe('[Universidad del par][Nombre del destinatario]')
     // la vista previa es el correo con su marco, todavía sin texto
     const marco = await screen.findByTitle('Vista previa del correo')
     expect(marco).toHaveAttribute('srcdoc', expect.stringContaining('Universidad CESMAG'))

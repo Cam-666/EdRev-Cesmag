@@ -10,6 +10,7 @@ import { ErrorHttp } from '../lib/http.js'
 import { textoPlano } from '../lib/formato.js'
 import { iso } from '../lib/mapeo.js'
 import { generarConstancia, valoresDe } from './constanciaPdf.js'
+import { validarEleccion, type EleccionEnvio } from './administracion/plantillas.js'
 import { encolar } from './correos.js'
 
 interface FilaEntrega {
@@ -65,6 +66,7 @@ async function emitir(
   f: FilaEntrega,
   reemision: boolean,
   conAgradecimiento: boolean,
+  eleccion?: EleccionEnvio,
 ) {
   if (!f.correo) throw new ErrorHttp(422, `${f.nombre} no tiene correo: regístrelo antes de enviar la constancia`)
   // La constancia se emite cuando la evaluación está completa: concepto y fecha registrados.
@@ -78,7 +80,7 @@ async function emitir(
     }
   }
   await c.query('UPDATE evaluacion SET constancia_emitida = TRUE WHERE id_evaluacion = $1', [f.id_evaluacion])
-  const estado = await encolar(c, f.id_evaluacion, conAgradecimiento ? 'agradecimiento' : 'constancia', f.correo)
+  const estado = await encolar(c, f.id_evaluacion, conAgradecimiento ? 'agradecimiento' : 'constancia', f.correo, conAgradecimiento ? eleccion : undefined)
   await auditar(c, {
     usuario,
     tabla: 'evaluacion',
@@ -135,13 +137,14 @@ export async function descargarConstancia(revista: number, id: number) {
 }
 
 /** Emite todas las constancias pendientes, una por una; las que no se pueden emitir se cuentan aparte. */
-export async function emitirPendientes(revista: number, actor: number, conAgradecimiento: boolean) {
+export async function emitirPendientes(revista: number, actor: number, conAgradecimiento: boolean, eleccion?: EleccionEnvio) {
+  const elegida = conAgradecimiento ? await validarEleccion(revista, 'agradecimiento', eleccion) : undefined
   const { rows } = await pool.query<FilaEntrega>(`${SELECCION} AND NOT e.constancia_emitida`, [revista])
   const resultados = []
   const motivos: Array<{ par: string; motivo: string }> = []
   for (const f of rows) {
     try {
-      resultados.push(await enTransaccion((c) => emitir(c, revista, actor, f, false, conAgradecimiento)))
+      resultados.push(await enTransaccion((c) => emitir(c, revista, actor, f, false, conAgradecimiento, elegida)))
     } catch (e) {
       // Un motivo conocido (falta el correo o el concepto) se le dice al usuario; cualquier otra cosa es un error del sistema.
       if (!(e instanceof ErrorHttp)) console.error('Constancia no emitida:', e)
@@ -151,18 +154,20 @@ export async function emitirPendientes(revista: number, actor: number, conAgrade
   return { emitidas: resultados.length, fallidos: motivos.length, motivos, resultados }
 }
 
-export async function emitirConstancia(revista: number, id: number, actor: number, conAgradecimiento: boolean) {
+export async function emitirConstancia(revista: number, id: number, actor: number, conAgradecimiento: boolean, eleccion?: EleccionEnvio) {
+  const elegida = conAgradecimiento ? await validarEleccion(revista, 'agradecimiento', eleccion) : undefined
   return enTransaccion(async (c) => {
     const f = await entrega(c, revista, id)
     if (f.constancia_emitida) throw new ErrorHttp(409, 'La constancia ya fue emitida')
-    return emitir(c, revista, actor, f, false, conAgradecimiento)
+    return emitir(c, revista, actor, f, false, conAgradecimiento, elegida)
   })
 }
 
-export async function reenviarConstancia(revista: number, id: number, actor: number, conAgradecimiento: boolean) {
+export async function reenviarConstancia(revista: number, id: number, actor: number, conAgradecimiento: boolean, eleccion?: EleccionEnvio) {
+  const elegida = conAgradecimiento ? await validarEleccion(revista, 'agradecimiento', eleccion) : undefined
   return enTransaccion(async (c) => {
     const f = await entrega(c, revista, id)
     if (!f.constancia_emitida) throw new ErrorHttp(409, 'Solo se reenvía una constancia ya emitida')
-    return emitir(c, revista, actor, f, true, conAgradecimiento)
+    return emitir(c, revista, actor, f, true, conAgradecimiento, elegida)
   })
 }

@@ -1,12 +1,11 @@
 /*
- * plantillas (servicio) — las plantillas de cada revista: un correo (asunto y texto) o un archivo (la constancia:
- * un texto entre una imagen de encabezado y una de pie de página, con la imagen de la firma donde está {{firma}}).
- * Una plantilla nueva solo pide un nombre: nace en blanco, es un correo y su uso es «correo libre»; el uso (invitación,
- * agradecimiento o libre) se cambia después, al editarla. La constancia de cada revista es única y permanente: no se crea
- * ni se elimina, solo se edita. En cada revista solo hay una plantilla en uso por tipo, y los datos que una plantilla
- * puede traer dependen de su uso.
- * Cada plantilla conserva el fin (`fin`) para el que se creó, esté en uso o no: una de agradecimiento se
- * previsualiza, se edita y se elige como de agradecimiento. `tipo` solo dice para qué está en uso hoy.
+ * plantillas (servicio) — las plantillas de cada revista. Cada una sirve para algo fijo (su «fin»), que se elige al crearla:
+ * - Invitación al par y agradecimiento al par: pueden ser varias por revista. Una es la predeterminada (la que sale
+ *   marcada al asignar un par o emitir una constancia) y quien envía puede escoger otra en esa misma ventana.
+ * - Constancia: una sola por revista, permanente; solo se edita. Es un archivo: un texto entre una imagen de
+ *   encabezado y una de pie de página, con la imagen de la firma donde está {{firma}}.
+ * - Mensaje: se envía a mano desde la ficha de un par o de un autor.
+ * Los datos que una plantilla puede traer dependen de su fin.
  */
 import { enTransaccion, pool } from '../../db.js'
 import { ErrorHttp, siglaDe } from '../../lib/http.js'
@@ -28,12 +27,6 @@ const VARIABLES: Record<Fin, string[]> = {
   constancia: ['revista', 'REVISTA', 'par', 'PAR', 'articulo', 'issn', 'indexaciones', 'fecha', 'anio', 'firma'],
   // Un mensaje se escribe a un par o a un autor, así que sus datos son los de la persona, no los de un artículo.
   mensaje: ['revista', 'nombre', 'universidad', 'profesion', 'fecha', 'anio'],
-}
-const ETIQUETA_FIN: Record<Fin, string> = {
-  invitacion: 'la invitación a evaluar',
-  agradecimiento: 'el agradecimiento',
-  constancia: 'la constancia',
-  mensaje: 'los mensajes que se envían a mano',
 }
 
 interface FilaPlantilla {
@@ -73,7 +66,7 @@ function plantillaApi(p: FilaPlantilla) {
     asunto: p.asunto,
     cuerpo: p.cuerpo,
     variables: variablesDe(p),
-    enUso: p.tipo !== null,
+    enUso: p.tipo !== null,  // «predeterminada» para las invitaciones, los agradecimientos y la constancia
     imagenes:
       p.clase === 'archivo'
         ? {
@@ -109,92 +102,61 @@ export async function listarPlantillas() {
 export interface DatosNuevaPlantilla {
   revista: 'reep' | 'ire'
   nombre: string
-  /** Opcional: por omisión es «mensaje» (correo libre). La constancia no se puede crear: ya existe una por revista. */
-  uso?: Fin
-  clase?: 'correo' | 'archivo'
+  /** Para qué es: invitar a un par, agradecerle o un mensaje libre. La constancia ya existe y no se crea. */
+  fin: 'invitacion' | 'agradecimiento' | 'mensaje'
 }
 
+/** Una plantilla nueva nace en blanco, para el fin que se elige; nunca es la predeterminada hasta que se marque. */
 export async function crearPlantilla(d: DatosNuevaPlantilla) {
   const revista = numeroDeRevista(d.revista)
-  if (d.uso === 'constancia' || d.clase === 'archivo') {
-    throw new ErrorHttp(409, 'La constancia de cada revista ya existe y es única: edítela en Plantillas, no se crea otra')
-  }
-  const clase = 'correo'
-  const fin: Fin = d.uso ?? 'mensaje'
-  const nombreRepetido = (e: { code?: string }): never => {
-    if (e.code === '23505') throw new ErrorHttp(409, 'Ya existe una plantilla con ese nombre en esta revista')
-    throw e
-  }
   const id = await enTransaccion(async (c) => {
     const { rows } = await c
       .query<{ id_plantilla: number }>(
         `INSERT INTO plantilla (id_revista, nombre, clase, fin, asunto, cuerpo)
-         VALUES ($1, $2, $3, $4, $5, '') RETURNING id_plantilla`,
-        [revista, d.nombre, clase, fin, clase === 'correo' ? '' : null],
+         VALUES ($1, $2, 'correo', $3, '', '') RETURNING id_plantilla`,
+        [revista, d.nombre, d.fin],
       )
-      .catch(nombreRepetido)
-    const nueva = rows[0]?.id_plantilla ?? 0
-    return nueva
+      .catch((e: { code?: string }): never => {
+        if (e.code === '23505') throw new ErrorHttp(409, 'Ya existe una plantilla con ese nombre en esta revista')
+        throw e
+      })
+    return rows[0]?.id_plantilla ?? 0
   })
   return plantillaApi(await cargar(id))
 }
 
-/** Elige para qué se usa una plantilla en su revista; la que tenía ese uso queda libre. */
-export async function asignarUso(id: number, uso: Fin) {
+/** Marca la plantilla como la predeterminada de su fin en su revista; la anterior queda como una más. */
+export async function marcarPredeterminada(id: number) {
   const p = await cargar(id)
-  if (p.fin === 'mensaje') {
-    throw new ErrorHttp(409, 'Esta plantilla es para mensajes que se envían a mano: no se marca como «en uso», se elige al enviar el correo')
-  }
-  // Una plantilla solo se elige para el fin con el que se creó.
-  if (uso !== p.fin) {
-    throw new ErrorHttp(409, `Esta plantilla es para ${ETIQUETA_FIN[p.fin]} y no puede usarse para ${ETIQUETA_FIN[uso]}`)
+  if (p.fin !== 'invitacion' && p.fin !== 'agradecimiento') {
+    throw new ErrorHttp(409, 'Solo las invitaciones y los agradecimientos tienen una plantilla predeterminada')
   }
   if (!p.cuerpo.trim()) {
-    throw new ErrorHttp(422, 'La plantilla aún no tiene texto: redáctela en Plantillas antes de elegirla')
+    throw new ErrorHttp(422, 'La plantilla aún no tiene texto: escríbalo antes de dejarla como la predeterminada')
   }
-  validar(VARIABLES[uso], p.asunto, p.cuerpo)
+  validar(VARIABLES[p.fin], p.asunto, p.cuerpo)
   await enTransaccion(async (c) => {
-    await c.query('UPDATE plantilla SET tipo = NULL WHERE id_revista = $1 AND tipo = $2', [p.id_revista, uso])
-    await c.query('UPDATE plantilla SET tipo = $2 WHERE id_plantilla = $1', [p.id_plantilla, uso])
+    await c.query('UPDATE plantilla SET tipo = NULL WHERE id_revista = $1 AND tipo = $2', [p.id_revista, p.fin])
+    await c.query('UPDATE plantilla SET tipo = $2 WHERE id_plantilla = $1', [p.id_plantilla, p.fin])
   })
   return plantillaApi(await cargar(p.id_plantilla))
 }
 
 export async function eliminarPlantilla(id: number): Promise<void> {
   const p = await cargar(id)
-  if (p.fin === 'constancia') throw new ErrorHttp(409, 'La constancia de la revista es permanente: no se puede eliminar, solo editar')
-  if (p.tipo) throw new ErrorHttp(409, 'La plantilla está en uso; marque otra como «en uso» antes de eliminarla')
+  if (p.fin === 'constancia') throw new ErrorHttp(409, 'La constancia de la revista no se elimina: solo se edita')
+  if (p.tipo) {
+    throw new ErrorHttp(409, 'Es la plantilla predeterminada: marque otra como predeterminada antes de eliminarla')
+  }
   await pool.query('DELETE FROM plantilla WHERE id_plantilla = $1', [p.id_plantilla])
 }
 
-/**
- * Guarda el asunto y el texto y, si se indica, cambia el uso de una plantilla de correo (invitación, agradecimiento
- * o libre). No se cambia el uso de la plantilla que está en uso (los correos automáticos dejarían de tener una) ni el
- * de la constancia.
- */
-export async function guardarPlantilla(
-  id: number,
-  d: { asunto: string | null; cuerpo: string; fin?: Fin },
-) {
+/** Guarda el asunto y el texto de una plantilla; solo se aceptan los datos de su fin. */
+export async function guardarPlantilla(id: number, d: { asunto: string | null; cuerpo: string }) {
   const p = await cargar(id)
-  let fin: Fin = p.fin
-  if (d.fin && d.fin !== p.fin) {
-    if (p.clase === 'archivo' || d.fin === 'constancia') {
-      throw new ErrorHttp(409, 'El uso de la constancia no se cambia: es la constancia de la revista')
-    }
-    if (p.tipo) {
-      throw new ErrorHttp(409, `Esta plantilla es la que se usa para ${ETIQUETA_FIN[p.fin]}: para cambiar su uso, primero marque otra plantilla como la que se usa`)
-    }
-    fin = d.fin
-  }
   const asunto = p.clase === 'archivo' ? null : (d.asunto ?? p.asunto)
-  validar(VARIABLES[fin], asunto, d.cuerpo)
-  await pool.query('UPDATE plantilla SET asunto = $1, cuerpo = $2, fin = $3 WHERE id_plantilla = $4', [
-    asunto,
-    d.cuerpo,
-    fin,
-    p.id_plantilla,
-  ])
+  validar(variablesDe(p), asunto, d.cuerpo)
+  await pool.query('UPDATE plantilla SET asunto = $1, cuerpo = $2 WHERE id_plantilla = $3', [asunto, d.cuerpo, p.id_plantilla])
   return plantillaApi(await cargar(p.id_plantilla))
 }
 
@@ -264,4 +226,47 @@ export async function vistaPdf(id: number, cuerpo?: string): Promise<Uint8Array>
   const p = await cargar(id)
   if (p.clase !== 'archivo') throw new ErrorHttp(409, 'Solo la plantilla de archivo tiene vista previa en PDF')
   return (await vistaPrevia(pool, p.id_plantilla, cuerpo)) ?? new Uint8Array()
+}
+
+/** Las plantillas de invitación o de agradecimiento de una revista que ya tienen texto, la predeterminada primero. */
+export async function plantillasParaEnviar(revista: number, fin: 'invitacion' | 'agradecimiento') {
+  const { rows } = await pool.query<FilaPlantilla>(
+    `${SELECCION_PLANTILLA} WHERE id_revista = $1 AND fin = $2 AND btrim(cuerpo) <> ''
+      ORDER BY (tipo IS NULL), nombre`,
+    [revista, fin],
+  )
+  return rows.map((p) => ({
+    id: String(p.id_plantilla),
+    nombre: p.nombre,
+    predeterminada: p.tipo !== null,
+    asunto: p.asunto ?? '',
+    cuerpo: p.cuerpo,
+  }))
+}
+
+/** Lo que el usuario eligió al enviar: una plantilla de la revista y, si quiso, un texto propio solo para ese envío. */
+export interface EleccionEnvio {
+  plantillaId?: number
+  asunto?: string
+  cuerpo?: string
+}
+
+/** Comprueba la elección (la plantilla es de la revista y del fin; el texto propio solo usa datos válidos). */
+export async function validarEleccion(
+  revista: number,
+  fin: 'invitacion' | 'agradecimiento',
+  e: EleccionEnvio | undefined,
+): Promise<EleccionEnvio | undefined> {
+  if (!e) return undefined
+  if (e.plantillaId !== undefined) {
+    // Los números de plantilla caben en un SMALLINT: uno más grande no existe (y la base daría un error).
+    if (e.plantillaId > 32767) throw new ErrorHttp(404, 'La plantilla no existe en esa revista o no tiene texto')
+    const { rows } = await pool.query<{ id_plantilla: number }>(
+      `SELECT id_plantilla FROM plantilla WHERE id_plantilla = $1 AND id_revista = $2 AND fin = $3 AND btrim(cuerpo) <> ''`,
+      [e.plantillaId, revista, fin],
+    )
+    if (!rows[0]) throw new ErrorHttp(404, 'La plantilla no existe en esa revista o no tiene texto')
+  }
+  if (e.cuerpo !== undefined) validar(VARIABLES[fin], e.asunto ?? null, e.cuerpo)
+  return e
 }

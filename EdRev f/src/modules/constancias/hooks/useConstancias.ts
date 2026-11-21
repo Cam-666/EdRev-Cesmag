@@ -13,6 +13,7 @@ import {
 } from '../services/constanciasService'
 import { solicitarArchivo } from '@/lib/api/cliente'
 import { useRevista } from '@/lib/revista/useRevista'
+import type { EleccionCorreo } from '@/types/plantilla'
 
 function useInvalidarConstancias() {
   const cliente = useQueryClient()
@@ -57,8 +58,15 @@ export function useEmitirConstancia() {
   const { revista } = useRevista()
   const invalidar = useInvalidarConstancias()
   return useMutation({
-    mutationFn: ({ constanciaId, conAgradecimiento }: { constanciaId: string; conAgradecimiento: boolean }) =>
-      emitirConstancia(revista, constanciaId, conAgradecimiento),
+    mutationFn: ({
+      constanciaId,
+      conAgradecimiento,
+      eleccion,
+    }: {
+      constanciaId: string
+      conAgradecimiento: boolean
+      eleccion?: EleccionCorreo
+    }) => emitirConstancia(revista, constanciaId, conAgradecimiento, eleccion),
     onSuccess: invalidar,
   })
 }
@@ -67,7 +75,8 @@ export function useEmitirPendientes() {
   const { revista } = useRevista()
   const invalidar = useInvalidarConstancias()
   return useMutation({
-    mutationFn: (conAgradecimiento: boolean) => emitirPendientes(revista, conAgradecimiento),
+    mutationFn: ({ conAgradecimiento, eleccion }: { conAgradecimiento: boolean; eleccion?: EleccionCorreo }) =>
+      emitirPendientes(revista, conAgradecimiento, eleccion),
     onSuccess: invalidar,
   })
 }

@@ -12,6 +12,7 @@ import { conceptoDb, mismaInstitucion } from '../lib/mapeo.js'
 import { reglaPares } from '../lib/paresArticulo.js'
 import type { DatosPar } from '../controladores/esquemas.js'
 import { articuloDeRevista, autoresDe, evaluacionesDe, ultimaRonda } from './articulos.js'
+import { validarEleccion, type EleccionEnvio } from './administracion/plantillas.js'
 import { encolar } from './correos.js'
 import { registrarPar } from './pares.js'
 import { aplicarRespuesta, type Respuesta } from './respuestas.js'
@@ -49,7 +50,14 @@ async function asignacionApi(c: Cliente, idArticulo: number, idEvaluacion: numbe
   return asignacion
 }
 
-export async function asignarPar(revista: number, idArticulo: number, entrada: PartePorAsignar, actor: number) {
+export async function asignarPar(
+  revista: number,
+  idArticulo: number,
+  entrada: PartePorAsignar,
+  actor: number,
+  eleccion?: EleccionEnvio,
+) {
+  const elegida = await validarEleccion(revista, 'invitacion', eleccion)
   return enTransaccion(async (c) => {
     const articulo = await articuloDeRevista(c, revista, idArticulo)
     if ((await ultimaRonda(c, idArticulo)) !== 'aprobado' || !['en-revision', 'en-evaluacion'].includes(articulo.estado)) {
@@ -93,7 +101,7 @@ export async function asignarPar(revista: number, idArticulo: number, entrada: P
     )
     const idEvaluacion = rows[0]?.id_evaluacion ?? 0
     // La invitación queda en cola de inmediato; el servicio de correo la envía.
-    await encolar(c, idEvaluacion, 'invitacion', par.correo)
+    await encolar(c, idEvaluacion, 'invitacion', par.correo, elegida)
     await auditar(c, {
       usuario: actor,
       tabla: 'evaluacion',

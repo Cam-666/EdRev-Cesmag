@@ -5,6 +5,7 @@
  * resultado de cada asignación se informa a la ficha.
  */
 import { useState } from 'react'
+import { EnviarInvitacionModal } from './EnviarInvitacionModal'
 import { FormularioCandidato } from './FormularioCandidato'
 import { ListaParesDisponibles } from './ListaParesDisponibles'
 import { useAsignarPar } from '../hooks/useAsignaciones'
@@ -12,7 +13,8 @@ import { Alerta } from '@/components/common/Alerta'
 import { Boton } from '@/components/common/Boton'
 import { Pestanas } from '@/components/common/Pestanas'
 import { mensajeDeApi } from '@/lib/api/errores'
-import type { ResultadoAsignacion } from '@/types/par'
+import type { DatosAsignacion, ResultadoAsignacion } from '@/types/par'
+import type { EleccionCorreo } from '@/types/plantilla'
 
 export interface AsignarParPanelProps {
   articuloId: string
@@ -28,7 +30,26 @@ export function AsignarParPanel({
   onCerrar,
 }: AsignarParPanelProps) {
   const asignar = useAsignarPar(articuloId)
-  const [asignando, setAsignando] = useState<string | null>(null)
+  // Antes de asignar se abre la ventana de la invitación: el par elegido o el candidato nuevo que espera el envío.
+  const [pendiente, setPendiente] = useState<{
+    datos: DatosAsignacion
+    nombre: string
+    limpiar?: () => void
+  } | null>(null)
+
+  function enviar(eleccion: EleccionCorreo) {
+    if (!pendiente) return
+    asignar.mutate(
+      { ...pendiente.datos, ...eleccion },
+      {
+        onSuccess: (r) => {
+          pendiente.limpiar?.()
+          setPendiente(null)
+          onAsignado(r)
+        },
+      },
+    )
+  }
 
   return (
     <section
@@ -57,14 +78,8 @@ export function AsignarParPanel({
             contenido: (
               <ListaParesDisponibles
                 articuloId={articuloId}
-                asignando={asignando}
-                onAsignar={(par) => {
-                  setAsignando(par.id)
-                  asignar.mutate(
-                    { parId: par.id },
-                    { onSuccess: onAsignado, onSettled: () => setAsignando(null) },
-                  )
-                }}
+                asignando={null}
+                onAsignar={(par) => setPendiente({ datos: { parId: par.id }, nombre: par.nombre })}
               />
             ),
           },
@@ -73,22 +88,23 @@ export function AsignarParPanel({
             etiqueta: 'Registrar un candidato nuevo',
             contenido: (
               <FormularioCandidato
-                enviando={asignar.isPending}
-                onEnviar={(nuevo, limpiar) =>
-                  asignar.mutate(
-                    { nuevo },
-                    {
-                      onSuccess: (r) => {
-                        limpiar()
-                        onAsignado(r)
-                      },
-                    },
-                  )
-                }
+                enviando={false}
+                onEnviar={(nuevo, limpiar) => setPendiente({ datos: { nuevo }, nombre: nuevo.nombre, limpiar })}
               />
             ),
           },
         ]}
+      />
+      <EnviarInvitacionModal
+        abierto={pendiente !== null}
+        nombrePar={pendiente?.nombre ?? ''}
+        enviando={asignar.isPending}
+        error={asignar.isError ? mensajeDeApi(asignar.error, 'No fue posible asignar el par.') : null}
+        onEnviar={enviar}
+        onCerrar={() => {
+          asignar.reset()
+          setPendiente(null)
+        }}
       />
     </section>
   )

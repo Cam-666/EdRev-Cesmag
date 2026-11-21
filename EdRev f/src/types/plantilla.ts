@@ -44,15 +44,29 @@ export interface Plantilla {
   imagenes: ImagenesPlantilla | null
 }
 
-/**
- * Una plantilla nueva: un nombre libre y para qué sirve. Siempre nace en blanco (la persona la escribe) y se elige
- * en Configuración cuando ya tiene texto. Sin un fin, se indica su clase.
- */
+/** Una plantilla nueva pide su revista, su nombre y para qué es; la constancia ya existe y no se crea. */
 export interface DatosNuevaPlantilla {
   revista: Revista
   nombre: string
-  uso?: FinPlantilla
-  clase?: ClasePlantilla
+  fin: Exclude<FinPlantilla, 'constancia'>
+}
+
+/** Una plantilla de invitación o de agradecimiento que se ofrece al asignar un par o emitir una constancia. */
+export interface PlantillaDeEnvio {
+  id: string
+  nombre: string
+  /** La que sale elegida de entrada. */
+  predeterminada: boolean
+  asunto: string
+  cuerpo: string
+  variables: string[]
+}
+
+/** Lo que se elige al enviar: la plantilla y, si se editó, su texto solo para ese envío. */
+export interface EleccionCorreo {
+  plantillaId?: string
+  asunto?: string
+  cuerpo?: string
 }
 
 /** Dirección desde la que salen los correos de una revista: se configura en el servicio de correo, no en pantalla. */

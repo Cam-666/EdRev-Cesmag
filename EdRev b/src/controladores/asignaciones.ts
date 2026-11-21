@@ -12,6 +12,12 @@ import { datosPar } from './esquemas.js'
 const CONCEPTOS = ['publicable', 'publicable-con-modificaciones', 'no-publicable', 'pendiente-formato'] as const
 
 const aAsignar = z.union([z.object({ parId: z.string() }), z.object({ nuevo: z.record(z.string(), z.unknown()) })])
+/** La invitación que se envía: la plantilla elegida y, si se editó, su texto solo para este envío. */
+const eleccion = z.object({
+  plantillaId: z.string().optional(),
+  asunto: z.string().max(300).optional(),
+  cuerpo: z.string().optional(),
+})
 const respuesta = z.object({ respuesta: z.enum(['acepto', 'no-acepto', 'no-desea', 'sin-respuesta']) })
 const entrega = z.object({
   fecha: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
@@ -26,8 +32,10 @@ export async function asignar(req: Request, res: Response): Promise<void> {
   const revista = revistaDe(req)
   const idArticulo = idNumerico(req.params.id, 'Artículo')
   const datos = aAsignar.parse(req.body)
-  const entrada = 'nuevo' in datos ? { nuevo: datosPar.parse(datos.nuevo) } : datos
-  res.status(201).json(await asignaciones.asignarPar(revista, idArticulo, entrada, usuarioDe(req).id))
+  const entrada = 'nuevo' in datos ? { nuevo: datosPar.parse(datos.nuevo) } : { parId: datos.parId }
+  const { plantillaId, ...texto } = eleccion.parse(req.body)
+  const elegida = { ...texto, plantillaId: plantillaId ? idNumerico(plantillaId, 'Plantilla') : undefined }
+  res.status(201).json(await asignaciones.asignarPar(revista, idArticulo, entrada, usuarioDe(req).id, elegida))
 }
 
 export async function responder(req: Request, res: Response): Promise<void> {

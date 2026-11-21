@@ -77,7 +77,8 @@ export const DATOS_REVISTA_INICIALES: Record<Revista, { issn: string; indexacion
 
 /**
  * Cada revista empieza con su propia invitación, correo de agradecimiento y constancia, y con una plantilla de
- * mensaje para escribirle a mano a un par o a un autor (esa nunca está «en uso»: se elige al enviar el correo).
+ * mensaje para escribirle a mano a un par o a un autor (esa nunca es la predeterminada: se elige al enviar el correo). La invitación y el agradecimiento tienen además
+ * una alternativa breve, para poder elegir al asignar un par o emitir una constancia.
  */
 export const PLANTILLAS_INICIALES: Plantilla[] = (['reep', 'ire'] as const).flatMap((revista) => [
   ...BASE.map((p) => ({
@@ -87,6 +88,32 @@ export const PLANTILLAS_INICIALES: Plantilla[] = (['reep', 'ire'] as const).flat
     fin: p.uso ?? 'invitacion',
     imagenes: p.uso === 'constancia' ? { ...IMAGENES[revista] } : null,
   })),
+  {
+    id: `${revista}-invitacion-breve`,
+    revista,
+    uso: null,
+    fin: 'invitacion' as const,
+    clase: 'correo' as const,
+    nombre: 'Invitación breve',
+    asunto: 'Invitación a evaluar · {{revista}}',
+    cuerpo: 'Apreciado(a) {{par}}:\n\nLo(a) invitamos a evaluar el artículo «{{articulo}}».\n\n{{botones}}',
+    variables: ['revista', 'numero', 'par', 'profesion', 'universidad', 'articulo', 'botones'],
+    enUso: false,
+    imagenes: null,
+  },
+  {
+    id: `${revista}-agradecimiento-breve`,
+    revista,
+    uso: null,
+    fin: 'agradecimiento' as const,
+    clase: 'correo' as const,
+    nombre: 'Agradecimiento breve',
+    asunto: 'Gracias · {{revista}}',
+    cuerpo: 'Apreciado(a) {{par}}:\n\nGracias por evaluar «{{articulo}}». Adjuntamos su constancia.',
+    variables: ['revista', 'par', 'articulo'],
+    enUso: false,
+    imagenes: null,
+  },
   {
     id: `${revista}-mensaje`,
     revista,

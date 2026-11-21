@@ -8,21 +8,16 @@ import { idNumerico } from '../../lib/http.js'
 import * as plantillas from '../../servicios/administracion/plantillas.js'
 
 const revista = z.enum(['reep', 'ire'])
-const uso = z.enum(['invitacion', 'agradecimiento', 'constancia', 'mensaje'])
 
-const nueva = z
-  .object({
-    revista,
-    nombre: z.string().trim().min(1, 'Escriba el nombre de la plantilla').max(80, 'Máximo 80 caracteres'),
-    uso: uso.optional(),
-    clase: z.enum(['correo', 'archivo']).optional(),
-  })
+const nueva = z.object({
+  revista,
+  nombre: z.string().trim().min(1, 'Escriba el nombre de la plantilla').max(80, 'Máximo 80 caracteres'),
+  fin: z.enum(['invitacion', 'agradecimiento', 'mensaje'], { message: 'Elija para qué es la plantilla' }),
+})
 
 const edicion = z.object({
   asunto: z.string().nullable(),
   cuerpo: z.string(),
-  // El uso de una plantilla de correo (la constancia no cambia de uso).
-  fin: z.enum(['invitacion', 'agradecimiento', 'mensaje']).optional(),
 })
 
 const idDe = (req: Request) => idNumerico(req.params.id, 'Plantilla')
@@ -35,9 +30,8 @@ export async function crear(req: Request, res: Response): Promise<void> {
   res.status(201).json(await plantillas.crearPlantilla(nueva.parse(req.body)))
 }
 
-export async function asignar(req: Request, res: Response): Promise<void> {
-  const { uso: elegido } = z.object({ uso }).parse(req.body)
-  res.json(await plantillas.asignarUso(idDe(req), elegido))
+export async function predeterminada(req: Request, res: Response): Promise<void> {
+  res.json(await plantillas.marcarPredeterminada(idDe(req)))
 }
 
 export async function eliminar(req: Request, res: Response): Promise<void> {

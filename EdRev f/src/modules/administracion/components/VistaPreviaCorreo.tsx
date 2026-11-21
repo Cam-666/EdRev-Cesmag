@@ -5,10 +5,10 @@
  * el correo mismo y no un texto plano.
  */
 import { useQuery } from '@tanstack/react-query'
-import { useEffect, useState } from 'react'
 import { vistaCorreoPlantilla } from '../services/adminService'
 import { Alerta } from '@/components/common/Alerta'
 import { mensajeDeApi } from '@/lib/api/errores'
+import { useRetrasado } from '@/lib/useRetrasado'
 import type { Revista } from '@/types/revista'
 
 export interface VistaPreviaCorreoProps {
@@ -16,16 +16,6 @@ export interface VistaPreviaCorreoProps {
   uso: 'invitacion' | 'agradecimiento' | 'mensaje'
   /** El texto guardado que se está editando (con sus marcas). */
   cuerpo: string
-}
-
-/** El valor después de que dejó de cambiar durante `ms`; evita una petición en cada tecla. */
-function useRetrasado<T>(valor: T, ms = 500): T {
-  const [retrasado, setRetrasado] = useState(valor)
-  useEffect(() => {
-    const t = setTimeout(() => setRetrasado(valor), ms)
-    return () => clearTimeout(t)
-  }, [valor, ms])
-  return retrasado
 }
 
 export function VistaPreviaCorreo({ revista, uso, cuerpo }: VistaPreviaCorreoProps) {

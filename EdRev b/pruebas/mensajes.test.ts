@@ -32,19 +32,16 @@ async function plantillaGeneral(revista: 'reep' | 'ire' = 'reep') {
 }
 
 describe('plantillas de mensaje', () => {
-  it('cada revista trae «Mensaje general» y una plantilla nueva de mensaje no se marca como en uso', async () => {
+  it('cada revista trae «Mensaje general» y una plantilla nueva de mensaje nunca está «en uso»', async () => {
     const api = await como()
     expect((await api.get('/reep/mensajes/plantillas')).body.map((p: { nombre: string }) => p.nombre)).toContain('Mensaje general')
-    const nueva = await api.post('/plantillas', { revista: 'reep', nombre: `Aviso ${unico()}`, uso: 'mensaje' })
+    const nueva = await api.post('/plantillas', { revista: 'reep', nombre: `Aviso ${unico()}`, fin: 'mensaje' })
     expect(nueva.status).toBe(201)
     expect(nueva.body).toMatchObject({ fin: 'mensaje', clase: 'correo', enUso: false })
     expect(nueva.body.variables).toEqual(expect.arrayContaining(['nombre', 'revista', 'universidad']))
     // en blanco: todavía no se ofrece al enviar un correo
     const antes = (await api.get('/reep/mensajes/plantillas')).body.map((p: { id: string }) => p.id)
     expect(antes).not.toContain(nueva.body.id)
-    // «en uso» solo existe para los envíos automáticos
-    expect((await api.post(`/plantillas/${nueva.body.id}/asignar`, { uso: 'mensaje' })).status).toBe(409)
-    expect((await api.post(`/plantillas/${nueva.body.id}/asignar`, { uso: 'invitacion' })).status).toBe(409)
     // solo acepta sus propios datos
     expect((await api.put(`/plantillas/${nueva.body.id}`, { asunto: 'Hola', cuerpo: 'Estimado {{par}}' })).status).toBe(422)
     expect((await api.put(`/plantillas/${nueva.body.id}`, { asunto: 'Hola {{nombre}}', cuerpo: 'Estimado(a) {{nombre}} de {{universidad}}' })).status).toBe(200)

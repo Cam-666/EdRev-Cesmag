@@ -84,11 +84,21 @@ export async function corregirYReenviar(revista: number, idTexto: string, nuevoC
       Number(correo.asignacionId),
     ])
     await c.query('UPDATE par_evaluador SET correo = $1 WHERE id_par = $2', [nuevoCorreo, rows[0]?.id_par])
+    // El correo nuevo conserva la plantilla (y el texto propio) del que falló.
+    const antes = await c.query<{ id_plantilla: number | null; asunto_propio: string | null; cuerpo_propio: string | null }>(
+      'SELECT id_plantilla, asunto_propio, cuerpo_propio FROM correo WHERE id_correo = $1',
+      [id],
+    )
     await encolar(
       c,
       Number(correo.asignacionId),
       correo.tipo === 'agradecimiento' || correo.tipo === 'constancia' ? correo.tipo : 'invitacion',
       nuevoCorreo,
+      {
+        plantillaId: antes.rows[0]?.id_plantilla ?? undefined,
+        asunto: antes.rows[0]?.asunto_propio ?? undefined,
+        cuerpo: antes.rows[0]?.cuerpo_propio ?? undefined,
+      },
     )
     await auditar(c, {
       usuario: actor,

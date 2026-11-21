@@ -80,6 +80,10 @@ describe('the whole flow of an article', () => {
     await user.type(within(panel).getByLabelText('Universidad'), 'Universidad Externa de Prueba')
     await user.type(within(panel).getByLabelText('Área temática'), 'Educación rural')
     await user.click(within(panel).getByRole('button', { name: 'Registrar y enviar invitación' }))
+    const ventana = await screen.findByRole('dialog', { name: /^Invitar a / })
+    const enviar = within(ventana).getByRole('button', { name: 'Asignar y enviar invitación' })
+    await waitFor(() => expect(enviar).toBeEnabled())
+    await user.click(enviar)
     expect(await screen.findByText('Par asignado e invitación enviada')).toBeInTheDocument()
 
     // 4. El par acepta: el artículo pasa a «En evaluación»

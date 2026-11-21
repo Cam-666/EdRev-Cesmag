@@ -81,17 +81,19 @@ async function enviarBrevo(
   return respuesta.status === 400 && /email/i.test(detalle) ? 'rebotado' : 'fallido'
 }
 
-async function procesar(): Promise<void> {
+export async function procesar(): Promise<void> {
   const { rows } = await pool.query<Pendiente>(
     `SELECT c.id_correo, c.id_evaluacion, c.tipo, c.destinatario, a.id_revista, a.id_articulo, r.nombre AS revista,
             r.correo_remitente AS remitente, a.numero_ojs, a.titulo, p.nombre AS par, p.profesion,
-            p.universidad, pl.asunto, pl.cuerpo
+            p.universidad, COALESCE(c.asunto_propio, pl.asunto) AS asunto, COALESCE(c.cuerpo_propio, pl.cuerpo) AS cuerpo
        FROM correo c
        JOIN evaluacion e ON e.id_evaluacion = c.id_evaluacion
        JOIN articulo a ON a.id_articulo = e.id_articulo
        JOIN revista r ON r.id_revista = a.id_revista
        JOIN par_evaluador p ON p.id_par = e.id_par
-       LEFT JOIN plantilla pl ON pl.id_revista = a.id_revista AND pl.tipo = c.tipo AND c.tipo <> 'constancia'
+       LEFT JOIN plantilla pl ON c.tipo <> 'constancia' AND pl.id_plantilla = COALESCE(
+              c.id_plantilla,
+              (SELECT d.id_plantilla FROM plantilla d WHERE d.id_revista = a.id_revista AND d.tipo = c.tipo))
       WHERE c.resultado = 'en-cola' ORDER BY c.fecha_envio LIMIT 20`,
   )
   for (const p of rows) {

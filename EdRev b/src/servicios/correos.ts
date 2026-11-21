@@ -120,10 +120,12 @@ export async function encolar(
   idEvaluacion: number,
   tipo: TipoGuardado,
   destinatario: string,
+  eleccion?: { plantillaId?: number; asunto?: string; cuerpo?: string },
 ): Promise<'en-cola'> {
   await c.query(
-    `INSERT INTO correo (id_evaluacion, tipo, destinatario, resultado) VALUES ($1, $2, $3, 'en-cola')`,
-    [idEvaluacion, tipo, destinatario],
+    `INSERT INTO correo (id_evaluacion, tipo, destinatario, resultado, id_plantilla, asunto_propio, cuerpo_propio)
+     VALUES ($1, $2, $3, 'en-cola', $4, $5, $6)`,
+    [idEvaluacion, tipo, destinatario, eleccion?.plantillaId ?? null, eleccion?.asunto ?? null, eleccion?.cuerpo ?? null],
   )
   return 'en-cola'
 }

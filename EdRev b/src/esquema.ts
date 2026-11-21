@@ -7,7 +7,9 @@
  * Cambios que aplica:
  * - las plantillas pueden ser de tipo «mensaje» (para enviar un correo a mano a un par o a un autor);
  * - la tabla `mensaje`, donde queda cada uno de esos correos;
- * - una plantilla «Mensaje general» de ejemplo en cada revista que todavía no tenga una.
+ * - una plantilla «Mensaje general» de ejemplo en cada revista que todavía no tenga una;
+ * - las plantillas de invitación o de agradecimiento que sobran (no son la que se envía sola) pasan a ser mensajes:
+ *   cada revista queda con sus tres textos automáticos y el resto son mensajes que se eligen al enviar un correo.
  */
 import type { Cliente } from './db.js'
 
@@ -49,4 +51,8 @@ export async function asegurarEsquema(c: Cliente): Promise<void> {
       WHERE NOT EXISTS (SELECT 1 FROM plantilla p WHERE p.id_revista = r.id_revista AND p.fin = 'mensaje')
         AND NOT EXISTS (SELECT 1 FROM plantilla p WHERE p.id_revista = r.id_revista AND p.nombre = 'Mensaje general')`,
   )
+  // Cada invitación o agradecimiento guarda la plantilla que se eligió al enviarlo y, si se editó, su texto propio.
+  await c.query('ALTER TABLE correo ADD COLUMN IF NOT EXISTS id_plantilla SMALLINT REFERENCES plantilla ON DELETE SET NULL')
+  await c.query('ALTER TABLE correo ADD COLUMN IF NOT EXISTS asunto_propio VARCHAR(300)')
+  await c.query('ALTER TABLE correo ADD COLUMN IF NOT EXISTS cuerpo_propio TEXT')
 }

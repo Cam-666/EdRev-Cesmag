@@ -211,7 +211,7 @@ describe('el correo de invitación muestra la respuesta del par', () => {
 describe('las plantillas de correo no llevan imágenes', () => {
   it('ni se suben ni se sirven en una dirección pública', async () => {
     const api = await como()
-    const creada = await api.post('/plantillas', { revista: 'reep', nombre: `Sin imagen ${unico()}`, clase: 'correo' })
+    const creada = await api.post('/plantillas', { revista: 'reep', nombre: `Sin imagen ${unico()}`, fin: 'mensaje' })
     for (const parte of ['encabezado', 'pie', 'firma']) {
       expect((await api.subir(`/plantillas/${creada.body.id}/imagen/${parte}`, PNG, 'firma.png')).status).toBe(409)
     }
