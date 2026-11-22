@@ -24,7 +24,12 @@ async function enviarCola(): Promise<string[]> {
   process.env.CORREO_MODO = 'simulado'
   const registro = vi.spyOn(console, 'log').mockImplementation(() => undefined)
   try {
-    await procesar()
+    // cada vuelta toma solo los 20 más antiguos y otras pruebas dejan correos en cola: se repite hasta vaciarla
+    for (let i = 0; i < 20; i++) {
+      await procesar()
+      const { rows } = await pool.query("SELECT 1 FROM correo WHERE resultado = 'en-cola' LIMIT 1")
+      if (rows.length === 0) break
+    }
     return registro.mock.calls.map((c) => String(c[0]))
   } finally {
     registro.mockRestore()
