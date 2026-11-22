@@ -167,11 +167,11 @@ describe('plantillas: lo automático es permanente y el aviso de guardado está 
     expect(within(constancia).queryByRole('button', { name: /Eliminar/ })).toBeNull()
     // invitaciones: la habitual se señala y no se elimina; la otra se puede dejar como habitual o eliminar
     const invitaciones = await grupo('Invitación al par evaluador')
-    expect(within(invitaciones).getByText('Invitación a evaluar · La habitual')).toBeInTheDocument()
+    expect(within(invitaciones).getByText('Invitación a evaluar · Recomendada')).toBeInTheDocument()
     expect(within(invitaciones).queryByRole('button', { name: 'Eliminar Invitación a evaluar' })).toBeNull()
     expect(within(invitaciones).getByRole('button', { name: 'Eliminar Invitación breve' })).toBeInTheDocument()
-    await user.click(within(invitaciones).getByRole('button', { name: 'Usar como la habitual Invitación breve' }))
-    expect(await within(invitaciones).findByText('Invitación breve · La habitual')).toBeInTheDocument()
+    await user.click(within(invitaciones).getByRole('button', { name: 'Usar como recomendada Invitación breve' }))
+    expect(await within(invitaciones).findByText('Invitación breve · Recomendada')).toBeInTheDocument()
     expect(within(invitaciones).getByRole('button', { name: 'Eliminar Invitación a evaluar' })).toBeInTheDocument()
     await user.click(within(constancia).getByRole('button', { name: /Editar/ }))
     expect(await screen.findByText(/documento PDF de la constancia/)).toBeInTheDocument()
@@ -191,7 +191,7 @@ describe('plantillas: lo automático es permanente y el aviso de guardado está 
 })
 
 describe('elegir la plantilla al enviar', () => {
-  it('al asignar un par se abre la invitación: sale la habitual, se puede escoger otra o cambiar su texto solo para este envío', async () => {
+  it('al asignar un par se dice qué invitación sale; el correo y el menú se abren solo si se piden', async () => {
     const { user } = montarRuta('/reep/articulos/2026-033/pares')
     await user.click(await screen.findByRole('button', { name: 'Asignar par' }))
     const panel = await screen.findByRole('region', { name: 'Asignar par evaluador' })
@@ -200,19 +200,17 @@ describe('elegir la plantilla al enviar', () => {
     await user.click(boton)
 
     const ventana = await screen.findByRole('dialog', { name: /^Invitar a / })
-    // todavía no se asignó nada: primero se revisa el correo
-    expect(await within(ventana).findByTitle('Vista previa del correo')).toBeInTheDocument()
-    const menu = within(ventana).getByRole('combobox', { name: 'Plantilla de la invitación' })
-    expect(menu).toHaveTextContent('Invitación a evaluar (la habitual)')
-    await elegirOpcion(user, 'Plantilla de la invitación', 'Invitación breve')
-    expect(menu).toHaveTextContent('Invitación breve')
+    // todavía no se asignó nada y no hay nada más que decidir: solo la frase y los botones
+    expect(await within(ventana).findByText(/Se enviará la invitación de/)).toBeInTheDocument()
+    expect(within(ventana).queryByTitle('Vista previa del correo')).toBeNull()
+    expect(within(ventana).queryByRole('combobox')).toBeNull()
 
-    // cambiar el texto es solo para este correo
-    await user.click(within(ventana).getByRole('button', { name: 'Cambiar el texto de este correo' }))
-    expect(within(ventana).getByText(/solo para este correo: la plantilla no se modifica/)).toBeInTheDocument()
-    expect(within(ventana).getByLabelText('Asunto')).toBeInTheDocument()
-    await user.click(within(ventana).getByRole('button', { name: 'Volver al texto de la plantilla' }))
-    expect(within(ventana).queryByLabelText('Asunto')).toBeNull()
+    await user.click(within(ventana).getByRole('button', { name: 'Ver o cambiar el correo' }))
+    expect(await within(ventana).findByTitle('Vista previa del correo')).toBeInTheDocument()
+    const menu = within(ventana).getByRole('combobox', { name: 'Plantilla de invitación' })
+    expect(menu).toHaveTextContent('Invitación a evaluar (recomendada)')
+    await elegirOpcion(user, 'Plantilla de invitación', 'Invitación breve')
+    expect(menu).toHaveTextContent('Invitación breve')
 
     // cancelar no asigna a nadie
     await user.click(within(ventana).getByRole('button', { name: 'Cancelar' }))
@@ -220,16 +218,18 @@ describe('elegir la plantilla al enviar', () => {
     expect(screen.queryByText('Par asignado e invitación enviada')).toBeNull()
   })
 
-  it('al emitir una constancia con agradecimiento se escoge su plantilla; sin agradecimiento no hay nada que escoger', async () => {
+  it('al emitir una constancia el agradecimiento sale marcado; se puede ver y cambiar, o quitar', async () => {
     const { user } = montarRuta('/reep/constancias')
     const tabla = await screen.findByRole('table', { name: 'Constancias pendientes de emisión' })
     await user.click((await within(tabla).findAllByRole('button', { name: /^Emitir la constancia de/ }))[0] as HTMLElement)
     expect(await screen.findByText(/CERTIFICA QUE/)).toBeInTheDocument()
-    const menu = await screen.findByRole('combobox', { name: 'Plantilla de el agradecimiento' })
-    expect(menu).toHaveTextContent('Agradecimiento (la habitual)')
-    await elegirOpcion(user, 'Plantilla de el agradecimiento', 'Agradecimiento breve')
-    await user.click(screen.getByRole('checkbox', { name: 'Emitir con correo de agradecimiento' }))
-    expect(screen.queryByRole('combobox', { name: 'Plantilla de el agradecimiento' })).toBeNull()
+    expect(await screen.findByText(/Se enviará el correo de agradecimiento de/)).toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: 'Ver o cambiar el correo' }))
+    const menu = await screen.findByRole('combobox', { name: 'Plantilla de agradecimiento' })
+    expect(menu).toHaveTextContent('Agradecimiento (recomendada)')
+    await elegirOpcion(user, 'Plantilla de agradecimiento', 'Agradecimiento breve')
+    await user.click(screen.getByRole('checkbox', { name: 'Enviar también correo de agradecimiento' }))
+    expect(screen.queryByRole('combobox', { name: 'Plantilla de agradecimiento' })).toBeNull()
     await user.click(screen.getByRole('button', { name: 'Emitir y enviar' }))
     expect(await screen.findByText(/Quedó registrada en Correos enviados/)).toBeInTheDocument()
   })

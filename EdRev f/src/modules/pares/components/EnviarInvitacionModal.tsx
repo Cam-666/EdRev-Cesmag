@@ -1,7 +1,7 @@
 /*
- * EnviarInvitacionModal — la ventana que se abre al asignar un par: muestra la invitación tal como la recibirá,
- * deja escoger otra plantilla de invitación de la revista (sale elegida la habitual) y cambiar su texto solo para
- * este envío. «Asignar y enviar invitación» registra la asignación y envía el correo con lo que se ve.
+ * EnviarInvitacionModal — la ventana que se abre al asignar un par: dice qué invitación se enviará (la recomendada de
+ * la revista) y, con «Ver o cambiar el correo», deja ver cómo la recibirá y escoger otra plantilla. «Enviar invitación»
+ * registra la asignación y envía el correo.
  */
 import { SelectorPlantillaCorreo } from '@/modules/correos/components/SelectorPlantillaCorreo'
 import { useEleccionCorreo } from '@/modules/correos/hooks/useEleccionCorreo'
@@ -20,7 +20,7 @@ export interface EnviarInvitacionModalProps {
   onCerrar: () => void
 }
 
-/** Se monta solo mientras está abierta, así cada vez empieza con la plantilla habitual y sin cambios. */
+/** Se monta solo mientras está abierta, así cada vez empieza con la plantilla recomendada. */
 export function EnviarInvitacionModal(props: EnviarInvitacionModalProps) {
   return props.abierto ? <Contenido {...props} /> : null
 }
@@ -35,7 +35,7 @@ function Contenido({ nombrePar, enviando, error, onEnviar, onCerrar }: EnviarInv
       ancho="amplio"
       onCerrar={onCerrar}
       titulo={`Invitar a ${nombrePar}`}
-      descripcion="Revise la invitación. Si todo está bien, pulse «Asignar y enviar invitación»."
+      descripcion="Al enviarla, el par queda asignado al artículo."
       acciones={
         <>
           <Boton variante="neutro" onClick={onCerrar}>
@@ -46,13 +46,13 @@ function Contenido({ nombrePar, enviando, error, onEnviar, onCerrar }: EnviarInv
             disabled={!estado.eleccion}
             onClick={() => estado.eleccion && onEnviar(estado.eleccion)}
           >
-            Asignar y enviar invitación
+            Enviar invitación
           </Boton>
         </>
       }
     >
       {error && <Alerta tipo="error">{error}</Alerta>}
-      <SelectorPlantillaCorreo estado={estado} nombre="la invitación" />
+      <SelectorPlantillaCorreo estado={estado} />
     </Modal>
   )
 }

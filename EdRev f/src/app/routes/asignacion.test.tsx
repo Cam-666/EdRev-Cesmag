@@ -50,7 +50,7 @@ async function candidatoApi(articulo: string, n: number) {
 /** La invitación se revisa en una ventana antes de asignar: se espera a que carguen las plantillas y se envía. */
 export async function enviarInvitacion(user: { click: (e: Element) => Promise<void> }) {
   const ventana = await screen.findByRole('dialog', { name: /^Invitar a / })
-  const boton = within(ventana).getByRole('button', { name: 'Asignar y enviar invitación' })
+  const boton = within(ventana).getByRole('button', { name: 'Enviar invitación' })
   await waitFor(() => expect(boton).toBeEnabled())
   await user.click(boton)
 }
