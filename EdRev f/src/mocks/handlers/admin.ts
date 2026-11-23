@@ -6,28 +6,26 @@
  */
 import { http, HttpResponse } from 'msw'
 import { baseDe, configuracion, plantillas, usuarios } from '../db'
+import { VARIABLES_FIN } from '../plantillas'
 import { bloquearContrasena, crearEnlace } from './acceso'
+import { correoDeEjemplo } from './vistaCorreo'
 import { contextoGlobal, error, sinTildes } from './util'
 import { marcadores } from '@/lib/plantillas'
 import type { RespuestaEnvioEnlace } from '@/types/acceso'
 import type { EntradaAuditoria } from '@/types/historial'
 import type { DatosNuevaPlantilla, FinPlantilla, ParteImagen, Plantilla } from '@/types/plantilla'
 
+import { REVISTAS } from '@/types/revista'
 import type { Revista } from '@/types/revista'
 import type { DatosUsuario, Usuario } from '@/types/usuario'
 
 /** Marcas que toda plantilla debe conservar, o su correo o constancia pierde los datos para los que existe. */
 
 /** Marcas que acepta cada uso; una plantilla sin uso acepta las de su clase. */
-const VARIABLES: Record<FinPlantilla, string[]> = {
-  invitacion: ['revista', 'numero', 'par', 'profesion', 'universidad', 'articulo', 'botones'],
-  agradecimiento: ['revista', 'par', 'articulo'],
-  constancia: ['revista', 'REVISTA', 'par', 'PAR', 'articulo', 'issn', 'indexaciones', 'fecha', 'anio', 'firma'],
-  mensaje: ['revista', 'nombre', 'universidad', 'profesion', 'fecha', 'anio'],
-}
+const VARIABLES: Record<FinPlantilla, string[]> = VARIABLES_FIN
 
 const PARTES: readonly ParteImagen[] = ['encabezado', 'pie', 'firma']
-const MAX_IMAGEN = 2 * 1024 * 1024
+const MAX_IMAGEN = 30 * 1024 * 1024
 
 function validarPlantilla(
   permitidos: string[],
@@ -69,7 +67,8 @@ export const handlersAdmin = [
     const revista = params.revista as Revista
     if (revista !== 'reep' && revista !== 'ire') return error(404, 'Revista no encontrada')
     const { issn, indexaciones } = (await request.json()) as { issn: string; indexaciones: string }
-    if (!/^(\d{4}-\d{3}[\dXx])?$/.test(issn.trim())) return error(422, 'El ISSN tiene la forma 1234-567X')
+    if (!/^(\d{4}-\d{3}[\dXx])?$/.test(issn.trim()))
+      return error(422, 'El ISSN tiene la forma 1234-567X')
     if (indexaciones.length > 1500) return error(422, 'Máximo 1500 caracteres')
     configuracion().revistas[revista] = {
       ...configuracion().revistas[revista],
@@ -178,7 +177,8 @@ export const handlersAdmin = [
     const { revista, nombre, fin } = (await request.json()) as DatosNuevaPlantilla
     if (revista !== 'reep' && revista !== 'ire') return error(422, 'Revista no válida')
     if (!nombre.trim()) return error(422, 'Escriba el nombre de la plantilla')
-    if (fin !== 'invitacion' && fin !== 'agradecimiento' && fin !== 'mensaje') return error(422, 'Elija para qué es la plantilla')
+    if (fin !== 'invitacion' && fin !== 'agradecimiento' && fin !== 'mensaje')
+      return error(422, 'Elija para qué es la plantilla')
     const repetido = plantillas().some(
       (p) => p.revista === revista && p.nombre.trim().toLowerCase() === nombre.trim().toLowerCase(),
     )
@@ -209,10 +209,16 @@ export const handlersAdmin = [
     const plantilla = plantillas().find((p) => p.id === params.id)
     if (!plantilla) return error(404, 'Plantilla no encontrada')
     if (plantilla.fin !== 'invitacion' && plantilla.fin !== 'agradecimiento') {
-      return error(409, 'Solo las invitaciones y los agradecimientos tienen una plantilla predeterminada')
+      return error(
+        409,
+        'Solo las invitaciones y los agradecimientos tienen una plantilla predeterminada',
+      )
     }
     if (!plantilla.cuerpo.trim()) {
-      return error(422, 'La plantilla aún no tiene texto: escríbalo antes de dejarla como la predeterminada')
+      return error(
+        422,
+        'La plantilla aún no tiene texto: escríbalo antes de dejarla como la predeterminada',
+      )
     }
     for (const otra of plantillas()) {
       if (otra.revista === plantilla.revista && otra.fin === plantilla.fin) {
@@ -228,7 +234,8 @@ export const handlersAdmin = [
     if (!c.ok) return c.respuesta
     const plantilla = plantillas().find((p) => p.id === params.id)
     if (!plantilla) return error(404, 'Plantilla no encontrada')
-    if (plantilla.fin === 'constancia') return error(409, 'La constancia de la revista no se elimina: solo se edita')
+    if (plantilla.fin === 'constancia')
+      return error(409, 'La constancia de la revista no se elimina: solo se edita')
     plantillas().splice(plantillas().indexOf(plantilla), 1)
     return new HttpResponse(null, { status: 204 })
   }),
@@ -242,12 +249,14 @@ export const handlersAdmin = [
     const parte = PARTES.find((x) => x === params.parte)
     if (!parte) return error(404, 'Parte de la plantilla no válida')
     // Solo la plantilla de archivo (la constancia) tiene imágenes; una plantilla de correo no tiene.
-    if (!plantilla.imagenes) return error(409, 'Solo la plantilla de archivo (la constancia) lleva imágenes')
+    if (!plantilla.imagenes)
+      return error(409, 'Solo la plantilla de archivo (la constancia) lleva imágenes')
     const archivo = (await request.formData()).get('archivo')
     if (archivo === null || typeof archivo === 'string') return error(422, 'Adjunte la imagen')
-    const esImagen = /\.(png|jpe?g)$/i.test(archivo.name) || /^image\/(png|jpeg)$/.test(archivo.type)
+    const esImagen =
+      /\.(png|jpe?g)$/i.test(archivo.name) || /^image\/(png|jpeg)$/.test(archivo.type)
     if (!esImagen) return error(422, 'La imagen debe ser PNG o JPG')
-    if (archivo.size > MAX_IMAGEN) return error(422, 'La imagen no puede pasar de 2 MB')
+    if (archivo.size > MAX_IMAGEN) return error(422, 'La imagen no puede pasar de 30 MB')
     const imagen = { nombre: archivo.name, tamano: archivo.size }
     plantilla.imagenes[parte] = imagen
     return HttpResponse.json(plantilla)
@@ -267,9 +276,10 @@ export const handlersAdmin = [
   http.post('*/api/plantillas/vista-correo', async ({ request }) => {
     const c = contextoGlobal(request, 'administrar')
     if (!c.ok) return c.respuesta
-    const { cuerpo, uso } = (await request.json()) as {
+    const { cuerpo, uso, revista } = (await request.json()) as {
       cuerpo: string
       uso: 'invitacion' | 'agradecimiento' | 'mensaje'
+      revista?: Revista
     }
     // El título dice de qué correo se trata.
     const titulo =
@@ -279,7 +289,7 @@ export const handlersAdmin = [
           ? 'Mensaje de la Dependencia de Editorial'
           : 'Invitación a evaluar un artículo'
     return HttpResponse.json({
-      html: `<!doctype html><html lang="es"><body><h1>Universidad CESMAG</h1><h2>${titulo}</h2><p>${cuerpo}</p><small>Aviso de datos personales</small></body></html>`,
+      html: correoDeEjemplo(titulo, cuerpo, REVISTAS[revista ?? 'reep'].nombre),
     })
   }),
 
@@ -288,7 +298,8 @@ export const handlersAdmin = [
     if (!c.ok) return c.respuesta
     const plantilla = plantillas().find((p) => p.id === params.id)
     if (!plantilla) return error(404, 'Plantilla no encontrada')
-    if (!plantilla.imagenes) return error(409, 'Solo la plantilla de archivo tiene vista previa en PDF')
+    if (!plantilla.imagenes)
+      return error(409, 'Solo la plantilla de archivo tiene vista previa en PDF')
     return new HttpResponse('%PDF-1.4 vista previa de ejemplo', {
       headers: { 'Content-Type': 'application/pdf' },
     })
@@ -299,7 +310,8 @@ export const handlersAdmin = [
     if (!c.ok) return c.respuesta
     const plantilla = plantillas().find((p) => p.id === params.id)
     if (!plantilla) return error(404, 'Plantilla no encontrada')
-    if (!plantilla.imagenes) return error(409, 'Solo la plantilla de archivo tiene vista previa en PDF')
+    if (!plantilla.imagenes)
+      return error(409, 'Solo la plantilla de archivo tiene vista previa en PDF')
     return new HttpResponse('%PDF-1.4 vista previa de ejemplo', {
       headers: { 'Content-Type': 'application/pdf' },
     })

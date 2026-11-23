@@ -32,7 +32,8 @@ export function ImagenesConstancia({ plantilla }: { plantilla: Plantilla }) {
         Encabezado, pie de página y firma
       </h3>
       <p className="text-cuerpo-13 text-texto-secundario">
-        Imágenes PNG o JPG de hasta 2 MB. La firma aparece donde el texto tiene {'{{firma}}'}.
+        Imágenes PNG o JPG de hasta 30 MB (las muy grandes se reducen solas antes de subirlas). La
+        firma aparece donde el texto tiene el dato [Firma].
       </p>
       {faltan.length > 0 && (
         <Alerta tipo="advertencia">

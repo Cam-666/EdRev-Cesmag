@@ -4,6 +4,7 @@
  * (tipo «mensaje», sin artículo). Igual que el servidor real: solo se usan plantillas de mensaje de esa revista y
  * a quien no tiene un correo válido no se le puede escribir. Lo pueden hacer la Administradora y la Auxiliar.
  */
+import { correoDeEjemplo } from './vistaCorreo'
 import { http, HttpResponse } from 'msw'
 import { autorPorId, plantillas } from '../db'
 import { ahoraIso, contexto, error } from './util'
@@ -22,16 +23,39 @@ interface Persona {
   correo: string
   universidad: string
   profesion: string
+  area: string
+  pais: string
+  orcid: string
 }
 
 function personaDe(base: SeedRevista, destino: Pedido['destino']): Persona | null {
   if (destino?.tipo === 'par') {
     const par = base.pares.find((p) => p.id === destino.id)
-    return par ? { nombre: par.nombre, correo: par.correo, universidad: par.universidad, profesion: par.profesion } : null
+    return par
+      ? {
+          nombre: par.nombre,
+          correo: par.correo,
+          universidad: par.universidad,
+          profesion: par.profesion,
+          area: par.area,
+          pais: '',
+          orcid: '',
+        }
+      : null
   }
   if (destino?.tipo === 'autor') {
     const autor = autorPorId(String(destino.id))
-    return autor ? { nombre: autor.nombre, correo: autor.correo, universidad: autor.filiacion, profesion: '' } : null
+    return autor
+      ? {
+          nombre: autor.nombre,
+          correo: autor.correo,
+          universidad: autor.filiacion,
+          profesion: '',
+          area: '',
+          pais: autor.pais,
+          orcid: autor.orcid,
+        }
+      : null
   }
   return null
 }
@@ -40,20 +64,31 @@ function plantillaDe(revista: Revista, id: string | undefined) {
   return plantillas().find((p) => p.id === id && p.revista === revista && p.fin === 'mensaje')
 }
 
-const rellenar = (texto: string, v: Record<string, string>) => texto.replace(/\{\{(\w+)\}\}/g, (_, k: string) => v[k] ?? '')
+const rellenar = (texto: string, v: Record<string, string>) =>
+  texto.replace(/\{\{(\w+)\}\}/g, (_, k: string) => v[k] ?? '')
 
 const NOMBRE_REVISTA: Record<Revista, string> = {
   reep: 'Revista Electrónica en Educación y Pedagogía',
-  ire: 'Revista Investigium IRE Ciencias Sociales y Humanas',
+  ire: 'Revista Investigium IRE: Ciencias Sociales y Humanas',
 }
 
 function datosDe(revista: Revista, p: Persona): Record<string, string> {
   return {
     revista: NOMBRE_REVISTA[revista],
+    REVISTA: NOMBRE_REVISTA[revista].toUpperCase(),
     nombre: p.nombre,
+    NOMBRE: p.nombre.toUpperCase(),
+    correo: p.correo,
     universidad: p.universidad,
     profesion: p.profesion,
-    fecha: new Date().toLocaleDateString('es-CO', { day: 'numeric', month: 'long', year: 'numeric' }),
+    area: p.area,
+    pais: p.pais,
+    orcid: p.orcid,
+    fecha: new Date().toLocaleDateString('es-CO', {
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric',
+    }),
     anio: String(new Date().getFullYear()),
   }
 }
@@ -70,7 +105,8 @@ export const handlersMensajes = [
     const c = contexto(params, request)
     if (!c.ok) return c.respuesta
     const fin = new URL(request.url).searchParams.get('fin')
-    if (fin !== 'invitacion' && fin !== 'agradecimiento') return error(422, 'Indique si es una invitación o un agradecimiento')
+    if (fin !== 'invitacion' && fin !== 'agradecimiento')
+      return error(422, 'Indique si es una invitación o un agradecimiento')
     return HttpResponse.json(
       deEnvio(c.revista, fin).map((p) => ({
         id: p.id,
@@ -87,10 +123,9 @@ export const handlersMensajes = [
     const c = contexto(params, request)
     if (!c.ok) return c.respuesta
     const { fin, cuerpo } = (await request.json()) as { fin: string; cuerpo: string }
-    const titulo = fin === 'agradecimiento' ? 'Gracias por su evaluación' : 'Invitación a evaluar un artículo'
-    return HttpResponse.json({
-      html: `<!doctype html><html lang="es"><body><h1>Universidad CESMAG</h1><h2>${titulo}</h2><p>${cuerpo}</p><small>Aviso de datos personales</small></body></html>`,
-    })
+    const titulo =
+      fin === 'agradecimiento' ? 'Gracias por su evaluación' : 'Invitación a evaluar un artículo'
+    return HttpResponse.json({ html: correoDeEjemplo(titulo, cuerpo, NOMBRE_REVISTA[c.revista]) })
   }),
 
   http.get('*/api/:revista/mensajes/plantillas', ({ params, request }) => {
@@ -110,7 +145,8 @@ export const handlersMensajes = [
     const persona = personaDe(c.base, pedido.destino)
     if (!persona) return error(404, 'La persona no existe')
     const plantilla = plantillaDe(c.revista, pedido.plantillaId)
-    if (!plantilla) return error(404, 'La plantilla no existe en esa revista o no es una plantilla de mensaje')
+    if (!plantilla)
+      return error(404, 'La plantilla no existe en esa revista o no es una plantilla de mensaje')
     const v = datosDe(c.revista, persona)
     const cuerpo = rellenar(plantilla.cuerpo, v)
     return HttpResponse.json({
@@ -128,10 +164,14 @@ export const handlersMensajes = [
     const persona = personaDe(c.base, pedido.destino)
     if (!persona) return error(404, 'La persona no existe')
     const plantilla = plantillaDe(c.revista, pedido.plantillaId)
-    if (!plantilla) return error(404, 'La plantilla no existe en esa revista o no es una plantilla de mensaje')
+    if (!plantilla)
+      return error(404, 'La plantilla no existe en esa revista o no es una plantilla de mensaje')
     const correo = persona.correo.trim().toLowerCase()
     if (!CORREO_VALIDO.test(correo)) {
-      return error(409, `${persona.nombre} no tiene un correo válido registrado: corríjalo en su ficha antes de enviarle un mensaje`)
+      return error(
+        409,
+        `${persona.nombre} no tiene un correo válido registrado: corríjalo en su ficha antes de enviarle un mensaje`,
+      )
     }
     const v = datosDe(c.revista, persona)
     const id = `${c.revista}-msg-n${c.base.correos.length + 1}`
@@ -150,6 +190,9 @@ export const handlersMensajes = [
       atendido: false,
       respuestaPar: null,
     })
-    return HttpResponse.json({ id, estado: 'en-cola', destinatario: correo, nombre: persona.nombre }, { status: 201 })
+    return HttpResponse.json(
+      { id, estado: 'en-cola', destinatario: correo, nombre: persona.nombre },
+      { status: 201 },
+    )
   }),
 ]

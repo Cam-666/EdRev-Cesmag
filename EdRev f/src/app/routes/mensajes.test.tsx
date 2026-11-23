@@ -56,7 +56,7 @@ describe('enviar un correo a mano (Enviar correo)', () => {
     await user.click(await screen.findByRole('button', { name: 'Enviar correo' }))
     const dialogo = await screen.findByRole('dialog', { name: /^Enviar correo a / })
     await within(dialogo).findByRole('combobox', { name: '2. ¿Qué plantilla quiere enviar?' })
-    await elegirOpcion(user, '1. ¿Desde qué revista se envía?', 'Revista Investigium IRE Ciencias Sociales y Humanas')
+    await elegirOpcion(user, '1. ¿Desde qué revista se envía?', 'Revista Investigium IRE: Ciencias Sociales y Humanas')
     await waitFor(() =>
       expect(within(dialogo).getByRole('combobox', { name: '2. ¿Qué plantilla quiere enviar?' })).toHaveTextContent('Mensaje general'),
     )

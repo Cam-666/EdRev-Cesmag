@@ -8,12 +8,14 @@
  * 2. `vistaPrevia` arma el correo con los datos de la persona y lo muestra tal como lo recibirá.
  * 3. `enviarMensaje` lo guarda «en cola»; la tarea de fondo de servicios/envioCorreos lo envía (por Brevo o
  *    simulado, según CORREO_MODO) y marca su resultado.
- * Los datos que una plantilla de mensaje puede usar: revista, nombre, universidad, profesión, fecha y año.
+ * Los datos que una plantilla de mensaje puede usar: los de la persona (nombre, correo, profesión, universidad o
+ * filiación, área, país, ORCID), los de su artículo más reciente en esa revista (título, número, tipo, estado) y los
+ * de la revista (nombre, ISSN, indexaciones, correo), además de la fecha y el año.
  */
-import { config } from '../config.js'
 import { enTransaccion, pool } from '../db.js'
 import { auditar } from '../lib/auditoria.js'
 import { aHtml } from '../lib/formato.js'
+import { datosRevista, ESTADO_ARTICULO, TIPO_ARTICULO } from '../lib/datosCorreo.js'
 import { CORREO_VALIDO, ErrorHttp, siglaDe } from '../lib/http.js'
 import { iso } from '../lib/mapeo.js'
 import { escudoEmbebido, marcoInstitucional } from '../lib/marcoCorreo.js'
@@ -28,27 +30,57 @@ interface Persona {
   correo: string | null
   universidad: string | null
   profesion: string | null
+  area: string | null
+  pais: string | null
+  orcid: string | null
+  /** Su artículo más reciente en la revista desde la que se escribe (si tiene). */
+  numero_ojs: string | null
+  titulo: string | null
+  tipo: string | null
+  estado: string | null
 }
 
-async function persona(d: Destino): Promise<Persona> {
+async function persona(d: Destino, revista: number): Promise<Persona> {
   const { rows } =
     d.tipo === 'par'
       ? await pool.query<Persona>(
-          'SELECT nombre, correo, universidad, profesion FROM par_evaluador WHERE id_par = $1',
-          [d.id],
+          `SELECT p.nombre, p.correo, p.universidad, p.profesion, p.area, NULL::text AS pais, NULL::text AS orcid,
+                  a.numero_ojs, a.titulo, a.tipo, a.estado
+             FROM par_evaluador p
+             LEFT JOIN LATERAL (
+               SELECT ar.* FROM evaluacion e JOIN articulo ar ON ar.id_articulo = e.id_articulo
+                WHERE e.id_par = p.id_par AND ar.id_revista = $2 ORDER BY e.fecha_asignacion DESC LIMIT 1
+             ) a ON true
+            WHERE p.id_par = $1`,
+          [d.id, revista],
         )
       : await pool.query<Persona>(
-          'SELECT nombre, correo, filiacion AS universidad, NULL::text AS profesion FROM autor WHERE id_autor = $1',
-          [d.id],
+          `SELECT au.nombre, au.correo, au.filiacion AS universidad, NULL::text AS profesion, NULL::text AS area,
+                  au.pais, au.orcid, a.numero_ojs, a.titulo, a.tipo, a.estado
+             FROM autor au
+             LEFT JOIN LATERAL (
+               SELECT ar.* FROM articulo_autor aa JOIN articulo ar ON ar.id_articulo = aa.id_articulo
+                WHERE aa.id_autor = au.id_autor AND ar.id_revista = $2
+                ORDER BY ar.fecha_postulacion DESC NULLS LAST, ar.id_articulo DESC LIMIT 1
+             ) a ON true
+            WHERE au.id_autor = $1`,
+          [d.id, revista],
         )
   const fila = rows[0]
   if (!fila) throw new ErrorHttp(404, d.tipo === 'par' ? 'Par evaluador no encontrado' : 'Autor no encontrado')
   return fila
 }
 
-async function revistaDe(id: number): Promise<{ nombre: string; correo_remitente: string }> {
-  const { rows } = await pool.query<{ nombre: string; correo_remitente: string }>(
-    'SELECT nombre, correo_remitente FROM revista WHERE id_revista = $1',
+interface RevistaMensaje {
+  nombre: string
+  correo_remitente: string
+  issn: string | null
+  indexaciones: string | null
+}
+
+async function revistaDe(id: number): Promise<RevistaMensaje> {
+  const { rows } = await pool.query<RevistaMensaje>(
+    'SELECT nombre, correo_remitente, issn, indexaciones FROM revista WHERE id_revista = $1',
     [id],
   )
   if (!rows[0]) throw new ErrorHttp(404, 'Revista no encontrada')
@@ -75,14 +107,21 @@ async function plantillaDe(revista: number, id: number): Promise<PlantillaMensaj
 
 const rellenar = (texto: string, v: Record<string, string>) => texto.replace(/\{\{(\w+)\}\}/g, (_, k: string) => v[k] ?? '')
 
-function datosDe(revista: string, p: Persona): Record<string, string> {
+function datosDe(revista: RevistaMensaje, p: Persona): Record<string, string> {
   return {
-    revista,
+    ...datosRevista(revista),
     nombre: p.nombre,
+    NOMBRE: p.nombre.toUpperCase(),
+    correo: p.correo ?? '',
     universidad: p.universidad ?? '',
     profesion: p.profesion ?? '',
-    fecha: new Date().toLocaleDateString('es-CO', { day: 'numeric', month: 'long', year: 'numeric', timeZone: config.zonaHoraria }),
-    anio: String(new Date().getFullYear()),
+    area: p.area ?? '',
+    pais: p.pais ?? '',
+    orcid: p.orcid ?? '',
+    articulo: p.titulo ?? '',
+    numero: p.numero_ojs ?? '',
+    tipo: p.tipo ? (TIPO_ARTICULO[p.tipo] ?? '') : '',
+    estado: p.estado ? (ESTADO_ARTICULO[p.estado] ?? '') : '',
   }
 }
 
@@ -98,8 +137,8 @@ export async function plantillasDeMensaje(revista: number) {
 
 /** El correo tal como lo recibirá la persona (con el marco institucional), sin enviarlo. */
 export async function vistaPrevia(revista: number, destino: Destino, idPlantilla: number) {
-  const [p, rev, plantilla] = await Promise.all([persona(destino), revistaDe(revista), plantillaDe(revista, idPlantilla)])
-  const v = datosDe(rev.nombre, p)
+  const [p, rev, plantilla] = await Promise.all([persona(destino, revista), revistaDe(revista), plantillaDe(revista, idPlantilla)])
+  const v = datosDe(rev, p)
   return {
     para: { nombre: p.nombre, correo: p.correo?.trim() || null },
     de: rev.correo_remitente,
@@ -116,12 +155,12 @@ export async function vistaPrevia(revista: number, destino: Destino, idPlantilla
 
 /** Guarda el mensaje «en cola»: la tarea de fondo lo envía. */
 export async function enviarMensaje(revista: number, destino: Destino, idPlantilla: number, actor: number) {
-  const [p, rev, plantilla] = await Promise.all([persona(destino), revistaDe(revista), plantillaDe(revista, idPlantilla)])
+  const [p, rev, plantilla] = await Promise.all([persona(destino, revista), revistaDe(revista), plantillaDe(revista, idPlantilla)])
   const correo = p.correo?.trim().toLowerCase() ?? ''
   if (!CORREO_VALIDO.test(correo)) {
     throw new ErrorHttp(409, `${p.nombre} no tiene un correo válido registrado: corríjalo en su ficha antes de enviarle un mensaje`)
   }
-  const v = datosDe(rev.nombre, p)
+  const v = datosDe(rev, p)
   const asunto = rellenar(plantilla.asunto, v) || `Mensaje de ${rev.nombre}`
   const cuerpo = rellenar(plantilla.cuerpo, v)
   return enTransaccion(async (c) => {

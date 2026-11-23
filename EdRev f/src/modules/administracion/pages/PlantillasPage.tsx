@@ -29,7 +29,15 @@ const OPCIONES_REVISTA = (Object.keys(REVISTAS) as Revista[]).map((r) => ({
   etiqueta: REVISTAS[r].nombreCorto,
 }))
 
-function Fila({ nombre, descripcion, children }: { nombre: string; descripcion: string; children: React.ReactNode }) {
+function Fila({
+  nombre,
+  descripcion,
+  children,
+}: {
+  nombre: string
+  descripcion: string
+  children: React.ReactNode
+}) {
   return (
     <li className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-borde-base bg-superficie-tarjeta p-4">
       <div className="min-w-0 flex-1">
@@ -99,7 +107,11 @@ export function PlantillasPage() {
                 {GRUPOS.map((g) => {
                   const lista = delaRevista.filter((p) => p.fin === g.fin)
                   return (
-                    <section key={g.fin} aria-labelledby={`titulo-${g.fin}`} className="flex flex-col gap-3">
+                    <section
+                      key={g.fin}
+                      aria-labelledby={`titulo-${g.fin}`}
+                      className="flex flex-col gap-3"
+                    >
                       <div>
                         <h3 id={`titulo-${g.fin}`} className="text-titulo-16">
                           {g.nombre}
@@ -108,7 +120,8 @@ export function PlantillasPage() {
                       </div>
                       {lista.length === 0 ? (
                         <p className="rounded-lg border border-dashed border-borde-fuerte p-4 text-cuerpo-13 text-texto-secundario">
-                          Todavía no hay plantillas de este tipo en esta revista. Cree una con «Nueva plantilla».
+                          Todavía no hay plantillas de este tipo en esta revista. Cree una con
+                          «Nueva plantilla».
                         </p>
                       ) : (
                         <ul className="flex flex-col gap-3">
@@ -118,9 +131,17 @@ export function PlantillasPage() {
                               <Fila
                                 key={p.id}
                                 nombre={conVarias && p.enUso ? `${p.nombre} · En uso` : p.nombre}
-                                descripcion={p.cuerpo.trim() ? 'Lista para usar.' : 'Todavía está en blanco: escriba su texto.'}
+                                descripcion={
+                                  p.cuerpo.trim()
+                                    ? 'Lista para usar.'
+                                    : 'Todavía está en blanco: escriba su texto.'
+                                }
                               >
-                                <Boton variante="secundario" tamano="sm" onClick={() => setEditando(p.id)}>
+                                <Boton
+                                  variante="secundario"
+                                  tamano="sm"
+                                  onClick={() => setEditando(p.id)}
+                                >
                                   Editar <span className="sr-only">{p.nombre}</span>
                                 </Boton>
                                 {conVarias && !p.enUso && p.cuerpo.trim() && (
@@ -134,7 +155,11 @@ export function PlantillasPage() {
                                   </Boton>
                                 )}
                                 {p.fin !== 'constancia' && (
-                                  <Boton variante="peligro" tamano="sm" onClick={() => setBorrando(p)}>
+                                  <Boton
+                                    variante="peligro"
+                                    tamano="sm"
+                                    onClick={() => setBorrando(p)}
+                                  >
                                     Eliminar <span className="sr-only">{p.nombre}</span>
                                   </Boton>
                                 )}
@@ -147,7 +172,9 @@ export function PlantillasPage() {
                   )
                 })}
                 {habitual.isError && (
-                  <Alerta tipo="error">{mensajeDeApi(habitual.error, 'No fue posible cambiar la plantilla en uso.')}</Alerta>
+                  <Alerta tipo="error">
+                    {mensajeDeApi(habitual.error, 'No fue posible cambiar la plantilla en uso.')}
+                  </Alerta>
                 )}
               </>
             )}
@@ -173,7 +200,11 @@ export function PlantillasPage() {
         descripcion={`¿Desea eliminar la plantilla «${borrando?.nombre ?? ''}»? Esta acción no se puede deshacer.`}
         etiquetaConfirmar="Eliminar plantilla"
         cargando={eliminar.isPending}
-        error={eliminar.isError ? mensajeDeApi(eliminar.error, 'No fue posible eliminar la plantilla.') : null}
+        error={
+          eliminar.isError
+            ? mensajeDeApi(eliminar.error, 'No fue posible eliminar la plantilla.')
+            : null
+        }
         onConfirmar={() => {
           if (borrando) eliminar.mutate(borrando.id, { onSuccess: () => setBorrando(null) })
         }}

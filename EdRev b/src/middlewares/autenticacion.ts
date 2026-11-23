@@ -40,12 +40,14 @@ export async function requiereSesion(req: Request, _res: Response, next: NextFun
   } catch {
     throw new ErrorHttp(401, 'No autenticado')
   }
-  const { rows } = await pool.query<{ nombre: string; rol: UsuarioSesion['perfil'] }>(
-    'SELECT nombre, rol FROM usuario WHERE id_usuario = $1 AND activo',
+  const { rows } = await pool.query<{ nombre: string; rol: UsuarioSesion['perfil']; activo: boolean }>(
+    'SELECT nombre, rol, activo FROM usuario WHERE id_usuario = $1',
     [id],
   )
   const fila = rows[0]
   if (!fila) throw new ErrorHttp(401, 'No autenticado')
+  // La cuenta existe pero la Administradora la inhabilitó: se avisa el motivo para no confundirlo con una sesión vencida.
+  if (!fila.activo) throw new ErrorHttp(401, 'Cuenta inhabilitada', { motivo: 'inhabilitada' })
   req.usuario = { id, nombre: fila.nombre, perfil: fila.rol }
   next()
 }

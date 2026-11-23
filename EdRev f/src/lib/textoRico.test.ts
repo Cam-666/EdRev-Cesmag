@@ -28,6 +28,9 @@ describe('texto rico del editor', () => {
       '[centro]**Constancia** de {{par}}\n\nSegundo párrafo',
       'Uno\ndos en otra línea\n\n[justificado]Tres con **negrita** al medio.\n\n[derecha]{{firma}}',
       '**{{PAR}}**\n\n[centro]{{articulo}}',
+      // cursiva, renglones en blanco y sangría, como en el «Proyectó» de la constancia
+      'Cordialmente,\n\n\n\n\n\n__Proyectó__: __Jenny Mera__\n              __Editora__',
+      '**__Negrita y cursiva__** y __solo cursiva__',
     ]) {
       expect(deEditable(caja(aHtmlEditable(texto)))).toBe(texto)
     }
@@ -37,7 +40,9 @@ describe('texto rico del editor', () => {
     expect(deEditable(caja('<div>Uno</div><div>Dos<br></div>'))).toBe('Uno\n\nDos')
     expect(deEditable(caja('Texto suelto<div>Otro</div>'))).toBe('Texto suelto\n\nOtro')
     expect(deEditable(caja('<p>Hola <b>mundo</b> cruel</p>'))).toBe('Hola **mundo** cruel')
-    expect(deEditable(caja('<p><strong>a</strong><strong>b</strong></p>'))).toBe('**a****b**'.replace('****', ''))
+    expect(deEditable(caja('<p><strong>a</strong><strong>b</strong></p>'))).toBe(
+      '**a****b**'.replace('****', ''),
+    )
     expect(deEditable(caja('<p style="text-align:center">Hola</p>'))).toBe('[centro]Hola')
     expect(deEditable(caja('<p><br></p><p>Dos</p>'))).toBe('Dos')
   })

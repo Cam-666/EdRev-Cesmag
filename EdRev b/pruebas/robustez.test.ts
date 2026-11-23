@@ -9,7 +9,9 @@ import { fechaLocal } from '../src/lib/fechas.js'
 import { enteroDe } from '../src/lib/http.js'
 import { app, articuloAprobado, candidato, como } from './api.js'
 
-const PNG = Buffer.alloc(3 * 1024 * 1024, 0)
+const PNG = Buffer.alloc(31 * 1024 * 1024, 0)
+// Una imagen grande pero dentro del límite (25 MB), con la firma de un PNG.
+const PNG_GRANDE = Buffer.concat([Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]), Buffer.alloc(25 * 1024 * 1024, 0)])
 
 describe('entradas del cliente', () => {
   it('una página o un tamaño que no son enteros usan el valor por defecto', async () => {
@@ -39,7 +41,7 @@ describe('entradas del cliente', () => {
     expect((await api.get('/reep/articulos?q=_&porPagina=100')).body.total).toBe(0)
   })
 
-  it('un JSON mal formado es 400 y una imagen de más de 2 MB es 413, no 500', async () => {
+  it('un JSON mal formado es 400 y una imagen de más de 30 MB es 413, no 500 (una de 25 MB se acepta)', async () => {
     const api = await como()
     const malo = await request(app)
       .post('/api/auth/login')
@@ -51,7 +53,10 @@ describe('entradas del cliente', () => {
     const archivo = lista.find((p) => p.clase === 'archivo')
     const grande = await api.subir(`/plantillas/${archivo?.id}/imagen/encabezado`, PNG, 'enorme.png')
     expect(grande.status).toBe(413)
-    expect(grande.body.mensaje).toContain('2 MB')
+    expect(grande.body.mensaje).toContain('30 MB')
+    const aceptada = await api.subir(`/plantillas/${archivo?.id}/imagen/encabezado`, PNG_GRANDE, 'grande.png')
+    expect(aceptada.status).toBe(200)
+    await api.delete(`/plantillas/${archivo?.id}/imagen/encabezado`)
   })
 })
 

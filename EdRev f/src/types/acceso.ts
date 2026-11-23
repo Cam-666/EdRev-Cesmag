@@ -20,7 +20,7 @@ export interface DetalleErrorIngreso {
   bloqueadoHasta?: string
 }
 
-export type MotivoCierre = 'manual' | 'inactividad'
+export type MotivoCierre = 'manual' | 'inactividad' | 'inhabilitada'
 
 /** Por qué se envió un enlace de contraseña: una cuenta nueva o una recuperación. */
 export type MotivoEnlace = 'activacion' | 'recuperacion'

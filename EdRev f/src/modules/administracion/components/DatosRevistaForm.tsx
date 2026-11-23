@@ -73,7 +73,9 @@ export function DatosRevistaForm({ revista, datos }: DatosRevistaFormProps) {
           <Alerta tipo="exito">Datos guardados. Las constancias nuevas los usarán.</Alerta>
         )}
         {guardar.isError && (
-          <Alerta tipo="error">{mensajeDeApi(guardar.error, 'No fue posible guardar los datos.')}</Alerta>
+          <Alerta tipo="error">
+            {mensajeDeApi(guardar.error, 'No fue posible guardar los datos.')}
+          </Alerta>
         )}
       </div>
       <div>

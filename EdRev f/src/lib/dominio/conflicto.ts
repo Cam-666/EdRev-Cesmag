@@ -7,8 +7,25 @@ import type { ParEvaluador } from '@/types/par'
 
 /** Palabras que no distinguen una institución de otra: «Universidad Cesmag» y «Cesmag» son la misma. */
 const GENERICAS = new Set([
-  'universidad', 'universitaria', 'universitario', 'univ', 'institucion', 'instituto', 'corporacion',
-  'fundacion', 'de', 'del', 'la', 'las', 'los', 'el', 'y', 'e', 'u', 'en', 'sede',
+  'universidad',
+  'universitaria',
+  'universitario',
+  'univ',
+  'institucion',
+  'instituto',
+  'corporacion',
+  'fundacion',
+  'de',
+  'del',
+  'la',
+  'las',
+  'los',
+  'el',
+  'y',
+  'e',
+  'u',
+  'en',
+  'sede',
 ])
 
 function palabras(texto: string | null): Set<string> {
@@ -40,7 +57,9 @@ export function mismaInstitucion(
   par: Pick<ParEvaluador, 'universidad'>,
   autores: Array<Pick<Autor, 'nombre' | 'filiacion'>>,
 ): string | null {
-  const delMismo = autores.filter((a) => par.universidad && mismaUniversidad(a.filiacion, par.universidad))
+  const delMismo = autores.filter(
+    (a) => par.universidad && mismaUniversidad(a.filiacion, par.universidad),
+  )
   if (delMismo.length === 0) return null
   const quien = delMismo.length === 1 ? 'del autor' : 'de los autores'
   return `El par pertenece a ${par.universidad}, la misma institución ${quien} ${delMismo.map((a) => a.nombre).join(', ')}: no se puede asignar a este artículo.`

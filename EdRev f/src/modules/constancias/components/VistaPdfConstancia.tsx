@@ -4,29 +4,28 @@
  * Con el servidor real se pide el PDF; con los datos de ejemplo del navegador no hay PDF, y el diálogo muestra la
  * vista de texto (VistaPreviaConstancia).
  */
-import { useEffect, useMemo } from 'react'
 import { useVistaPdfConstancia } from '../hooks/useConstancias'
 import { Alerta } from '@/components/common/Alerta'
+import { HojasPdf } from '@/components/common/HojasPdf'
 import { mensajeDeApi } from '@/lib/api/errores'
 
 export function VistaPdfConstancia({ constanciaId }: { constanciaId: string | null }) {
   const consulta = useVistaPdfConstancia(constanciaId)
-  const direccion = useMemo(
-    () =>
-      consulta.data && typeof URL.createObjectURL === 'function' ? URL.createObjectURL(consulta.data) : null,
-    [consulta.data],
-  )
-  useEffect(() => () => (direccion ? URL.revokeObjectURL(direccion) : undefined), [direccion])
 
   if (consulta.isError) {
-    return <Alerta tipo="error">{mensajeDeApi(consulta.error, 'No fue posible mostrar la constancia.')}</Alerta>
+    return (
+      <Alerta tipo="error">
+        {mensajeDeApi(consulta.error, 'No fue posible mostrar la constancia.')}
+      </Alerta>
+    )
   }
-  if (!direccion) return <p className="text-cuerpo-13 text-texto-secundario">Preparando la constancia…</p>
+  if (!consulta.data)
+    return <p className="text-cuerpo-13 text-texto-secundario">Preparando la constancia…</p>
   return (
-    <iframe
-      title="Vista previa de la constancia en PDF"
-      src={`${direccion}#view=FitH`}
-      className="h-[75vh] min-h-[560px] w-full rounded-lg border border-borde-base bg-white"
+    <HojasPdf
+      archivo={consulta.data}
+      titulo="Vista previa de la constancia en PDF"
+      claseRespaldo="h-[75vh] min-h-[560px]"
     />
   )
 }

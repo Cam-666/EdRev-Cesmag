@@ -9,8 +9,11 @@
  * - la tabla `mensaje`, donde queda cada uno de esos correos;
  * - una plantilla «Mensaje general» de ejemplo en cada revista que todavía no tenga una;
  * - las plantillas de invitación o de agradecimiento que sobran (no son la que se envía sola) pasan a ser mensajes:
- *   cada revista queda con sus tres textos automáticos y el resto son mensajes que se eligen al enviar un correo.
+ *   cada revista queda con sus tres textos automáticos y el resto son mensajes que se eligen al enviar un correo;
+ * - la constancia con el texto inicial anterior (sin editar) pasa al de la constancia de la dependencia, y la revista
+ *   IRE toma su nombre oficial («Revista Investigium IRE: Ciencias Sociales y Humanas»).
  */
+import { TEXTO_CONSTANCIA, TEXTO_CONSTANCIA_ANTERIOR } from './lib/textoConstancia.js'
 import type { Cliente } from './db.js'
 
 export async function asegurarEsquema(c: Cliente): Promise<void> {
@@ -56,4 +59,14 @@ export async function asegurarEsquema(c: Cliente): Promise<void> {
   // El texto propio por envío ya no existe: se retiran sus columnas de las bases que las tenían.
   await c.query('ALTER TABLE correo DROP COLUMN IF EXISTS asunto_propio')
   await c.query('ALTER TABLE correo DROP COLUMN IF EXISTS cuerpo_propio')
+  // La constancia con la disposición de la que entrega la dependencia: solo si todavía tiene el texto inicial anterior
+  // sin cambios (una constancia que la Administradora ya editó se respeta).
+  await c.query("UPDATE plantilla SET cuerpo = $1 WHERE fin = 'constancia' AND replace(cuerpo, chr(13), '') = $2", [
+    TEXTO_CONSTANCIA,
+    TEXTO_CONSTANCIA_ANTERIOR,
+  ])
+  // El nombre oficial de la revista IRE lleva dos puntos, como en sus constancias.
+  await c.query(
+    "UPDATE revista SET nombre = 'Revista Investigium IRE: Ciencias Sociales y Humanas' WHERE nombre = 'Revista Investigium IRE Ciencias Sociales y Humanas'",
+  )
 }

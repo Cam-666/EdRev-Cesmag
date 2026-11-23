@@ -12,7 +12,82 @@
  * Cada revista tiene sus propias tres plantillas.
  */
 import type { CuentaRemitente, ImagenesPlantilla, Plantilla } from '@/types/plantilla'
+import type { FinPlantilla } from '@/types/plantilla'
 import type { Revista } from '@/types/revista'
+
+/** Los datos que puede traer cada tipo de plantilla (los mismos del servidor). */
+export const VARIABLES_FIN: Record<FinPlantilla, string[]> = {
+  invitacion: [
+    'par',
+    'PAR',
+    'profesion',
+    'universidad',
+    'area',
+    'articulo',
+    'numero',
+    'tipo',
+    'revista',
+    'REVISTA',
+    'issn',
+    'contacto',
+    'plazo',
+    'limite',
+    'fecha',
+    'anio',
+    'botones',
+  ],
+  agradecimiento: [
+    'par',
+    'PAR',
+    'profesion',
+    'universidad',
+    'area',
+    'articulo',
+    'numero',
+    'tipo',
+    'entrega',
+    'revista',
+    'REVISTA',
+    'issn',
+    'indexaciones',
+    'contacto',
+    'fecha',
+    'anio',
+  ],
+  constancia: [
+    'revista',
+    'REVISTA',
+    'par',
+    'PAR',
+    'articulo',
+    'issn',
+    'indexaciones',
+    'fecha',
+    'anio',
+    'firma',
+  ],
+  mensaje: [
+    'nombre',
+    'NOMBRE',
+    'correo',
+    'profesion',
+    'universidad',
+    'area',
+    'pais',
+    'orcid',
+    'articulo',
+    'numero',
+    'tipo',
+    'estado',
+    'revista',
+    'REVISTA',
+    'issn',
+    'indexaciones',
+    'contacto',
+    'fecha',
+    'anio',
+  ],
+}
 
 const BASE: Array<Omit<Plantilla, 'id' | 'revista' | 'imagenes' | 'fin'>> = [
   {
@@ -22,7 +97,7 @@ const BASE: Array<Omit<Plantilla, 'id' | 'revista' | 'imagenes' | 'fin'>> = [
     asunto: 'Invitación a evaluar un artículo · {{revista}}',
     cuerpo:
       'Apreciado(a) {{par}}, {{profesion}} de la {{universidad}}:\n\nLa {{revista}} lo(a) invita a participar como par evaluador del artículo «{{articulo}}» (solicitud {{numero}}). Si acepta, recibirá los documentos desde el OJS.\n\nResponda con un clic:\n\n{{botones}}\n\nCordialmente,',
-    variables: ['revista', 'numero', 'par', 'profesion', 'universidad', 'articulo', 'botones'],
+    variables: VARIABLES_FIN.invitacion,
     enUso: true,
   },
   {
@@ -32,7 +107,7 @@ const BASE: Array<Omit<Plantilla, 'id' | 'revista' | 'imagenes' | 'fin'>> = [
     asunto: 'Gracias por su evaluación · {{revista}}',
     cuerpo:
       'Apreciado(a) {{par}}:\n\nAgradecemos su participación como par evaluador del artículo «{{articulo}}». Adjuntamos su constancia.\n\nCordialmente,',
-    variables: ['revista', 'par', 'articulo'],
+    variables: VARIABLES_FIN.agradecimiento,
     enUso: true,
   },
   {
@@ -42,7 +117,7 @@ const BASE: Array<Omit<Plantilla, 'id' | 'revista' | 'imagenes' | 'fin'>> = [
     asunto: null,
     cuerpo:
       '[centro]**LA EDITORA DE LA {{REVISTA}}**\n**ISSN {{issn}} (en línea)**\n\n[centro]**CERTIFICA QUE**\n\n[justificado]**{{PAR}}** participó como evaluador(a) académico(a) del artículo titulado **«{{articulo}}»**, postulado para publicación en una de las ediciones correspondientes al año {{anio}} de la {{revista}}.\n\n[justificado]Su participación se desarrolló en el marco del proceso editorial de evaluación por pares bajo la modalidad de doble ciego, y constituyó un valioso aporte al aseguramiento de la calidad, el rigor y la pertinencia científica de los contenidos publicados por la Revista.\n\n[justificado]Cabe destacar que la {{revista}} se encuentra indexada y referenciada en reconocidos sistemas de información, directorios y bases de datos académicas, entre ellos: {{indexaciones}}.\n\n[justificado]La presente certificación se expide a solicitud del interesado(a), para los fines académicos y profesionales que estime pertinentes.\n\nSan Juan de Pasto, {{fecha}}.\n\nCordialmente,\n\n[centro]{{firma}}\n\n[centro]Editor(a) de la {{revista}}',
-    variables: ['revista', 'REVISTA', 'par', 'PAR', 'articulo', 'issn', 'indexaciones', 'fecha', 'anio', 'firma'],
+    variables: VARIABLES_FIN.constancia,
     enUso: true,
   },
 ]
@@ -96,8 +171,9 @@ export const PLANTILLAS_INICIALES: Plantilla[] = (['reep', 'ire'] as const).flat
     clase: 'correo' as const,
     nombre: 'Invitación breve',
     asunto: 'Invitación a evaluar · {{revista}}',
-    cuerpo: 'Apreciado(a) {{par}}:\n\nLo(a) invitamos a evaluar el artículo «{{articulo}}».\n\n{{botones}}',
-    variables: ['revista', 'numero', 'par', 'profesion', 'universidad', 'articulo', 'botones'],
+    cuerpo:
+      'Apreciado(a) {{par}}:\n\nLo(a) invitamos a evaluar el artículo «{{articulo}}».\n\n{{botones}}',
+    variables: VARIABLES_FIN.invitacion,
     enUso: false,
     imagenes: null,
   },
@@ -109,8 +185,9 @@ export const PLANTILLAS_INICIALES: Plantilla[] = (['reep', 'ire'] as const).flat
     clase: 'correo' as const,
     nombre: 'Agradecimiento breve',
     asunto: 'Gracias · {{revista}}',
-    cuerpo: 'Apreciado(a) {{par}}:\n\nGracias por evaluar «{{articulo}}». Adjuntamos su constancia.',
-    variables: ['revista', 'par', 'articulo'],
+    cuerpo:
+      'Apreciado(a) {{par}}:\n\nGracias por evaluar «{{articulo}}». Adjuntamos su constancia.',
+    variables: VARIABLES_FIN.agradecimiento,
     enUso: false,
     imagenes: null,
   },
@@ -124,7 +201,7 @@ export const PLANTILLAS_INICIALES: Plantilla[] = (['reep', 'ire'] as const).flat
     asunto: 'Mensaje de {{revista}}',
     cuerpo:
       'Apreciado(a) {{nombre}}:\n\nLe escribimos desde la Dependencia de Editorial de la {{revista}}.\n\nCordialmente,',
-    variables: ['revista', 'nombre', 'universidad', 'profesion', 'fecha', 'anio'],
+    variables: VARIABLES_FIN.mensaje,
     enUso: false,
     imagenes: null,
   },
@@ -138,7 +215,7 @@ export const CUENTAS_INICIALES: CuentaRemitente[] = [
 
 export const NOMBRE_EN_CORREO: Record<Revista, string> = {
   reep: 'Revista Electrónica en Educación y Pedagogía',
-  ire: 'Revista Investigium IRE Ciencias Sociales y Humanas',
+  ire: 'Revista Investigium IRE: Ciencias Sociales y Humanas',
 }
 
 /** Partes fijas de la constancia: membrete y firma (no son texto editable). */

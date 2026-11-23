@@ -33,7 +33,7 @@ export function manejadorErrores(error: unknown, _req: Request, res: Response, _
   }
   if (cliente.name === 'MulterError') {
     const grande = cliente.code === 'LIMIT_FILE_SIZE'
-    res.status(grande ? 413 : 422).json({ mensaje: grande ? 'La imagen no puede pesar más de 2 MB' : 'No se pudo leer el archivo adjunto' })
+    res.status(grande ? 413 : 422).json({ mensaje: grande ? 'La imagen no puede pesar más de 30 MB' : 'No se pudo leer el archivo adjunto' })
     return
   }
   const pg = error as { code?: string; message?: string }

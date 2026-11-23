@@ -132,7 +132,9 @@ export function UsuariosPage() {
         etiquetaConfirmar="Eliminar cuenta"
         cargando={eliminar.isPending}
         error={
-          eliminar.isError ? mensajeDeApi(eliminar.error, 'No fue posible eliminar la cuenta.') : null
+          eliminar.isError
+            ? mensajeDeApi(eliminar.error, 'No fue posible eliminar la cuenta.')
+            : null
         }
         onConfirmar={() => {
           if (eliminando) eliminar.mutate(eliminando.id, { onSuccess: () => setEliminando(null) })

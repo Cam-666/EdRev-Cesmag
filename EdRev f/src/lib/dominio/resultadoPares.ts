@@ -10,13 +10,21 @@
 import { PARES_BASE } from './pares'
 import type { ConceptoPar, EstadoAsignacion, ResultadoPares } from '@/types/par'
 
-const REALES: readonly ResultadoPares[] = ['publicable', 'publicable-con-modificaciones', 'no-publicable']
+const REALES: readonly ResultadoPares[] = [
+  'publicable',
+  'publicable-con-modificaciones',
+  'no-publicable',
+]
 
 export function resultadoDePares(
   asignaciones: Array<{ estado: EstadoAsignacion; concepto: ConceptoPar | null }>,
 ): ResultadoPares | null {
   const vigentes = asignaciones.filter(
-    (a) => a.estado === 'invitado' || a.estado === 'segundo-intento' || a.estado === 'acepto' || a.estado === 'entrego',
+    (a) =>
+      a.estado === 'invitado' ||
+      a.estado === 'segundo-intento' ||
+      a.estado === 'acepto' ||
+      a.estado === 'entrego',
   )
   if (vigentes.length < PARES_BASE) return null
   const conceptos: ResultadoPares[] = []

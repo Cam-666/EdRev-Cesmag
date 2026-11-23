@@ -2,7 +2,9 @@ import { alinearParrafo, alternarNegrita, analizar, textoPlano } from './formato
 
 describe('formato del texto de una plantilla', () => {
   it('reads the alignment of each paragraph and the bold', () => {
-    const p = analizar('[centro]**Título**\n\n[justificado]Texto con **negrita** en medio.\n\nSin marca')
+    const p = analizar(
+      '[centro]**Título**\n\n[justificado]Texto con **negrita** en medio.\n\nSin marca',
+    )
     expect(p.map((x) => x.alineacion)).toEqual(['centro', 'justificado', 'izquierda'])
     expect(p[1]?.lineas[0]?.map((t) => t.negrita)).toEqual([false, true, false])
     expect(textoPlano('[centro]**A** b\nc')).toBe('A b\nc')

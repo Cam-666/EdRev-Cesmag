@@ -28,6 +28,11 @@ export function error(estado: number, mensaje: string, extra: Record<string, unk
   return HttpResponse.json({ mensaje, ...extra }, { status: estado })
 }
 
+/** La cuenta existe pero está inhabilitada: igual que la API real, se avisa el motivo del rechazo. */
+function sesionInhabilitada() {
+  return error(401, 'Cuenta inhabilitada', { motivo: 'inhabilitada' })
+}
+
 type Contexto =
   | { ok: true; revista: Revista; base: SeedRevista; usuario: Usuario }
   | { ok: false; respuesta: Response }
@@ -43,8 +48,9 @@ export function contexto(
     return { ok: false, respuesta: error(404, 'Revista no encontrada') }
   }
   const id = idUsuarioDeAutorizacion(request.headers.get('Authorization'))
-  const usuario = usuarios().find((u) => u.id === id && u.estado === 'activo')
+  const usuario = usuarios().find((u) => u.id === id)
   if (!usuario) return { ok: false, respuesta: error(401, 'No autenticado') }
+  if (usuario.estado !== 'activo') return { ok: false, respuesta: sesionInhabilitada() }
   if (accion && !puede(usuario.perfil, accion)) {
     return { ok: false, respuesta: error(403, 'Sin permiso para esta acción') }
   }
@@ -56,8 +62,9 @@ type ContextoGlobal = { ok: true; usuario: Usuario } | { ok: false; respuesta: R
 /** Sesión (y opcionalmente un permiso) para los endpoints que no son de una sola revista. */
 export function contextoGlobal(request: Request, accion?: Accion): ContextoGlobal {
   const id = idUsuarioDeAutorizacion(request.headers.get('Authorization'))
-  const usuario = usuarios().find((u) => u.id === id && u.estado === 'activo')
+  const usuario = usuarios().find((u) => u.id === id)
   if (!usuario) return { ok: false, respuesta: error(401, 'No autenticado') }
+  if (usuario.estado !== 'activo') return { ok: false, respuesta: sesionInhabilitada() }
   if (accion && !puede(usuario.perfil, accion)) {
     return { ok: false, respuesta: error(403, 'Sin permiso para esta acción') }
   }

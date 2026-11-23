@@ -1,6 +1,6 @@
 /*
- * EditorTexto — el texto de una plantilla en un recuadro donde se ve como va a quedar: la negrita se aplica al
- * texto seleccionado, la alineación (izquierda, centro, derecha, justificado) al párrafo donde está el cursor, y
+ * EditorTexto — el texto de una plantilla en un recuadro donde se ve como va a quedar: la negrita y la cursiva se
+ * aplican al texto seleccionado, la alineación (izquierda, centro, derecha, justificado) al párrafo donde está el cursor, y
  * los datos que el texto puede traer (el nombre del par, el título del artículo…) se insertan con un botón y se
  * muestran con nombres sencillos entre corchetes. Nadie escribe marcas a mano: el recuadro se convierte en el
  * texto guardado (ver lib/textoRico y lib/formato), así el mismo texto sirve para el correo y para el PDF de la
@@ -103,7 +103,9 @@ export function EditorTexto({ valor, onCambio, datos = [], error, ayuda }: Edito
   /** El texto escrito directamente en el recuadro (fuera de un párrafo) pasa a un párrafo, conservando la selección. */
   function envolverSueltos(el: HTMLElement) {
     const r = rango()
-    const guardado = r ? { sc: r.startContainer, so: r.startOffset, ec: r.endContainer, eo: r.endOffset } : null
+    const guardado = r
+      ? { sc: r.startContainer, so: r.startOffset, ec: r.endContainer, eo: r.endOffset }
+      : null
     let parrafo: HTMLElement | null = null
     for (const nodo of Array.from(el.childNodes)) {
       if (esBloque(nodo)) {
@@ -128,29 +130,36 @@ export function EditorTexto({ valor, onCambio, datos = [], error, ayuda }: Edito
     }
   }
 
-  function negrita() {
+  /** Negrita o cursiva sobre el texto seleccionado (si ya la tiene, se quita). */
+  function estilo(orden: 'bold' | 'italic') {
     const el = ref.current
     if (!el) return
     enfocar(el)
-    if (hayOrden() && document.execCommand('bold')) {
+    if (hayOrden() && document.execCommand(orden)) {
       emitir()
       return
     }
     // Sin el comando del navegador: se envuelve (o desenvuelve) a mano el texto seleccionado.
+    const etiqueta = orden === 'bold' ? 'STRONG' : 'EM'
     const r = rango()
     if (!r || r.collapsed) return
     let dentro: Node | null = r.commonAncestorContainer
-    while (dentro && dentro !== el && !(dentro.nodeType === 1 && (dentro as HTMLElement).tagName === 'STRONG')) {
+    while (
+      dentro &&
+      dentro !== el &&
+      !(dentro.nodeType === 1 && (dentro as HTMLElement).tagName === etiqueta)
+    ) {
       dentro = dentro.parentNode
     }
     if (dentro && dentro !== el) {
-      const fuerte = dentro as HTMLElement
-      while (fuerte.firstChild) fuerte.parentNode?.insertBefore(fuerte.firstChild, fuerte)
-      fuerte.remove()
+      const envoltura = dentro as HTMLElement
+      while (envoltura.firstChild)
+        envoltura.parentNode?.insertBefore(envoltura.firstChild, envoltura)
+      envoltura.remove()
     } else {
-      const fuerte = document.createElement('strong')
-      fuerte.appendChild(r.extractContents())
-      r.insertNode(fuerte)
+      const envoltura = document.createElement(etiqueta.toLowerCase())
+      envoltura.appendChild(r.extractContents())
+      r.insertNode(envoltura)
     }
     emitir()
   }
@@ -219,9 +228,21 @@ export function EditorTexto({ valor, onCambio, datos = [], error, ayuda }: Edito
           type="button"
           aria-label="Negrita"
           onMouseDown={conservarSeleccion}
-          onClick={negrita}
+          onClick={() => estilo('bold')}
         >
           <strong aria-hidden="true">N</strong>
+        </Boton>
+        <Boton
+          variante="neutro"
+          tamano="sm"
+          type="button"
+          aria-label="Cursiva"
+          onMouseDown={conservarSeleccion}
+          onClick={() => estilo('italic')}
+        >
+          <em aria-hidden="true" className="font-serif">
+            K
+          </em>
         </Boton>
         {ALINEACIONES.map((a) => (
           <Boton
@@ -288,7 +309,7 @@ export function EditorTexto({ valor, onCambio, datos = [], error, ayuda }: Edito
           }}
           className={cn(
             'min-h-64 max-w-xl rounded-md border bg-superficie-tarjeta px-3 py-2 text-cuerpo-15 text-texto-principal',
-            'focus-visible:border-borde-foco [&_p]:mb-3 [&_p]:min-h-[1.5em]',
+            'whitespace-pre-wrap focus-visible:border-borde-foco [&_p]:mb-3 [&_p]:min-h-[1.5em]',
             error ? 'border-estado-error' : 'border-borde-control',
           )}
         />

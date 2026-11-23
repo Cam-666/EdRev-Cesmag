@@ -13,10 +13,12 @@
 import { config } from '../config.js'
 import { pool, type Cliente } from '../db.js'
 import { auditar } from '../lib/auditoria.js'
+import { datosRevista, fechaEscrita, limiteEscrito, plazoEscrito, TIPO_ARTICULO } from '../lib/datosCorreo.js'
 import { aHtml } from '../lib/formato.js'
 import { marcoInstitucional } from '../lib/marcoCorreo.js'
 import { ACCIONES_CORREO, botonesHtml, enlaceRespuesta, MARCA_BOTONES } from '../lib/respuestas.js'
 import { generarConstancia } from './constanciaPdf.js'
+import { diasEspera } from './configuracion.js'
 
 /** El correo que solo entrega la constancia (sin plantilla de agradecimiento): un texto fijo y corto. */
 const TEXTO_SOLO_CONSTANCIA =
@@ -42,6 +44,11 @@ interface Pendiente {
   par: string
   profesion: string | null
   universidad: string | null
+  area: string | null
+  tipo_articulo: string
+  issn: string | null
+  indexaciones: string | null
+  fecha_evaluacion: string | null
   asunto: string | null
   cuerpo: string | null
 }
@@ -84,8 +91,9 @@ async function enviarBrevo(
 export async function procesar(): Promise<void> {
   const { rows } = await pool.query<Pendiente>(
     `SELECT c.id_correo, c.id_evaluacion, c.tipo, c.destinatario, a.id_revista, a.id_articulo, r.nombre AS revista,
-            r.correo_remitente AS remitente, a.numero_ojs, a.titulo, p.nombre AS par, p.profesion,
-            p.universidad, pl.asunto, pl.cuerpo
+            r.correo_remitente AS remitente, r.issn, r.indexaciones, a.numero_ojs, a.titulo, a.tipo AS tipo_articulo,
+            p.nombre AS par, p.profesion, p.universidad, p.area, e.fecha_evaluacion::text AS fecha_evaluacion,
+            pl.asunto, pl.cuerpo
        FROM correo c
        JOIN evaluacion e ON e.id_evaluacion = c.id_evaluacion
        JOIN articulo a ON a.id_articulo = e.id_articulo
@@ -99,14 +107,21 @@ export async function procesar(): Promise<void> {
                 ORDER BY (d.tipo IS NULL), d.id_plantilla LIMIT 1))
       WHERE c.resultado = 'en-cola' ORDER BY c.fecha_envio LIMIT 20`,
   )
+  const dias = rows.length ? await diasEspera(pool) : 0
   for (const p of rows) {
-    const v = {
-      revista: p.revista,
+    const v: Record<string, string> = {
+      ...datosRevista({ nombre: p.revista, issn: p.issn, indexaciones: p.indexaciones, correo_remitente: p.remitente }),
       numero: p.numero_ojs,
+      articulo: p.titulo,
+      tipo: TIPO_ARTICULO[p.tipo_articulo] ?? '',
       par: p.par,
+      PAR: p.par.toUpperCase(),
       profesion: p.profesion ?? '',
       universidad: p.universidad ?? '',
-      articulo: p.titulo,
+      area: p.area ?? '',
+      entrega: fechaEscrita(p.fecha_evaluacion),
+      plazo: plazoEscrito(dias),
+      limite: limiteEscrito(dias),
       botones: MARCA_BOTONES,
     }
     const solo = p.tipo === 'constancia'

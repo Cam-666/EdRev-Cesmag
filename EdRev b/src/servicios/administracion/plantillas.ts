@@ -9,11 +9,13 @@
  */
 import { enTransaccion, pool } from '../../db.js'
 import { auditar, type AccionAuditoria } from '../../lib/auditoria.js'
+import { datosRevista, EJEMPLO, limiteEscrito, plazoEscrito } from '../../lib/datosCorreo.js'
 import { ErrorHttp, siglaDe } from '../../lib/http.js'
 import { aHtml } from '../../lib/formato.js'
 import { escudoEmbebido, marcoInstitucional } from '../../lib/marcoCorreo.js'
 import { botonesHtml, MARCA_BOTONES } from '../../lib/respuestas.js'
 import { vistaPrevia } from '../constanciaPdf.js'
+import { diasEspera } from '../configuracion.js'
 
 export type Uso = 'invitacion' | 'agradecimiento' | 'constancia'
 /** Para qué se creó una plantilla: los tres usos automáticos, o «mensaje» (un correo que se envía a mano). */
@@ -24,11 +26,22 @@ const NOMBRE_PARTE: Record<Parte, string> = { encabezado: 'encabezado', pie: 'pi
 
 /** Los datos (marcas) que acepta cada fin; REVISTA y PAR son los mismos textos en mayúsculas. */
 const VARIABLES: Record<Fin, string[]> = {
-  invitacion: ['revista', 'numero', 'par', 'profesion', 'universidad', 'articulo', 'botones'],
-  agradecimiento: ['revista', 'par', 'articulo'],
+  // Los de la estructura original (revista, par, artículo y fecha) más los del proceso que sirven al invitar.
+  invitacion: [
+    'par', 'PAR', 'profesion', 'universidad', 'area', 'articulo', 'numero', 'tipo', 'revista', 'REVISTA',
+    'issn', 'contacto', 'plazo', 'limite', 'fecha', 'anio', 'botones',
+  ],
+  agradecimiento: [
+    'par', 'PAR', 'profesion', 'universidad', 'area', 'articulo', 'numero', 'tipo', 'entrega', 'revista', 'REVISTA',
+    'issn', 'indexaciones', 'contacto', 'fecha', 'anio',
+  ],
   constancia: ['revista', 'REVISTA', 'par', 'PAR', 'articulo', 'issn', 'indexaciones', 'fecha', 'anio', 'firma'],
-  // Un mensaje se escribe a un par o a un autor, así que sus datos son los de la persona, no los de un artículo.
-  mensaje: ['revista', 'nombre', 'universidad', 'profesion', 'fecha', 'anio'],
+  // Un mensaje se escribe a un par o a un autor, por cualquier motivo: lleva los datos de la persona, los de su
+  // artículo más reciente en la revista desde la que se escribe y los de la revista.
+  mensaje: [
+    'nombre', 'NOMBRE', 'correo', 'profesion', 'universidad', 'area', 'pais', 'orcid', 'articulo', 'numero', 'tipo',
+    'estado', 'revista', 'REVISTA', 'issn', 'indexaciones', 'contacto', 'fecha', 'anio',
+  ],
 }
 
 interface FilaPlantilla {
@@ -201,22 +214,18 @@ export async function vistaCorreo(d: {
   uso: 'invitacion' | 'agradecimiento' | 'mensaje'
   cuerpo: string
 }) {
-  const { rows } = await pool.query<{ nombre: string; correo_remitente: string }>(
-    'SELECT nombre, correo_remitente FROM revista WHERE id_revista = $1',
+  const { rows } = await pool.query<{ nombre: string; correo_remitente: string; issn: string | null; indexaciones: string | null }>(
+    'SELECT nombre, correo_remitente, issn, indexaciones FROM revista WHERE id_revista = $1',
     [numeroDeRevista(d.revista)],
   )
   const revista = rows[0]
   if (!revista) throw new ErrorHttp(404, 'Revista no encontrada')
+  const dias = await diasEspera(pool)
   const ejemplo: Record<string, string> = {
-    revista: revista.nombre,
-    numero: '2026-034',
-    par: 'Luz Marina Burbano',
-    profesion: 'Magíster en Educación',
-    universidad: 'Universidad de Nariño',
-    articulo: 'Alfabetización mediática en la formación de maestros',
-    nombre: 'Luz Marina Burbano',
-    fecha: new Date().toLocaleDateString('es-CO', { day: 'numeric', month: 'long', year: 'numeric' }),
-    anio: String(new Date().getFullYear()),
+    ...EJEMPLO,
+    ...datosRevista(revista),
+    plazo: plazoEscrito(dias),
+    limite: limiteEscrito(dias),
     botones: MARCA_BOTONES,
   }
   const texto = d.cuerpo.replace(/\{\{(\w+)\}\}/g, (m, k: string) => ejemplo[k] ?? m)

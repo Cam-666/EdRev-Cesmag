@@ -44,6 +44,26 @@ describe('acceso', () => {
     expect((await request(app).post('/api/auth/login').send({ correo, contrasena: 'Revistas2027' })).status).toBe(200)
   })
 
+  it('una cuenta inhabilitada con la sesión abierta recibe el motivo, distinto de una sesión inválida', async () => {
+    const admin = await como()
+    const correo = `inhabilitada.${Date.now()}@unicesmag.edu.co`
+    const creada = await admin.post('/usuarios', { nombre: 'Cuenta A Inhabilitar', correo, perfil: 'auxiliar' })
+    const token = decodeURIComponent(String(creada.body.enlaceDemo).split('token=')[1])
+    await request(app).post(`/api/auth/enlaces/${encodeURIComponent(token)}`).send({ contrasena: 'Revistas2027' })
+    const sesion = (await request(app).post('/api/auth/login').send({ correo, contrasena: 'Revistas2027' })).body.token
+    const consulta = () => request(app).get('/api/reep/tablero').set('Authorization', `Bearer ${sesion}`)
+    expect((await consulta()).status).toBe(200)
+
+    expect((await admin.patch(`/usuarios/${creada.body.id}`, { estado: 'inhabilitado' })).status).toBe(200)
+    const rechazada = await consulta()
+    expect(rechazada.status).toBe(401)
+    expect(rechazada.body.motivo).toBe('inhabilitada')
+    // un token falso sigue siendo un 401 sin motivo
+    const falsa = await request(app).get('/api/reep/tablero').set('Authorization', 'Bearer falso')
+    expect(falsa.status).toBe(401)
+    expect(falsa.body.motivo).toBeUndefined()
+  })
+
   it('no deja sin administradora activa', async () => {
     const admin = await como()
     expect((await admin.patch('/usuarios/1', { estado: 'inhabilitado' })).status).toBe(409)

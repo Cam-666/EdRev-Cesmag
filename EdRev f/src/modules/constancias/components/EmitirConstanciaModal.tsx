@@ -48,7 +48,11 @@ function Contenido({
   function confirmar() {
     if (!constanciaId) return
     emitir.mutate(
-      { constanciaId, conAgradecimiento, eleccion: conAgradecimiento ? gracias.eleccion : undefined },
+      {
+        constanciaId,
+        conAgradecimiento,
+        eleccion: conAgradecimiento ? gracias.eleccion : undefined,
+      },
       {
         onSuccess: ({ correo }) => {
           onEmitida(
@@ -103,7 +107,11 @@ function Contenido({
             <VistaPreviaConstancia vista={vista.data} />
           ))}
       </EstadoConsulta>
-      <OpcionAgradecimiento marcada={conAgradecimiento} onCambio={setConAgradecimiento} estado={gracias} />
+      <OpcionAgradecimiento
+        marcada={conAgradecimiento}
+        onCambio={setConAgradecimiento}
+        estado={gracias}
+      />
     </Modal>
   )
 }

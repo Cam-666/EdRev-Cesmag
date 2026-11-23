@@ -73,14 +73,8 @@ export function usePlantillas() {
 export function useGuardarPlantilla() {
   const cliente = useQueryClient()
   return useMutation({
-    mutationFn: ({
-      id,
-      ...datos
-    }: {
-      id: string
-      asunto: string | null
-      cuerpo: string
-    }) => guardarPlantilla(id, datos),
+    mutationFn: ({ id, ...datos }: { id: string; asunto: string | null; cuerpo: string }) =>
+      guardarPlantilla(id, datos),
     onSuccess: () => cliente.invalidateQueries({ queryKey: ['admin', 'plantillas'] }),
   })
 }

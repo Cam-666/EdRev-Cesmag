@@ -13,7 +13,7 @@
 INSERT INTO revista (id_revista, nombre, correo_remitente, issn, indexaciones) OVERRIDING SYSTEM VALUE VALUES
   (1, 'Revista Electrónica en Educación y Pedagogía', 'revistaeducacionpedagogia@gmail.com', '2590-7476',
    'Publindex (categoría B), Redalyc, EBSCO, ERIH PLUS, Dialnet, DOAJ, REDIB, LATINDEX, Actualidad Iberoamericana, EZB, LatinREV, REDIPE, MIAR, LivRe y Ulrichsweb de ProQuest'),
-  (2, 'Revista Investigium IRE Ciencias Sociales y Humanas', 'revistainvestigiumire@gmail.com', '2357-5239',
+  (2, 'Revista Investigium IRE: Ciencias Sociales y Humanas', 'revistainvestigiumire@gmail.com', '2357-5239',
    'Publindex (categoría C), Redalyc, EBSCO, ERIH PLUS, Dialnet, DOAJ, REDIB, LATINDEX, Actualidad Iberoamericana, EZB, LatinREV, REDIPE, MIAR, LivRe y Ulrichsweb de ProQuest');
 
 -- Días de espera de la respuesta del par: 5. La Administradora lo ajusta en Administración › Configuración.
@@ -39,7 +39,34 @@ CROSS JOIN (VALUES
    'Gracias por su evaluación · {{revista}}',
    E'Apreciado(a) {{par}}:\n\nAgradecemos su participación como par evaluador del artículo «{{articulo}}». Adjuntamos su constancia.\n\nCordialmente,'),
   ('Constancia de participación', 'constancia', NULL,
-   E'[centro]**LA EDITORA DE LA {{REVISTA}}**\n**ISSN {{issn}} (en línea)**\n\n[centro]**CERTIFICA QUE**\n\n[justificado]**{{PAR}}** participó como evaluador(a) académico(a) del artículo titulado **«{{articulo}}»**, postulado para publicación en una de las ediciones correspondientes al año {{anio}} de la {{revista}}.\n\n[justificado]Su participación se desarrolló en el marco del proceso editorial de evaluación por pares bajo la modalidad de doble ciego, y constituyó un valioso aporte al aseguramiento de la calidad, el rigor y la pertinencia científica de los contenidos publicados por la Revista.\n\n[justificado]Cabe destacar que la {{revista}} se encuentra indexada y referenciada en reconocidos sistemas de información, directorios y bases de datos académicas, entre ellos: {{indexaciones}}.\n\n[justificado]La presente certificación se expide a solicitud del interesado(a), para los fines académicos y profesionales que estime pertinentes.\n\nSan Juan de Pasto, {{fecha}}.\n\nCordialmente,\n\n[centro]{{firma}}\n\n[centro]Editor(a) de la {{revista}}')
+   E'[centro]**LA EDITORA DE LA {{REVISTA}}**
+**ISSN {{issn}} (en línea)**
+
+[centro]**CERTIFICA QUE**
+
+[justificado]**{{PAR}}** participó como evaluador(a) académico(a) del artículo titulado **“{{articulo}}”**, postulado para publicación en una de las ediciones correspondientes al año {{anio}} de la {{revista}}.
+
+[justificado]Su participación se desarrolló en el marco del proceso editorial de evaluación por pares bajo la modalidad de doble ciego, y constituyó un valioso aporte al aseguramiento de la calidad, el rigor y la pertinencia científica de los contenidos publicados por la Revista.
+
+[justificado]Cabe destacar que la {{revista}} se encuentra indexada y referenciada en reconocidos sistemas de información, directorios y bases de datos académicas, entre ellos: {{indexaciones}}.
+
+[justificado]La presente certificación se expide a solicitud del interesado(a), para los fines académicos y profesionales que estime pertinentes.
+
+San Juan de Pasto, {{fecha}}.
+
+Cordialmente,
+
+[centro]{{firma}}
+
+[centro]Jenny Alejandra Mera Cordoba PhD.
+Editora Revista Investigium IRE: Ciencias Sociales y Humanas
+
+
+
+
+
+__Proyectó__: __Jenny Mera__
+              __Editora__')
 ) AS p(nombre, tipo, asunto, cuerpo);
 
 -- Plantilla de ejemplo para escribirle a mano a un par o a un autor (no está «en uso»: se elige al enviar el correo).

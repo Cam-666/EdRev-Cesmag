@@ -2,13 +2,20 @@ import { puedeAsignarPares, puedeRegistrarRonda, requiereNuevaRevision } from '.
 import type { EstadoArticulo, RondaComite } from '@/types/articulo'
 
 const ronda = (resultado: RondaComite['resultado']) => ({ resultado }) as RondaComite
-const articulo = (estado: EstadoArticulo, ...rondas: RondaComite[]) => ({ estado, rondasComite: rondas })
+const articulo = (estado: EstadoArticulo, ...rondas: RondaComite[]) => ({
+  estado,
+  rondasComite: rondas,
+})
 
 describe('committee review and assignment of peers', () => {
   it('peers are assigned only when the last round approved and the article is under review', () => {
-    expect(puedeAsignarPares(articulo('en-revision', ronda('ajustes'), ronda('aprobado')))).toBe(true)
+    expect(puedeAsignarPares(articulo('en-revision', ronda('ajustes'), ronda('aprobado')))).toBe(
+      true,
+    )
     expect(puedeAsignarPares(articulo('en-evaluacion', ronda('aprobado')))).toBe(true)
-    expect(puedeAsignarPares(articulo('en-revision', ronda('aprobado'), ronda('ajustes')))).toBe(false)
+    expect(puedeAsignarPares(articulo('en-revision', ronda('aprobado'), ronda('ajustes')))).toBe(
+      false,
+    )
     for (const estado of ['postulado', 'aprobado', 'rechazado', 'archivado'] as const) {
       expect(puedeAsignarPares(articulo(estado, ronda('aprobado')))).toBe(false)
     }

@@ -1,6 +1,7 @@
 /*
  * AccesoPage — Iniciar sesión (/acceso), con sus dos variantes del diseño: credenciales incorrectas / bloqueo
- * (alerta dentro del formulario) y «Su sesión expiró» tras 30 minutos de inactividad.
+ * (alerta dentro del formulario), «Su sesión expiró» tras 30 minutos de inactividad y el aviso de cuenta
+ * inhabilitada cuando la Administradora la desactiva con la sesión abierta.
  */
 import { Navigate, useLocation } from 'react-router-dom'
 import { POLITICA_ACCESO } from '../config/politicaAcceso'
@@ -25,15 +26,28 @@ export function AccesoPage() {
   if (usuario) return <Navigate to={desde ?? '/inicio'} replace />
 
   const expirada = ultimoCierre?.motivo === 'inactividad'
+  const inhabilitada = ultimoCierre?.motivo === 'inhabilitada'
   return (
     <TarjetaAcceso
-      titulo={expirada ? 'Su sesión expiró' : 'Sistema de Gestión Editorial'}
+      titulo={
+        inhabilitada
+          ? 'Su sesión fue cerrada'
+          : expirada
+            ? 'Su sesión expiró'
+            : 'Sistema de Gestión Editorial'
+      }
       subtitulo={
         expirada
           ? 'Vuelva a ingresar para continuar donde quedó'
           : 'Ingrese con su correo institucional'
       }
     >
+      {inhabilitada && (
+        <Alerta tipo="advertencia">
+          Su cuenta fue inhabilitada y por eso se cerró su sesión. Para volver a ingresar,
+          comuníquese con la Administradora de la dependencia de Editorial.
+        </Alerta>
+      )}
       {expirada && (
         <Alerta tipo="informacion">
           Sesión cerrada por {POLITICA_ACCESO.inactividadMinutos} minutos de inactividad. El trabajo

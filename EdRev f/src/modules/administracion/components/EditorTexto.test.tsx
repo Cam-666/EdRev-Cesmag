@@ -84,13 +84,22 @@ describe('EditorTexto: the formatting is applied in the box, not written as mark
     const user = userEvent.setup()
     render(<Prueba inicial="Un texto largo que se justifica" alCambiar={(t) => cambios.push(t)} />)
     const caja = screen.getByRole('textbox', { name: 'Texto' })
-    expect(screen.getByRole('button', { name: 'Alinear a la izquierda' })).toHaveAttribute('aria-pressed', 'true')
+    expect(screen.getByRole('button', { name: 'Alinear a la izquierda' })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    )
     seleccionar(caja, 3, 3)
     await user.click(screen.getByRole('button', { name: 'Justificar' }))
     expect(caja.querySelector('p')).toHaveStyle({ textAlign: 'justify' })
     expect(cambios.at(-1)).toBe('[justificado]Un texto largo que se justifica')
-    expect(screen.getByRole('button', { name: 'Justificar' })).toHaveAttribute('aria-pressed', 'true')
-    expect(screen.getByRole('button', { name: 'Alinear a la izquierda' })).toHaveAttribute('aria-pressed', 'false')
+    expect(screen.getByRole('button', { name: 'Justificar' })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    )
+    expect(screen.getByRole('button', { name: 'Alinear a la izquierda' })).toHaveAttribute(
+      'aria-pressed',
+      'false',
+    )
     await user.click(screen.getByRole('button', { name: 'Alinear a la izquierda' }))
     expect(cambios.at(-1)).toBe('Un texto largo que se justifica')
   })

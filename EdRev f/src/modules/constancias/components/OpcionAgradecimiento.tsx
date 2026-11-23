@@ -16,7 +16,11 @@ export interface OpcionAgradecimientoProps {
 export function OpcionAgradecimiento({ marcada, onCambio, estado }: OpcionAgradecimientoProps) {
   return (
     <div className="flex flex-col gap-3">
-      <Casilla etiqueta="Enviar también correo de agradecimiento" marcada={marcada} onCambio={onCambio} />
+      <Casilla
+        etiqueta="Enviar también correo de agradecimiento"
+        marcada={marcada}
+        onCambio={onCambio}
+      />
       {marcada && <SelectorPlantillaCorreo estado={estado} alto="h-[35vh] min-h-[280px]" />}
     </div>
   )

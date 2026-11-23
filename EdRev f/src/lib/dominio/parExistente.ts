@@ -7,12 +7,7 @@ import type { ParEvaluador } from '@/types/par'
 
 /** Clave para comparar un texto: sin tildes, mayúsculas ni espacios repetidos ("CESMAG" = "Cesmag"). */
 export function claveTexto(texto: string): string {
-  return texto
-    .normalize('NFD')
-    .replace(/[̀-ͯ]/g, '')
-    .toLowerCase()
-    .replace(/\s+/g, ' ')
-    .trim()
+  return texto.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/\s+/g, ' ').trim()
 }
 
 type ParBase = Pick<ParEvaluador, 'nombre' | 'correo' | 'bloqueo'>
@@ -56,7 +51,8 @@ export function formaExistente(
   const limpio = texto.trim().replace(/\s+/g, ' ')
   const cuenta = new Map<string, number>()
   for (const p of pares) {
-    if (claveTexto(p[campo]) === claveTexto(limpio)) cuenta.set(p[campo], (cuenta.get(p[campo]) ?? 0) + 1)
+    if (claveTexto(p[campo]) === claveTexto(limpio))
+      cuenta.set(p[campo], (cuenta.get(p[campo]) ?? 0) + 1)
   }
   const [mejor] = [...cuenta.entries()].sort(
     (a, b) => b[1] - a[1] || Number(/[A-ZÁÉÍÓÚÑ]/.test(b[0])) - Number(/[A-ZÁÉÍÓÚÑ]/.test(a[0])),

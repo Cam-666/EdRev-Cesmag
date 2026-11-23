@@ -28,7 +28,7 @@ export const REVISTAS: Record<Revista, DatosRevista> = {
   ire: {
     id: 'ire',
     modulo: 2,
-    nombre: 'Revista Investigium IRE Ciencias Sociales y Humanas',
+    nombre: 'Revista Investigium IRE: Ciencias Sociales y Humanas',
     nombreCorto: 'Investigium IRE',
     issn: '2357-5239',
     medioIssn: 'Digital',

@@ -13,12 +13,16 @@ describe('mismaInstitucion: the assignment is refused', () => {
   })
 
   it('compares universities ignoring accents and case', () => {
-    expect(mismaInstitucion({ universidad: 'UNIVERSIDAD DE NARINO' }, AUTORES)).toContain('Sandra Milena Córdoba')
+    expect(mismaInstitucion({ universidad: 'UNIVERSIDAD DE NARINO' }, AUTORES)).toContain(
+      'Sandra Milena Córdoba',
+    )
   })
 
   it('treats «Cesmag» and «Universidad Cesmag» as the same institution', () => {
     expect(mismaInstitucion({ universidad: 'Cesmag' }, AUTORES)).toContain('Diego Fernando Erazo')
-    expect(mismaInstitucion({ universidad: 'U. de Nariño' }, AUTORES)).toContain('Sandra Milena Córdoba')
+    expect(mismaInstitucion({ universidad: 'U. de Nariño' }, AUTORES)).toContain(
+      'Sandra Milena Córdoba',
+    )
     expect(mismaInstitucion({ universidad: 'Universidad Mariana' }, AUTORES)).toBeNull()
   })
 

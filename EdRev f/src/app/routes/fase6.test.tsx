@@ -258,10 +258,10 @@ describe('administration', () => {
 
     const texto = await screen.findByLabelText('Texto')
     expect(texto.textContent).toBe('')
-    await user.click(screen.getByRole('button', { name: 'Universidad del par' }))
-    expect(texto.textContent).toBe('[Universidad del par]')
+    await user.click(screen.getByRole('button', { name: 'Universidad o institución' }))
+    expect(texto.textContent).toBe('[Universidad o institución]')
     await user.click(screen.getByRole('button', { name: 'Nombre del destinatario' }))
-    expect(texto.textContent).toBe('[Universidad del par][Nombre del destinatario]')
+    expect(texto.textContent).toBe('[Universidad o institución][Nombre del destinatario]')
     // la vista previa es el correo con su marco, todavía sin texto
     const marco = await screen.findByTitle('Vista previa del correo')
     expect(marco).toHaveAttribute('srcdoc', expect.stringContaining('Universidad CESMAG'))

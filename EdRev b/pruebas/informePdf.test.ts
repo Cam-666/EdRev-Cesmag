@@ -13,7 +13,7 @@ const reep: DatosRevista = {
   conceptos: { publicable: 5, conModificaciones: 3, noPublicable: 1, pendienteFormato: 0 },
 }
 const ire: DatosRevista = {
-  sigla: 'ire', nombre: 'Revista Investigium IRE Ciencias Sociales y Humanas', postulados: 10, aprobados: 3, rechazados: 1,
+  sigla: 'ire', nombre: 'Revista Investigium IRE: Ciencias Sociales y Humanas', postulados: 10, aprobados: 3, rechazados: 1,
   entregadas: 8, constancias: 4, dias: 72, sumaDias: 576,
   conceptos: { publicable: 7, conModificaciones: 1, noPublicable: 0, pendienteFormato: 0 },
 }

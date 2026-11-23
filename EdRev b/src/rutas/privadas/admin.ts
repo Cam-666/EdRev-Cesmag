@@ -14,7 +14,7 @@ import { soloAdministradora } from '../../middlewares/autenticacion.js'
 export const rutasAdmin = Router()
 rutasAdmin.use(['/usuarios', '/plantillas', '/auditoria', '/configuracion'], soloAdministradora)
 
-const subida = multer({ storage: multer.memoryStorage(), limits: { fileSize: 2 * 1024 * 1024 } })
+const subida = multer({ storage: multer.memoryStorage(), limits: { fileSize: 30 * 1024 * 1024 } })
 
 // Usuarios
 rutasAdmin.get('/usuarios', usuarios.listar)

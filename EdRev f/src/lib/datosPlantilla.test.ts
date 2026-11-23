@@ -12,7 +12,9 @@ describe('datosPlantilla', () => {
     expect(aGuardado('Hola [Nombre del par]: «[Título del artículo]»')).toBe(
       'Hola {{par}}: «{{articulo}}»',
     )
-    expect(aGuardado('Cita [como se dijo] y [Nombre del par]')).toBe('Cita [como se dijo] y {{par}}')
+    expect(aGuardado('Cita [como se dijo] y [Nombre del par]')).toBe(
+      'Cita [como se dijo] y {{par}}',
+    )
   })
 
   it('converts in both directions without loss', () => {

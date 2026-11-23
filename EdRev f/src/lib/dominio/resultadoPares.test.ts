@@ -7,9 +7,14 @@ const rechazo = { estado: 'no-acepto' as EstadoAsignacion, concepto: null }
 
 describe('resultadoDePares', () => {
   it('two peers with the same concept decide the article', () => {
-    expect(resultadoDePares([entrego('no-publicable'), entrego('no-publicable')])).toBe('no-publicable')
+    expect(resultadoDePares([entrego('no-publicable'), entrego('no-publicable')])).toBe(
+      'no-publicable',
+    )
     expect(
-      resultadoDePares([entrego('publicable-con-modificaciones'), entrego('publicable-con-modificaciones')]),
+      resultadoDePares([
+        entrego('publicable-con-modificaciones'),
+        entrego('publicable-con-modificaciones'),
+      ]),
     ).toBe('publicable-con-modificaciones')
     expect(resultadoDePares([entrego('publicable'), entrego('publicable')])).toBe('publicable')
   })
@@ -21,7 +26,9 @@ describe('resultadoDePares', () => {
 
   it('a peer who declined holds no place and does not count', () => {
     expect(resultadoDePares([rechazo, rechazo, entrego('publicable')])).toBeNull()
-    expect(resultadoDePares([rechazo, entrego('publicable'), entrego('publicable')])).toBe('publicable')
+    expect(resultadoDePares([rechazo, entrego('publicable'), entrego('publicable')])).toBe(
+      'publicable',
+    )
   })
 
   it('different concepts wait for the tiebreaker, who decides by majority', () => {
@@ -39,6 +46,8 @@ describe('resultadoDePares', () => {
   })
 
   it('a pending-format concept decides nothing', () => {
-    expect(resultadoDePares([entrego('pendiente-formato'), entrego('pendiente-formato')])).toBeNull()
+    expect(
+      resultadoDePares([entrego('pendiente-formato'), entrego('pendiente-formato')]),
+    ).toBeNull()
   })
 })

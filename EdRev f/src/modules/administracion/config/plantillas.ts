@@ -25,7 +25,8 @@ export const GRUPOS: Array<{ fin: FinPlantilla; nombre: string; descripcion: str
   {
     fin: 'constancia',
     nombre: 'Constancia de participación',
-    descripcion: 'Es el documento PDF que recibe el par por haber evaluado un artículo. Hay una sola por revista: solo se edita.',
+    descripcion:
+      'Es el documento PDF que recibe el par por haber evaluado un artículo. Hay una sola por revista: solo se edita.',
   },
   {
     fin: 'mensaje',
@@ -37,10 +38,13 @@ export const GRUPOS: Array<{ fin: FinPlantilla; nombre: string; descripcion: str
 
 /** Lo que dice el formulario de cada tipo de plantilla. */
 export const EXPLICACION_FIN: Record<FinPlantilla, string> = {
-  invitacion: 'Es la invitación que recibe el par cuando usted lo asigna a un artículo. Al asignar se puede escoger entre las invitaciones de la revista.',
-  agradecimiento: 'Es el correo de agradecimiento que acompaña a la constancia. Al emitir la constancia se puede escoger entre los agradecimientos de la revista.',
+  invitacion:
+    'Es la invitación que recibe el par cuando usted lo asigna a un artículo. Al asignar se puede escoger entre las invitaciones de la revista.',
+  agradecimiento:
+    'Es el correo de agradecimiento que acompaña a la constancia. Al emitir la constancia se puede escoger entre los agradecimientos de la revista.',
   constancia: 'Este es el documento PDF de la constancia que recibe el par.',
-  mensaje: 'Sirve para escribirle a un par o a un autor cuando usted quiera, desde su ficha, con el botón «Enviar correo».',
+  mensaje:
+    'Sirve para escribirle a un par o a un autor cuando usted quiera, desde su ficha, con el botón «Enviar correo».',
 }
 
 /** Devuelve el primer problema encontrado como frase, o null cuando la plantilla es válida. */
@@ -53,7 +57,8 @@ export function validarPlantilla(
   const enCuerpo = marcadores(cuerpo)
   const usados = [...enCuerpo, ...marcadores(asunto ?? '')]
   const desconocido = usados.find((m) => !plantilla.variables.includes(m))
-  if (desconocido) return `El dato «${ETIQUETA_DATO[desconocido] ?? desconocido}» no se puede usar en esta plantilla.`
+  if (desconocido)
+    return `El dato «${ETIQUETA_DATO[desconocido] ?? desconocido}» no se puede usar en esta plantilla.`
   return null
 }
 
@@ -62,9 +67,21 @@ export const DATOS_EJEMPLO: Record<string, string> = {
   numero: '2026-034',
   profesion: 'Magíster en Educación',
   universidad: 'Universidad de Nariño',
+  area: 'Educación',
+  pais: 'Colombia',
+  orcid: '0000-0002-1825-0097',
   par: 'Luz Marina Burbano',
   nombre: 'Luz Marina Burbano',
+  NOMBRE: 'LUZ MARINA BURBANO',
+  correo: 'lm.burbano@udenar.edu.co',
   articulo: 'Alfabetización mediática en la formación de maestros',
+  tipo: 'Investigación',
+  estado: 'En evaluación',
+  entrega: '20 de noviembre de 2026',
+  contacto: 'revistaeducacionpedagogia@gmail.com',
+  plazo: '5 días',
+  limite: '19 de noviembre de 2026',
+  indexaciones: 'Publindex (categoría B), Redalyc, EBSCO',
   botones: '[Botones: Acepto la invitación · No acepto esta invitación · No deseo participar más]',
   PAR: 'LUZ MARINA BURBANO',
   issn: '2590-7476',

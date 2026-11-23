@@ -56,7 +56,9 @@ export function FormularioPlantilla({ plantilla }: FormularioPlantillaProps) {
 
   return (
     <div className="flex flex-col gap-4">
-      <p className="text-cuerpo-13 text-texto-secundario">{EXPLICACION_FIN[plantilla.fin as FinPlantilla]}</p>
+      <p className="text-cuerpo-13 text-texto-secundario">
+        {EXPLICACION_FIN[plantilla.fin as FinPlantilla]}
+      </p>
 
       {tieneAsunto && (
         <CampoTexto
@@ -86,7 +88,9 @@ export function FormularioPlantilla({ plantilla }: FormularioPlantillaProps) {
             ? 'Así se ve el archivo PDF, con datos de ejemplo. Se actualiza mientras usted escribe y al subir las imágenes.'
             : 'Así recibe la persona el correo, con datos de ejemplo. Se actualiza mientras usted escribe.'}
         </p>
-        {tieneAsunto && <p className="text-cuerpo-15-enfasis">Asunto: {rellenar(asunto, ejemplo)}</p>}
+        {tieneAsunto && (
+          <p className="text-cuerpo-15-enfasis">Asunto: {rellenar(asunto, ejemplo)}</p>
+        )}
         {esConstancia ? (
           <VistaPreviaConstancia plantilla={plantilla} cuerpo={cuerpo} />
         ) : (
@@ -106,9 +110,15 @@ export function FormularioPlantilla({ plantilla }: FormularioPlantillaProps) {
 
       <div ref={resultado} role="status" aria-live="polite" className="flex flex-col gap-2">
         {mutacion.isError && (
-          <Alerta tipo="error">{mensajeDeApi(mutacion.error, 'No fue posible guardar la plantilla.')}</Alerta>
+          <Alerta tipo="error">
+            {mensajeDeApi(mutacion.error, 'No fue posible guardar la plantilla.')}
+          </Alerta>
         )}
-        {guardada && <Alerta tipo="exito">Plantilla guardada. Los próximos envíos usarán el texto nuevo.</Alerta>}
+        {guardada && (
+          <Alerta tipo="exito">
+            Plantilla guardada. Los próximos envíos usarán el texto nuevo.
+          </Alerta>
+        )}
       </div>
     </div>
   )

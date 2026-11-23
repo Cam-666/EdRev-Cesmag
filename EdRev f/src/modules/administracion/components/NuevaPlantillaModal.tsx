@@ -87,9 +87,16 @@ function Contenido({ revista: inicial, onCerrar, onCreada }: NuevaPlantillaModal
         </>
       }
     >
-      <form id={FORMULARIO} onSubmit={handleSubmit(enviar)} noValidate className="flex flex-col gap-3">
+      <form
+        id={FORMULARIO}
+        onSubmit={handleSubmit(enviar)}
+        noValidate
+        className="flex flex-col gap-3"
+      >
         {crear.isError && (
-          <Alerta tipo="error">{mensajeDeApi(crear.error, 'No fue posible crear la plantilla.')}</Alerta>
+          <Alerta tipo="error">
+            {mensajeDeApi(crear.error, 'No fue posible crear la plantilla.')}
+          </Alerta>
         )}
         <ListaDesplegable
           etiqueta="Revista"
@@ -97,7 +104,12 @@ function Contenido({ revista: inicial, onCerrar, onCreada }: NuevaPlantillaModal
           valor={revista}
           onCambio={(v) => setRevista(v as Revista)}
         />
-        <CampoTexto etiqueta="Nombre" autoComplete="off" error={errors.nombre?.message} {...register('nombre')} />
+        <CampoTexto
+          etiqueta="Nombre"
+          autoComplete="off"
+          error={errors.nombre?.message}
+          {...register('nombre')}
+        />
         <ListaDesplegable
           etiqueta="¿Para qué es?"
           opciones={OPCIONES_FIN}

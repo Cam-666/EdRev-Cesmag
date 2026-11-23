@@ -37,7 +37,7 @@ describe('executive summary of the report', () => {
       diasPromedioEvaluacion: ind(0, 1),
       conceptos: { publicable: 1, conModificaciones: 0, noPublicable: 0, pendienteFormato: 0 },
     }).join(' ')
-    expect(una).toContain('la Revista Investigium IRE Ciencias Sociales y Humanas registró 1 artículo postulado')
+    expect(una).toContain('la Revista Investigium IRE: Ciencias Sociales y Humanas registró 1 artículo postulado')
     expect(una).toContain('1 fue aprobado y 0 fueron rechazados')
     expect(una).toContain('1 evaluación y se emitieron 1 constancia')
     expect(una).toContain('1 día')

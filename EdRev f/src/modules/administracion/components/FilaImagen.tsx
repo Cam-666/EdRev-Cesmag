@@ -1,6 +1,8 @@
 /*
  * FilaImagen — una imagen de una plantilla de constancia (encabezado, pie o firma): su archivo actual y los
- * controles para subir un PNG o JPG desde el computador o quitarlo.
+ * controles para subir un PNG o JPG desde el computador o quitarlo. Una imagen muy grande (una foto de 20 MB, por
+ * ejemplo) se reduce en el navegador antes de subirla, a un tamaño de buena calidad para imprimir: así la constancia
+ * en PDF no pesa decenas de MB y el servicio de correo no la rechaza como adjunto.
  */
 import { useId, useState } from 'react'
 import { useQuitarImagen, useSubirImagen } from '../hooks/useAdmin'
@@ -8,6 +10,33 @@ import { Alerta } from '@/components/common/Alerta'
 import { Boton } from '@/components/common/Boton'
 import { mensajeDeApi } from '@/lib/api/errores'
 import type { ImagenPlantilla, ParteImagen, Plantilla } from '@/types/plantilla'
+
+/** Lado mayor con el que se guarda la imagen: alcanza para imprimir el membrete a 300 ppp. */
+const LADO_MAXIMO = 2400
+const LIMITE_SIN_REDUCIR = 1.5 * 1024 * 1024
+
+/** La imagen reducida para la constancia, o la misma si ya es liviana o el navegador no puede reducirla. */
+async function reducir(archivo: File): Promise<File> {
+  if (archivo.size <= LIMITE_SIN_REDUCIR || typeof createImageBitmap !== 'function') return archivo
+  try {
+    const imagen = await createImageBitmap(archivo)
+    const k = Math.min(1, LADO_MAXIMO / imagen.width, LADO_MAXIMO / imagen.height)
+    const lienzo = document.createElement('canvas')
+    lienzo.width = Math.round(imagen.width * k)
+    lienzo.height = Math.round(imagen.height * k)
+    const contexto = lienzo.getContext('2d')
+    if (!contexto) return archivo
+    contexto.drawImage(imagen, 0, 0, lienzo.width, lienzo.height)
+    // Un PNG sigue siendo PNG (conserva la transparencia); una foto JPG se guarda como JPG de buena calidad.
+    const tipo = archivo.type === 'image/png' ? 'image/png' : 'image/jpeg'
+    const reducida = await new Promise<Blob | null>((listo) => lienzo.toBlob(listo, tipo, 0.92))
+    return reducida && reducida.size < archivo.size
+      ? new File([reducida], archivo.name, { type: tipo })
+      : archivo
+  } catch {
+    return archivo
+  }
+}
 
 function tamano(bytes: number): string {
   return bytes >= 1024 * 1024
@@ -29,6 +58,7 @@ export function FilaImagen({
 }) {
   const id = useId()
   const [archivo, setArchivo] = useState<File | null>(null)
+  const [preparando, setPreparando] = useState(false)
   const subir = useSubirImagen()
   const quitar = useQuitarImagen()
   const fallo = subir.isError ? subir.error : quitar.isError ? quitar.error : null
@@ -56,15 +86,18 @@ export function FilaImagen({
           variante="secundario"
           tamano="sm"
           disabled={!archivo}
-          cargando={subir.isPending}
+          cargando={subir.isPending || preparando}
           aria-label={`Subir ${titulo.toLowerCase()}`}
-          onClick={() =>
-            archivo &&
+          onClick={async () => {
+            if (!archivo) return
+            setPreparando(true)
+            const lista = await reducir(archivo)
+            setPreparando(false)
             subir.mutate(
-              { id: plantilla.id, parte, archivo },
+              { id: plantilla.id, parte, archivo: lista },
               { onSuccess: () => setArchivo(null) },
             )
-          }
+          }}
         >
           Subir
         </Boton>

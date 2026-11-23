@@ -5,6 +5,7 @@ import { axe } from 'vitest-axe'
 import { vi } from 'vitest'
 import { rutas } from '.'
 import { Proveedores } from '../Proveedores'
+import { usuarios } from '@/mocks/db'
 import { CONTRASENA_DEMO } from '@/mocks/seed/credenciales'
 import { ADMINISTRADORA, AUXILIAR, AUXILIAR_INHABILITADA } from '@/mocks/seed/usuarios'
 import type { Usuario } from '@/types/usuario'
@@ -149,6 +150,24 @@ describe('session expiry', () => {
       await vi.advanceTimersByTimeAsync(29 * 60_000)
     })
     expect(router.state.location.pathname).toBe('/inicio')
+  })
+})
+
+describe('disabled while signed in', () => {
+  it('closes the session with a courteous notice (not the inactivity one) when the account gets disabled', async () => {
+    const { user, router } = montar('/reep/tablero', ADMIN)
+    expect(router.state.location.pathname).toBe('/reep/tablero')
+    // La Administradora inhabilita la cuenta mientras la sesión sigue abierta.
+    const cuenta = usuarios().find((u) => u.id === ADMIN.id)
+    if (cuenta) cuenta.estado = 'inhabilitado'
+    await user.click(await screen.findByRole('link', { name: 'Artículos' }))
+    await waitFor(() => expect(router.state.location.pathname).toBe('/acceso'))
+    expect(
+      screen.getByRole('heading', { level: 1, name: 'Su sesión fue cerrada' }),
+    ).toBeInTheDocument()
+    expect(screen.getByText(/Su cuenta fue inhabilitada/)).toBeInTheDocument()
+    expect(screen.getByText(/comuníquese con la Administradora/)).toBeInTheDocument()
+    expect(screen.queryByText(/inactividad/)).toBeNull()
   })
 })
 

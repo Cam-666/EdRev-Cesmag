@@ -28,17 +28,21 @@ export function VistaPreviaCorreo({ revista, uso, cuerpo }: VistaPreviaCorreoPro
   return (
     <div className="flex flex-col gap-2">
       {consulta.isError && (
-        <Alerta tipo="error">{mensajeDeApi(consulta.error, 'No fue posible mostrar el correo.')}</Alerta>
+        <Alerta tipo="error">
+          {mensajeDeApi(consulta.error, 'No fue posible mostrar el correo.')}
+        </Alerta>
       )}
       {consulta.data ? (
         <iframe
           title="Vista previa del correo"
           srcDoc={consulta.data.html}
           sandbox=""
-          className="h-[760px] w-full rounded-lg border border-borde-base bg-white"
+          className="bg-white h-[760px] w-full rounded-lg border border-borde-base"
         />
       ) : (
-        !consulta.isError && <p className="text-cuerpo-13 text-texto-secundario">Preparando la vista previa…</p>
+        !consulta.isError && (
+          <p className="text-cuerpo-13 text-texto-secundario">Preparando la vista previa…</p>
+        )
       )}
     </div>
   )

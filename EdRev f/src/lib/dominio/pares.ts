@@ -37,7 +37,10 @@ const CONCEPTOS_REALES: readonly ConceptoPar[] = [
 ]
 
 /** Dos conceptos entregados, reales y distintos. */
-export function conceptosDifieren(a: AsignacionRegla | undefined, b: AsignacionRegla | undefined): boolean {
+export function conceptosDifieren(
+  a: AsignacionRegla | undefined,
+  b: AsignacionRegla | undefined,
+): boolean {
   return (
     a?.estado === 'entrego' &&
     b?.estado === 'entrego' &&
@@ -66,7 +69,12 @@ export function reglaPares(asignaciones: AsignacionRegla[]): ReglaPares {
   const lugares = activos.length
   if (lugares < PARES_BASE) return { lugares, puede: true, desempate: false, motivo: null }
   if (lugares >= MAX_PARES_ACTIVOS) {
-    return { lugares, puede: false, desempate: false, motivo: 'El artículo ya tiene tres pares evaluadores' }
+    return {
+      lugares,
+      puede: false,
+      desempate: false,
+      motivo: 'El artículo ya tiene tres pares evaluadores',
+    }
   }
   if (conceptosDifieren(activos[0], activos[1]) && !activos.some((a) => a.esDesempate)) {
     return { lugares, puede: true, desempate: true, motivo: null }

@@ -19,16 +19,21 @@ export class ErrorApi extends Error {
 
 let token: string | null = null
 
-let alExpirar: (() => void) | null = null
+/** «inhabilitada»: la sesión terminó porque la Administradora inhabilitó la cuenta, no por vencimiento. */
+export type MotivoRechazo = 'inhabilitada' | undefined
 
-/** Registra qué hacer cuando el backend rechaza el token de sesión (vencido o inválido). */
-export function alExpirarSesion(manejador: (() => void) | null): void {
+let alExpirar: ((motivo: MotivoRechazo) => void) | null = null
+
+/** Registra qué hacer cuando el backend rechaza el token de sesión (vencido, inválido o de una cuenta inhabilitada). */
+export function alExpirarSesion(manejador: ((motivo: MotivoRechazo) => void) | null): void {
   alExpirar = manejador
 }
 
 /** Un 401 con un token en uso significa que la sesión terminó; sin token es solo un ingreso con datos incorrectos. */
-function revisarExpiracion(estado: number): void {
-  if (estado === 401 && token) alExpirar?.()
+function revisarExpiracion(estado: number, cuerpo: unknown): void {
+  if (estado !== 401 || !token) return
+  const motivo = (cuerpo as { motivo?: unknown } | undefined)?.motivo
+  alExpirar?.(motivo === 'inhabilitada' ? 'inhabilitada' : undefined)
 }
 
 /** Define el token que se envía en cada petición (null = sin sesión). Solo lo llama la capa de sesión. */
@@ -56,8 +61,9 @@ export async function solicitarArchivo(ruta: string, init: RequestInit = {}): Pr
   if (init.body !== undefined) headers.set('Content-Type', 'application/json')
   const respuesta = await fetch(`${baseApi()}${ruta}`, { ...init, headers })
   if (!respuesta.ok) {
-    revisarExpiracion(respuesta.status)
-    throw new ErrorApi(respuesta.status, respuesta.statusText, await leerJson(respuesta))
+    const cuerpo = await leerJson(respuesta)
+    revisarExpiracion(respuesta.status, cuerpo)
+    throw new ErrorApi(respuesta.status, respuesta.statusText, cuerpo)
   }
   return respuesta.blob()
 }
@@ -73,8 +79,9 @@ export async function solicitar<T>(ruta: string, init: RequestInit = {}): Promis
 
   const respuesta = await fetch(`${baseApi()}${ruta}`, { ...init, headers })
   if (!respuesta.ok) {
-    revisarExpiracion(respuesta.status)
-    throw new ErrorApi(respuesta.status, respuesta.statusText, await leerJson(respuesta))
+    const cuerpo = await leerJson(respuesta)
+    revisarExpiracion(respuesta.status, cuerpo)
+    throw new ErrorApi(respuesta.status, respuesta.statusText, cuerpo)
   }
   if (respuesta.status === 204) return undefined as T
   return (await respuesta.json()) as T

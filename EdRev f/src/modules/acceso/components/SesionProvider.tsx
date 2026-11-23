@@ -52,18 +52,16 @@ export function SesionProvider({ usuarioInicial, children }: SesionProviderProps
     (motivo: MotivoCierre = 'manual') => {
       establecerToken(null)
       borrarSesion()
-      setUltimoCierre(
-        usuario && motivo === 'inactividad' ? { motivo, correo: usuario.correo } : null,
-      )
+      setUltimoCierre(usuario && motivo !== 'manual' ? { motivo, correo: usuario.correo } : null)
       setUsuario(null)
     },
     [usuario],
   )
 
-  // El backend rechazó el token: la sesión venció, así que se lleva a la persona al ingreso.
+  // El backend rechazó el token: la sesión venció o la cuenta fue inhabilitada; se lleva a la persona al ingreso.
   useEffect(() => {
     if (!usuario) return
-    alExpirarSesion(() => cerrarSesion('inactividad'))
+    alExpirarSesion((motivo) => cerrarSesion(motivo ?? 'inactividad'))
     return () => alExpirarSesion(null)
   }, [usuario, cerrarSesion])
 

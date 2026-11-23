@@ -115,7 +115,9 @@ export function vistaPdfConstancia(id: string, cuerpo: string): Promise<Blob> {
 
 /** Deja la plantilla como la habitual de su revista: la que sale elegida al asignar un par o emitir una constancia. */
 export function marcarPredeterminada(id: string): Promise<Plantilla> {
-  return solicitar<Plantilla>(`/plantillas/${encodeURIComponent(id)}/predeterminada`, { method: 'POST' })
+  return solicitar<Plantilla>(`/plantillas/${encodeURIComponent(id)}/predeterminada`, {
+    method: 'POST',
+  })
 }
 
 /** Elimina una plantilla que no es la habitual de su revista. */
@@ -145,10 +147,15 @@ export function obtenerConfiguracion(): Promise<Configuracion> {
   return solicitar<Configuracion>('/configuracion')
 }
 
-export function guardarConfiguracion(datos: Pick<Configuracion, 'diasEspera'>): Promise<Configuracion> {
+export function guardarConfiguracion(
+  datos: Pick<Configuracion, 'diasEspera'>,
+): Promise<Configuracion> {
   return solicitar<Configuracion>('/configuracion', { method: 'PUT', ...json(datos) })
 }
 
 export function guardarDatosRevista(revista: Revista, datos: DatosRevista): Promise<DatosRevista> {
-  return solicitar<DatosRevista>(`/configuracion/revistas/${revista}`, { method: 'PUT', ...json(datos) })
+  return solicitar<DatosRevista>(`/configuracion/revistas/${revista}`, {
+    method: 'PUT',
+    ...json(datos),
+  })
 }

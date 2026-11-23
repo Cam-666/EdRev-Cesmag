@@ -1,7 +1,7 @@
 # EdRev Cesmag
 
 Sistema de gestión editorial de la Universidad CESMAG para sus dos revistas: **Revista Electrónica en Educación y
-Pedagogía (REEP)** y **Revista Investigium IRE Ciencias Sociales y Humanas (IRE)**. Reemplaza el Excel con el que la
+Pedagogía (REEP)** y **Revista Investigium IRE: Ciencias Sociales y Humanas (IRE)**. Reemplaza el Excel con el que la
 dependencia de Editorial hace seguimiento a los artículos y automatiza dos tareas: la invitación a los pares
 evaluadores y la emisión de las constancias de evaluación.
 

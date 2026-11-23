@@ -103,8 +103,8 @@ export function ConfiguracionPage() {
               </h3>
               <p className="max-w-2xl text-cuerpo-13 text-texto-secundario">
                 Registre el ISSN y las indexaciones de cada revista, que cambian con el tiempo. Al
-                editarlos, las constancias que se envíen o se descarguen desde ese momento salen con el
-                texto nuevo. El texto de la constancia y de los correos se escribe en Plantillas.
+                editarlos, las constancias que se envíen o se descarguen desde ese momento salen con
+                el texto nuevo. El texto de la constancia y de los correos se escribe en Plantillas.
               </p>
               {REVISTAS_IDS.map((r) => (
                 <div key={r} className="flex max-w-2xl flex-col gap-3">
