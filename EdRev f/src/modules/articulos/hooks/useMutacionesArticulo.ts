@@ -14,7 +14,6 @@ import { useRevista } from '@/lib/revista/useRevista'
 import type {
   CierreArticulo,
   EdicionArticulo,
-  EstadoArticulo,
   NuevaRonda,
   NuevoArticulo,
 } from '@/types/articulo'
@@ -80,10 +79,7 @@ export function useReabrirArticulo(id: string) {
   const { revista } = useRevista()
   const invalidar = useInvalidarArticulos()
   return useMutation({
-    mutationFn: (datos: {
-      motivo: string
-      estado: Extract<EstadoArticulo, 'en-revision' | 'postulado'>
-    }) => reabrirArticulo(revista, id, datos),
+    mutationFn: (datos: { motivo: string }) => reabrirArticulo(revista, id, datos),
     onSuccess: invalidar,
   })
 }

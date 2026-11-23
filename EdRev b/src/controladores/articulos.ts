@@ -13,7 +13,6 @@ import * as articulos from '../servicios/gestionArticulos.js'
 import { registrarRonda } from '../servicios/rondasComite.js'
 
 const TIPOS = ['investigacion', 'reflexion', 'revision'] as const
-const ESTADOS = ['postulado', 'en-revision', 'en-evaluacion', 'aprobado', 'rechazado', 'archivado'] as const
 
 const publicacion = z.object({ volumen: z.number().int().positive(), numero: z.number().int().positive() })
 
@@ -60,10 +59,8 @@ const cierre = z.object({
   publicacion: publicacion.nullable(),
 })
 
-const reapertura = z.object({
-  motivo: z.string().trim().min(1, 'Escriba el motivo de la reapertura'),
-  estado: z.enum(ESTADOS),
-})
+// Un artículo retomado siempre vuelve a «Postulado»: el comité debe revisarlo de nuevo antes de asignar pares.
+const reapertura = z.object({ motivo: z.string().trim().min(1, 'Escriba el motivo de la reapertura') })
 
 const revistaDe = (req: Request) => idRevista(req.params.revista)
 const articuloDe = (req: Request) => idNumerico(req.params.id, 'Artículo')

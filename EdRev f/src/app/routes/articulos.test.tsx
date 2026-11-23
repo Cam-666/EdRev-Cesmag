@@ -483,7 +483,7 @@ describe('reopening an archived article (/reabrir)', () => {
     await waitFor(() => expect(router.state.location.pathname).toBe('/reep/articulos/2026-007'))
     // La navegación se confirma en una transición de baja prioridad: se espera a que el diálogo desaparezca.
     await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull(), { timeout: 10000 })
-    expect((await screen.findAllByText('En revisión')).length).toBeGreaterThan(0)
+    expect((await screen.findAllByText('Postulado')).length).toBeGreaterThan(0)
 
     await user.click(await screen.findByRole('tab', { name: 'Historial' }))
     expect(

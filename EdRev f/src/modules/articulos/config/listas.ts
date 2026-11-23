@@ -46,11 +46,6 @@ export const ESTADOS_FILTRO: EstadoArticulo[] = [
 ]
 
 /** Estados a los que puede volver un artículo archivado cuando se reabre. */
-export const ESTADOS_REAPERTURA: Array<{ valor: 'en-revision' | 'postulado'; etiqueta: string }> = [
-  { valor: 'en-revision', etiqueta: 'En revisión del comité' },
-  { valor: 'postulado', etiqueta: 'Postulado' },
-]
-
 /** Concepto de un par, tal como lo imprimen la ficha del artículo y el historial del par. */
 export const ETIQUETA_CONCEPTO: Record<ConceptoPar, string> = {
   publicable: 'Publicable',

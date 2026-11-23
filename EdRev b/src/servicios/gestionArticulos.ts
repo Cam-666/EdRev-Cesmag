@@ -253,13 +253,14 @@ export async function cerrarArticulo(revista: number, id: number, datos: DatosCi
 export async function reabrirArticulo(
   revista: number,
   id: number,
-  datos: { motivo: string; estado: EstadoArticulo },
+  datos: { motivo: string },
   actor: number,
 ): Promise<void> {
   await enTransaccion(async (c) => {
     const a = await articuloDeRevista(c, revista, id)
     if (a.estado !== 'archivado') throw new ErrorHttp(409, 'El artículo no está archivado')
-    await c.query('UPDATE articulo SET estado = $1 WHERE id_articulo = $2', [datos.estado, id])
+    // Vuelve a «Postulado»: así el comité debe registrar una nueva ronda antes de que se asignen más pares.
+    await c.query("UPDATE articulo SET estado = 'postulado' WHERE id_articulo = $1", [id])
     await auditar(c, {
       usuario: actor,
       tabla: 'articulo',

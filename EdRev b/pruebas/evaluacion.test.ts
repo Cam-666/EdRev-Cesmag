@@ -8,12 +8,15 @@ import { articuloAprobado, candidato, como } from './api.js'
 const hoy = () => fechaLocal()
 
 describe('asignación, evaluación, constancias y correos', () => {
-  it('un artículo archivado y retomado como «Postulado» pasa de nuevo por el comité antes de tener pares', async () => {
+  it('un artículo archivado y retomado vuelve a «Postulado» y pasa de nuevo por el comité antes de tener pares', async () => {
     const api = await como()
     const art = await articuloAprobado()
     await candidato(art.id, 1)
     await api.post(`/reep/articulos/${art.id}/cerrar`, { estado: 'archivado', motivo: 'Sin respuesta', publicacion: null })
-    expect((await api.post(`/reep/articulos/${art.id}/reabrir`, { estado: 'postulado', motivo: 'Se retoma' })).status).toBe(200)
+    // aunque se pida otro estado, siempre vuelve a «Postulado»
+    const retomado = await api.post(`/reep/articulos/${art.id}/reabrir`, { estado: 'en-revision', motivo: 'Se retoma' })
+    expect(retomado.status).toBe(200)
+    expect(retomado.body.estado).toBe('postulado')
     const nuevo = { nuevo: { nombre: 'Otro', profesion: '', correo: `o${Date.now()}@x.co`, universidad: 'U', area: 'A' } }
     expect((await api.post(`/reep/articulos/${art.id}/asignaciones`, nuevo)).status).toBe(409)
     // ya tenía un par, y aun así el comité puede registrar una ronda nueva

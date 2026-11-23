@@ -11,7 +11,6 @@ import type {
   NuevoArticulo,
   NuevaRonda,
   RespuestaListado,
-  EstadoArticulo,
 } from '@/types/articulo'
 import type { DatosAutor } from '@/types/autor'
 import type { HistorialArticulo } from '@/types/historial'
@@ -119,7 +118,7 @@ export function cerrarArticulo(
 export function reabrirArticulo(
   revista: Revista,
   id: string,
-  datos: { motivo: string; estado: Extract<EstadoArticulo, 'en-revision' | 'postulado'> },
+  datos: { motivo: string },
 ): Promise<ArticuloDetalle> {
   return solicitar<ArticuloDetalle>(`/${revista}/articulos/${encodeURIComponent(id)}/reabrir`, {
     method: 'POST',

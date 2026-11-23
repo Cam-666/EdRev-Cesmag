@@ -1,11 +1,10 @@
 /*
  * ReabrirArticuloModal — «Retomar el proceso» de un artículo archivado: pide el motivo (se guarda como una
- * observación con fecha) y el estado al que vuelve, y muestra lo que se conserva (autores, pares, antiplagio,
- * observaciones, constancias).
+ * observación con fecha), avisa que vuelve a «Postulado» para una nueva revisión del comité y muestra lo que se
+ * conserva (autores, pares, antiplagio, observaciones, constancias).
  */
 import { zodResolver } from '@hookform/resolvers/zod'
-import { Controller, useForm } from 'react-hook-form'
-import { ESTADOS_REAPERTURA } from '../config/listas'
+import { useForm } from 'react-hook-form'
 import { esquemaReapertura } from '../config/esquemas'
 import { paresVigentes } from '../config/reglas'
 import type { ReaperturaForm } from '../config/esquemas'
@@ -14,7 +13,6 @@ import { Alerta } from '@/components/common/Alerta'
 import { AreaTexto } from '@/components/common/AreaTexto'
 import { Boton } from '@/components/common/Boton'
 import { DistintivoEstado } from '@/components/common/DistintivoEstado'
-import { ListaDesplegable } from '@/components/common/ListaDesplegable'
 import { Modal } from '@/components/common/Modal'
 import { formatearFechaLarga } from '@/lib/format'
 import type { ArticuloDetalle } from '@/types/articulo'
@@ -27,6 +25,9 @@ export interface ReabrirArticuloModalProps {
 
 const FORMULARIO = 'formulario-reabrir'
 
+/** «1 emitida», «2 emitidas». */
+const plural = (n: number, uno: string, varios: string) => `${n} ${n === 1 ? uno : varios}`
+
 export function ReabrirArticuloModal({
   articulo,
   onCerrar,
@@ -37,11 +38,10 @@ export function ReabrirArticuloModal({
   const {
     register,
     handleSubmit,
-    control,
     formState: { errors },
   } = useForm<ReaperturaForm>({
     resolver: zodResolver(esquemaReapertura),
-    defaultValues: { motivo: '', estado: 'en-revision' },
+    defaultValues: { motivo: '' },
   })
 
   const conserva: Array<[string, string]> = [
@@ -50,7 +50,7 @@ export function ReabrirArticuloModal({
       'Pares',
       paresVigentes(articulo.asignaciones).length === 0
         ? 'Ninguno asignado'
-        : `${paresVigentes(articulo.asignaciones).length} asignados`,
+        : plural(paresVigentes(articulo.asignaciones).length, 'asignado', 'asignados'),
     ],
     [
       'Antiplagio',
@@ -58,12 +58,16 @@ export function ReabrirArticuloModal({
         ? `${articulo.coincidencias} % · ${articulo.atribuidoIa ?? 0} % de IA`
         : 'Ninguno',
     ],
-    ['Revisión del comité', `${articulo.rondasComite.length} rondas`],
+    ['Revisión del comité', plural(articulo.rondasComite.length, 'ronda', 'rondas')],
     [
       'Constancias',
       articulo.asignaciones.filter((a) => a.constanciaEmitida).length === 0
         ? 'Ninguna'
-        : `${articulo.asignaciones.filter((a) => a.constanciaEmitida).length} emitidas`,
+        : plural(
+            articulo.asignaciones.filter((a) => a.constanciaEmitida).length,
+            'emitida',
+            'emitidas',
+          ),
     ],
   ]
 
@@ -121,18 +125,10 @@ export function ReabrirArticuloModal({
               error={errors.motivo?.message}
               {...register('motivo')}
             />
-            <Controller
-              control={control}
-              name="estado"
-              render={({ field }) => (
-                <ListaDesplegable
-                  etiqueta="Estado al que vuelve"
-                  opciones={ESTADOS_REAPERTURA}
-                  valor={field.value}
-                  onCambio={field.onChange}
-                />
-              )}
-            />
+            <p className="text-cuerpo-13 text-texto-secundario">
+              El artículo vuelve a Postulado: el comité editorial debe registrar una nueva ronda
+              antes de asignar más pares.
+            </p>
           </form>
 
           <section

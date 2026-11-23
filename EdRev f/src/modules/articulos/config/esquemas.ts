@@ -63,7 +63,6 @@ export type RondaForm = z.infer<typeof esquemaRonda>
 
 export const esquemaReapertura = z.object({
   motivo: z.string().trim().min(1, 'Escriba el motivo de la reapertura.'),
-  estado: z.enum(['en-revision', 'postulado']),
 })
 export type ReaperturaForm = z.infer<typeof esquemaReapertura>
 

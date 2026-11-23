@@ -446,11 +446,12 @@ export const handlersArticulos = [
     const articulo = c.base.articulos.find((a) => a.id === params.id)
     if (!articulo) return error(404, 'Artículo no encontrado')
     if (articulo.estado !== 'archivado') return error(409, 'El artículo no está archivado')
-    const { motivo, estado } = (await request.json()) as { motivo: string; estado: EstadoArticulo }
+    const { motivo } = (await request.json()) as { motivo: string }
     if (!motivo.trim()) return error(422, 'Escriba el motivo de la reapertura')
 
     // Todo el historial anterior (pares, conceptos, correos, constancias) se conserva intacto.
-    articulo.estado = estado
+    // Vuelve a «Postulado»: el comité debe revisarlo de nuevo.
+    articulo.estado = 'postulado'
     articulo.archivadoEn = null
     articulo.motivoArchivo = null
     auditar(

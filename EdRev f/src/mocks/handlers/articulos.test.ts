@@ -309,7 +309,6 @@ describe('articles API (mock)', () => {
   it('reopening keeps everything and records the reason in the history', async () => {
     const cuerpo = {
       motivo: 'El autor escribió anunciando las modificaciones.',
-      estado: 'en-revision',
     }
     expect(
       (await llamar('/reep/articulos/2026-034/reabrir', { metodo: 'POST', cuerpo })).status,
@@ -319,7 +318,7 @@ describe('articles API (mock)', () => {
     const ok = await llamar('/reep/articulos/2026-007/reabrir', { metodo: 'POST', cuerpo })
     expect(ok.status).toBe(200)
     const despues = (await ok.json()) as ArticuloDetalle
-    expect(despues.estado).toBe('en-revision')
+    expect(despues.estado).toBe('postulado')
     expect(despues.autores).toEqual(antes.autores)
     expect(despues.coincidencias).toEqual(antes.coincidencias)
     expect(despues.rondasComite).toEqual(antes.rondasComite)
