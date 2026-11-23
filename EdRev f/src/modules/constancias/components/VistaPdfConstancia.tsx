@@ -6,7 +6,7 @@
  */
 import { useVistaPdfConstancia } from '../hooks/useConstancias'
 import { Alerta } from '@/components/common/Alerta'
-import { HojasPdf } from '@/components/common/HojasPdf'
+import { VisorPdf } from '@/components/common/VisorPdf'
 import { mensajeDeApi } from '@/lib/api/errores'
 
 export function VistaPdfConstancia({ constanciaId }: { constanciaId: string | null }) {
@@ -22,10 +22,10 @@ export function VistaPdfConstancia({ constanciaId }: { constanciaId: string | nu
   if (!consulta.data)
     return <p className="text-cuerpo-13 text-texto-secundario">Preparando la constancia…</p>
   return (
-    <HojasPdf
+    <VisorPdf
       archivo={consulta.data}
       titulo="Vista previa de la constancia en PDF"
-      claseRespaldo="h-[75vh] min-h-[560px]"
+      className="mx-auto max-w-3xl"
     />
   )
 }

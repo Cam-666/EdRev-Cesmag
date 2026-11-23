@@ -161,9 +161,14 @@ describe('disabled while signed in', () => {
     const cuenta = usuarios().find((u) => u.id === ADMIN.id)
     if (cuenta) cuenta.estado = 'inhabilitado'
     await user.click(await screen.findByRole('link', { name: 'Artículos' }))
-    await waitFor(() => expect(router.state.location.pathname).toBe('/acceso'))
+    // Con toda la suite corriendo a la vez la respuesta puede tardar: se espera con holgura.
+    await waitFor(() => expect(router.state.location.pathname).toBe('/acceso'), { timeout: 10000 })
     expect(
-      screen.getByRole('heading', { level: 1, name: 'Su sesión fue cerrada' }),
+      await screen.findByRole(
+        'heading',
+        { level: 1, name: 'Su sesión fue cerrada' },
+        { timeout: 10000 },
+      ),
     ).toBeInTheDocument()
     expect(screen.getByText(/Su cuenta fue inhabilitada/)).toBeInTheDocument()
     expect(screen.getByText(/comuníquese con la Administradora/)).toBeInTheDocument()

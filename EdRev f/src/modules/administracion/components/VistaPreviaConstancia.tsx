@@ -7,7 +7,7 @@ import { useQuery } from '@tanstack/react-query'
 import { useEffect, useState } from 'react'
 import { vistaPdfConstancia } from '../services/adminService'
 import { Alerta } from '@/components/common/Alerta'
-import { HojasPdf } from '@/components/common/HojasPdf'
+import { VisorPdf } from '@/components/common/VisorPdf'
 import { mensajeDeApi } from '@/lib/api/errores'
 import type { Plantilla } from '@/types/plantilla'
 
@@ -38,10 +38,10 @@ export function VistaPreviaConstancia({ plantilla, cuerpo }: VistaPreviaConstanc
         </Alerta>
       )}
       {consulta.data ? (
-        <HojasPdf
+        <VisorPdf
           archivo={consulta.data}
           titulo="Vista previa de la constancia en PDF"
-          claseRespaldo="h-[860px]"
+          className="mx-auto max-w-3xl"
         />
       ) : (
         !consulta.isError && (
