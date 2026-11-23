@@ -20,13 +20,15 @@ async function correosDeRevista(revista: number) {
 export interface FiltrosCorreos {
   tipo: string | null
   estado: string | null
+  /** A quién se escribió: «par» o «autor». */
+  para: string | null
   pagina: number
   porPagina: number
 }
 
 export async function listarCorreos(revista: number, f: FiltrosCorreos) {
   const todos = await correosDeRevista(revista)
-  const filtrados = todos.filter((c) => (!f.tipo || c.tipo === f.tipo) && (!f.estado || c.estado === f.estado))
+  const filtrados = todos.filter((c) => (!f.tipo || c.tipo === f.tipo) && (!f.estado || c.estado === f.estado) && (!f.para || c.dirigidoA === f.para))
   return {
     items: filtrados.slice((f.pagina - 1) * f.porPagina, f.pagina * f.porPagina),
     total: filtrados.length,
@@ -84,9 +86,9 @@ export async function corregirYReenviar(revista: number, idTexto: string, nuevoC
       Number(correo.asignacionId),
     ])
     await c.query('UPDATE par_evaluador SET correo = $1 WHERE id_par = $2', [nuevoCorreo, rows[0]?.id_par])
-    // El correo nuevo conserva la plantilla (y el texto propio) del que falló.
-    const antes = await c.query<{ id_plantilla: number | null; asunto_propio: string | null; cuerpo_propio: string | null }>(
-      'SELECT id_plantilla, asunto_propio, cuerpo_propio FROM correo WHERE id_correo = $1',
+    // El correo nuevo conserva la plantilla del que falló.
+    const antes = await c.query<{ id_plantilla: number | null }>(
+      'SELECT id_plantilla FROM correo WHERE id_correo = $1',
       [id],
     )
     await encolar(
@@ -94,11 +96,7 @@ export async function corregirYReenviar(revista: number, idTexto: string, nuevoC
       Number(correo.asignacionId),
       correo.tipo === 'agradecimiento' || correo.tipo === 'constancia' ? correo.tipo : 'invitacion',
       nuevoCorreo,
-      {
-        plantillaId: antes.rows[0]?.id_plantilla ?? undefined,
-        asunto: antes.rows[0]?.asunto_propio ?? undefined,
-        cuerpo: antes.rows[0]?.cuerpo_propio ?? undefined,
-      },
+      { plantillaId: antes.rows[0]?.id_plantilla ?? undefined },
     )
     await auditar(c, {
       usuario: actor,

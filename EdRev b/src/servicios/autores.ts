@@ -5,6 +5,7 @@
  * los del artículo más reciente (cada artículo conserva los suyos).
  */
 import { pool } from '../db.js'
+import { auditar } from '../lib/auditoria.js'
 import { ErrorHttp, siglaDe, sinTildes } from '../lib/http.js'
 
 const SELECCION = `
@@ -116,7 +117,7 @@ export async function articulosDelAutor(id: number) {
   }))
 }
 
-export async function registrarAutor(revista: number, d: DatosAutor) {
+export async function registrarAutor(revista: number, d: DatosAutor, actor: number) {
   const repetido = d.orcid ? await pool.query('SELECT 1 FROM autor WHERE orcid = $1', [d.orcid]) : { rows: [] }
   if (repetido.rows.length > 0) throw new ErrorHttp(409, 'Ya existe un autor con ese ORCID en el directorio')
   const { rows } = await pool.query<{ id_autor: number }>(
@@ -125,6 +126,14 @@ export async function registrarAutor(revista: number, d: DatosAutor) {
      RETURNING id_autor`,
     [d.nombre, d.orcid, d.correo, d.filiacion ?? '', d.pais ?? ''],
   )
+  await auditar(pool, {
+    usuario: actor,
+    tabla: 'autor',
+    idRegistro: rows[0]?.id_autor ?? 0,
+    accion: 'registro',
+    texto: `Registró al autor ${d.nombre} en el directorio`,
+    revista,
+  })
   return {
     id: String(rows[0]?.id_autor),
     revista: siglaDe(revista),
@@ -136,13 +145,23 @@ export async function registrarAutor(revista: number, d: DatosAutor) {
   }
 }
 
-export async function editarAutor(revista: number, id: number, d: Partial<DatosAutor>) {
+/** El ORCID puede quedar vacío (no todos lo tienen); el nombre y el correo, si se envían vacíos, se conservan. */
+export async function editarAutor(revista: number, id: number, d: Partial<DatosAutor>, actor: number) {
   await pool.query(
-    `UPDATE autor SET nombre = COALESCE($1, nombre), orcid = COALESCE(NULLIF($2, ''), orcid),
+    `UPDATE autor SET nombre = COALESCE($1, nombre), orcid = CASE WHEN $2::text IS NULL THEN orcid ELSE NULLIF($2, '') END,
             correo = COALESCE(NULLIF($3, ''), correo),
             filiacion = COALESCE(NULLIF($5, ''), filiacion), pais = COALESCE(NULLIF($6, ''), pais)
       WHERE id_autor = $4`,
     [d.nombre ?? null, d.orcid ?? null, d.correo ?? null, id, d.filiacion ?? null, d.pais ?? null],
   )
-  return autorApi(await cargar(id), revista)
+  const autor = await cargar(id)
+  await auditar(pool, {
+    usuario: actor,
+    tabla: 'autor',
+    idRegistro: id,
+    accion: 'edicion',
+    texto: `Editó los datos del autor ${autor.nombre}`,
+    revista,
+  })
+  return autorApi(autor, revista)
 }

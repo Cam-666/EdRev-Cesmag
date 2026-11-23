@@ -20,6 +20,8 @@ export interface FilaCorreo {
   id_articulo: number
   id_revista: number
   numero_ojs: string
+  /** Nombre del par al que se escribió. */
+  nombre_par: string
   /** Lo que respondió el par a la invitación (para los correos de invitación). */
   estado_par: string
   motivo_bloqueo: string | null
@@ -93,6 +95,9 @@ export function correosApi(filas: FilaCorreo[]) {
       asignacionId: String(f.id_evaluacion),
       tipo: derivados.get(f.id_correo)?.tipo ?? f.tipo,
       destinatario: f.destinatario,
+      nombreDestinatario: f.nombre_par,
+      // Las invitaciones, los agradecimientos y las constancias siempre son para un par evaluador.
+      dirigidoA: 'par' as 'par' | 'autor',
       asunto: ASUNTO[f.tipo],
       fechaEnvio: iso(f.fecha_envio),
       estado: f.resultado,
@@ -103,7 +108,7 @@ export function correosApi(filas: FilaCorreo[]) {
 }
 
 export const SELECCION_CORREOS = `
-  SELECT c.*, e.id_articulo, e.estado_par, a.id_revista, a.numero_ojs, p.motivo_bloqueo,
+  SELECT c.*, e.id_articulo, e.estado_par, a.id_revista, a.numero_ojs, p.nombre AS nombre_par, p.motivo_bloqueo,
          (SELECT au.fecha FROM auditoria au
            WHERE au.tabla_afectada = 'evaluacion' AND au.id_registro = e.id_evaluacion::text
              AND au.accion IN ('respuesta', 'bloqueo') ORDER BY au.fecha DESC LIMIT 1) AS fecha_respuesta,
@@ -120,12 +125,12 @@ export async function encolar(
   idEvaluacion: number,
   tipo: TipoGuardado,
   destinatario: string,
-  eleccion?: { plantillaId?: number; asunto?: string; cuerpo?: string },
+  eleccion?: { plantillaId?: number },
 ): Promise<'en-cola'> {
   await c.query(
-    `INSERT INTO correo (id_evaluacion, tipo, destinatario, resultado, id_plantilla, asunto_propio, cuerpo_propio)
-     VALUES ($1, $2, $3, 'en-cola', $4, $5, $6)`,
-    [idEvaluacion, tipo, destinatario, eleccion?.plantillaId ?? null, eleccion?.asunto ?? null, eleccion?.cuerpo ?? null],
+    `INSERT INTO correo (id_evaluacion, tipo, destinatario, resultado, id_plantilla)
+     VALUES ($1, $2, $3, 'en-cola', $4)`,
+    [idEvaluacion, tipo, destinatario, eleccion?.plantillaId ?? null],
   )
   return 'en-cola'
 }

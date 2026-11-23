@@ -39,8 +39,10 @@ export interface CorreoEnviado {
   asignacionId: string
   tipo: TipoCorreo
   destinatario: string
-  /** Nombre de la persona a quien se escribió; solo en los mensajes enviados a mano. */
+  /** Nombre de la persona a quien se escribió. */
   nombreDestinatario?: string
+  /** A quién se escribió: un par evaluador o un autor (los correos de una evaluación son siempre para un par). */
+  dirigidoA?: 'par' | 'autor'
   asunto: string
   fechaEnvio: string
   estado: EstadoCorreo

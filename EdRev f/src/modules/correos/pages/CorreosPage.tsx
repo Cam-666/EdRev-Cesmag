@@ -43,7 +43,7 @@ export function CorreosPage() {
     setAviso(null)
     reintentar.mutate(correo.id, {
       onSuccess: () =>
-        setAviso({ tipo: 'exito', texto: `Correo a ${correo.destinatario} enviado.` }),
+        setAviso({ tipo: 'exito', texto: `El correo a ${correo.destinatario} volvió a la cola y se enviará en unos instantes.` }),
       onError: (e) =>
         setAviso({ tipo: 'error', texto: mensajeDeApi(e, 'No fue posible reintentar el envío.') }),
     })
@@ -61,7 +61,10 @@ export function CorreosPage() {
               }
             : {
                 tipo: 'exito',
-                texto: `Se reintentaron ${r.reintentados} envíos y todos se enviaron.`,
+                texto:
+                  r.reintentados === 0
+                    ? 'No había correos pendientes por reintentar.'
+                    : `Se reintentaron ${r.reintentados} envíos: volvieron a la cola y se enviarán en unos instantes.`,
               },
         ),
     })
@@ -128,6 +131,16 @@ export function CorreosPage() {
               valor: t,
               etiqueta: ETIQUETA_TIPO_CORREO[t],
             })),
+          ]}
+        />
+        <ListaDesplegable
+          etiqueta="Dirigido a"
+          valor={filtros.para ?? TODOS}
+          onCambio={(v) => cambiar({ para: v === TODOS ? undefined : (v as 'par' | 'autor') })}
+          opciones={[
+            { valor: TODOS, etiqueta: 'Todos' },
+            { valor: 'par', etiqueta: 'Pares evaluadores' },
+            { valor: 'autor', etiqueta: 'Autores' },
           ]}
         />
         <ListaDesplegable

@@ -14,13 +14,13 @@ export const GRUPOS: Array<{ fin: FinPlantilla; nombre: string; descripcion: str
     fin: 'invitacion',
     nombre: 'Invitación al par evaluador',
     descripcion:
-      'Se envía cuando usted asigna un par a un artículo. Puede haber varias: al asignar se escoge cuál usar y sale elegida la «recomendada».',
+      'Se envía cuando usted asigna un par a un artículo. Puede haber varias: al asignar se escoge cuál usar y sale elegida la que está «en uso».',
   },
   {
     fin: 'agradecimiento',
     nombre: 'Agradecimiento al par evaluador',
     descripcion:
-      'Se envía junto con la constancia cuando usted la emite. Puede haber varias: al emitir se escoge cuál usar y sale elegida la «recomendada».',
+      'Se envía junto con la constancia cuando usted la emite. Puede haber varias: al emitir se escoge cuál usar y sale elegida la que está «en uso».',
   },
   {
     fin: 'constancia',

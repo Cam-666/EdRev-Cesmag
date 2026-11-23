@@ -22,6 +22,9 @@ export const ETIQUETA_RESPUESTA_PAR: Record<RespuestaDelPar, string> = {
   'sin-respuesta': 'No respondió a las invitaciones (par bloqueado)',
 }
 
+/** A quién se escribió el correo. */
+export const ETIQUETA_DIRIGIDO_A = { par: 'Par evaluador', autor: 'Autor' } as const
+
 export const TIPOS_CORREO = Object.keys(ETIQUETA_TIPO_CORREO) as TipoCorreo[]
 
 export const ESTADOS_CORREO: EstadoCorreo[] = ['en-cola', 'enviado', 'rebotado', 'fallido']

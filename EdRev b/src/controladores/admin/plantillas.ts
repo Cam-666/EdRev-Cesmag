@@ -5,6 +5,7 @@
 import type { Request, Response } from 'express'
 import { z } from 'zod'
 import { idNumerico } from '../../lib/http.js'
+import { usuarioDe } from '../../middlewares/autenticacion.js'
 import * as plantillas from '../../servicios/administracion/plantillas.js'
 
 const revista = z.enum(['reep', 'ire'])
@@ -27,30 +28,30 @@ export async function listar(_req: Request, res: Response): Promise<void> {
 }
 
 export async function crear(req: Request, res: Response): Promise<void> {
-  res.status(201).json(await plantillas.crearPlantilla(nueva.parse(req.body)))
+  res.status(201).json(await plantillas.crearPlantilla(nueva.parse(req.body), usuarioDe(req).id))
 }
 
 export async function predeterminada(req: Request, res: Response): Promise<void> {
-  res.json(await plantillas.marcarPredeterminada(idDe(req)))
+  res.json(await plantillas.marcarPredeterminada(idDe(req), usuarioDe(req).id))
 }
 
 export async function eliminar(req: Request, res: Response): Promise<void> {
-  await plantillas.eliminarPlantilla(idDe(req))
+  await plantillas.eliminarPlantilla(idDe(req), usuarioDe(req).id)
   res.status(204).end()
 }
 
 export async function guardar(req: Request, res: Response): Promise<void> {
-  res.json(await plantillas.guardarPlantilla(idDe(req), edicion.parse(req.body)))
+  res.json(await plantillas.guardarPlantilla(idDe(req), edicion.parse(req.body), usuarioDe(req).id))
 }
 
 export async function subirImagen(req: Request, res: Response): Promise<void> {
   const parte = plantillas.parteDe(req.params.parte)
-  res.json(await plantillas.subirImagen(idDe(req), parte, req.file?.buffer))
+  res.json(await plantillas.subirImagen(idDe(req), parte, req.file?.buffer, usuarioDe(req).id))
 }
 
 export async function quitarImagen(req: Request, res: Response): Promise<void> {
   const parte = plantillas.parteDe(req.params.parte)
-  res.json(await plantillas.quitarImagen(idDe(req), parte))
+  res.json(await plantillas.quitarImagen(idDe(req), parte, usuarioDe(req).id))
 }
 
 export async function vistaCorreo(req: Request, res: Response): Promise<void> {

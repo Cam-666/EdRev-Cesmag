@@ -8,6 +8,7 @@
  * Los datos que una plantilla puede traer dependen de su fin.
  */
 import { enTransaccion, pool } from '../../db.js'
+import { auditar, type AccionAuditoria } from '../../lib/auditoria.js'
 import { ErrorHttp, siglaDe } from '../../lib/http.js'
 import { aHtml } from '../../lib/formato.js'
 import { escudoEmbebido, marcoInstitucional } from '../../lib/marcoCorreo.js'
@@ -19,6 +20,7 @@ export type Uso = 'invitacion' | 'agradecimiento' | 'constancia'
 export type Fin = Uso | 'mensaje'
 export type Parte = 'encabezado' | 'pie' | 'firma'
 export const PARTES: readonly Parte[] = ['encabezado', 'pie', 'firma']
+const NOMBRE_PARTE: Record<Parte, string> = { encabezado: 'encabezado', pie: 'pie de página', firma: 'firma' }
 
 /** Los datos (marcas) que acepta cada fin; REVISTA y PAR son los mismos textos en mayúsculas. */
 const VARIABLES: Record<Fin, string[]> = {
@@ -92,6 +94,11 @@ function validar(permitidos: string[], asunto: string | null, cuerpo: string): v
   if (desconocido) throw new ErrorHttp(422, `El marcador {{${desconocido}}} no existe en esta plantilla`)
 }
 
+/** Deja en la auditoría quién cambió una plantilla (los textos de los correos y de la constancia llegan a todos los pares). */
+async function registrarCambio(p: FilaPlantilla, actor: number, accion: AccionAuditoria, texto: string): Promise<void> {
+  await auditar(pool, { usuario: actor, tabla: 'plantilla', idRegistro: p.id_plantilla, accion, texto, revista: p.id_revista })
+}
+
 const numeroDeRevista = (sigla: 'reep' | 'ire') => (sigla === 'reep' ? 1 : 2)
 
 export async function listarPlantillas() {
@@ -107,7 +114,7 @@ export interface DatosNuevaPlantilla {
 }
 
 /** Una plantilla nueva nace en blanco, para el fin que se elige; nunca es la predeterminada hasta que se marque. */
-export async function crearPlantilla(d: DatosNuevaPlantilla) {
+export async function crearPlantilla(d: DatosNuevaPlantilla, actor: number) {
   const revista = numeroDeRevista(d.revista)
   const id = await enTransaccion(async (c) => {
     const { rows } = await c
@@ -122,11 +129,13 @@ export async function crearPlantilla(d: DatosNuevaPlantilla) {
       })
     return rows[0]?.id_plantilla ?? 0
   })
-  return plantillaApi(await cargar(id))
+  const creada = await cargar(id)
+  await registrarCambio(creada, actor, 'registro', `Creó la plantilla «${d.nombre}»`)
+  return plantillaApi(creada)
 }
 
 /** Marca la plantilla como la predeterminada de su fin en su revista; la anterior queda como una más. */
-export async function marcarPredeterminada(id: number) {
+export async function marcarPredeterminada(id: number, actor: number) {
   const p = await cargar(id)
   if (p.fin !== 'invitacion' && p.fin !== 'agradecimiento') {
     throw new ErrorHttp(409, 'Solo las invitaciones y los agradecimientos tienen una plantilla predeterminada')
@@ -139,24 +148,24 @@ export async function marcarPredeterminada(id: number) {
     await c.query('UPDATE plantilla SET tipo = NULL WHERE id_revista = $1 AND tipo = $2', [p.id_revista, p.fin])
     await c.query('UPDATE plantilla SET tipo = $2 WHERE id_plantilla = $1', [p.id_plantilla, p.fin])
   })
+  await registrarCambio(p, actor, 'edicion', `Dejó «${p.nombre}» como la plantilla en uso`)
   return plantillaApi(await cargar(p.id_plantilla))
 }
 
-export async function eliminarPlantilla(id: number): Promise<void> {
+export async function eliminarPlantilla(id: number, actor: number): Promise<void> {
   const p = await cargar(id)
   if (p.fin === 'constancia') throw new ErrorHttp(409, 'La constancia de la revista no se elimina: solo se edita')
-  if (p.tipo) {
-    throw new ErrorHttp(409, 'Es la plantilla predeterminada: marque otra como predeterminada antes de eliminarla')
-  }
   await pool.query('DELETE FROM plantilla WHERE id_plantilla = $1', [p.id_plantilla])
+  await registrarCambio(p, actor, 'eliminacion', `Eliminó la plantilla «${p.nombre}»`)
 }
 
 /** Guarda el asunto y el texto de una plantilla; solo se aceptan los datos de su fin. */
-export async function guardarPlantilla(id: number, d: { asunto: string | null; cuerpo: string }) {
+export async function guardarPlantilla(id: number, d: { asunto: string | null; cuerpo: string }, actor: number) {
   const p = await cargar(id)
   const asunto = p.clase === 'archivo' ? null : (d.asunto ?? p.asunto)
   validar(variablesDe(p), asunto, d.cuerpo)
   await pool.query('UPDATE plantilla SET asunto = $1, cuerpo = $2 WHERE id_plantilla = $3', [asunto, d.cuerpo, p.id_plantilla])
+  await registrarCambio(p, actor, 'edicion', `Editó el texto de la plantilla «${p.nombre}»`)
   return plantillaApi(await cargar(p.id_plantilla))
 }
 
@@ -167,7 +176,7 @@ export function parteDe(valor: unknown): Parte {
 }
 
 /** El encabezado, el pie o la firma de una constancia: una imagen PNG o JPG. */
-export async function subirImagen(id: number, parte: Parte, imagen: Buffer | undefined) {
+export async function subirImagen(id: number, parte: Parte, imagen: Buffer | undefined, actor: number) {
   const p = await cargar(id)
   if (p.clase !== 'archivo') throw new ErrorHttp(409, 'Solo la plantilla de archivo (la constancia) lleva imágenes')
   if (!imagen) throw new ErrorHttp(422, 'Adjunte la imagen')
@@ -175,12 +184,14 @@ export async function subirImagen(id: number, parte: Parte, imagen: Buffer | und
   const jpg = imagen.length > 3 && imagen[0] === 0xff && imagen[1] === 0xd8
   if (!png && !jpg) throw new ErrorHttp(422, 'La imagen debe ser PNG o JPG')
   await pool.query(`UPDATE plantilla SET ${parte} = $1 WHERE id_plantilla = $2`, [imagen, p.id_plantilla])
+  await registrarCambio(p, actor, 'edicion', `Cambió la imagen de ${NOMBRE_PARTE[parte]} de «${p.nombre}»`)
   return plantillaApi(await cargar(p.id_plantilla))
 }
 
-export async function quitarImagen(id: number, parte: Parte) {
+export async function quitarImagen(id: number, parte: Parte, actor: number) {
   const p = await cargar(id)
   await pool.query(`UPDATE plantilla SET ${parte} = NULL WHERE id_plantilla = $1`, [p.id_plantilla])
+  await registrarCambio(p, actor, 'edicion', `Quitó la imagen de ${NOMBRE_PARTE[parte]} de «${p.nombre}»`)
   return plantillaApi(await cargar(p.id_plantilla))
 }
 
@@ -244,14 +255,12 @@ export async function plantillasParaEnviar(revista: number, fin: 'invitacion' | 
   }))
 }
 
-/** Lo que el usuario eligió al enviar: una plantilla de la revista y, si quiso, un texto propio solo para ese envío. */
+/** Lo que el usuario eligió al enviar: una plantilla de la revista. */
 export interface EleccionEnvio {
   plantillaId?: number
-  asunto?: string
-  cuerpo?: string
 }
 
-/** Comprueba la elección (la plantilla es de la revista y del fin; el texto propio solo usa datos válidos). */
+/** Comprueba la elección (la plantilla es de la revista, del fin y tiene texto). */
 export async function validarEleccion(
   revista: number,
   fin: 'invitacion' | 'agradecimiento',
@@ -267,6 +276,5 @@ export async function validarEleccion(
     )
     if (!rows[0]) throw new ErrorHttp(404, 'La plantilla no existe en esa revista o no tiene texto')
   }
-  if (e.cuerpo !== undefined) validar(VARIABLES[fin], e.asunto ?? null, e.cuerpo)
   return e
 }

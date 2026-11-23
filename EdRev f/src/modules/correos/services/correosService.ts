@@ -13,6 +13,8 @@ export interface CorreoConArticulo extends CorreoEnviado {
 export interface FiltrosCorreos {
   tipo?: TipoCorreo
   estado?: EstadoCorreo
+  /** A quién se escribió: pares evaluadores o autores. */
+  para?: 'par' | 'autor'
   pagina: number
   porPagina: number
 }
@@ -39,6 +41,7 @@ export function listarCorreos(revista: Revista, f: FiltrosCorreos): Promise<Resp
   const q = new URLSearchParams({ pagina: String(f.pagina), porPagina: String(f.porPagina) })
   if (f.tipo) q.set('tipo', f.tipo)
   if (f.estado) q.set('estado', f.estado)
+  if (f.para) q.set('para', f.para)
   return solicitar<RespuestaCorreos>(`/${revista}/correos?${q.toString()}`)
 }
 

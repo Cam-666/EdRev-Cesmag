@@ -145,6 +145,9 @@ describe('artículos', () => {
     const ficha = (await api.get(`/reep/autores/${creado.body.id}`)).body
     expect(ficha).toMatchObject({ filiacion: 'Universidad Mariana', pais: 'Colombia' })
 
+    // el ORCID se puede escribir, cambiar y también dejar vacío (no todos lo tienen)
+    expect((await api.patch(`/reep/autores/${creado.body.id}`, { orcid: '0000-0002-1825-0097' })).body.orcid).toBe('0000-0002-1825-0097')
+    expect((await api.patch(`/reep/autores/${creado.body.id}`, { orcid: '' })).body.orcid).toBe('')
     const editado = await api.patch(`/reep/autores/${creado.body.id}`, { filiacion: 'Universidad de Nariño', pais: 'Ecuador' })
     expect(editado.body).toMatchObject({ filiacion: 'Universidad de Nariño', pais: 'Ecuador' })
 

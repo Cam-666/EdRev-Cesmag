@@ -1,5 +1,5 @@
 /*
- * EnviarInvitacionModal — la ventana que se abre al asignar un par: dice qué invitación se enviará (la recomendada de
+ * EnviarInvitacionModal — la ventana que se abre al asignar un par: dice qué invitación se enviará (la que está en uso de
  * la revista) y, con «Ver o cambiar el correo», deja ver cómo la recibirá y escoger otra plantilla. «Enviar invitación»
  * registra la asignación y envía el correo.
  */
@@ -20,7 +20,7 @@ export interface EnviarInvitacionModalProps {
   onCerrar: () => void
 }
 
-/** Se monta solo mientras está abierta, así cada vez empieza con la plantilla recomendada. */
+/** Se monta solo mientras está abierta, así cada vez empieza con la plantilla en uso. */
 export function EnviarInvitacionModal(props: EnviarInvitacionModalProps) {
   return props.abierto ? <Contenido {...props} /> : null
 }

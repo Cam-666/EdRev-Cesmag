@@ -229,9 +229,6 @@ export const handlersAdmin = [
     const plantilla = plantillas().find((p) => p.id === params.id)
     if (!plantilla) return error(404, 'Plantilla no encontrada')
     if (plantilla.fin === 'constancia') return error(409, 'La constancia de la revista no se elimina: solo se edita')
-    if (plantilla.enUso) {
-      return error(409, 'Es la plantilla predeterminada: marque otra como predeterminada antes de eliminarla')
-    }
     plantillas().splice(plantillas().indexOf(plantilla), 1)
     return new HttpResponse(null, { status: 204 })
   }),

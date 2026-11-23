@@ -42,7 +42,16 @@ function respuestaDe(base: SeedRevista, c: CorreoEnviado): RespuestaAlCorreo | n
 
 function conArticulo(base: SeedRevista, c: CorreoEnviado) {
   const articulo = base.articulos.find((a) => a.id === c.articuloId)
-  return { ...c, numeroOjs: articulo?.numeroOjs ?? c.articuloId, respuestaPar: respuestaDe(base, c) }
+  // Los correos de una evaluación son siempre para el par de esa evaluación.
+  const asignacion = base.asignaciones.find((a) => a.id === c.asignacionId)
+  const nombre = c.nombreDestinatario ?? base.pares.find((p) => p.id === asignacion?.parId)?.nombre
+  return {
+    ...c,
+    nombreDestinatario: nombre,
+    dirigidoA: c.dirigidoA ?? ('par' as const),
+    numeroOjs: articulo?.numeroOjs ?? c.articuloId,
+    respuestaPar: respuestaDe(base, c),
+  }
 }
 
 function auditar(
@@ -87,6 +96,7 @@ export const handlersCorreos = [
     const url = new URL(request.url)
     const tipo = url.searchParams.get('tipo')
     const estado = url.searchParams.get('estado')
+    const para = url.searchParams.get('para')
     const pagina = Math.max(1, Number(url.searchParams.get('pagina') ?? 1))
     const porPagina = Math.max(1, Number(url.searchParams.get('porPagina') ?? 10))
 
@@ -94,6 +104,7 @@ export const handlersCorreos = [
     const filtrados = todos
       .filter((x) => !tipo || x.tipo === tipo)
       .filter((x) => !estado || x.estado === estado)
+      .filter((x) => !para || (x.dirigidoA ?? 'par') === para)
       .sort((a, b) => b.fechaEnvio.localeCompare(a.fechaEnvio))
     return HttpResponse.json({
       items: filtrados

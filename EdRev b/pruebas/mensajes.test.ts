@@ -75,7 +75,12 @@ describe('enviar un mensaje a un par o a un autor', () => {
     expect(enviado.body).toMatchObject({ estado: 'en-cola', destinatario: par.correo })
     const registro = (await api.get('/reep/correos?tipo=mensaje&porPagina=100')).body
     const fila = registro.items.find((c: { id: string }) => c.id === enviado.body.id)
-    expect(fila).toMatchObject({ tipo: 'mensaje', destinatario: par.correo, estado: 'en-cola', articuloId: '', asignacionId: '' })
+    expect(fila).toMatchObject({ tipo: 'mensaje', destinatario: par.correo, nombreDestinatario: par.nombre, dirigidoA: 'par', estado: 'en-cola', articuloId: '', asignacionId: '' })
+    // el registro se puede filtrar por a quién se escribió: los pares y los autores
+    const soloPares = (await api.get('/reep/correos?para=par&porPagina=100')).body.items as Array<{ id: string; dirigidoA: string }>
+    expect(soloPares.some((c) => c.id === enviado.body.id)).toBe(true)
+    expect(soloPares.every((c) => c.dirigidoA === 'par')).toBe(true)
+    expect((await api.get('/reep/correos?para=autor&porPagina=100')).body.items.some((c: { id: string }) => c.id === enviado.body.id)).toBe(false)
     // el mensaje solo aparece en la revista desde la que salió
     const enIre = (await api.get('/ire/correos?tipo=mensaje&porPagina=100')).body.items
     expect(enIre.some((c: { id: string }) => c.id === enviado.body.id)).toBe(false)
@@ -94,7 +99,11 @@ describe('enviar un mensaje a un par o a un autor', () => {
     expect(r.body.mensaje).toContain('no tiene un correo válido')
     const conCorreo = await nuevoAutor(`autor${unico()}@ejemplo.edu.co`)
     const aux = await como(AUXILIAR)
-    expect((await aux.post('/ire/mensajes', { destino: { tipo: 'autor', id: conCorreo }, plantillaId: await plantillaGeneral('ire') })).status).toBe(201)
+    const enviado = await aux.post('/ire/mensajes', { destino: { tipo: 'autor', id: conCorreo }, plantillaId: await plantillaGeneral('ire') })
+    expect(enviado.status).toBe(201)
+    const deAutores = (await api.get('/ire/correos?para=autor&porPagina=100')).body.items as Array<{ id: string; dirigidoA: string; nombreDestinatario: string }>
+    expect(deAutores.find((c) => c.id === enviado.body.id)).toMatchObject({ dirigidoA: 'autor', nombreDestinatario: enviado.body.nombre })
+    expect(deAutores.every((c) => c.dirigidoA === 'autor')).toBe(true)
   })
 
   it('una plantilla de otra revista, una que no es de mensaje o un destino inexistente se rechazan', async () => {

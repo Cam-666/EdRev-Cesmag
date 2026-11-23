@@ -1,8 +1,8 @@
 /*
  * PlantillasPage — Plantillas (/administracion/plantillas): los textos de los correos y de la constancia, que se
  * editan sin tocar el código. Cuatro grupos por revista, cada uno para algo fijo que se elige al crear la plantilla:
- * - Invitación al par y agradecimiento al par: puede haber varias. Una es la «recomendada» (sale elegida al asignar un par
- *   o emitir una constancia); quien envía puede escoger otra en esa misma ventana. La recomendada no se elimina.
+ * - Invitación al par y agradecimiento al par: puede haber varias. Una está «en uso» (sale elegida al asignar un par
+ *   o emitir una constancia); quien envía puede escoger otra en esa misma ventana. Cualquiera se puede eliminar.
  * - Constancia: una sola por revista; solo se edita.
  * - Mensajes libres: se eligen al pulsar «Enviar correo» en la ficha de un par o de un autor.
  * Al pulsar «Editar» se abre el texto de esa plantilla; «Volver a las plantillas» regresa a las listas.
@@ -117,7 +117,7 @@ export function PlantillasPage() {
                             return (
                               <Fila
                                 key={p.id}
-                                nombre={conVarias && p.enUso ? `${p.nombre} · Recomendada` : p.nombre}
+                                nombre={conVarias && p.enUso ? `${p.nombre} · En uso` : p.nombre}
                                 descripcion={p.cuerpo.trim() ? 'Lista para usar.' : 'Todavía está en blanco: escriba su texto.'}
                               >
                                 <Boton variante="secundario" tamano="sm" onClick={() => setEditando(p.id)}>
@@ -130,10 +130,10 @@ export function PlantillasPage() {
                                     cargando={habitual.isPending && habitual.variables === p.id}
                                     onClick={() => habitual.mutate(p.id)}
                                   >
-                                    Usar como recomendada <span className="sr-only">{p.nombre}</span>
+                                    Marcar como en uso <span className="sr-only">{p.nombre}</span>
                                   </Boton>
                                 )}
-                                {p.fin !== 'constancia' && !p.enUso && (
+                                {p.fin !== 'constancia' && (
                                   <Boton variante="peligro" tamano="sm" onClick={() => setBorrando(p)}>
                                     Eliminar <span className="sr-only">{p.nombre}</span>
                                   </Boton>
@@ -147,7 +147,7 @@ export function PlantillasPage() {
                   )
                 })}
                 {habitual.isError && (
-                  <Alerta tipo="error">{mensajeDeApi(habitual.error, 'No fue posible cambiar la plantilla recomendada.')}</Alerta>
+                  <Alerta tipo="error">{mensajeDeApi(habitual.error, 'No fue posible cambiar la plantilla en uso.')}</Alerta>
                 )}
               </>
             )}

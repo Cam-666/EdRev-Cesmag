@@ -143,6 +143,7 @@ export const handlersMensajes = [
       tipo: 'mensaje',
       destinatario: correo,
       nombreDestinatario: persona.nombre,
+      dirigidoA: pedido.destino?.tipo === 'autor' ? 'autor' : 'par',
       asunto: rellenar(plantilla.asunto ?? '', v),
       fechaEnvio: ahoraIso(),
       estado: 'enviado',

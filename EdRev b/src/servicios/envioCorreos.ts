@@ -85,7 +85,7 @@ export async function procesar(): Promise<void> {
   const { rows } = await pool.query<Pendiente>(
     `SELECT c.id_correo, c.id_evaluacion, c.tipo, c.destinatario, a.id_revista, a.id_articulo, r.nombre AS revista,
             r.correo_remitente AS remitente, a.numero_ojs, a.titulo, p.nombre AS par, p.profesion,
-            p.universidad, COALESCE(c.asunto_propio, pl.asunto) AS asunto, COALESCE(c.cuerpo_propio, pl.cuerpo) AS cuerpo
+            p.universidad, pl.asunto, pl.cuerpo
        FROM correo c
        JOIN evaluacion e ON e.id_evaluacion = c.id_evaluacion
        JOIN articulo a ON a.id_articulo = e.id_articulo
@@ -93,7 +93,10 @@ export async function procesar(): Promise<void> {
        JOIN par_evaluador p ON p.id_par = e.id_par
        LEFT JOIN plantilla pl ON c.tipo <> 'constancia' AND pl.id_plantilla = COALESCE(
               c.id_plantilla,
-              (SELECT d.id_plantilla FROM plantilla d WHERE d.id_revista = a.id_revista AND d.tipo = c.tipo))
+              -- Sin elección: la que está en uso; y si ya no hay (se eliminó), la primera de ese fin que tenga texto.
+              (SELECT d.id_plantilla FROM plantilla d
+                WHERE d.id_revista = a.id_revista AND d.fin = c.tipo AND btrim(d.cuerpo) <> ''
+                ORDER BY (d.tipo IS NULL), d.id_plantilla LIMIT 1))
       WHERE c.resultado = 'en-cola' ORDER BY c.fecha_envio LIMIT 20`,
   )
   for (const p of rows) {

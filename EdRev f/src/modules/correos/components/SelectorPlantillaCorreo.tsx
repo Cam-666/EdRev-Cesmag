@@ -1,6 +1,6 @@
 /*
  * SelectorPlantillaCorreo — lo que se ve al enviar una invitación o un agradecimiento. De entrada solo una frase con
- * el correo que se va a enviar (la plantilla recomendada de la revista sale elegida), para que normalmente baste con
+ * el correo que se va a enviar (la plantilla en uso de la revista sale elegida), para que normalmente baste con
  * pulsar «Enviar». El enlace «Ver o cambiar el correo» abre la vista previa y, si la revista tiene varias plantillas,
  * el menú para escoger otra. Funciona con el estado de useEleccionCorreo, que guarda la elección para enviarla.
  */
@@ -59,7 +59,7 @@ export function SelectorPlantillaCorreo({ estado, alto = 'h-[45vh] min-h-[320px]
           {lista.length > 1 && (
             <ListaDesplegable
               etiqueta={t.etiqueta}
-              opciones={lista.map((p) => ({ valor: p.id, etiqueta: p.predeterminada ? `${p.nombre} (recomendada)` : p.nombre }))}
+              opciones={lista.map((p) => ({ valor: p.id, etiqueta: p.predeterminada ? `${p.nombre} (en uso)` : p.nombre }))}
               valor={plantilla.id}
               onCambio={estado.elegir}
             />

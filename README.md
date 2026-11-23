@@ -139,7 +139,7 @@ revise en **Correos enviados** que la invitación quede «Enviado». Si no llega
 | El correo queda **En cola** | `CORREO_MODO` está en `apagado` o no se ha reiniciado la API. |
 | **Fallido** y en la consola `Brevo 4xx` | Brevo rechazó el envío: clave API mala, remitente sin verificar o tope diario. El mensaje de Brevo sale en la consola. Los fallidos se reintentan solos unas veces y luego con «Reintentar fallidos». |
 | **Rebotado** | La dirección del par no existe. Se corrige con «Corregir y reenviar». |
-| «Sin plantilla en uso» en la consola | La revista no tiene una plantilla recomendada con texto para ese correo: se escribe en Administración › Plantillas. |
+| «Sin plantilla en uso» en la consola | La revista no tiene una plantilla en uso con texto para ese correo: se escribe en Administración › Plantillas. |
 | Los correos salen sin escudo | `LOGO_CORREO_URL` no es alcanzable desde Internet. |
 
 ## Cómo funciona por dentro (para soporte)
@@ -152,9 +152,10 @@ revise en **Correos enviados** que la invitación quede «Enviado». Si no llega
   (ingreso, respuesta del par, webhook, escudo) están separadas de las privadas, que exigen sesión.
 - **Plantillas:** cada revista tiene las suyas, y cada una sirve para algo fijo que se elige al crearla (`fin`:
   invitación, agradecimiento, constancia o mensaje libre). De invitación y de agradecimiento puede haber varias: una es
-  «la recomendada» (`plantilla.tipo`, sale elegida de entrada) y quien asigna un par o emite una constancia puede escoger
-  otra con «Ver o cambiar el correo» en esa misma ventana (la API aún admite un texto propio por envío, pero la pantalla ya no lo ofrece). La elección se guarda con el correo
-  (`correo.id_plantilla`, `asunto_propio`, `cuerpo_propio`) y la usan el envío, el segundo intento y el reenvío. La
+  «la que está en uso» (`plantilla.tipo`, sale elegida de entrada) y quien asigna un par o emite una constancia puede escoger
+  otra con «Ver o cambiar el correo» en esa misma ventana. La elección se guarda con el correo
+  (`correo.id_plantilla`) y la usan el envío, el segundo intento y el reenvío. Cualquier plantilla de correo se puede eliminar, también la que está en uso: el envío toma entonces otra de ese tipo
+  que tenga texto. Crear, editar y eliminar plantillas queda en la auditoría. La
   constancia es una por revista y solo se edita. Las de **mensaje** se eligen al pulsar **Enviar correo** en la ficha de
   un par o de un autor. Las nuevas nacen en blanco. El texto se guarda con marcas sencillas (`{{par}}`, `[centro]`,
   `**negrita**`) que el editor de la página oculta.
@@ -215,6 +216,23 @@ Comandos útiles: `docker compose ps` (estado), `docker compose logs -f api` (re
 y `docker compose down -v` (apagar **y borrar** la base). Para cambiar una variable del `.env`, edítelo y ejecute
 `docker compose up -d`. En producción ponga `ENLACE_DEMO=false` y `CORREO_MODO=brevo` (ver la sección de Brevo).
 Respaldo de la base: `docker compose exec -T db pg_dump -U edrev edrev > respaldo.sql` (el `-T` evita que la terminal altere el archivo).
+
+## Despliegue en Railway (API y base) y Vercel (interfaz)
+
+Es la otra forma de publicar el sistema, sin servidor propio: la **base de datos y la API** corren en Railway y la
+**interfaz** en Vercel. Funciona con el mismo código; solo cambian las variables.
+
+1. **Railway.** Cree un proyecto y agregue **PostgreSQL**. Agregue un servicio desde el repositorio de GitHub con
+   **Root Directory** `EdRev b` (usa su `Dockerfile`) y, en **Settings › Networking**, genere un dominio público.
+   Variables del servicio: `DATABASE_URL` (referencia `${{Postgres.DATABASE_URL}}`), `JWT_SECRET`, `CORS_ORIGIN` y
+   `FRONTEND_URL` (ambas con la dirección de Vercel, sin `/` al final), `API_PUBLICA_URL` (el dominio de Railway),
+   `CORREO_MODO=brevo`, `BREVO_API_KEY`, `BREVO_WEBHOOK_TOKEN`, `ENLACE_DEMO=false`. Railway define `PORT` por sí mismo.
+2. **Base inicial (una sola vez).** Con el `DATABASE_PUBLIC_URL` del servicio Postgres, desde `EdRev b`:
+   `psql "<DATABASE_PUBLIC_URL>" -f db/01_esquema.sql -f db/02_datos_iniciales.sql`.
+3. **Vercel.** Importe el mismo repositorio con **Root Directory** `EdRev f` (Vite; `vercel.json` ya reenvía las rutas
+   a `index.html`). Variables: `VITE_API_URL=https://<dominio-de-railway>/api` y `VITE_USE_MOCKS=false`. Cualquier cambio
+   de esas variables exige volver a desplegar, porque se incorporan al compilar.
+4. Compruebe `https://<dominio-de-railway>/api/salud` y entre a la dirección de Vercel.
 
 ## Migración de los datos del Excel
 

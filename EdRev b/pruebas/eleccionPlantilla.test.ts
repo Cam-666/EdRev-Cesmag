@@ -58,7 +58,7 @@ describe('elegir la plantilla al enviar', () => {
     expect(r.body.html).toContain('Un texto nuevo para Luz Marina Burbano')
   })
 
-  it('la invitación sale con la plantilla elegida y con el texto editado; el segundo intento conserva la elección', async () => {
+  it('la invitación sale con la plantilla elegida; el segundo intento conserva la elección', async () => {
     const api = await como()
     const art = await articuloAprobado()
     const elegida = await plantilla(api, 'reep', 'invitacion', 'Asunto elegido {{revista}}', 'Cuerpo elegido {{par}}{{botones}}')
@@ -69,19 +69,17 @@ describe('elegir la plantilla al enviar', () => {
     // una plantilla de otra revista, un texto con datos que no existen o una plantilla inexistente se rechazan
     expect((await api.post(`/reep/articulos/${art.id}/asignaciones`, { ...nuevo(1), plantillaId: ajena.id })).status).toBe(404)
     expect((await api.post(`/reep/articulos/${art.id}/asignaciones`, { ...nuevo(1), plantillaId: '999999' })).status).toBe(404)
-    expect((await api.post(`/reep/articulos/${art.id}/asignaciones`, { ...nuevo(1), cuerpo: 'Hola {{inventado}}' })).status).toBe(422)
 
-    const r = await api.post(`/reep/articulos/${art.id}/asignaciones`, { ...nuevo(1), plantillaId: elegida.id, asunto: 'Asunto editado', cuerpo: 'Texto editado para {{par}}{{botones}}' })
+    const r = await api.post(`/reep/articulos/${art.id}/asignaciones`, { ...nuevo(1), plantillaId: elegida.id })
     expect(r.status).toBe(201)
     const id = Number(r.body.asignacion.id)
-    const fila = (await pool.query('SELECT id_plantilla, asunto_propio, cuerpo_propio FROM correo WHERE id_evaluacion = $1', [id])).rows[0]
+    const fila = (await pool.query('SELECT id_plantilla FROM correo WHERE id_evaluacion = $1', [id])).rows[0]
     expect(String(fila.id_plantilla)).toBe(elegida.id)
-    expect(fila.asunto_propio).toBe('Asunto editado')
 
     const salida = await enviarCola()
-    expect(salida.some((l) => l.includes('invitacion') && l.includes('Asunto editado'))).toBe(true)
+    expect(salida.some((l) => l.includes('invitacion') && l.includes('Asunto elegido'))).toBe(true)
 
-    // sin editar el texto, sale con la plantilla elegida; y el segundo intento usa la misma
+    // una segunda invitación sale con la plantilla elegida; y el segundo intento usa la misma
     const art2 = await articuloAprobado()
     const r2 = await api.post(`/reep/articulos/${art2.id}/asignaciones`, {
       nuevo: { nombre: `Eleccion ${art2.id}-2`, profesion: 'Magíster', correo: `e2.${art2.id}@udenar.edu.co`, universidad: 'Universidad Mariana', area: 'Educación' },

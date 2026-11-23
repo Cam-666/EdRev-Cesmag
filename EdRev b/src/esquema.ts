@@ -51,8 +51,9 @@ export async function asegurarEsquema(c: Cliente): Promise<void> {
       WHERE NOT EXISTS (SELECT 1 FROM plantilla p WHERE p.id_revista = r.id_revista AND p.fin = 'mensaje')
         AND NOT EXISTS (SELECT 1 FROM plantilla p WHERE p.id_revista = r.id_revista AND p.nombre = 'Mensaje general')`,
   )
-  // Cada invitación o agradecimiento guarda la plantilla que se eligió al enviarlo y, si se editó, su texto propio.
+  // Cada invitación o agradecimiento guarda la plantilla que se eligió al enviarlo.
   await c.query('ALTER TABLE correo ADD COLUMN IF NOT EXISTS id_plantilla SMALLINT REFERENCES plantilla ON DELETE SET NULL')
-  await c.query('ALTER TABLE correo ADD COLUMN IF NOT EXISTS asunto_propio VARCHAR(300)')
-  await c.query('ALTER TABLE correo ADD COLUMN IF NOT EXISTS cuerpo_propio TEXT')
+  // El texto propio por envío ya no existe: se retiran sus columnas de las bases que las tenían.
+  await c.query('ALTER TABLE correo DROP COLUMN IF EXISTS asunto_propio')
+  await c.query('ALTER TABLE correo DROP COLUMN IF EXISTS cuerpo_propio')
 }

@@ -334,8 +334,7 @@ describe('templates API', () => {
     expect(marcada.status).toBe(200)
     const d = await json<DatosPlantillas>(await llamar('/plantillas'))
     expect(d.plantillas.filter((p) => p.revista === 'reep' && p.fin === 'invitacion' && p.enUso).map((p) => p.id)).toEqual([nueva.id])
-    // y no se elimina mientras es la habitual
-    expect((await llamar(`/plantillas/${nueva.id}`, { metodo: 'DELETE' })).status).toBe(409)
+    // se deja todo como estaba y la que estaba en uso también se puede eliminar
     await llamar('/plantillas/reep-invitacion/predeterminada', { metodo: 'POST' })
     expect((await llamar(`/plantillas/${nueva.id}`, { metodo: 'DELETE' })).status).toBe(204)
     // la constancia y los mensajes no tienen habitual; una en blanco tampoco puede serlo
@@ -345,14 +344,14 @@ describe('templates API', () => {
     expect((await llamar(`/plantillas/${blanca.id}/predeterminada`, { metodo: 'POST' })).status).toBe(422)
   })
 
-  it('the habitual template cannot be deleted; the others can', async () => {
+  it('any email template can be deleted, even the one in use; the constancia cannot', async () => {
     const creada = await json<Plantilla>(
       await llamar('/plantillas', {
         metodo: 'POST',
         cuerpo: { revista: 'ire', nombre: 'Para eliminar', fin: 'mensaje' },
       }),
     )
-    expect((await llamar('/plantillas/ire-invitacion', { metodo: 'DELETE' })).status).toBe(409)
+    expect((await llamar('/plantillas/ire-constancia', { metodo: 'DELETE' })).status).toBe(409)
     expect((await llamar(`/plantillas/${creada.id}`, { metodo: 'DELETE' })).status).toBe(204)
     expect((await llamar(`/plantillas/${creada.id}`, { metodo: 'DELETE' })).status).toBe(404)
   })

@@ -11,18 +11,16 @@ import * as constancias from '../servicios/gestionConstancias.js'
 /** Si el correo que lleva la constancia es el de agradecimiento (lo normal) o solo la constancia. */
 const opciones = z.object({
   conAgradecimiento: z.boolean().default(true),
-  // La plantilla de agradecimiento elegida y, si se editó, su texto solo para este envío.
+  // La plantilla de agradecimiento elegida.
   plantillaId: z.string().optional(),
-  asunto: z.string().max(300).optional(),
-  cuerpo: z.string().optional(),
 })
 
 const revistaDe = (req: Request) => idRevista(req.params.revista)
 const constanciaDe = (req: Request) => idNumerico(req.params.id, 'Constancia')
 /** Lo que pide la petición: si lleva agradecimiento y la elección de plantilla. */
 function envioDe(req: Request) {
-  const { conAgradecimiento, plantillaId, ...texto } = opciones.parse(req.body ?? {})
-  return { con: conAgradecimiento, eleccion: { ...texto, plantillaId: plantillaId ? idNumerico(plantillaId, 'Plantilla') : undefined } }
+  const { conAgradecimiento, plantillaId } = opciones.parse(req.body ?? {})
+  return { con: conAgradecimiento, eleccion: { plantillaId: plantillaId ? idNumerico(plantillaId, 'Plantilla') : undefined } }
 }
 
 export async function listar(req: Request, res: Response): Promise<void> {

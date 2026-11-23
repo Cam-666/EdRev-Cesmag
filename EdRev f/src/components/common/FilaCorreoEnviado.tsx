@@ -6,6 +6,8 @@ import { formatearFechaHora } from '@/lib/format'
 
 export interface FilaCorreoEnviadoProps {
   tipo: string
+  /** A quién se escribió (par evaluador o autor); si se omite, la tabla no tiene esa columna. */
+  dirigidoA?: string
   destinatario: string
   /** Número de OJS del artículo, cuando el registro no es de un solo artículo. */
   numeroOjs?: string
@@ -19,6 +21,7 @@ export interface FilaCorreoEnviadoProps {
 
 export function FilaCorreoEnviado({
   tipo,
+  dirigidoA,
   destinatario,
   numeroOjs,
   fechaEnvio,
@@ -29,6 +32,7 @@ export function FilaCorreoEnviado({
   return (
     <tr className="h-fila border-t border-borde-base">
       <td className="px-4 text-cuerpo-15-enfasis text-texto-principal">{tipo}</td>
+      {dirigidoA !== undefined && <td className="px-4 text-cuerpo-13 text-texto-principal">{dirigidoA}</td>}
       <td className="px-4 text-cuerpo-13 text-texto-principal">{destinatario}</td>
       {numeroOjs !== undefined && <td className="px-4 text-cuerpo-13">{numeroOjs}</td>}
       <td className="px-4 text-cuerpo-13 text-texto-secundario">

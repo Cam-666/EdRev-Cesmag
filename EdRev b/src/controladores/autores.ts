@@ -5,6 +5,7 @@
 import type { Request, Response } from 'express'
 import { z } from 'zod'
 import { enteroDe, idNumerico, idRevista } from '../lib/http.js'
+import { usuarioDe } from '../middlewares/autenticacion.js'
 import * as autores from '../servicios/autores.js'
 
 const datosAutor = z.object({
@@ -52,11 +53,11 @@ export async function articulos(req: Request, res: Response): Promise<void> {
 }
 
 export async function registrar(req: Request, res: Response): Promise<void> {
-  res.status(201).json(await autores.registrarAutor(revistaDe(req), datosAutor.parse(req.body)))
+  res.status(201).json(await autores.registrarAutor(revistaDe(req), datosAutor.parse(req.body), usuarioDe(req).id))
 }
 
 export async function editar(req: Request, res: Response): Promise<void> {
   const revista = revistaDe(req)
   const id = autorDe(req)
-  res.json(await autores.editarAutor(revista, id, datosAutor.partial().parse(req.body)))
+  res.json(await autores.editarAutor(revista, id, datosAutor.partial().parse(req.body), usuarioDe(req).id))
 }

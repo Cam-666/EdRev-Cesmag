@@ -158,6 +158,7 @@ interface FilaMensaje {
   id_revista: number
   destinatario: string
   nombre: string
+  id_par: number | null
   asunto: string
   fecha_envio: Date
   resultado: 'en-cola' | 'enviado' | 'rebotado' | 'fallido'
@@ -170,7 +171,7 @@ interface FilaMensaje {
  */
 export async function mensajesDeRevista(revista: number) {
   const { rows } = await pool.query<FilaMensaje>(
-    `SELECT m.id_mensaje, m.id_revista, m.destinatario, m.nombre, m.asunto, m.fecha_envio, m.resultado,
+    `SELECT m.id_mensaje, m.id_revista, m.destinatario, m.nombre, m.id_par, m.asunto, m.fecha_envio, m.resultado,
             EXISTS (SELECT 1 FROM mensaje m2 WHERE m2.id_mensaje > m.id_mensaje
                       AND m2.id_par IS NOT DISTINCT FROM m.id_par AND m2.id_autor IS NOT DISTINCT FROM m.id_autor
                       AND m2.id_plantilla IS NOT DISTINCT FROM m.id_plantilla) AS atendido
@@ -186,6 +187,7 @@ export async function mensajesDeRevista(revista: number) {
     tipo: 'mensaje',
     destinatario: m.destinatario,
     nombreDestinatario: m.nombre,
+    dirigidoA: (m.id_par === null ? 'autor' : 'par') as 'par' | 'autor',
     asunto: m.asunto,
     fechaEnvio: iso(m.fecha_envio),
     estado: m.resultado,

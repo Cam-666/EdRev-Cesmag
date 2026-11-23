@@ -2,6 +2,7 @@
  * Pruebas de las plantillas (la constancia permanente, los correos de uso editable) y del formato del texto
  */
 import request from 'supertest'
+import { pool } from '../src/db.js'
 import { describe, expect, it } from 'vitest'
 import { analizar, aHtml, textoPlano } from '../src/lib/formato.js'
 import { dibujarConstancia, valoresDe } from '../src/servicios/constanciaPdf.js'
@@ -62,14 +63,14 @@ describe('plantillas: constancia permanente y correos de uso editable', () => {
     await api.delete(`/plantillas/${correo.body.id}`)
   })
 
-  it('cada revista tiene su invitación, agradecimiento y constancia predeterminados; la predeterminada no se elimina y se puede cambiar', async () => {
+  it('cada revista tiene su invitación, agradecimiento y constancia en uso; la constancia no se elimina y la en uso de un correo sí, y se puede cambiar', async () => {
     const api = await como()
     for (const revista of ['reep', 'ire']) {
       const lista = (await api.get('/plantillas')).body.plantillas as Array<{ id: string; revista: string; fin: string; enUso: boolean; uso: string | null }>
       for (const fin of ['invitacion', 'agradecimiento', 'constancia']) {
         expect(lista.filter((p) => p.revista === revista && p.fin === fin && p.enUso)).toHaveLength(1)
       }
-      for (const p of lista.filter((x) => x.revista === revista && x.enUso)) expect((await api.delete(`/plantillas/${p.id}`)).status).toBe(409)
+      for (const p of lista.filter((x) => x.revista === revista && x.enUso && x.fin === 'constancia')) expect((await api.delete(`/plantillas/${p.id}`)).status).toBe(409)
     }
     const original = (await api.get('/plantillas')).body.plantillas.find((p: { revista: string; fin: string; enUso: boolean }) => p.revista === 'reep' && p.fin === 'invitacion' && p.enUso)
     const otra = (await api.post('/plantillas', { revista: 'reep', nombre: `Invitación breve ${Date.now()}`, fin: 'invitacion' })).body
@@ -88,6 +89,54 @@ describe('plantillas: constancia permanente y correos de uso editable', () => {
     expect((await api.post(`/plantillas/${original.id}/predeterminada`)).status).toBe(200)
     expect((await api.delete(`/plantillas/${otra.id}`)).status).toBe(204)
     expect((await api.delete(`/plantillas/${otra.id}`)).status).toBe(404)
+  })
+
+  it('la plantilla en uso de un correo también se puede eliminar: el envío usa entonces otra de ese fin que tenga texto', async () => {
+    const api = await como()
+    const otra = (await api.post('/plantillas', { revista: 'ire', nombre: `Gracias ${Date.now()}`, fin: 'agradecimiento' })).body
+    expect((await api.put(`/plantillas/${otra.id}`, { asunto: 'Gracias', cuerpo: 'Gracias, {{par}}.' })).status).toBe(200)
+    const lista = (await api.get('/plantillas')).body.plantillas as Array<{ id: string; revista: string; fin: string; enUso: boolean; asunto: string | null; cuerpo: string }>
+    const enUso = lista.find((p) => p.revista === 'ire' && p.fin === 'agradecimiento' && p.enUso)!
+    expect((await api.delete(`/plantillas/${enUso.id}`)).status).toBe(204)
+    const sin = (await api.get('/plantillas')).body.plantillas as Array<{ revista: string; fin: string; enUso: boolean }>
+    expect(sin.filter((p) => p.revista === 'ire' && p.fin === 'agradecimiento' && p.enUso)).toHaveLength(0)
+    // se deja todo como estaba
+    const vuelta = (await api.post('/plantillas', { revista: 'ire', nombre: enUso.asunto ? `Agradecimiento ${Date.now()}` : 'Agradecimiento', fin: 'agradecimiento' })).body
+    await api.put(`/plantillas/${vuelta.id}`, { asunto: enUso.asunto, cuerpo: enUso.cuerpo })
+    expect((await api.post(`/plantillas/${vuelta.id}/predeterminada`)).status).toBe(200)
+    expect((await api.delete(`/plantillas/${otra.id}`)).status).toBe(204)
+  })
+
+  it('crear, editar y eliminar una plantilla, y registrar o editar un autor, quedan en la auditoría', async () => {
+    const api = await como()
+    const nombre = `Auditada ${Date.now()}`
+    const p = (await api.post('/plantillas', { revista: 'reep', nombre, fin: 'mensaje' })).body
+    expect((await api.put(`/plantillas/${p.id}`, { asunto: 'Hola', cuerpo: 'Hola {{nombre}}' })).status).toBe(200)
+    expect((await api.delete(`/plantillas/${p.id}`)).status).toBe(204)
+    const autor = await api.post('/reep/autores', { nombre: `Autor auditado ${Date.now()}`, correo: 'a@x.co', orcid: '', filiacion: 'Universidad CESMAG', pais: 'Colombia' })
+    expect((await api.patch(`/reep/autores/${autor.body.id}`, { filiacion: 'Universidad Mariana' })).status).toBe(200)
+    const { rows } = await pool.query(
+      `SELECT accion, detalle->>'texto' AS texto FROM auditoria WHERE tabla_afectada IN ('plantilla', 'autor') ORDER BY id_auditoria DESC LIMIT 12`,
+    )
+    const textos = rows.map((r: { accion: string; texto: string }) => `${r.accion}: ${r.texto}`)
+    expect(textos).toEqual(expect.arrayContaining([
+      `registro: Creó la plantilla «${nombre}»`,
+      `edicion: Editó el texto de la plantilla «${nombre}»`,
+      `eliminacion: Eliminó la plantilla «${nombre}»`,
+      expect.stringMatching(/^registro: Registró al autor Autor auditado/),
+      expect.stringMatching(/^edicion: Editó los datos del autor Autor auditado/),
+    ]))
+  })
+
+  it('las plantillas de mensaje se editan sin restricción', async () => {
+    const api = await como()
+    const m = (await api.get('/plantillas')).body.plantillas.find((p: { revista: string; fin: string }) => p.revista === 'reep' && p.fin === 'mensaje')
+    expect(m).toBeTruthy()
+    const r = await api.put(`/plantillas/${m.id}`, { asunto: m.asunto, cuerpo: `${m.cuerpo}
+
+Nota.` })
+    expect(r.status).toBe(200)
+    expect((await api.put(`/plantillas/${m.id}`, { asunto: m.asunto, cuerpo: m.cuerpo })).status).toBe(200)
   })
 
   it('la constancia es permanente: siempre está en uso y no se elimina, pero se edita', async () => {

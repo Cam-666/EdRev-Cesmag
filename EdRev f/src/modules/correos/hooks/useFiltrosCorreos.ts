@@ -1,5 +1,5 @@
 /*
- * useFiltrosCorreos — los filtros del registro de correos (tipo, resultado) viven en la cadena de consulta de la
+ * useFiltrosCorreos — los filtros del registro de correos (tipo, resultado, a quién se escribió) viven en la cadena de consulta de la
  * URL, así una vista filtrada se puede enlazar y recargar.
  */
 import { useSearchParams } from 'react-router-dom'
@@ -16,10 +16,12 @@ export function useFiltrosCorreos() {
   const [params, setParams] = useSearchParams()
   const tipo = params.get('tipo')
   const estado = params.get('estado')
+  const para = params.get('para')
 
   const filtros: FiltrosCorreos = {
     tipo: TIPOS.find((t) => t === tipo),
     estado: ESTADOS.find((e) => e === estado),
+    para: para === 'par' || para === 'autor' ? para : undefined,
     pagina: Math.max(1, Number(params.get('pagina') ?? 1) || 1),
     porPagina: POR_PAGINA_CORREOS,
   }
@@ -34,5 +36,5 @@ export function useFiltrosCorreos() {
     setParams(siguiente, { replace: true })
   }
 
-  return { filtros, cambiar, hayFiltros: Boolean(filtros.tipo || filtros.estado) }
+  return { filtros, cambiar, hayFiltros: Boolean(filtros.tipo || filtros.estado || filtros.para) }
 }

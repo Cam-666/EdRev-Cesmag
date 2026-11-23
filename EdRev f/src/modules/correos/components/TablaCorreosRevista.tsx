@@ -1,9 +1,9 @@
 /*
- * TablaCorreosRevista — el registro de correos enviados de la revista: tipo, destinatario, artículo, fecha y
+ * TablaCorreosRevista — el registro de correos enviados de la revista: tipo, a quién va dirigido (par o autor), destinatario, artículo, fecha y
  * resultado (símbolo y texto, nunca solo color). Un correo rebotado ofrece «Corregir» (corregir la dirección y
  * reenviar), uno fallido o en cola «Reintentar», los demás «Ver».
  */
-import { ETIQUETA_TIPO_CORREO } from '../config/listas'
+import { ETIQUETA_DIRIGIDO_A, ETIQUETA_TIPO_CORREO } from '../config/listas'
 import type { CorreoConArticulo } from '../services/correosService'
 import { Boton } from '@/components/common/Boton'
 import { FilaCorreoEnviado } from '@/components/common/FilaCorreoEnviado'
@@ -34,6 +34,7 @@ export function TablaCorreosRevista({
       etiqueta="Registro de envíos de la revista"
       columnas={[
         { clave: 'tipo', encabezado: 'Tipo', render: () => null },
+        { clave: 'para', encabezado: 'Dirigido a', render: () => null },
         { clave: 'destinatario', encabezado: 'Destinatario', render: () => null },
         { clave: 'articulo', encabezado: 'Artículo', render: () => null },
         { clave: 'fecha', encabezado: 'Fecha', render: () => null },
@@ -48,6 +49,7 @@ export function TablaCorreosRevista({
         <FilaCorreoEnviado
           key={c.id}
           tipo={ETIQUETA_TIPO_CORREO[c.tipo]}
+          dirigidoA={ETIQUETA_DIRIGIDO_A[c.dirigidoA ?? 'par']}
           destinatario={c.destinatario}
           numeroOjs={c.tipo === 'mensaje' ? '—' : c.numeroOjs}
           fechaEnvio={c.fechaEnvio}

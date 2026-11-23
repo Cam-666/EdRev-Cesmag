@@ -1,6 +1,6 @@
 /*
  * useEleccionCorreo — lo que se decide al enviar una invitación o un agradecimiento: con qué plantilla de la revista.
- * La plantilla recomendada (la predeterminada) sale elegida de entrada, así que en el caso normal no hay nada que decidir.
+ * La plantilla en uso (la predeterminada) sale elegida de entrada, así que en el caso normal no hay nada que decidir.
  */
 import { useState } from 'react'
 import { usePlantillasDeEnvio } from './useMensajes'
@@ -13,7 +13,7 @@ export function useEleccionCorreo(revista: Revista, fin: FinEnvio, activo = true
   const lista = consulta.data ?? []
   const [idElegido, setIdElegido] = useState<string | null>(null)
 
-  // Mientras no se elija otra (o si la elegida ya no existe) vale la primera de la lista: la recomendada.
+  // Mientras no se elija otra (o si la elegida ya no existe) vale la primera de la lista: la que está en uso.
   const plantilla = lista.find((p) => p.id === idElegido) ?? lista[0] ?? null
   const asunto = plantilla?.asunto ?? ''
   const cuerpo = plantilla?.cuerpo ?? null

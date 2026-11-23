@@ -26,6 +26,7 @@ export async function listar(req: Request, res: Response): Promise<void> {
     await correos.listarCorreos(revistaDe(req), {
       tipo: q.tipo ? String(q.tipo) : null,
       estado: q.estado ? String(q.estado) : null,
+      para: q.para ? String(q.para) : null,
       pagina: enteroDe(q.pagina, 1, 1),
       porPagina: enteroDe(q.porPagina, 10, 1, 100),
     }),

@@ -62,11 +62,9 @@ export interface PlantillaDeEnvio {
   variables: string[]
 }
 
-/** Lo que se elige al enviar: la plantilla y, si se editó, su texto solo para ese envío. */
+/** Lo que se elige al enviar: la plantilla de la revista. */
 export interface EleccionCorreo {
   plantillaId?: string
-  asunto?: string
-  cuerpo?: string
 }
 
 /** Dirección desde la que salen los correos de una revista: se configura en el servicio de correo, no en pantalla. */
