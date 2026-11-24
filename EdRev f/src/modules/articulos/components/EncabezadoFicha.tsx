@@ -60,7 +60,9 @@ export function EncabezadoFicha({ articulo, acciones }: EncabezadoFichaProps) {
         </li>
         {sinResponder > 0 && (
           <li className="rounded-full bg-superficie-sutil px-3 py-1 text-etiqueta-13 text-neutro-800">
-            {sinResponder === 1 ? '1 invitación sin responder' : `${sinResponder} invitaciones sin responder`}
+            {sinResponder === 1
+              ? '1 invitación sin responder'
+              : `${sinResponder} invitaciones sin responder`}
           </li>
         )}
       </ul>

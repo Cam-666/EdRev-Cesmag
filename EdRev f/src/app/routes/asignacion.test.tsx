@@ -123,7 +123,10 @@ describe('assigning a peer from the article sheet', () => {
     await user.click(within(panel).getByRole('tab', { name: 'Registrar un candidato nuevo' }))
     await user.type(within(panel).getByLabelText('Nombre'), 'Par de la misma institución')
     await user.type(within(panel).getByLabelText('Profesión o título'), 'Magíster')
-    await user.type(within(panel).getByLabelText('Correo electrónico'), 'par.misma@unicesmag.edu.co')
+    await user.type(
+      within(panel).getByLabelText('Correo electrónico'),
+      'par.misma@unicesmag.edu.co',
+    )
     await user.type(within(panel).getByLabelText('Universidad'), 'Universidad CESMAG')
     await user.type(within(panel).getByLabelText('Área temática'), 'Educación rural')
     await user.click(within(panel).getByRole('button', { name: 'Registrar y enviar invitación' }))
@@ -164,9 +167,7 @@ describe('bounced invitation', () => {
     ).toBeInTheDocument()
 
     await user.click(screen.getByRole('link', { name: 'Corregir correo' }))
-    await waitFor(() =>
-      expect(router.state.location.pathname).toMatch(/^\/pares\/reep-par-n/),
-    )
+    await waitFor(() => expect(router.state.location.pathname).toMatch(/^\/pares\/reep-par-n/))
     await user.click(await screen.findByRole('button', { name: 'Editar' }))
     const dialogo = await screen.findByRole('dialog', { name: 'Editar par evaluador' })
     const correo = within(dialogo).getByLabelText('Correo electrónico')
@@ -282,6 +283,65 @@ describe('actions on an assigned peer', () => {
         name: 'Emitir la constancia de Sandra Liliana Cuasapud',
       }),
     ).toBeInTheDocument()
+  })
+
+  it('asks whether to open a committee round when both peers rate it «No publicable»: yes reopens, no rejects', async () => {
+    async function calificadoNoPublicable(numero: string) {
+      const articulo = await articuloNuevo(numero)
+      for (const n of [1, 2]) {
+        const a = await candidatoApi(articulo.id, Number(`${numero.slice(-2)}${n}`))
+        await llamar(`/reep/asignaciones/${a.asignacion.id}/respuesta`, {
+          metodo: 'POST',
+          cuerpo: { respuesta: 'acepto' },
+        })
+        await llamar(`/reep/asignaciones/${a.asignacion.id}/entrega`, {
+          metodo: 'POST',
+          cuerpo: { fecha: hoy() },
+        })
+        await llamar(`/reep/asignaciones/${a.asignacion.id}/concepto`, {
+          metodo: 'POST',
+          cuerpo: { concepto: 'no-publicable' },
+        })
+      }
+      return articulo
+    }
+    const pregunta =
+      'Este artículo acaba de ser calificado como «No publicable» por ambos pares evaluadores. ¿Desea abrir una ronda de revisión de comité?'
+
+    // Sí: vuelve al comité para una nueva ronda
+    const uno = await calificadoNoPublicable('2026-081')
+    const primero = montarRuta(`/reep/articulos/${uno.id}`)
+    expect(await screen.findByText(pregunta)).toBeInTheDocument()
+    await primero.user.click(screen.getByRole('button', { name: 'Sí' }))
+    expect(
+      await screen.findByText(/se abrió una nueva ronda de revisión del comité/),
+    ).toBeInTheDocument()
+    expect((await screen.findAllByText('Postulado')).length).toBeGreaterThan(0)
+    primero.unmount()
+    // El comité aprueba la nueva ronda: lo que sigue es el volumen y el número, no más pares.
+    await llamar(`/reep/articulos/${uno.id}/rondas`, {
+      metodo: 'POST',
+      cuerpo: { coincidencias: 3, atribuidoIa: 1, resultado: 'aprobado', observacion: '' },
+    })
+    const tercero = montarRuta(`/reep/articulos/${uno.id}`)
+    expect(
+      await screen.findByText(
+        /El comité editorial aprobó el artículo después de la evaluación de los pares/,
+      ),
+    ).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Asignar volumen y número' })).toBeInTheDocument()
+    tercero.unmount()
+
+    // No: pide confirmación y el artículo queda rechazado
+    const dos = await calificadoNoPublicable('2026-082')
+    const segundo = montarRuta(`/reep/articulos/${dos.id}`)
+    await segundo.user.click(await screen.findByRole('button', { name: 'No' }))
+    const confirmar = await screen.findByRole('dialog', { name: 'Rechazar el artículo' })
+    await segundo.user.click(
+      within(confirmar).getByRole('button', { name: 'Sí, rechazar el artículo' }),
+    )
+    expect(await screen.findByText(/se decidió no abrir otra ronda/)).toBeInTheDocument()
+    expect((await screen.findAllByText('Rechazado')).length).toBeGreaterThan(0)
   })
 
   it('offers «Asignar par de desempate» only when the concepts of the two peers do not coincide', async () => {

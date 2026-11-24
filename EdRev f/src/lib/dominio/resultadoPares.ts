@@ -3,7 +3,7 @@
  * API simulada para que lo que muestra la página y lo que hace el servidor nunca se contradigan.
  * Cuando todos los pares que ocupan un lugar entregaron un concepto real y la mayoría coincide, ese concepto es
  * el resultado (con dos pares deben coincidir los dos; un tercero resuelve el desacuerdo):
- * - «No publicable»: el proceso se cierra y el artículo queda «Rechazado».
+ * - «No publicable»: la dependencia decide si abre una nueva ronda del comité o rechaza el artículo definitivamente.
  * - «Publicable con modificaciones»: el artículo vuelve al comité para una nueva ronda.
  * - «Publicable»: el artículo se aprueba; necesita el volumen y el número de la publicación.
  */
@@ -34,14 +34,4 @@ export function resultadoDePares(
     conceptos.push(c)
   }
   return REALES.find((r) => conceptos.filter((c) => c === r).length * 2 > conceptos.length) ?? null
-}
-
-/** Mensaje de la ficha para cada resultado. */
-export const TEXTO_RESULTADO: Record<ResultadoPares, string> = {
-  'no-publicable':
-    'Los pares evaluadores calificaron el artículo como no publicable. El proceso se cerró y el artículo quedó rechazado.',
-  'publicable-con-modificaciones':
-    'Los pares evaluadores calificaron el artículo como publicable con modificaciones sustanciales. Con su constancia termina la participación de los pares; el artículo pasa a una nueva ronda del comité editorial, que verificará si los autores corrigieron el artículo y decidirá si se aprueba su publicación.',
-  publicable:
-    'Los pares evaluadores calificaron el artículo como publicable. Asigne el volumen y el número para cerrar el proceso como aprobado.',
 }

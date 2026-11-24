@@ -14,7 +14,12 @@ export function TablaAutoresArticulo({ autores, onEditar }: TablaAutoresArticulo
   const columnas: Array<ColumnaTabla<AutorDeArticulo>> = [
     { clave: 'orden', encabezado: '#', render: (a) => a.orden },
     { clave: 'autor', encabezado: 'Autor', render: (a) => a.nombre },
-    { clave: 'orcid', encabezado: 'ORCID', render: (a) => a.orcid || '—', className: 'whitespace-nowrap' },
+    {
+      clave: 'orcid',
+      encabezado: 'ORCID',
+      render: (a) => a.orcid || '—',
+      className: 'whitespace-nowrap',
+    },
     { clave: 'filiacion', encabezado: 'Filiación', render: (a) => a.filiacion },
     { clave: 'pais', encabezado: 'País', render: (a) => a.pais },
     { clave: 'rol', encabezado: 'Rol', render: (a) => (a.orden === 1 ? 'Principal' : '--') },

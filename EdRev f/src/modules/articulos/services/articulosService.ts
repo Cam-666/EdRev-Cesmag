@@ -104,6 +104,21 @@ export function obtenerHistorial(revista: Revista, id: string): Promise<Historia
 }
 
 /** Cierra el proceso como aprobado, rechazado o archivado, con su motivo. */
+/** «No publicable» de los pares: abrir una nueva ronda del comité (true) o rechazar el artículo definitivamente (false). */
+export function decidirNoPublicable(
+  revista: Revista,
+  id: string,
+  abrirRonda: boolean,
+): Promise<ArticuloDetalle> {
+  return solicitar<ArticuloDetalle>(
+    `/${revista}/articulos/${encodeURIComponent(id)}/decision-pares`,
+    {
+      method: 'POST',
+      ...json({ abrirRonda }),
+    },
+  )
+}
+
 export function cerrarArticulo(
   revista: Revista,
   id: string,

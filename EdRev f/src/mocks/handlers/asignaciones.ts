@@ -164,27 +164,50 @@ function auditar(
   })
 }
 
-/** Los conceptos de los pares deciden el artículo: cerrarlo, devolverlo al comité o aprobarlo. */
-function aplicarResultado(base: SeedRevista, revista: Revista, articuloId: string, usuario: string): void {
+/**
+ * Los conceptos de los pares deciden el artículo: devolverlo al comité o aprobarlo. «No publicable» no cambia nada
+ * todavía: la ficha pregunta si se abre una ronda del comité o se rechaza (ver «decision-pares» en articulos).
+ */
+function aplicarResultado(
+  base: SeedRevista,
+  revista: Revista,
+  articuloId: string,
+  usuario: string,
+): void {
   const articulo = base.articulos.find((a) => a.id === articuloId)
-  if (!articulo || (articulo.estado !== 'en-revision' && articulo.estado !== 'en-evaluacion')) return
+  if (!articulo || (articulo.estado !== 'en-revision' && articulo.estado !== 'en-evaluacion'))
+    return
   const resultado = resultadoDePares(base.asignaciones.filter((a) => a.articuloId === articuloId))
-  if (resultado === 'no-publicable') {
-    articulo.estado = 'rechazado'
-    auditar(base, revista, articuloId, 'cierre', 'Cerró el proceso como rechazado: los pares calificaron el artículo como no publicable', usuario)
-  } else if (resultado === 'publicable-con-modificaciones') {
+  if (resultado === 'publicable-con-modificaciones') {
     articulo.estado = 'postulado'
-    auditar(base, revista, articuloId, 'revision', 'Devolvió el artículo al comité para una nueva ronda de revisión: los pares lo calificaron como publicable con modificaciones', usuario)
+    auditar(
+      base,
+      revista,
+      articuloId,
+      'revision',
+      'Devolvió el artículo al comité para una nueva ronda de revisión: los pares lo calificaron como publicable con modificaciones',
+      usuario,
+    )
   } else if (resultado === 'publicable' && articulo.publicacion) {
     articulo.estado = 'aprobado'
-    auditar(base, revista, articuloId, 'cierre', 'Cerró el proceso como aprobado: los pares lo calificaron como publicable', usuario)
+    auditar(
+      base,
+      revista,
+      articuloId,
+      'cierre',
+      'Cerró el proceso como aprobado: los pares lo calificaron como publicable',
+      usuario,
+    )
   }
 }
 
 /** El último correo de invitación de una evaluación (invitación, 2.º intento o reenvío). */
 export function ultimoCorreo(base: SeedRevista, asignacionId: string): CorreoEnviado | undefined {
   return base.correos
-    .filter((x) => x.asignacionId === asignacionId && x.tipo !== 'agradecimiento' && x.tipo !== 'constancia')
+    .filter(
+      (x) =>
+        x.asignacionId === asignacionId && x.tipo !== 'agradecimiento' && x.tipo !== 'constancia',
+    )
     .sort((a, b) => b.fechaEnvio.localeCompare(a.fechaEnvio))[0]
 }
 
@@ -234,26 +257,60 @@ export function aplicarRespuestaMock(
     asignacion.fechaRespuesta = ahora
     // El artículo pasa a «En evaluación» cuando acepta el primer par.
     if (articulo?.estado === 'en-revision') articulo.estado = 'en-evaluacion'
-    auditar(base, revista, asignacion.articuloId, 'respuesta', texto(`Registró que el par ${asignacion.orden} aceptó`, 'aceptó la invitación'), origen)
+    auditar(
+      base,
+      revista,
+      asignacion.articuloId,
+      'respuesta',
+      texto(`Registró que el par ${asignacion.orden} aceptó`, 'aceptó la invitación'),
+      origen,
+    )
   } else if (respuesta === 'no-acepto') {
     // Declinar esta invitación no bloquea al par: se le puede invitar de nuevo más adelante.
     asignacion.estado = 'no-acepto'
     asignacion.fechaRespuesta = ahora
-    auditar(base, revista, asignacion.articuloId, 'respuesta', texto(`Registró que el par ${asignacion.orden} no aceptó esta invitación`, 'no aceptó esta invitación'), origen)
+    auditar(
+      base,
+      revista,
+      asignacion.articuloId,
+      'respuesta',
+      texto(
+        `Registró que el par ${asignacion.orden} no aceptó esta invitación`,
+        'no aceptó esta invitación',
+      ),
+      origen,
+    )
   } else if (respuesta === 'no-desea') {
     // Un par que no desea participar más pasa a la lista de bloqueados.
     asignacion.estado = 'no-acepto'
     asignacion.fechaRespuesta = ahora
     par.bloqueo = { motivo: 'no-desea', fecha: ahora.slice(0, 10) }
-    auditar(base, revista, asignacion.articuloId, 'bloqueo', texto(`Bloqueó al par ${asignacion.orden}: no desea participar`, 'no desea participar más'), origen)
+    auditar(
+      base,
+      revista,
+      asignacion.articuloId,
+      'bloqueo',
+      texto(`Bloqueó al par ${asignacion.orden}: no desea participar`, 'no desea participar más'),
+      origen,
+    )
   } else {
     // Se bloquea tras el segundo intento sin respuesta.
     if (asignacion.estado !== 'segundo-intento') {
-      return { estado: 409, mensaje: 'El bloqueo por falta de respuesta se aplica tras el segundo intento' }
+      return {
+        estado: 409,
+        mensaje: 'El bloqueo por falta de respuesta se aplica tras el segundo intento',
+      }
     }
     asignacion.estado = 'sin-respuesta'
     par.bloqueo = { motivo: 'sin-respuesta', fecha: ahora.slice(0, 10) }
-    auditar(base, revista, asignacion.articuloId, 'bloqueo', `Bloqueó al par ${asignacion.orden} tras el 2.º intento`, 'Sistema')
+    auditar(
+      base,
+      revista,
+      asignacion.articuloId,
+      'bloqueo',
+      `Bloqueó al par ${asignacion.orden} tras el 2.º intento`,
+      'Sistema',
+    )
   }
   return null
 }
@@ -406,7 +463,15 @@ export const handlersAsignaciones = [
       return error(409, 'El par ya respondió esta invitación')
     }
 
-    const fallo = aplicarRespuestaMock(c.base, c.revista, asignacion, par, respuesta, c.usuario.nombre, false)
+    const fallo = aplicarRespuestaMock(
+      c.base,
+      c.revista,
+      asignacion,
+      par,
+      respuesta,
+      c.usuario.nombre,
+      false,
+    )
     if (fallo) return error(fallo.estado, fallo.mensaje)
     return HttpResponse.json(asignacion)
   }),

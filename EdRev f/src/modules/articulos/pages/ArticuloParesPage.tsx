@@ -37,13 +37,15 @@ export function ArticuloParesPage() {
   const motivoBloqueo =
     requiereNuevaRevision(articulo) && articulo.resultadoPares === 'publicable-con-modificaciones'
       ? 'Los pares ya evaluaron el artículo; el comité editorial debe revisar si los autores lo corrigieron.'
-      : requiereNuevaRevision(articulo)
-        ? 'El proceso fue retomado y el comité editorial debe revisar de nuevo el artículo.'
-        : !aprobado
-          ? 'El comité editorial aún no ha aprobado el artículo.'
-          : !regla.puede
-            ? regla.motivo
-            : null
+      : requiereNuevaRevision(articulo) && articulo.resultadoPares === 'no-publicable'
+        ? 'Los pares calificaron el artículo como no publicable; el comité editorial decidirá su destino en una nueva ronda.'
+        : requiereNuevaRevision(articulo)
+          ? 'El proceso fue retomado y el comité editorial debe revisar de nuevo el artículo.'
+          : !aprobado
+            ? 'El comité editorial aún no ha aprobado el artículo.'
+            : !regla.puede
+              ? regla.motivo
+              : null
 
   function abrir(valor: boolean) {
     const siguiente = new URLSearchParams(params)

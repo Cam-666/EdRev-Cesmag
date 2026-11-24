@@ -22,5 +22,6 @@ rutasArticulos.post('/:revista/articulos/:id/autores', articulos.agregarAutorAlA
 rutasArticulos.post('/:revista/articulos/:id/rondas', articulos.registrarRondaDelComite)
 rutasArticulos.post('/:revista/articulos/:id/trasladar', articulos.trasladar)
 rutasArticulos.post('/:revista/articulos/:id/cerrar', articulos.cerrar)
+rutasArticulos.post('/:revista/articulos/:id/decision-pares', articulos.decisionPares)
 rutasArticulos.post('/:revista/articulos/:id/reabrir', articulos.reabrir)
 rutasArticulos.get('/:revista/articulos/:id/historial', articulos.historial)

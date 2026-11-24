@@ -7,6 +7,7 @@
 import { BotonVolver } from '@/components/common/BotonVolver'
 import { useState } from 'react'
 import { Outlet, useLocation, useNavigate, useParams } from 'react-router-dom'
+import { AvisoResultadoPares } from './AvisoResultadoPares'
 import { CambiarRevistaModal } from './CambiarRevistaModal'
 import { CerrarProcesoModal } from './CerrarProcesoModal'
 import { EditarArticuloModal } from './EditarArticuloModal'
@@ -20,20 +21,11 @@ import { EstadoConsulta } from '@/components/common/EstadoConsulta'
 import { Pestanas } from '@/components/common/Pestanas'
 import { ErrorApi } from '@/lib/api/cliente'
 import { requiereNuevaRevision } from '@/lib/dominio/comite'
-import { TEXTO_RESULTADO } from '@/lib/dominio/resultadoPares'
 import { useRevista } from '@/lib/revista/useRevista'
 import type { EstadoArticulo } from '@/types/articulo'
-import type { ResultadoPares } from '@/types/par'
 
 /** Estados cuyo proceso sigue abierto. */
 const ABIERTOS: readonly EstadoArticulo[] = ['postulado', 'en-revision', 'en-evaluacion']
-
-/** El resultado de los pares solo es novedad mientras el artículo esté en el estado al que condujo. */
-function muestraResultado(resultado: ResultadoPares, estado: EstadoArticulo): boolean {
-  if (resultado === 'no-publicable') return estado === 'rechazado'
-  if (resultado === 'publicable-con-modificaciones') return estado === 'postulado'
-  return estado === 'en-evaluacion' || estado === 'en-revision' || estado === 'aprobado'
-}
 
 const SEGMENTOS = ['comite', 'autores', 'pares', 'historial'] as const
 
@@ -109,37 +101,10 @@ export function FichaArticuloLayout() {
               </>
             }
           />
-          {articulo.resultadoPares &&
-            muestraResultado(articulo.resultadoPares, articulo.estado) && (
-              <Alerta
-                tipo={articulo.resultadoPares === 'publicable' ? 'exito' : 'informacion'}
-                titulo="Resultado de la evaluación por pares"
-                accion={
-                  articulo.resultadoPares === 'publicable' &&
-                  ABIERTOS.includes(articulo.estado) &&
-                  puedeCerrar ? (
-                    <Boton variante="secundario" tamano="sm" onClick={() => setCerrando(true)}>
-                      Asignar volumen y número
-                    </Boton>
-                  ) : articulo.resultadoPares === 'publicable-con-modificaciones' ? (
-                    <EnlaceBoton
-                      variante="secundario"
-                      tamano="sm"
-                      to={`/${revista}/articulos/${encodeURIComponent(articulo.id)}/comite`}
-                    >
-                      Ir a la revisión del comité
-                    </EnlaceBoton>
-                  ) : undefined
-                }
-              >
-                {TEXTO_RESULTADO[articulo.resultadoPares]}
-                {articulo.resultadoPares !== 'publicable' || articulo.estado === 'aprobado'
-                  ? ' Emita la constancia de cada par desde la pestaña «Pares y evaluación».'
-                  : ''}
-              </Alerta>
-            )}
+          <AvisoResultadoPares articulo={articulo} onAsignarPublicacion={() => setCerrando(true)} />
           {requiereNuevaRevision(articulo) &&
-            articulo.resultadoPares !== 'publicable-con-modificaciones' && (
+            articulo.resultadoPares !== 'publicable-con-modificaciones' &&
+            articulo.resultadoPares !== 'no-publicable' && (
               <Alerta
                 tipo="advertencia"
                 titulo="Este artículo debe revisarse de nuevo"

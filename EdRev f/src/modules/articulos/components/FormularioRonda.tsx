@@ -59,7 +59,9 @@ export function FormularioRonda({ articulo, onGuardada, onCancelar }: Formulario
   const observacion = useWatch({ control, name: 'observacion' })
   const conocidas = texto.trim() !== '' && Number.isFinite(coincidencias)
   const supera = conocidas && superaUmbral(coincidencias)
-  const sugerido = conocidas ? resultadoSugerido(coincidencias, observacion, UMBRAL_COINCIDENCIAS) : null
+  const sugerido = conocidas
+    ? resultadoSugerido(coincidencias, observacion, UMBRAL_COINCIDENCIAS)
+    : null
 
   function enviar(v: RondaForm) {
     const resultado = v.resultado as ResultadoRonda

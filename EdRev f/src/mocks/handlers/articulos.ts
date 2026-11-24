@@ -406,6 +406,36 @@ export const handlersArticulos = [
     })
   }),
 
+  // «No publicable» de los pares: abrir una nueva ronda del comité o rechazar el artículo definitivamente.
+  http.post('*/api/:revista/articulos/:id/decision-pares', async ({ params, request }) => {
+    const c = contexto(params, request, 'cerrar-articulo')
+    if (!c.ok) return c.respuesta
+    const articulo = c.base.articulos.find((a) => a.id === params.id)
+    if (!articulo) return error(404, 'Artículo no encontrado')
+    const { abrirRonda } = (await request.json()) as { abrirRonda: boolean }
+    const resultado = resultadoDePares(
+      c.base.asignaciones.filter((a) => a.articuloId === articulo.id),
+    )
+    if (resultado !== 'no-publicable' || articulo.estado !== 'en-evaluacion') {
+      return error(
+        409,
+        'Este artículo no tiene una calificación de «No publicable» pendiente de decisión',
+      )
+    }
+    articulo.estado = abrirRonda ? 'postulado' : 'rechazado'
+    auditar(
+      c.base,
+      c.revista,
+      articulo.id,
+      abrirRonda ? 'revision' : 'cierre',
+      abrirRonda
+        ? 'Abrió una nueva ronda de revisión del comité: los pares evaluadores calificaron el artículo como no publicable'
+        : 'Cerró el proceso como rechazado definitivamente: los pares evaluadores calificaron el artículo como no publicable',
+      c.usuario.nombre,
+    )
+    return HttpResponse.json(detalle(c.base, articulo))
+  }),
+
   http.post('*/api/:revista/articulos/:id/cerrar', async ({ params, request }) => {
     const c = contexto(params, request, 'cerrar-articulo')
     if (!c.ok) return c.respuesta

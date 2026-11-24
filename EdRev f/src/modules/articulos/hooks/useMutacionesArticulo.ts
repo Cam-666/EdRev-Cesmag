@@ -5,18 +5,14 @@ import {
   cerrarArticulo,
   crearArticulo,
   editarArticulo,
+  decidirNoPublicable,
   reabrirArticulo,
   registrarRonda,
   trasladarArticulo,
 } from '../services/articulosService'
 import { useInvalidarArticulos } from './useInvalidarArticulos'
 import { useRevista } from '@/lib/revista/useRevista'
-import type {
-  CierreArticulo,
-  EdicionArticulo,
-  NuevaRonda,
-  NuevoArticulo,
-} from '@/types/articulo'
+import type { CierreArticulo, EdicionArticulo, NuevaRonda, NuevoArticulo } from '@/types/articulo'
 import type { DatosAutor } from '@/types/autor'
 
 export function useCrearArticulo() {
@@ -71,6 +67,15 @@ export function useCerrarArticulo(id: string) {
   const invalidar = useInvalidarArticulos()
   return useMutation({
     mutationFn: (cierre: CierreArticulo) => cerrarArticulo(revista, id, cierre),
+    onSuccess: invalidar,
+  })
+}
+
+export function useDecidirNoPublicable(id: string) {
+  const { revista } = useRevista()
+  const invalidar = useInvalidarArticulos()
+  return useMutation({
+    mutationFn: (abrirRonda: boolean) => decidirNoPublicable(revista, id, abrirRonda),
     onSuccess: invalidar,
   })
 }

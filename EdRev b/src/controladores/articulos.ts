@@ -11,6 +11,7 @@ import { detalleArticulo } from '../servicios/articulos.js'
 import { agregarAutor } from '../servicios/autoresArticulo.js'
 import * as articulos from '../servicios/gestionArticulos.js'
 import { registrarRonda } from '../servicios/rondasComite.js'
+import { decidirNoPublicable } from '../servicios/resultadoPares.js'
 
 const TIPOS = ['investigacion', 'reflexion', 'revision'] as const
 
@@ -148,4 +149,13 @@ export async function reabrir(req: Request, res: Response): Promise<void> {
 
 export async function historial(req: Request, res: Response): Promise<void> {
   res.json(await articulos.historialArticulo(revistaDe(req), articuloDe(req)))
+}
+
+/** «No publicable» de los pares: abrir una nueva ronda del comité (sí) o rechazar el artículo definitivamente (no). */
+export async function decisionPares(req: Request, res: Response): Promise<void> {
+  const revista = revistaDe(req)
+  const id = articuloDe(req)
+  const { abrirRonda } = z.object({ abrirRonda: z.boolean() }).parse(req.body)
+  await decidirNoPublicable(revista, id, abrirRonda, usuarioDe(req).id)
+  res.json(await detalleArticulo(pool, revista, id))
 }

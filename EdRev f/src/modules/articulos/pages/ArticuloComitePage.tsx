@@ -23,7 +23,8 @@ export function ArticuloComitePage() {
   const { revista } = useRevista()
   const navigate = useNavigate()
   const [params, setParams] = useSearchParams()
-  const [aviso, setAviso] = useState<ResultadoRonda | null>(null)
+  // «tras-pares»: el comité aprobó una ronda después de la evaluación de los pares (toca volumen y número).
+  const [aviso, setAviso] = useState<ResultadoRonda | 'tras-pares' | null>(null)
   const puedeRegistrar =
     usePermiso('registrar-revision') &&
     puedeRegistrarRonda(articulo, articulo.asignaciones.length > 0)
@@ -38,6 +39,12 @@ export function ArticuloComitePage() {
   }
 
   function guardada(resultado: ResultadoRonda) {
+    // Si los pares ya evaluaron, aprobar no lleva a buscar pares: lo que sigue es el volumen y el número.
+    if (resultado === 'aprobado' && articulo.resultadoPares) {
+      abrir(false)
+      setAviso('tras-pares')
+      return
+    }
     if (resultado === 'aprobado') {
       navigate(`${base}/pares?asignar=1`)
       return
@@ -68,10 +75,14 @@ export function ArticuloComitePage() {
       />
       <div role="status" aria-live="polite">
         {aviso && (
-          <Alerta tipo="advertencia">
-            {aviso === 'rechazado'
-              ? 'Ronda registrada: Rechazado. El artículo sigue en revisión y no recibirá pares hasta que una ronda quede Aprobada: registre otra cuando el autor corrija.'
-              : 'Ronda registrada: Requiere ajustes. Cuando el autor corrija, registre otra ronda.'}
+          <Alerta tipo={aviso === 'tras-pares' ? 'exito' : 'advertencia'}>
+            {aviso === 'tras-pares'
+              ? 'Ronda registrada: Aprobado. Los pares ya evaluaron el artículo: asigne el volumen y el número con el botón del aviso al comienzo de la ficha.'
+              : aviso === 'rechazado'
+                ? articulo.resultadoPares
+                  ? 'Ronda registrada: Rechazado. El artículo sigue en revisión del comité: registre otra ronda cuando los autores corrijan.'
+                  : 'Ronda registrada: Rechazado. El artículo sigue en revisión y no recibirá pares hasta que una ronda quede Aprobada: registre otra cuando el autor corrija.'
+                : 'Ronda registrada: Requiere ajustes. Cuando el autor corrija, registre otra ronda.'}
           </Alerta>
         )}
       </div>

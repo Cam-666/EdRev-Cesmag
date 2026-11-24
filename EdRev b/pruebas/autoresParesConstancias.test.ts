@@ -234,10 +234,32 @@ async function evaluar(articulo: string, conceptos: string[], desde: number) {
 }
 
 describe('el resultado del artículo según los conceptos de los pares', () => {
-  it('dos pares «no publicable» cierran el proceso: el artículo queda rechazado', async () => {
+  it('dos pares «no publicable» esperan la decisión: «No» rechaza el artículo definitivamente', async () => {
+    const api = await como()
     const art = await articuloAprobado()
     const ficha = await evaluar(art.id, ['no-publicable', 'no-publicable'], 30)
-    expect(ficha).toMatchObject({ estado: 'rechazado', resultadoPares: 'no-publicable' })
+    // no se cierra solo: la ficha pregunta si se abre una ronda del comité
+    expect(ficha).toMatchObject({ estado: 'en-evaluacion', resultadoPares: 'no-publicable' })
+    const no = await api.post(`/reep/articulos/${art.id}/decision-pares`, { abrirRonda: false })
+    expect(no.status).toBe(200)
+    expect(no.body.estado).toBe('rechazado')
+    // ya decidido, no se puede volver a decidir
+    expect((await api.post(`/reep/articulos/${art.id}/decision-pares`, { abrirRonda: true })).status).toBe(409)
+  })
+
+  it('«no publicable» con «Sí» abre una ronda del comité que sigue la numeración de las anteriores', async () => {
+    const api = await como()
+    const art = await articuloAprobado()
+    await evaluar(art.id, ['no-publicable', 'no-publicable'], 44)
+    const si = await api.post(`/reep/articulos/${art.id}/decision-pares`, { abrirRonda: true })
+    expect(si.status).toBe(200)
+    expect(si.body.estado).toBe('postulado')
+    const ronda = await api.post(`/reep/articulos/${art.id}/rondas`, { coincidencias: 3, atribuidoIa: 1, resultado: 'aprobado', observacion: '' })
+    expect(ronda.status).toBe(201)
+    expect(ronda.body.rondasComite).toHaveLength(2)
+    // un artículo sin calificación «no publicable» no admite la decisión
+    const otro = await articuloAprobado()
+    expect((await api.post(`/reep/articulos/${otro.id}/decision-pares`, { abrirRonda: false })).status).toBe(409)
   })
 
   it('«publicable con modificaciones» devuelve el artículo al comité para otra ronda', async () => {
@@ -278,7 +300,7 @@ describe('el resultado del artículo según los conceptos de los pares', () => {
     const ficha = await evaluar(art.id, ['publicable', 'no-publicable'], 38)
     expect(ficha).toMatchObject({ estado: 'en-evaluacion', resultadoPares: null })
     const final = await evaluar(art.id, ['no-publicable'], 40)
-    expect(final).toMatchObject({ estado: 'rechazado', resultadoPares: 'no-publicable' })
+    expect(final).toMatchObject({ estado: 'en-evaluacion', resultadoPares: 'no-publicable' })
   })
 
   it('no decide mientras falte la entrega de un par', async () => {

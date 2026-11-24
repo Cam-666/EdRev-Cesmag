@@ -30,11 +30,11 @@ export function ListaAutoresBorrador({ autores, onQuitar }: ListaAutoresBorrador
           Aún no hay autores. Busque una ficha existente o registre uno nuevo.
         </p>
       ) : (
-        <ol className="flex flex-col gap-1.5">
+        <ol className="gap-1.5 flex flex-col">
           {autores.map((a, i) => (
             <li
               key={`${a.autorId ?? a.datos.orcid}-${i}`}
-              className="flex items-center gap-2 rounded-md bg-superficie-tarjeta px-2 py-1.5"
+              className="py-1.5 flex items-center gap-2 rounded-md bg-superficie-tarjeta px-2"
             >
               <span
                 aria-hidden="true"
