@@ -29,6 +29,7 @@ export function listarArticulos(revista: Revista, f: FiltrosArticulos): Promise<
   if (f.desde) q.set('desde', f.desde)
   if (f.hasta) q.set('hasta', f.hasta)
   if (f.sinResponder) q.set('sinResponder', '1')
+  if (f.sinPares) q.set('sinPares', '1')
   return solicitar<RespuestaListado>(`/${revista}/articulos?${q.toString()}`)
 }
 

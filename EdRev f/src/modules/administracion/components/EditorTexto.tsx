@@ -4,14 +4,16 @@
  * los datos que el texto puede traer (el nombre del par, el título del artículo…) se insertan con un botón y se
  * muestran con nombres sencillos entre corchetes. Nadie escribe marcas a mano: el recuadro se convierte en el
  * texto guardado (ver lib/textoRico y lib/formato), así el mismo texto sirve para el correo y para el PDF de la
- * constancia.
+ * constancia. Si el correo tiene asunto, el campo del asunto va aquí mismo y los botones de datos escriben donde
+ * esté el cursor: en el asunto o en el texto.
  */
 import { useEffect, useId, useLayoutEffect, useRef, useState } from 'react'
 import type { MouseEvent as EventoRaton } from 'react'
 import { Boton } from '@/components/common/Boton'
+import { CampoTexto } from '@/components/common/CampoTexto'
 import { MensajeError } from '@/components/common/MensajeError'
 import { cn } from '@/lib/cn'
-import { datoVisible, ETIQUETA_DATO } from '@/lib/datosPlantilla'
+import { aGuardado, aVisible, datoVisible, ETIQUETA_DATO } from '@/lib/datosPlantilla'
 import { ALINEACIONES } from '@/lib/formato'
 import type { Alineacion } from '@/lib/formato'
 import { alineacionDe, aHtmlEditable, CSS_ALINEACION, deEditable } from '@/lib/textoRico'
@@ -24,7 +26,13 @@ export interface EditorTextoProps {
   datos?: string[]
   error?: string
   ayuda?: string
+  /** El asunto guardado (con {{marcas}}), si el correo lleva asunto; sin él no se muestra el campo. */
+  asunto?: string
+  onAsunto?: (asunto: string) => void
 }
+
+/** Datos que solo tienen sentido en el cuerpo (no en el asunto de un correo). */
+const SOLO_EN_TEXTO = ['botones', 'firma']
 
 const ICONO: Record<Alineacion, string> = {
   izquierda: '⬅',
@@ -40,8 +48,21 @@ const conservarSeleccion = (e: EventoRaton) => e.preventDefault()
 
 const hayOrden = () => typeof document.execCommand === 'function'
 
-export function EditorTexto({ valor, onCambio, datos = [], error, ayuda }: EditorTextoProps) {
+export function EditorTexto({
+  valor,
+  onCambio,
+  datos = [],
+  error,
+  ayuda,
+  asunto,
+  onAsunto,
+}: EditorTextoProps) {
   const ref = useRef<HTMLDivElement>(null)
+  const refAsunto = useRef<HTMLInputElement>(null)
+  const tieneAsunto = asunto !== undefined && onAsunto !== undefined
+  // Dónde escriben los botones de datos: en el último campo donde estuvo el cursor.
+  const [destino, setDestino] = useState<'asunto' | 'texto'>('texto')
+  const enAsunto = tieneAsunto && destino === 'asunto'
   const ultimo = useRef<string | null>(null)
   const idEtiqueta = useId()
   // La alineación del párrafo donde está el cursor, para que el botón de la que está en uso se vea presionado.
@@ -185,6 +206,21 @@ export function EditorTexto({ valor, onCambio, datos = [], error, ayuda }: Edito
     emitir()
   }
 
+  /** Escribe un dato en el asunto, donde está el cursor (o al final), y deja el cursor después del dato. */
+  function escribirEnAsunto(dato: string) {
+    const campo = refAsunto.current
+    if (!campo || !tieneAsunto) return
+    const visible = aVisible(asunto)
+    const inicio = campo.selectionStart ?? visible.length
+    const fin = campo.selectionEnd ?? inicio
+    onAsunto(aGuardado(visible.slice(0, inicio) + dato + visible.slice(fin)))
+    const cursor = inicio + dato.length
+    requestAnimationFrame(() => {
+      campo.focus()
+      campo.setSelectionRange(cursor, cursor)
+    })
+  }
+
   /** Escribe `texto` donde está el cursor (al final cuando el recuadro no tiene cursor). */
   function escribir(texto: string) {
     const el = ref.current
@@ -221,6 +257,46 @@ export function EditorTexto({ valor, onCambio, datos = [], error, ayuda }: Edito
 
   return (
     <div className="flex flex-col gap-3">
+      {tieneAsunto && (
+        <CampoTexto
+          ref={refAsunto}
+          etiqueta="Asunto"
+          value={aVisible(asunto)}
+          onChange={(e) => onAsunto(aGuardado(e.target.value))}
+          onFocus={() => setDestino('asunto')}
+        />
+      )}
+      {datos.length > 0 && (
+        <div className="flex flex-col gap-2">
+          <p id="insertar-dato" className="text-etiqueta-13">
+            {tieneAsunto
+              ? `Insertar un dato en ${enAsunto ? 'el asunto' : 'el texto'}`
+              : 'Insertar un dato en el texto'}
+          </p>
+          <p className="text-cuerpo-13 text-texto-secundario">
+            {tieneAsunto
+              ? 'Ubique el cursor en el asunto o en el texto, donde desea el dato, y presione el botón. Al enviar el correo, el sistema lo reemplaza por el dato real.'
+              : 'Ubique el cursor donde desea el dato y presione el botón. Al enviar el correo, el sistema lo reemplaza por el dato real.'}
+          </p>
+          <div role="group" aria-labelledby="insertar-dato" className="flex flex-wrap gap-2">
+            {datos.map((clave) => (
+              <Boton
+                key={clave}
+                variante="secundario"
+                tamano="sm"
+                type="button"
+                onMouseDown={conservarSeleccion}
+                disabled={enAsunto && SOLO_EN_TEXTO.includes(clave)}
+                onClick={() =>
+                  enAsunto ? escribirEnAsunto(datoVisible(clave)) : escribir(datoVisible(clave))
+                }
+              >
+                {ETIQUETA_DATO[clave] ?? clave}
+              </Boton>
+            ))}
+          </div>
+        </div>
+      )}
       <div role="toolbar" aria-label="Formato del texto" className="flex flex-wrap gap-2">
         <Boton
           variante="neutro"
@@ -259,31 +335,6 @@ export function EditorTexto({ valor, onCambio, datos = [], error, ayuda }: Edito
           </Boton>
         ))}
       </div>
-      {datos.length > 0 && (
-        <div className="flex flex-col gap-2">
-          <p id="insertar-dato" className="text-etiqueta-13">
-            Insertar un dato en el texto
-          </p>
-          <p className="text-cuerpo-13 text-texto-secundario">
-            Ubique el cursor donde desea el dato y presione el botón. Al enviar el correo, el
-            sistema lo reemplaza por el dato real.
-          </p>
-          <div role="group" aria-labelledby="insertar-dato" className="flex flex-wrap gap-2">
-            {datos.map((clave) => (
-              <Boton
-                key={clave}
-                variante="secundario"
-                tamano="sm"
-                type="button"
-                onMouseDown={conservarSeleccion}
-                onClick={() => escribir(datoVisible(clave))}
-              >
-                {ETIQUETA_DATO[clave] ?? clave}
-              </Boton>
-            ))}
-          </div>
-        </div>
-      )}
       <div className="flex flex-col gap-1">
         <span id={idEtiqueta} className="text-etiqueta-13 text-texto-principal">
           Texto
@@ -301,6 +352,7 @@ export function EditorTexto({ valor, onCambio, datos = [], error, ayuda }: Edito
           spellCheck
           onInput={emitir}
           onFocus={() => {
+            setDestino('texto')
             if (hayOrden()) document.execCommand('defaultParagraphSeparator', false, 'p')
           }}
           onPaste={(e) => {

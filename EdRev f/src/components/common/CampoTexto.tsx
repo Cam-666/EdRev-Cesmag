@@ -16,8 +16,31 @@ export interface CampoTextoProps extends Omit<ComponentPropsWithRef<'input'>, 'i
   accionEtiqueta?: ReactNode
   /** Control puesto dentro de la caja, en su extremo derecho (por ejemplo el ojo de la contraseña). */
   accionInterna?: ReactNode
+  /**
+   * Campo para buscar (no para escribir un dato): lleva una lupa a la izquierda y un fondo azul suave, para que no
+   * se confunda con los campos de un formulario.
+   */
+  busqueda?: boolean
   /** Deja la etiqueta solo para lectores de pantalla (por ejemplo, un campo dentro de la fila de una tabla). */
   etiquetaOculta?: boolean
+}
+
+function IconoLupa() {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      width="18"
+      height="18"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <circle cx="11" cy="11" r="7" />
+      <line x1="16.5" y1="16.5" x2="21" y2="21" />
+    </svg>
+  )
 }
 
 export function CampoTexto({
@@ -27,6 +50,7 @@ export function CampoTexto({
   error,
   accionEtiqueta,
   accionInterna,
+  busqueda = false,
   etiquetaOculta = false,
   className,
   required,
@@ -63,15 +87,28 @@ export function CampoTexto({
           aria-invalid={error ? true : undefined}
           aria-describedby={describedBy || undefined}
           className={cn(
-            'min-h-control rounded-md border bg-superficie-tarjeta px-3 text-cuerpo-15 text-texto-principal',
+            'min-h-control rounded-md border px-3 text-cuerpo-15 text-texto-principal',
+            busqueda ? 'bg-estado-info-fondo pl-10' : 'bg-superficie-tarjeta',
             'placeholder:text-texto-placeholder',
             'focus-visible:border-borde-foco',
             'disabled:cursor-not-allowed disabled:bg-superficie-sutil disabled:text-texto-secundario',
-            error ? 'border-estado-error' : 'border-borde-control',
+            error
+              ? 'border-estado-error'
+              : busqueda
+                ? 'border-estado-info'
+                : 'border-borde-control',
             accionInterna ? 'pr-11' : null,
             className,
           )}
         />
+        {busqueda && (
+          <span
+            aria-hidden="true"
+            className="pointer-events-none absolute inset-y-0 left-3 flex items-center text-estado-info"
+          >
+            <IconoLupa />
+          </span>
+        )}
         {accionInterna && (
           <span className="absolute inset-y-0 right-2 flex items-center">{accionInterna}</span>
         )}

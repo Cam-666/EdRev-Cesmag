@@ -19,7 +19,7 @@ describe('validarPlantilla', () => {
       'El dato «Fecha de emisión» no se puede usar en esta plantilla.',
     )
     expect(validarPlantilla(INVITACION, 'Hola {{numero}}', '{{par}} {{articulo}}')).toContain(
-      'Número de la solicitud',
+      'Número de OJS',
     )
   })
 

@@ -60,6 +60,7 @@ export const VARIABLES_FIN: Record<FinPlantilla, string[]> = {
     'par',
     'PAR',
     'articulo',
+    'numero',
     'issn',
     'indexaciones',
     'fecha',

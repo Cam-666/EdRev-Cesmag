@@ -10,7 +10,7 @@ import { ultimoCorreo } from './asignaciones'
 import type { SeedRevista } from '../seed/fabrica'
 import { ahoraIso, contexto, error, sinTildes } from './util'
 import { anioDeGestion } from '@/lib/dominio/anios'
-import { puedeRegistrarRonda } from '@/lib/dominio/comite'
+import { esperaPares, puedeRegistrarRonda } from '@/lib/dominio/comite'
 import { resultadoDePares } from '@/lib/dominio/resultadoPares'
 import {
   clavePublicacion,
@@ -144,6 +144,7 @@ export const handlersArticulos = [
     const desde = url.searchParams.get('desde')
     const hasta = url.searchParams.get('hasta')
     const sinResponder = url.searchParams.get('sinResponder') === '1'
+    const sinPares = url.searchParams.get('sinPares') === '1'
     const anio = Number(url.searchParams.get('anio') ?? 0)
     const pagina = Math.max(1, Number(url.searchParams.get('pagina') ?? 1))
     const porPagina = Math.max(1, Number(url.searchParams.get('porPagina') ?? 6))
@@ -163,6 +164,14 @@ export const handlersArticulos = [
           c.base.asignaciones.some(
             (x) =>
               x.articuloId === a.id && (x.estado === 'invitado' || x.estado === 'segundo-intento'),
+          ),
+      )
+      .filter(
+        (a) =>
+          !sinPares ||
+          esperaPares(
+            a,
+            c.base.asignaciones.filter((x) => x.articuloId === a.id).map((x) => x.estado),
           ),
       )
       .sort((a, b) =>

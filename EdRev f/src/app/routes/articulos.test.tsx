@@ -120,7 +120,7 @@ describe('article registration (one form, then the committee review)', () => {
     expect(await screen.findByText(/Agregue al menos un autor/)).toBeInTheDocument()
 
     // Autor existente del directorio común: se busca por nombre, los datos se llenan y quedan de solo lectura
-    await user.type(screen.getByLabelText('Buscar ficha existente'), 'Sandra')
+    await user.type(screen.getByLabelText('Buscar por ORCID o nombre'), 'Sandra')
     await user.click(await screen.findByRole('button', { name: /Sandra Milena Córdoba/ }))
     expect(screen.getByLabelText('Nombre completo')).toHaveValue('Sandra Milena Córdoba')
     expect(screen.getByLabelText('ORCID (opcional)')).toHaveAttribute('readonly')
@@ -366,9 +366,7 @@ describe('committee review (/comite)', () => {
     // La página solo sugiere un resultado; lo elige el comité
     await user.clear(coincidencias)
     await user.type(coincidencias, '21')
-    expect(
-      await screen.findByText('Sugerencia: Rechazado (no publicable)'),
-    ).toBeInTheDocument()
+    expect(await screen.findByText('Sugerencia: Rechazado (no publicable)')).toBeInTheDocument()
     expect(screen.getByText(/superan el 15 % aceptado/)).toBeInTheDocument()
     // dentro del límite y con observaciones la sugerencia cambia
     await user.clear(coincidencias)

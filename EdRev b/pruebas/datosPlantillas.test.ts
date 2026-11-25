@@ -77,7 +77,7 @@ describe('constancia', () => {
   it('sigue la disposición de la constancia de la dependencia: una hoja Carta, cursiva para «Proyectó»', async () => {
     const pdf = await dibujarConstancia(
       { cuerpo: TEXTO_CONSTANCIA, encabezado: null, pie: null, firma: null },
-      valoresDe({ revista: 'Revista Electrónica en Educación y Pedagogía', par: 'Diana Quirá', articulo: 'Título', issn: '2590-7476', indexaciones: 'Redalyc' }),
+      valoresDe({ revista: 'Revista Electrónica en Educación y Pedagogía', par: 'Diana Quirá', articulo: 'Título', numero: '2026-034', issn: '2590-7476', indexaciones: 'Redalyc' }),
     )
     const doc = await PDFDocument.load(pdf)
     expect(doc.getPageCount()).toBe(1)

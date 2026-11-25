@@ -25,7 +25,7 @@ export const PARTES: readonly Parte[] = ['encabezado', 'pie', 'firma']
 const NOMBRE_PARTE: Record<Parte, string> = { encabezado: 'encabezado', pie: 'pie de página', firma: 'firma' }
 
 /** Los datos (marcas) que acepta cada fin; REVISTA y PAR son los mismos textos en mayúsculas. */
-const VARIABLES: Record<Fin, string[]> = {
+export const VARIABLES: Record<Fin, string[]> = {
   // Los de la estructura original (revista, par, artículo y fecha) más los del proceso que sirven al invitar.
   invitacion: [
     'par', 'PAR', 'profesion', 'universidad', 'area', 'articulo', 'numero', 'tipo', 'revista', 'REVISTA',
@@ -35,7 +35,7 @@ const VARIABLES: Record<Fin, string[]> = {
     'par', 'PAR', 'profesion', 'universidad', 'area', 'articulo', 'numero', 'tipo', 'entrega', 'revista', 'REVISTA',
     'issn', 'indexaciones', 'contacto', 'fecha', 'anio',
   ],
-  constancia: ['revista', 'REVISTA', 'par', 'PAR', 'articulo', 'issn', 'indexaciones', 'fecha', 'anio', 'firma'],
+  constancia: ['revista', 'REVISTA', 'par', 'PAR', 'articulo', 'numero', 'issn', 'indexaciones', 'fecha', 'anio', 'firma'],
   // Un mensaje se escribe a un par o a un autor, por cualquier motivo: lleva los datos de la persona, los de su
   // artículo más reciente en la revista desde la que se escribe y los de la revista.
   mensaje: [

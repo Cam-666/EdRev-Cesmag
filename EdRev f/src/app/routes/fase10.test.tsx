@@ -58,7 +58,7 @@ describe('the whole flow of an article', () => {
     await user.type(await screen.findByLabelText('Número de OJS'), '2026-090')
     await user.type(screen.getByLabelText('Título'), 'Escuela rural y memoria')
     await elegirOpcion(user, 'Tipo de artículo', 'Investigación')
-    await user.type(screen.getByLabelText('Buscar ficha existente'), 'Sandra')
+    await user.type(screen.getByLabelText('Buscar por ORCID o nombre'), 'Sandra')
     await user.click(await screen.findByRole('button', { name: /Sandra Milena Córdoba/ }))
     await user.click(screen.getByRole('button', { name: 'Agregar' }))
     await user.click(screen.getByRole('button', { name: 'Guardar artículo' }))

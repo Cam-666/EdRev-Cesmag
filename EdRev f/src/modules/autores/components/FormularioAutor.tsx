@@ -1,6 +1,7 @@
 /*
  * FormularioAutor — formulario de autor: busca un registro existente por nombre u ORCID (al elegir uno se llenan
- * los datos y quedan de solo lectura) o se escribe un autor nuevo. Lo reutilizan el paso 2 del registro y el modal
+ * los datos y quedan de solo lectura) o se escribe un autor nuevo. El campo de búsqueda lleva una lupa y un fondo
+ * azul suave para no confundirlo con los campos donde se escriben los datos. Lo reutilizan el paso 2 del registro y el modal
  * «Agregar autor» de la ficha del artículo. El campo de correo no tiene diseño en Figma, pero es obligatorio.
  */
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -101,13 +102,14 @@ export function FormularioAutor({
       {permitirBuscar && (
         <div className="flex flex-col gap-2">
           <CampoTexto
-            etiqueta="Buscar ficha existente"
+            etiqueta="Buscar por ORCID o nombre"
             type="search"
-            placeholder="Nombre u ORCID"
-            ayuda="Si el autor ya postuló un artículo, sus datos se completan automáticamente."
+            placeholder="Escriba el ORCID o el nombre del autor"
+            ayuda="Si el autor ya postuló un artículo, sus datos se completan automáticamente. Si no aparece, registre sus datos en los campos de abajo."
             value={busqueda}
             onChange={(e) => setBusqueda(e.target.value)}
             disabled={soloLectura}
+            busqueda
           />
           <p role="status" className="sr-only">
             {buscando && !resultados.isFetching ? `${fichas.length} fichas encontradas` : ''}

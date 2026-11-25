@@ -1,7 +1,7 @@
 /*
  * permisos — única fuente de verdad de lo que puede hacer cada perfil (autorización).
- * La Auxiliar hace todo el trabajo editorial de las dos revistas; solo la administración (cuentas, plantillas,
- * configuración y auditoría) es de la Administradora.
+ * La Auxiliar hace todo el trabajo editorial de las dos revistas y también entra a Administración (plantillas,
+ * auditoría y configuración); solo las cuentas de usuario son de la Administradora.
  */
 import type { Perfil } from '@/types/usuario'
 
@@ -28,8 +28,10 @@ export type Accion =
   | 'reabrir-articulo'
   /** Cerrar el proceso de un artículo como aprobado, rechazado o archivado. */
   | 'cerrar-articulo'
-  /** Cuentas, plantillas y parámetros. */
+  /** Plantillas, auditoría y configuración (el módulo de Administración). */
   | 'administrar'
+  /** Cuentas de usuario: crear, editar, inhabilitar y eliminar. */
+  | 'administrar-usuarios'
 
 const TODAS: readonly Accion[] = [
   'registrar-datos',
@@ -44,11 +46,12 @@ const TODAS: readonly Accion[] = [
   'reabrir-articulo',
   'cerrar-articulo',
   'administrar',
+  'administrar-usuarios',
 ]
 
 const PERMISOS: Record<Perfil, ReadonlySet<Accion>> = {
   administrador: new Set(TODAS),
-  auxiliar: new Set(TODAS.filter((a) => a !== 'administrar')),
+  auxiliar: new Set(TODAS.filter((a) => a !== 'administrar-usuarios')),
 }
 
 export function puede(perfil: Perfil, accion: Accion): boolean {

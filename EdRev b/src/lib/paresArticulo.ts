@@ -68,3 +68,14 @@ export function reglaPares(activos: FilaPar[]): { lugares: number; puede: boolea
       'El artículo ya tiene 2 pares evaluadores: no se buscan más. Un tercero solo se permite cuando los conceptos de los dos pares no coinciden.',
   }
 }
+
+/**
+ * Condición SQL (sobre el artículo `a`) de un artículo «sin pares»: el comité ya lo aprobó (su última ronda es
+ * Aprobado), sigue en revisión y no tiene ningún par invitado, que haya aceptado o que haya entregado. Es el que
+ * espera que se le asignen pares. Si todos los invitados rechazaron, vuelve a estar sin pares.
+ */
+export const CONDICION_SIN_PARES = `a.estado = 'en-revision'
+  AND (SELECT r.resultado FROM revision_inicial_comite r WHERE r.id_articulo = a.id_articulo
+        ORDER BY r.fecha DESC, r.id_revision DESC LIMIT 1) = 'aprobado'
+  AND NOT EXISTS (SELECT 1 FROM evaluacion e WHERE e.id_articulo = a.id_articulo
+                    AND e.estado_par IN ('invitado', 'acepto', 'entrego'))`

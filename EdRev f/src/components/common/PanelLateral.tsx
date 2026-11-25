@@ -38,7 +38,7 @@ const MODULOS_COMUNES = [
   { etiqueta: 'Informes', ruta: '/informes', prefijo: undefined },
   { etiqueta: 'Autores', ruta: '/autores', prefijo: '/autores' },
   { etiqueta: 'Pares evaluadores', ruta: '/pares', prefijo: '/pares' },
-  { etiqueta: 'Administración', ruta: '/administracion/usuarios', prefijo: '/administracion' },
+  { etiqueta: 'Administración', ruta: '/administracion', prefijo: '/administracion' },
 ]
 
 const SUBMODULOS = [
@@ -130,7 +130,10 @@ export function PanelLateral({
         </div>
       </div>
 
-      <nav aria-label="Principal" className="flex flex-1 flex-col gap-1 overflow-y-auto px-2 [scrollbar-color:var(--velo-panel)_transparent] [scrollbar-width:thin]">
+      <nav
+        aria-label="Principal"
+        className="flex flex-1 flex-col gap-1 overflow-y-auto px-2 [scrollbar-color:var(--velo-panel)_transparent] [scrollbar-width:thin]"
+      >
         <ul className="flex flex-col gap-1">
           {comunes.map((m) => (
             <li key={m.ruta}>

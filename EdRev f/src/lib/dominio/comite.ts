@@ -12,6 +12,7 @@
  * - El artículo puede cambiar de revista en cualquier etapa, las veces que haga falta.
  */
 import type { EstadoArticulo, ResultadoRonda, RondaComite } from '@/types/articulo'
+import type { EstadoAsignacion } from '@/types/par'
 
 interface ArticuloEnComite {
   estado: EstadoArticulo
@@ -50,6 +51,25 @@ export function puedeRegistrarRonda(articulo: ArticuloEnComite, tienePares: bool
 
 export function aprobadoPorComite(articulo: ArticuloEnComite): boolean {
   return ultimaRonda(articulo)?.resultado === 'aprobado'
+}
+
+const PAR_VIGENTE: readonly EstadoAsignacion[] = [
+  'invitado',
+  'segundo-intento',
+  'acepto',
+  'entrego',
+]
+
+/**
+ * Artículo «sin pares» (indicador del tablero): el comité ya lo aprobó, sigue en revisión y no tiene ningún par
+ * invitado, que haya aceptado o que haya entregado. Si todos los invitados declinaron, vuelve a estar sin pares.
+ */
+export function esperaPares(articulo: ArticuloEnComite, estadosPares: EstadoAsignacion[]): boolean {
+  return (
+    articulo.estado === 'en-revision' &&
+    aprobadoPorComite(articulo) &&
+    !estadosPares.some((e) => PAR_VIGENTE.includes(e))
+  )
 }
 
 export function puedeAsignarPares(articulo: ArticuloEnComite): boolean {

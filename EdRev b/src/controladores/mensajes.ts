@@ -9,10 +9,16 @@ import { usuarioDe } from '../middlewares/autenticacion.js'
 import * as plantillas from '../servicios/administracion/plantillas.js'
 import * as mensajes from '../servicios/mensajes.js'
 
-const pedido = z.object({
-  destino: z.object({ tipo: z.enum(['par', 'autor']), id: z.string().min(1) }),
-  plantillaId: z.string().min(1, 'Elija una plantilla'),
-})
+// Se envía una plantilla de mensaje (plantillaId) o un texto escrito al momento (texto), que no se guarda como plantilla.
+const pedido = z
+  .object({
+    destino: z.object({ tipo: z.enum(['par', 'autor']), id: z.string().min(1) }),
+    plantillaId: z.string().min(1).optional(),
+    texto: z.object({ asunto: z.string().max(300), cuerpo: z.string().max(20000) }).optional(),
+  })
+  .refine((p) => (p.plantillaId === undefined) !== (p.texto === undefined), {
+    message: 'Elija una plantilla o escriba el mensaje',
+  })
 
 const revistaDe = (req: Request) => idRevista(req.params.revista)
 
@@ -20,7 +26,9 @@ function leer(req: Request) {
   const p = pedido.parse(req.body)
   return {
     destino: { tipo: p.destino.tipo, id: idNumerico(p.destino.id, p.destino.tipo === 'par' ? 'Par' : 'Autor') },
-    plantilla: idNumerico(p.plantillaId, 'Plantilla'),
+    contenido: p.texto
+      ? { asunto: p.texto.asunto, cuerpo: p.texto.cuerpo }
+      : { plantilla: idNumerico(p.plantillaId ?? '', 'Plantilla') },
   }
 }
 
@@ -44,10 +52,10 @@ export async function plantillasDeMensaje(req: Request, res: Response): Promise<
 
 export async function vistaPrevia(req: Request, res: Response): Promise<void> {
   const p = leer(req)
-  res.json(await mensajes.vistaPrevia(revistaDe(req), p.destino, p.plantilla))
+  res.json(await mensajes.vistaPrevia(revistaDe(req), p.destino, p.contenido))
 }
 
 export async function enviar(req: Request, res: Response): Promise<void> {
   const p = leer(req)
-  res.status(201).json(await mensajes.enviarMensaje(revistaDe(req), p.destino, p.plantilla, usuarioDe(req).id))
+  res.status(201).json(await mensajes.enviarMensaje(revistaDe(req), p.destino, p.contenido, usuarioDe(req).id))
 }

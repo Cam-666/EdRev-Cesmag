@@ -1,6 +1,7 @@
 /*
  * Rutas privadas — todo lo que está detrás de <RutaPrivada> (exige sesión). Administración tiene además la
- * protección de <RutaPorPermiso> (solo la Administradora). Hay una sola implementación por pantalla; la revista
+ * protección de <RutaPorPermiso>: plantillas, auditoría y configuración para los dos perfiles, y las cuentas de
+ * usuario solo para la Administradora. Hay una sola implementación por pantalla; la revista
  * es el segmento :revista (las mismas pantallas para reep e ire).
  */
 import { Navigate } from 'react-router-dom'
@@ -9,7 +10,10 @@ import { AppLayout } from '../AppLayout'
 import { RevistaRoute } from '../RevistaRoute'
 import { RutaPorPermiso } from '@/modules/acceso/components/RutaPorPermiso'
 import { RutaPrivada } from '@/modules/acceso/components/RutaPrivada'
-import { AdministracionLayout } from '@/modules/administracion/components/AdministracionLayout'
+import {
+  AdministracionLayout,
+  InicioAdministracion,
+} from '@/modules/administracion/components/AdministracionLayout'
 import { ConfiguracionPage } from '@/modules/administracion/pages/ConfiguracionPage'
 import { AuditoriaPage } from '@/modules/administracion/pages/AuditoriaPage'
 import { PlantillasPage } from '@/modules/administracion/pages/PlantillasPage'
@@ -51,14 +55,17 @@ export const rutasPrivadas: RouteObject[] = [
           { path: '/pares', element: <ParesPage /> },
           { path: '/pares/bloqueados', element: <ParesBloqueadosPage /> },
           { path: '/pares/:id', element: <ParDetallePage /> },
-          { path: '/administracion', element: <Navigate to="/administracion/usuarios" replace /> },
+          { path: '/administracion', element: <InicioAdministracion /> },
           {
             element: <RutaPorPermiso accion="administrar" />,
             children: [
               {
                 element: <AdministracionLayout />,
                 children: [
-                  { path: '/administracion/usuarios', element: <UsuariosPage /> },
+                  {
+                    element: <RutaPorPermiso accion="administrar-usuarios" encabezado="h2" />,
+                    children: [{ path: '/administracion/usuarios', element: <UsuariosPage /> }],
+                  },
                   { path: '/administracion/plantillas', element: <PlantillasPage /> },
                   { path: '/administracion/auditoria', element: <AuditoriaPage /> },
                   { path: '/administracion/configuracion', element: <ConfiguracionPage /> },

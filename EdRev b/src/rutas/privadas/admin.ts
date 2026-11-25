@@ -1,6 +1,7 @@
 /*
- * Administración — solo de la Administradora. Las rutas solo dicen a dónde va cada petición: cuentas de
- * usuario, plantillas de cada revista, registro de auditoría de las dos revistas y configuración.
+ * Administración — las rutas solo dicen a dónde va cada petición: cuentas de usuario, plantillas de cada revista,
+ * registro de auditoría de las dos revistas y configuración. Las cuentas de usuario son solo de la Administradora;
+ * las plantillas, la auditoría y la configuración las manejan también las auxiliares.
  * La validación está en controladores/admin y las reglas en servicios/administracion.
  */
 import { Router } from 'express'
@@ -12,7 +13,7 @@ import * as usuarios from '../../controladores/admin/usuarios.js'
 import { soloAdministradora } from '../../middlewares/autenticacion.js'
 
 export const rutasAdmin = Router()
-rutasAdmin.use(['/usuarios', '/plantillas', '/auditoria', '/configuracion'], soloAdministradora)
+rutasAdmin.use('/usuarios', soloAdministradora)
 
 const subida = multer({ storage: multer.memoryStorage(), limits: { fileSize: 30 * 1024 * 1024 } })
 

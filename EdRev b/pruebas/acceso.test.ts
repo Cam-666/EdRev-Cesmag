@@ -19,11 +19,13 @@ describe('acceso', () => {
     expect((await request(app).get('/api/reep/articulos')).status).toBe(401)
   })
 
-  it('la Auxiliar no entra a Administración', async () => {
+  it('la Auxiliar entra a plantillas, auditoría y configuración, pero no a las cuentas de usuario', async () => {
     const aux = await como(AUXILIAR)
     expect((await aux.get('/usuarios')).status).toBe(403)
-    expect((await aux.get('/plantillas')).status).toBe(403)
-    expect((await aux.get('/auditoria')).status).toBe(403)
+    expect((await aux.post('/usuarios', { nombre: 'X', correo: 'x@unicesmag.edu.co', perfil: 'auxiliar' })).status).toBe(403)
+    expect((await aux.get('/plantillas')).status).toBe(200)
+    expect((await aux.get('/auditoria')).status).toBe(200)
+    expect((await aux.get('/configuracion')).status).toBe(200)
     expect((await aux.get('/reep/tablero')).status).toBe(200)
   })
 

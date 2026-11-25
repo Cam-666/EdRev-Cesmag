@@ -218,7 +218,7 @@ Nota.` })
 
   it('la firma de la constancia es solo la imagen: el PDF no lleva enlaces', async () => {
     const { PDFDocument, PDFName } = await import('pdf-lib')
-    const v = valoresDe({ revista: 'R', par: 'P', articulo: 'A', issn: '', indexaciones: '' })
+    const v = valoresDe({ revista: 'R', par: 'P', articulo: 'A', numero: '1', issn: '', indexaciones: '' })
     const pdf = await dibujarConstancia({ cuerpo: '{{par}} {{articulo}}\n\n[centro]{{firma}}', encabezado: null, pie: null, firma: PNG }, v)
     const anotaciones = (await PDFDocument.load(pdf)).getPage(0).node.get(PDFName.of('Annots')) as { size?: () => number } | undefined
     expect(anotaciones?.size?.() ?? 0).toBe(0)
@@ -228,7 +228,7 @@ Nota.` })
     const largo = Array.from({ length: 60 }, (_, i) => `[justificado]Párrafo ${i} con **negrita** y ñ, «comillas», “dobles” y 日本.`).join('\n\n')
     const pdf = await dibujarConstancia(
       { cuerpo: largo, encabezado: PNG, pie: PNG, firma: null },
-      valoresDe({ revista: 'R', par: 'P', articulo: 'A', issn: '', indexaciones: '' }),
+      valoresDe({ revista: 'R', par: 'P', articulo: 'A', numero: '1', issn: '', indexaciones: '' }),
     )
     const { PDFDocument } = await import('pdf-lib')
     expect((await PDFDocument.load(pdf)).getPageCount()).toBeGreaterThan(1)
@@ -276,7 +276,7 @@ describe('una plantilla nueva y la constancia', () => {
     expect(vista.headers['content-type']).toContain('application/pdf')
     const { PDFDocument } = await import('pdf-lib')
     const { valoresDe, dibujarConstancia } = await import('../src/servicios/constanciaPdf.js')
-    const v = valoresDe({ revista: 'R', par: 'P', articulo: 'A', issn: '', indexaciones: '' })
+    const v = valoresDe({ revista: 'R', par: 'P', articulo: 'A', numero: '1', issn: '', indexaciones: '' })
     const sola = await dibujarConstancia({ cuerpo: '', encabezado: null, pie: null, firma: null }, v)
     const conFirma = await dibujarConstancia({ cuerpo: '', encabezado: null, pie: null, firma: PNG }, v)
     expect((await PDFDocument.load(sola)).getPageCount()).toBe(1)
@@ -285,7 +285,7 @@ describe('una plantilla nueva y la constancia', () => {
 
   it('la constancia se dibuja en hoja Carta, con el título «CERTIFICA QUE» más grande que el cuerpo', async () => {
     const { PDFDocument } = await import('pdf-lib')
-    const v = valoresDe({ revista: 'R', par: 'P', articulo: 'A', issn: '', indexaciones: '' })
+    const v = valoresDe({ revista: 'R', par: 'P', articulo: 'A', numero: '1', issn: '', indexaciones: '' })
     const pdf = await dibujarConstancia({ cuerpo: '[centro]**CERTIFICA QUE**\n\n[justificado]Texto del cuerpo.', encabezado: null, pie: null, firma: null }, v)
     const { width, height } = (await PDFDocument.load(pdf)).getPage(0).getSize()
     expect([width, height]).toEqual([612, 792])

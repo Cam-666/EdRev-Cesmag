@@ -57,6 +57,25 @@ export function ArticulosPage() {
         </Alerta>
       )}
 
+      {filtros.sinPares && (
+        <Alerta
+          tipo="advertencia"
+          titulo="Artículos sin pares"
+          accion={
+            <Boton
+              variante="secundario"
+              tamano="sm"
+              onClick={() => cambiar({ sinPares: undefined })}
+            >
+              Quitar este filtro
+            </Boton>
+          }
+        >
+          Se muestran solo los artículos aprobados por el comité que todavía no tienen pares
+          evaluadores asignados.
+        </Alerta>
+      )}
+
       <FiltrosArticulos filtros={filtros} onCambio={cambiar} />
 
       <EstadoConsulta

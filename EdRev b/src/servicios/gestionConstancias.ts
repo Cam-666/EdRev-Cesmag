@@ -118,7 +118,7 @@ export async function vistaPreviaConstancia(revista: number, id: number) {
   )
   const p = rows[0]
   if (!p) throw new ErrorHttp(409, 'La revista no tiene plantilla de constancia en uso')
-  const valores = valoresDe({ par: f.nombre, articulo: f.titulo, revista: p.revista, issn: p.issn ?? '', indexaciones: p.indexaciones ?? '' })
+  const valores = valoresDe({ par: f.nombre, articulo: f.titulo, numero: f.numero_ojs, revista: p.revista, issn: p.issn ?? '', indexaciones: p.indexaciones ?? '' })
   return {
     universidad: 'UNIVERSIDAD CESMAG',
     revista: p.revista,
@@ -132,7 +132,7 @@ export async function vistaPreviaConstancia(revista: number, id: number) {
 /** El PDF se genera de nuevo con los datos registrados; no se guarda el archivo. */
 export async function descargarConstancia(revista: number, id: number) {
   const f = await entrega(pool, revista, id)
-  const pdf = await generarConstancia(pool, { par: f.nombre, articulo: f.titulo, idRevista: revista })
+  const pdf = await generarConstancia(pool, { par: f.nombre, articulo: f.titulo, numero: f.numero_ojs, idRevista: revista })
   return { pdf, nombre: `constancia-${f.id_evaluacion}.pdf` }
 }
 

@@ -8,6 +8,7 @@ import { auditar } from '../lib/auditoria.js'
 import { FECHA_VALIDA } from '../lib/fechas.js'
 import { ErrorHttp, siglaDe, sinTildes } from '../lib/http.js'
 import { iso } from '../lib/mapeo.js'
+import { CONDICION_SIN_PARES } from '../lib/paresArticulo.js'
 import { articuloDeRevista } from './articulos.js'
 import { vincularAutor, type AutorEntrada } from './autoresArticulo.js'
 import { correosApi, SELECCION_CORREOS, type FilaCorreo } from './correos.js'
@@ -47,6 +48,8 @@ export interface FiltrosListado {
   desde?: string
   hasta?: string
   sinResponder?: boolean
+  /** Solo los aprobados por el comité que todavía no tienen pares. */
+  sinPares?: boolean
   pagina: number
   porPagina: number
 }
@@ -81,6 +84,7 @@ export async function listarArticulos(revista: number, f: FiltrosListado) {
       "EXISTS (SELECT 1 FROM evaluacion e WHERE e.id_articulo = a.id_articulo AND e.estado_par = 'invitado')",
     )
   }
+  if (f.sinPares) filtros.push(`(${CONDICION_SIN_PARES})`)
   const donde = filtros.join(' AND ')
 
   const total = await pool.query<{ n: number }>(`SELECT count(*)::int AS n FROM articulo a WHERE ${donde}`, valores)

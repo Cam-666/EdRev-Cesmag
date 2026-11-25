@@ -52,7 +52,11 @@ async function asuntoDeLaInvitacion(n = 1): Promise<string> {
   await llamar('/reep/articulos/2026-033/asignaciones', {
     metodo: 'POST',
     cuerpo: {
-      nuevo: { ...CANDIDATO, nombre: `${CANDIDATO.nombre} ${n}`, correo: `candidato${n}@udenar.edu.co` },
+      nuevo: {
+        ...CANDIDATO,
+        nombre: `${CANDIDATO.nombre} ${n}`,
+        correo: `candidato${n}@udenar.edu.co`,
+      },
     },
   })
   const h = await json<{ correos: Array<{ tipo: string; asunto: string }> }>(
@@ -217,8 +221,8 @@ describe('constancias API (mock)', () => {
 })
 
 describe('templates API', () => {
-  it('each journal has its own templates for each use; Administradora only', async () => {
-    expect((await llamar('/plantillas', { usuario: AUXILIAR })).status).toBe(403)
+  it('each journal has its own templates for each use; the Auxiliar also manages them', async () => {
+    expect((await llamar('/plantillas', { usuario: AUXILIAR })).status).toBe(200)
     const d = await json<DatosPlantillas>(await llamar('/plantillas'))
     expect(d.plantillas.filter((p) => p.revista === 'reep').map((p) => p.id)).toEqual([
       'reep-invitacion',
@@ -231,7 +235,9 @@ describe('templates API', () => {
     // por cada revista, una invitación, un agradecimiento y una constancia son los habituales; las demás no lo son
     for (const revista of ['reep', 'ire']) {
       for (const fin of ['invitacion', 'agradecimiento', 'constancia']) {
-        expect(d.plantillas.filter((p) => p.revista === revista && p.fin === fin && p.enUso)).toHaveLength(1)
+        expect(
+          d.plantillas.filter((p) => p.revista === revista && p.fin === fin && p.enUso),
+        ).toHaveLength(1)
       }
     }
     expect(d.plantillas.filter((p) => p.fin === 'mensaje').every((p) => !p.enUso)).toBe(true)
@@ -244,7 +250,8 @@ describe('templates API', () => {
   })
 
   it("an edited constancia template changes only its journal's next constancia", async () => {
-    const nuevo = '[centro]**HACE CONSTAR QUE**\n\n{{par}}\n\nevaluó con dedicación el artículo «{{articulo}}».'
+    const nuevo =
+      '[centro]**HACE CONSTAR QUE**\n\n{{par}}\n\nevaluó con dedicación el artículo «{{articulo}}».'
     expect(
       (
         await llamar('/plantillas/reep-constancia', {
@@ -277,7 +284,9 @@ describe('templates API', () => {
         .status,
     ).toBe(422)
     expect((await put('reep-constancia', 'HACE CONSTAR QUE {{par}}')).status).toBe(200)
-    expect((await put('reep-invitacion', 'Hola, un texto sin marcadores', 'Asunto')).status).toBe(200)
+    expect((await put('reep-invitacion', 'Hola, un texto sin marcadores', 'Asunto')).status).toBe(
+      200,
+    )
     expect((await put('reep-constancia', '   ')).status).toBe(422)
   })
 
@@ -297,22 +306,51 @@ describe('templates API', () => {
   it('a new template asks for its journal, a name and what it is for; it is blank and its use never changes', async () => {
     const datos = { revista: 'reep', nombre: 'Invitación formal', fin: 'invitacion' }
     expect(
-      (await llamar('/plantillas', { metodo: 'POST', usuario: AUXILIAR, cuerpo: datos })).status,
-    ).toBe(403)
+      (
+        await llamar('/plantillas', {
+          metodo: 'POST',
+          usuario: AUXILIAR,
+          cuerpo: { ...datos, nombre: ' ' },
+        })
+      ).status,
+    ).toBe(422)
     expect(
       (await llamar('/plantillas', { metodo: 'POST', cuerpo: { ...datos, nombre: ' ' } })).status,
     ).toBe(422)
     // hay que decir para qué es, y la constancia no se crea
-    expect((await llamar('/plantillas', { metodo: 'POST', cuerpo: { revista: 'reep', nombre: 'Sin uso' } })).status).toBe(422)
-    expect((await llamar('/plantillas', { metodo: 'POST', cuerpo: { ...datos, nombre: 'Otra', fin: 'constancia' } })).status).toBe(422)
+    expect(
+      (
+        await llamar('/plantillas', {
+          metodo: 'POST',
+          cuerpo: { revista: 'reep', nombre: 'Sin uso' },
+        })
+      ).status,
+    ).toBe(422)
+    expect(
+      (
+        await llamar('/plantillas', {
+          metodo: 'POST',
+          cuerpo: { ...datos, nombre: 'Otra', fin: 'constancia' },
+        })
+      ).status,
+    ).toBe(422)
     const r = await llamar('/plantillas', { metodo: 'POST', cuerpo: datos })
     expect(r.status).toBe(201)
     const nueva = await json<Plantilla>(r)
-    expect(nueva).toMatchObject({ revista: 'reep', uso: null, enUso: false, fin: 'invitacion', clase: 'correo' })
+    expect(nueva).toMatchObject({
+      revista: 'reep',
+      uso: null,
+      enUso: false,
+      fin: 'invitacion',
+      clase: 'correo',
+    })
     expect(nueva.cuerpo).toBe('') // a new template is blank
     expect((await llamar('/plantillas', { metodo: 'POST', cuerpo: datos })).status).toBe(409)
     // El mismo nombre está bien en la otra revista
-    const enIre = await llamar('/plantillas', { metodo: 'POST', cuerpo: { ...datos, revista: 'ire' } })
+    const enIre = await llamar('/plantillas', {
+      metodo: 'POST',
+      cuerpo: { ...datos, revista: 'ire' },
+    })
     expect(enIre.status).toBe(201)
 
     // una invitación acepta {{par}} y {{articulo}}; {{nombre}} es de los mensajes
@@ -323,7 +361,11 @@ describe('templates API', () => {
     expect(conNombre.status).toBe(422)
     const bien = await llamar(`/plantillas/${nueva.id}`, {
       metodo: 'PUT',
-      cuerpo: { asunto: 'Hola · {{revista}}', cuerpo: 'Hola {{par}}, ¿evalúa «{{articulo}}»?', fin: 'mensaje' },
+      cuerpo: {
+        asunto: 'Hola · {{revista}}',
+        cuerpo: 'Hola {{par}}, ¿evalúa «{{articulo}}»?',
+        fin: 'mensaje',
+      },
     })
     expect(bien.status).toBe(200)
     // el fin nunca cambia, aunque se envíe
@@ -333,15 +375,30 @@ describe('templates API', () => {
     const marcada = await llamar(`/plantillas/${nueva.id}/predeterminada`, { metodo: 'POST' })
     expect(marcada.status).toBe(200)
     const d = await json<DatosPlantillas>(await llamar('/plantillas'))
-    expect(d.plantillas.filter((p) => p.revista === 'reep' && p.fin === 'invitacion' && p.enUso).map((p) => p.id)).toEqual([nueva.id])
+    expect(
+      d.plantillas
+        .filter((p) => p.revista === 'reep' && p.fin === 'invitacion' && p.enUso)
+        .map((p) => p.id),
+    ).toEqual([nueva.id])
     // se deja todo como estaba y la que estaba en uso también se puede eliminar
     await llamar('/plantillas/reep-invitacion/predeterminada', { metodo: 'POST' })
     expect((await llamar(`/plantillas/${nueva.id}`, { metodo: 'DELETE' })).status).toBe(204)
     // la constancia y los mensajes no tienen habitual; una en blanco tampoco puede serlo
-    expect((await llamar('/plantillas/reep-constancia/predeterminada', { metodo: 'POST' })).status).toBe(409)
-    expect((await llamar('/plantillas/reep-mensaje/predeterminada', { metodo: 'POST' })).status).toBe(409)
-    const blanca = await json<Plantilla>(await llamar('/plantillas', { metodo: 'POST', cuerpo: { revista: 'reep', nombre: 'En blanco', fin: 'agradecimiento' } }))
-    expect((await llamar(`/plantillas/${blanca.id}/predeterminada`, { metodo: 'POST' })).status).toBe(422)
+    expect(
+      (await llamar('/plantillas/reep-constancia/predeterminada', { metodo: 'POST' })).status,
+    ).toBe(409)
+    expect(
+      (await llamar('/plantillas/reep-mensaje/predeterminada', { metodo: 'POST' })).status,
+    ).toBe(409)
+    const blanca = await json<Plantilla>(
+      await llamar('/plantillas', {
+        metodo: 'POST',
+        cuerpo: { revista: 'reep', nombre: 'En blanco', fin: 'agradecimiento' },
+      }),
+    )
+    expect(
+      (await llamar(`/plantillas/${blanca.id}/predeterminada`, { metodo: 'POST' })).status,
+    ).toBe(422)
   })
 
   it('any email template can be deleted, even the one in use; the constancia cannot', async () => {
@@ -359,11 +416,20 @@ describe('templates API', () => {
   it('the constancia is permanent: it is only edited', async () => {
     expect((await llamar('/plantillas/ire-constancia', { metodo: 'DELETE' })).status).toBe(409)
     // una plantilla nueva nunca es una constancia
-    expect((await llamar('/plantillas', { metodo: 'POST', cuerpo: { revista: 'ire', nombre: 'Constancia 2027', fin: 'constancia' } })).status).toBe(422)
+    expect(
+      (
+        await llamar('/plantillas', {
+          metodo: 'POST',
+          cuerpo: { revista: 'ire', nombre: 'Constancia 2027', fin: 'constancia' },
+        })
+      ).status,
+    ).toBe(422)
   })
 
   it('the editorial staff gets the templates to choose from when sending: the habitual one first', async () => {
-    const lista = await json<Array<{ id: string; predeterminada: boolean }>>(await llamar('/reep/correos/plantillas?fin=invitacion', { usuario: AUXILIAR }))
+    const lista = await json<Array<{ id: string; predeterminada: boolean }>>(
+      await llamar('/reep/correos/plantillas?fin=invitacion', { usuario: AUXILIAR }),
+    )
     expect(lista[0]).toMatchObject({ id: 'reep-invitacion', predeterminada: true })
     expect(lista.map((p) => p.id)).toContain('reep-invitacion-breve')
     expect((await llamar('/ire/correos/plantillas?fin=invitacion')).status).toBe(200)
@@ -585,6 +651,6 @@ describe('administration API (mock)', () => {
       await llamar('/auditoria?usuario=villota&porPagina=500'),
     )
     expect(porUsuario.items.every((e) => e.usuario === 'Andrea Villota')).toBe(true)
-    expect((await llamar('/auditoria', { usuario: AUXILIAR })).status).toBe(403)
+    expect((await llamar('/auditoria', { usuario: AUXILIAR })).status).toBe(200)
   })
 })

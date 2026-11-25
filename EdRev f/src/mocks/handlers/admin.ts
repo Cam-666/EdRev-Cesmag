@@ -79,13 +79,13 @@ export const handlersAdmin = [
   }),
 
   http.get('*/api/usuarios', ({ request }) => {
-    const c = contextoGlobal(request, 'administrar')
+    const c = contextoGlobal(request, 'administrar-usuarios')
     if (!c.ok) return c.respuesta
     return HttpResponse.json(usuarios())
   }),
 
   http.post('*/api/usuarios', async ({ request }) => {
-    const c = contextoGlobal(request, 'administrar')
+    const c = contextoGlobal(request, 'administrar-usuarios')
     if (!c.ok) return c.respuesta
     const datos = (await request.json()) as DatosUsuario
     if (!datos.nombre.trim()) return error(422, 'Escriba el nombre')
@@ -111,7 +111,7 @@ export const handlersAdmin = [
   }),
 
   http.delete('*/api/usuarios/:id', ({ params, request }) => {
-    const c = contextoGlobal(request, 'administrar')
+    const c = contextoGlobal(request, 'administrar-usuarios')
     if (!c.ok) return c.respuesta
     const usuario = usuarios().find((u) => u.id === params.id)
     if (!usuario) return error(404, 'Usuario no encontrado')
@@ -135,7 +135,7 @@ export const handlersAdmin = [
   }),
 
   http.post('*/api/usuarios/:id/enlace', ({ params, request }) => {
-    const c = contextoGlobal(request, 'administrar')
+    const c = contextoGlobal(request, 'administrar-usuarios')
     if (!c.ok) return c.respuesta
     const usuario = usuarios().find((u) => u.id === params.id)
     if (!usuario) return error(404, 'Usuario no encontrado')
@@ -145,7 +145,7 @@ export const handlersAdmin = [
   }),
 
   http.patch('*/api/usuarios/:id', async ({ params, request }) => {
-    const c = contextoGlobal(request, 'administrar')
+    const c = contextoGlobal(request, 'administrar-usuarios')
     if (!c.ok) return c.respuesta
     const usuario = usuarios().find((u) => u.id === params.id)
     if (!usuario) return error(404, 'Usuario no encontrado')

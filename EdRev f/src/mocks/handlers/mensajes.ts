@@ -3,6 +3,7 @@
  * revista, la vista previa del correo y el envío. Un mensaje enviado queda en el registro de correos de la revista
  * (tipo «mensaje», sin artículo). Igual que el servidor real: solo se usan plantillas de mensaje de esa revista y
  * a quien no tiene un correo válido no se le puede escribir. Lo pueden hacer la Administradora y la Auxiliar.
+ * En lugar de una plantilla se puede mandar un texto escrito al enviar (no se guarda como plantilla).
  */
 import { correoDeEjemplo } from './vistaCorreo'
 import { http, HttpResponse } from 'msw'
@@ -16,6 +17,23 @@ const CORREO_VALIDO = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 interface Pedido {
   destino?: { tipo?: string; id?: string }
   plantillaId?: string
+  texto?: { asunto?: string; cuerpo?: string }
+}
+
+/** El asunto y el texto que se envían: los de la plantilla o los escritos al enviar; un texto explica el error. */
+function contenidoDe(
+  revista: Revista,
+  pedido: Pedido,
+): { asunto: string; cuerpo: string } | string {
+  if (pedido.texto) {
+    if (pedido.plantillaId) return 'Elija una plantilla o escriba el mensaje'
+    if (!pedido.texto.cuerpo?.trim()) return 'Escriba el texto del mensaje'
+    return { asunto: pedido.texto.asunto ?? '', cuerpo: pedido.texto.cuerpo }
+  }
+  const plantilla = plantillaDe(revista, pedido.plantillaId)
+  return plantilla
+    ? { asunto: plantilla.asunto ?? '', cuerpo: plantilla.cuerpo }
+    : 'La plantilla no existe en esa revista o no es una plantilla de mensaje'
 }
 
 interface Persona {
@@ -134,7 +152,7 @@ export const handlersMensajes = [
     return HttpResponse.json(
       plantillas()
         .filter((p) => p.revista === c.revista && p.fin === 'mensaje' && p.cuerpo.trim())
-        .map((p) => ({ id: p.id, nombre: p.nombre })),
+        .map((p) => ({ id: p.id, nombre: p.nombre, asunto: p.asunto ?? '', cuerpo: p.cuerpo })),
     )
   }),
 
@@ -144,15 +162,14 @@ export const handlersMensajes = [
     const pedido = (await request.json()) as Pedido
     const persona = personaDe(c.base, pedido.destino)
     if (!persona) return error(404, 'La persona no existe')
-    const plantilla = plantillaDe(c.revista, pedido.plantillaId)
-    if (!plantilla)
-      return error(404, 'La plantilla no existe en esa revista o no es una plantilla de mensaje')
+    const contenido = contenidoDe(c.revista, pedido)
+    if (typeof contenido === 'string') return error(pedido.texto ? 422 : 404, contenido)
     const v = datosDe(c.revista, persona)
-    const cuerpo = rellenar(plantilla.cuerpo, v)
+    const cuerpo = rellenar(contenido.cuerpo, v)
     return HttpResponse.json({
       para: { nombre: persona.nombre, correo: persona.correo.trim() || null },
       de: 'editorial@unicesmag.edu.co',
-      asunto: rellenar(plantilla.asunto ?? '', v),
+      asunto: rellenar(contenido.asunto, v) || `Mensaje de ${NOMBRE_REVISTA[c.revista]}`,
       html: `<!doctype html><html lang="es"><body><h1>Universidad CESMAG</h1><h2>Mensaje de la Dependencia de Editorial</h2><p>${cuerpo.replace(/\n/g, '<br>')}</p><small>Aviso de datos personales</small></body></html>`,
     })
   }),
@@ -163,9 +180,8 @@ export const handlersMensajes = [
     const pedido = (await request.json()) as Pedido
     const persona = personaDe(c.base, pedido.destino)
     if (!persona) return error(404, 'La persona no existe')
-    const plantilla = plantillaDe(c.revista, pedido.plantillaId)
-    if (!plantilla)
-      return error(404, 'La plantilla no existe en esa revista o no es una plantilla de mensaje')
+    const contenido = contenidoDe(c.revista, pedido)
+    if (typeof contenido === 'string') return error(pedido.texto ? 422 : 404, contenido)
     const correo = persona.correo.trim().toLowerCase()
     if (!CORREO_VALIDO.test(correo)) {
       return error(
@@ -184,7 +200,7 @@ export const handlersMensajes = [
       destinatario: correo,
       nombreDestinatario: persona.nombre,
       dirigidoA: pedido.destino?.tipo === 'autor' ? 'autor' : 'par',
-      asunto: rellenar(plantilla.asunto ?? '', v),
+      asunto: rellenar(contenido.asunto, v) || `Mensaje de ${NOMBRE_REVISTA[c.revista]}`,
       fechaEnvio: ahoraIso(),
       estado: 'enviado',
       atendido: false,

@@ -15,9 +15,7 @@ import { VistaPreviaCorreo } from './VistaPreviaCorreo'
 import { useGuardarPlantilla } from '../hooks/useAdmin'
 import { Alerta } from '@/components/common/Alerta'
 import { Boton } from '@/components/common/Boton'
-import { CampoTexto } from '@/components/common/CampoTexto'
 import { mensajeDeApi } from '@/lib/api/errores'
-import { aGuardado, aVisible } from '@/lib/datosPlantilla'
 import { rellenar } from '@/lib/plantillas'
 import type { FinPlantilla, Plantilla } from '@/types/plantilla'
 import { REVISTAS } from '@/types/revista'
@@ -60,18 +58,12 @@ export function FormularioPlantilla({ plantilla }: FormularioPlantillaProps) {
         {EXPLICACION_FIN[plantilla.fin as FinPlantilla]}
       </p>
 
-      {tieneAsunto && (
-        <CampoTexto
-          etiqueta="Asunto"
-          value={aVisible(asunto)}
-          onChange={(e) => setAsunto(aGuardado(e.target.value))}
-        />
-      )}
       <EditorTexto
         valor={cuerpo}
         onCambio={setCuerpo}
         datos={plantilla.variables}
         error={error ?? undefined}
+        {...(tieneAsunto ? { asunto, onAsunto: setAsunto } : {})}
       />
 
       {esConstancia && <ImagenesConstancia plantilla={plantilla} />}

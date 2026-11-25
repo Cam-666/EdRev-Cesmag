@@ -171,10 +171,12 @@ describe('administration', () => {
   it('rejects a constancia template with an unknown marker and shows the error', async () => {
     const { user } = montarRuta('/administracion/plantillas')
     await screen.findByRole('heading', { level: 2, name: 'Plantillas' })
-    await user.click(await screen.findByRole('button', { name: 'Editar Constancia de participación' }))
+    await user.click(
+      await screen.findByRole('button', { name: 'Editar Constancia de participación' }),
+    )
     const texto = await screen.findByLabelText('Texto')
     await user.clear(texto)
-    await user.type(texto, 'HACE CONSTAR QUE [[Número de la solicitud] evaluó.')
+    await user.type(texto, 'HACE CONSTAR QUE [[Botones de respuesta] evaluó.')
     await user.click(screen.getByRole('button', { name: 'Guardar plantilla' }))
     expect(await screen.findByText(/no se puede usar en esta plantilla/)).toBeInTheDocument()
     expect(screen.queryByText(/Plantilla guardada/)).toBeNull()
@@ -182,8 +184,12 @@ describe('administration', () => {
 
   it('each journal has its own templates; the constancia shows its header, footer and signature', async () => {
     const { user } = montarRuta('/administracion/plantillas')
-    await user.click(await screen.findByRole('button', { name: 'Editar Constancia de participación' }))
-    expect(await screen.findByRole('heading', { name: 'Encabezado, pie de página y firma' })).toBeInTheDocument()
+    await user.click(
+      await screen.findByRole('button', { name: 'Editar Constancia de participación' }),
+    )
+    expect(
+      await screen.findByRole('heading', { name: 'Encabezado, pie de página y firma' }),
+    ).toBeInTheDocument()
     expect(screen.getByLabelText('Imagen de encabezado')).toHaveAttribute(
       'accept',
       'image/png,image/jpeg,.png,.jpg,.jpeg',
@@ -193,16 +199,24 @@ describe('administration', () => {
     await user.click(screen.getByRole('button', { name: /Volver a las plantillas/ }))
     await user.click(await screen.findByRole('combobox', { name: 'Revista' }))
     await user.click(await screen.findByRole('option', { name: 'Investigium IRE' }))
-    await user.click(await screen.findByRole('button', { name: 'Editar Constancia de participación' }))
-    expect(await screen.findByRole('heading', { name: 'Encabezado, pie de página y firma' })).toBeInTheDocument()
+    await user.click(
+      await screen.findByRole('button', { name: 'Editar Constancia de participación' }),
+    )
+    expect(
+      await screen.findByRole('heading', { name: 'Encabezado, pie de página y firma' }),
+    ).toBeInTheDocument()
     // La vista previa es el PDF mismo, en un visor dentro de la página
-    expect(await screen.findByRole('heading', { name: 'Vista previa de la constancia' })).toBeInTheDocument()
+    expect(
+      await screen.findByRole('heading', { name: 'Vista previa de la constancia' }),
+    ).toBeInTheDocument()
   })
 
   it('the preview of a mail template is the mail itself, with its header, not a plain text', async () => {
     const { user } = montarRuta('/administracion/plantillas')
     await user.click(await screen.findByRole('button', { name: 'Editar Invitación a evaluar' }))
-    expect(await screen.findByRole('heading', { name: 'Vista previa del correo' })).toBeInTheDocument()
+    expect(
+      await screen.findByRole('heading', { name: 'Vista previa del correo' }),
+    ).toBeInTheDocument()
     const marco = await screen.findByTitle('Vista previa del correo')
     expect(marco.tagName).toBe('IFRAME')
     expect(marco).toHaveAttribute('srcdoc', expect.stringContaining('Universidad CESMAG'))
@@ -210,7 +224,12 @@ describe('administration', () => {
     const texto = screen.getByLabelText('Texto')
     await user.clear(texto)
     await user.type(texto, 'Un texto nuevo para la invitación.')
-    await waitFor(() => expect(screen.getByTitle('Vista previa del correo')).toHaveAttribute('srcdoc', expect.stringContaining('Un texto nuevo')))
+    await waitFor(() =>
+      expect(screen.getByTitle('Vista previa del correo')).toHaveAttribute(
+        'srcdoc',
+        expect.stringContaining('Un texto nuevo'),
+      ),
+    )
   })
 
   it('shows only the templates: no sender account box and no credentials', async () => {
@@ -226,14 +245,18 @@ describe('administration', () => {
     await user.click(await screen.findByRole('button', { name: 'Nueva plantilla' }))
     const dialogo = await screen.findByRole('dialog', { name: 'Nueva plantilla' })
     await user.click(within(dialogo).getByRole('button', { name: 'Crear plantilla' }))
-    expect(await within(dialogo).findByText('Escriba el nombre de la plantilla.')).toBeInTheDocument()
+    expect(
+      await within(dialogo).findByText('Escriba el nombre de la plantilla.'),
+    ).toBeInTheDocument()
     await user.type(within(dialogo).getByLabelText('Nombre'), 'Invitación en inglés')
     await elegirOpcion(user, '¿Para qué es?', 'Mensaje libre para un par o un autor')
     await user.click(within(dialogo).getByRole('button', { name: 'Crear plantilla' }))
     await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull())
 
     // se abre para escribirla: nace en blanco y sin nada más que elegir
-    expect(await screen.findByRole('heading', { level: 3, name: /Invitación en inglés/ })).toBeInTheDocument()
+    expect(
+      await screen.findByRole('heading', { level: 3, name: /Invitación en inglés/ }),
+    ).toBeInTheDocument()
     expect(screen.getByLabelText('Texto').textContent).toBe('')
     expect(screen.getByText(/Sirve para escribirle a un par o a un autor/)).toBeInTheDocument()
     expect(screen.queryByRole('button', { name: 'Usar esta plantilla' })).toBeNull()
@@ -335,11 +358,12 @@ describe('administration', () => {
     })
   })
 
-  it('the Auxiliar cannot open administration and does not see it in the side panel', async () => {
-    montarRuta('/administracion/usuarios', AUXILIAR)
-    await waitFor(() => expect(screen.queryByRole('heading', { name: /Usuarios/ })).toBeNull())
+  it('the Auxiliar opens administration on Plantillas, without the Usuarios tab', async () => {
+    montarRuta('/administracion', AUXILIAR)
+    expect(await screen.findByRole('heading', { level: 2, name: 'Plantillas' })).toBeInTheDocument()
+    expect(screen.queryByRole('tab', { name: 'Usuarios' })).toBeNull()
     const nav = screen.getByRole('navigation', { name: 'Principal' })
-    expect(within(nav).queryByRole('link', { name: 'Administración' })).toBeNull()
+    expect(within(nav).getByRole('link', { name: 'Administración' })).toBeInTheDocument()
     expect(within(nav).getByRole('link', { name: 'Informes' })).toBeInTheDocument()
     expect(within(nav).getByRole('link', { name: 'Inicio' })).toBeInTheDocument()
   })

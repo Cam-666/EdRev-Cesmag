@@ -11,7 +11,7 @@ import {
   vistaPreviaMensaje,
 } from '../services/mensajesService'
 import type { FinEnvio } from '../services/mensajesService'
-import type { DestinoMensaje } from '@/types/mensaje'
+import type { ContenidoMensaje, DestinoMensaje } from '@/types/mensaje'
 import type { Revista } from '@/types/revista'
 
 export function usePlantillasDeEnvio(revista: Revista, fin: FinEnvio, activo: boolean) {
@@ -39,19 +39,30 @@ export function usePlantillasDeMensaje(revista: Revista, activo: boolean) {
   })
 }
 
-export function useVistaPreviaMensaje(revista: Revista, destino: DestinoMensaje, plantillaId: string | null) {
+/** La vista previa del mensaje; con un texto escrito al enviar, conserva la anterior mientras llega la nueva. */
+export function useVistaPreviaMensaje(
+  revista: Revista,
+  destino: DestinoMensaje,
+  contenido: ContenidoMensaje | null,
+) {
   return useQuery({
-    queryKey: ['mensajes', revista, 'vista-previa', destino.tipo, destino.id, plantillaId],
-    queryFn: () => vistaPreviaMensaje(revista, destino, plantillaId ?? ''),
-    enabled: plantillaId !== null,
+    queryKey: ['mensajes', revista, 'vista-previa', destino.tipo, destino.id, contenido],
+    queryFn: () => vistaPreviaMensaje(revista, destino, contenido as ContenidoMensaje),
+    enabled: contenido !== null,
+    placeholderData: (anterior) => anterior,
   })
 }
 
 export function useEnviarMensaje(revista: Revista) {
   const cliente = useQueryClient()
   return useMutation({
-    mutationFn: ({ destino, plantillaId }: { destino: DestinoMensaje; plantillaId: string }) =>
-      enviarMensaje(revista, destino, plantillaId),
+    mutationFn: ({
+      destino,
+      contenido,
+    }: {
+      destino: DestinoMensaje
+      contenido: ContenidoMensaje
+    }) => enviarMensaje(revista, destino, contenido),
     onSuccess: () => cliente.invalidateQueries({ queryKey: ['correos', revista] }),
   })
 }

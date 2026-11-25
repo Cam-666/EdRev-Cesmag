@@ -14,12 +14,16 @@ const base: Informe = {
   constanciasEmitidas: ind(3, 1),
   diasPromedioEvaluacion: ind(10, 20),
   conceptos: { publicable: 3, conModificaciones: 2, noPublicable: 1, pendienteFormato: 0 },
+  articulos: [],
+  resultados: [],
 }
 
 describe('executive summary of the report', () => {
   it('writes the figures of both journals in formal Spanish', () => {
     const texto = redactarResumen(base).join(' ')
-    expect(texto).toContain('Durante el primer semestre de 2026, las dos revistas de la Universidad CESMAG registraron 8 artículos postulados')
+    expect(texto).toContain(
+      'Durante el primer semestre de 2026, las dos revistas de la Universidad CESMAG registraron 8 artículos postulados',
+    )
     expect(texto).toContain('3 fueron aprobados y 1 fue rechazado')
     expect(texto).toContain('entregaron 6 evaluaciones y se emitieron 4 constancias')
     expect(texto).toContain('«Publicable», con 3 de 6 (50 %)')
@@ -37,7 +41,9 @@ describe('executive summary of the report', () => {
       diasPromedioEvaluacion: ind(0, 1),
       conceptos: { publicable: 1, conModificaciones: 0, noPublicable: 0, pendienteFormato: 0 },
     }).join(' ')
-    expect(una).toContain('la Revista Investigium IRE: Ciencias Sociales y Humanas registró 1 artículo postulado')
+    expect(una).toContain(
+      'la Revista Investigium IRE: Ciencias Sociales y Humanas registró 1 artículo postulado',
+    )
     expect(una).toContain('1 fue aprobado y 0 fueron rechazados')
     expect(una).toContain('1 evaluación y se emitieron 1 constancia')
     expect(una).toContain('1 día')
@@ -53,6 +59,8 @@ describe('executive summary of the report', () => {
       constanciasEmitidas: ind(0, 0),
       conceptos: { publicable: 0, conModificaciones: 0, noPublicable: 0, pendienteFormato: 0 },
     })
-    expect(vacio).toEqual(['Durante el primer semestre de 2026 no hay actividad registrada para las dos revistas de la Universidad CESMAG.'])
+    expect(vacio).toEqual([
+      'Durante el primer semestre de 2026 no hay actividad registrada para las dos revistas de la Universidad CESMAG.',
+    ])
   })
 })

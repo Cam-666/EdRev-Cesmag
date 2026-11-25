@@ -1,7 +1,7 @@
 /*
  * constanciaPdf — la constancia en PDF: el texto de la plantilla de constancia en uso de la revista, con su
  * alineación y su negrita, entre las imágenes de encabezado y de pie de página de la plantilla, y con la imagen
- * de la firma donde está la marca {{firma}}. Además del par y el artículo, el texto puede usar el ISSN y las
+ * de la firma donde está la marca {{firma}}. Además del par, el artículo y su número de OJS, el texto puede usar el ISSN y las
  * indexaciones de la revista (se registran en Configuración), la fecha y el año. No lleva consecutivo.
  * Se genera de nuevo cada vez que se envía o se descarga, así siempre lleva las indexaciones actuales.
  */
@@ -12,6 +12,8 @@ import { analizar, type Alineacion } from '../lib/formato.js'
 export interface DatosConstancia {
   par: string
   articulo: string
+  /** El número de OJS del artículo. */
+  numero: string
   idRevista: number
 }
 
@@ -37,6 +39,7 @@ export interface ValoresConstancia {
   revista: string
   par: string
   articulo: string
+  numero: string
   issn: string
   indexaciones: string
 }
@@ -285,7 +288,7 @@ export async function generarConstancia(c: Cliente, d: DatosConstancia): Promise
   }
   return dibujarConstancia(
     plantilla,
-    valoresDe({ revista: f?.revista ?? '', par: d.par, articulo: d.articulo, issn: f?.issn ?? '', indexaciones: f?.indexaciones ?? '' }),
+    valoresDe({ revista: f?.revista ?? '', par: d.par, articulo: d.articulo, numero: d.numero, issn: f?.issn ?? '', indexaciones: f?.indexaciones ?? '' }),
   )
 }
 
@@ -300,6 +303,7 @@ export async function vistaPrevia(c: Cliente, idPlantilla: number, cuerpo?: stri
       revista: f.revista,
       par: 'DIANA MARCELA QUIRÁ ORDOÑEZ',
       articulo: 'Título del artículo de ejemplo',
+      numero: '2026-034',
       issn: f.issn ?? '',
       indexaciones: f.indexaciones ?? '',
     }),

@@ -82,6 +82,7 @@ export async function listar(req: Request, res: Response): Promise<void> {
       desde: textoDe(q.desde),
       hasta: textoDe(q.hasta),
       sinResponder: q.sinResponder === '1',
+      sinPares: q.sinPares === '1',
       pagina: enteroDe(q.pagina, 1, 1),
       porPagina: enteroDe(q.porPagina, 6, 1, 100),
     }),

@@ -113,7 +113,8 @@ use «Reenviar invitación».
   (el correo fallido queda «Reintentado»).
 - `modules/inicio`: Tablero por revista (pares sin responder, constancias pendientes) e Inicio
   (resumen de ambas revistas, cada tarjeta con los colores de su revista, y «Pendiente»).
-- `modules/informes`: informe comparativo para ambos perfiles; exporta CSV.
+- `modules/informes`: informe comparativo para ambos perfiles; exporta CSV para Excel (artículos del periodo y
+  publicados, no publicados y rechazados por revista).
 - `modules/administracion`: usuarios, plantillas de cada revista (invitación, agradecimiento, constancia) con
   validación de marcadores `{{revista}}`, `{{par}}`, `{{articulo}}` y auditoría de ambas revistas. Se elige la
   revista y se pueden crear plantillas nuevas para cualquiera de los tres fines: nacen en blanco, conservan el fin
@@ -130,9 +131,9 @@ use «Reenviar invitación».
 ## Permisos, acciones de pantalla y pares (ajustes previos a la fase 7)
 
 - Permisos (`modules/acceso/config/permisos.ts`, tabla única): la Auxiliar hace todo el trabajo editorial de
-  ambas revistas; solo Administración (usuarios, plantillas, configuración, auditoría) queda para la
-  Administradora. Informes e Inicio son para ambos perfiles; el panel lateral oculta Administración a la
-  Auxiliar y el mock responde 403 si lo intenta por la API.
+  ambas revistas y entra a Administración (plantillas, configuración, auditoría); solo las cuentas de usuario
+  (`administrar-usuarios`) quedan para la Administradora. Informes e Inicio son para ambos perfiles; la pestaña
+  Usuarios no se muestra a la Auxiliar y el mock responde 403 si lo intenta por la API.
 - Las acciones de cada pantalla («Registrar artículo», «Editar», «Asignar par»…) van junto al título, en el
   contenido (`components/common/EncabezadoPagina`), no en la barra de la revista.
 - Pares: la base de pares es común a las dos revistas (el correo es único). Las invitaciones corren en paralelo.

@@ -17,7 +17,7 @@ export const ETIQUETA_DATO: Record<string, string> = {
   pais: 'País del autor',
   orcid: 'ORCID del autor',
   articulo: 'Título del artículo',
-  numero: 'Número de la solicitud',
+  numero: 'Número de OJS',
   tipo: 'Tipo de artículo',
   estado: 'Estado del artículo',
   entrega: 'Fecha de entrega de la evaluación',
@@ -57,3 +57,29 @@ export function aGuardado(texto: string): string {
     return clave ? `{{${clave}}}` : marca
   })
 }
+
+/**
+ * Los datos que puede traer un mensaje a un par o a un autor (los mismos de una plantilla de mensaje): se usan al
+ * escribir el mensaje en la ventana de envío.
+ */
+export const DATOS_MENSAJE: readonly string[] = [
+  'nombre',
+  'NOMBRE',
+  'correo',
+  'profesion',
+  'universidad',
+  'area',
+  'pais',
+  'orcid',
+  'articulo',
+  'numero',
+  'tipo',
+  'estado',
+  'revista',
+  'REVISTA',
+  'issn',
+  'indexaciones',
+  'contacto',
+  'fecha',
+  'anio',
+]

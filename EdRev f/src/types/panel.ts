@@ -23,6 +23,8 @@ export interface CasoConstanciaPendiente {
 /** Tablero de una revista: las dos alertas que la dependencia marcó como prioridad, más contadores. */
 export interface Tablero {
   fecha: string
+  /** Artículos aprobados por el comité que todavía no tienen pares. */
+  sinPares: number
   enEvaluacion: number
   aprobados: number
   sinResponder: CasoSinResponder[]
@@ -70,6 +72,30 @@ export interface Informe {
     noPublicable: number
     pendienteFormato: number
   }
+  /** Los artículos postulados en el semestre (para el archivo de Excel). */
+  articulos: ArticuloDelInforme[]
+  /** Por revista: cuántos de esos artículos se publicaron, no se publicaron o se rechazaron. */
+  resultados: ResultadoRevistaInforme[]
+}
+
+export interface ArticuloDelInforme {
+  revista: Revista
+  numeroOjs: string
+  titulo: string
+  /** Los autores en el orden del artículo, separados por punto y coma. */
+  autores: string
+  /** Volumen y número, solo si el artículo se aprobó. */
+  publicacion: { volumen: number; numero: number } | null
+}
+
+export interface ResultadoRevistaInforme {
+  revista: Revista
+  nombre: string
+  /** Aprobados (con volumen y número). */
+  publicados: number
+  /** Los que siguen en proceso o se archivaron. */
+  noPublicados: number
+  rechazados: number
 }
 
 export interface PeriodoInforme {

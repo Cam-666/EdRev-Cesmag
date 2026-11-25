@@ -3,7 +3,13 @@
  * mensaje de una revista, la vista previa del correo y el envío.
  */
 import { solicitar } from '@/lib/api/cliente'
-import type { DestinoMensaje, MensajeEnviado, PlantillaDeMensaje, VistaPreviaMensaje } from '@/types/mensaje'
+import type {
+  ContenidoMensaje,
+  DestinoMensaje,
+  MensajeEnviado,
+  PlantillaDeMensaje,
+  VistaPreviaMensaje,
+} from '@/types/mensaje'
 import type { PlantillaDeEnvio } from '@/types/plantilla'
 import type { Revista } from '@/types/revista'
 
@@ -20,33 +26,43 @@ export function listarPlantillasDeMensaje(revista: Revista): Promise<PlantillaDe
 }
 
 /** Las plantillas de invitación o de agradecimiento de una revista, la predeterminada primero. */
-export function listarPlantillasDeEnvio(revista: Revista, fin: FinEnvio): Promise<PlantillaDeEnvio[]> {
+export function listarPlantillasDeEnvio(
+  revista: Revista,
+  fin: FinEnvio,
+): Promise<PlantillaDeEnvio[]> {
   return solicitar<PlantillaDeEnvio[]>(`/${revista}/correos/plantillas?fin=${fin}`)
 }
 
 /** El correo de invitación o de agradecimiento con su marco, para el texto que se está escribiendo. */
-export function vistaCorreoDeEnvio(revista: Revista, fin: FinEnvio, cuerpo: string): Promise<{ html: string }> {
-  return solicitar<{ html: string }>(`/${revista}/correos/vista-previa`, { method: 'POST', ...json({ fin, cuerpo }) })
+export function vistaCorreoDeEnvio(
+  revista: Revista,
+  fin: FinEnvio,
+  cuerpo: string,
+): Promise<{ html: string }> {
+  return solicitar<{ html: string }>(`/${revista}/correos/vista-previa`, {
+    method: 'POST',
+    ...json({ fin, cuerpo }),
+  })
 }
 
 export function vistaPreviaMensaje(
   revista: Revista,
   destino: DestinoMensaje,
-  plantillaId: string,
+  contenido: ContenidoMensaje,
 ): Promise<VistaPreviaMensaje> {
   return solicitar<VistaPreviaMensaje>(`/${revista}/mensajes/vista-previa`, {
     method: 'POST',
-    ...json({ destino, plantillaId }),
+    ...json({ destino, ...contenido }),
   })
 }
 
 export function enviarMensaje(
   revista: Revista,
   destino: DestinoMensaje,
-  plantillaId: string,
+  contenido: ContenidoMensaje,
 ): Promise<MensajeEnviado> {
   return solicitar<MensajeEnviado>(`/${revista}/mensajes`, {
     method: 'POST',
-    ...json({ destino, plantillaId }),
+    ...json({ destino, ...contenido }),
   })
 }

@@ -153,7 +153,7 @@ export async function procesar(): Promise<void> {
       } else {
         const adjunto =
           p.tipo !== 'invitacion'
-            ? await generarConstancia(pool, { par: p.par, articulo: p.titulo, idRevista: p.id_revista })
+            ? await generarConstancia(pool, { par: p.par, articulo: p.titulo, numero: p.numero_ojs, idRevista: p.id_revista })
             : undefined
         resultado = await enviarBrevo(p, asunto, html, adjunto)
       }

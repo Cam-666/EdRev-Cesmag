@@ -7,11 +7,17 @@ export interface DestinoMensaje {
   id: string
 }
 
-/** Una plantilla de mensaje que se puede elegir al enviar un correo. */
+/** Una plantilla de mensaje que se puede elegir al enviar un correo (su texto sirve de punto de partida al escribir). */
 export interface PlantillaDeMensaje {
   id: string
   nombre: string
+  asunto: string
+  cuerpo: string
 }
+
+/** Lo que se envía: una plantilla de mensaje, o un texto escrito al enviar que no se guarda como plantilla. */
+export type ContenidoMensaje =
+  { plantillaId: string } | { texto: { asunto: string; cuerpo: string } }
 
 /** El correo tal como lo recibirá la persona, sin enviarlo todavía. */
 export interface VistaPreviaMensaje {

@@ -4,8 +4,9 @@
  * El resumen de Inicio y el informe son las pantallas de las dos revistas.
  */
 import { http, HttpResponse } from 'msw'
-import { baseDe } from '../db'
+import { autorPorId, baseDe } from '../db'
 import type { SeedRevista } from '../seed/fabrica'
+import { esperaPares } from '@/lib/dominio/comite'
 import { filasDe } from './constancias'
 import { ahoraIso, contexto, contextoGlobal, error } from './util'
 import type {
@@ -100,6 +101,11 @@ function indicador(
   return { reep, ire, total: reep + ire }
 }
 
+const NOMBRE_INFORME: Record<Revista, string> = {
+  reep: 'Revista Electrónica en Educación y Pedagogía',
+  ire: 'Revista Investigium IRE: Ciencias Sociales y Humanas',
+}
+
 function informe(periodo: string, filtro: FiltroRevistaInforme): Informe {
   const { desde, hasta } = rango(periodo)
   const etiqueta = periodos().find((p) => p.valor === periodo)?.etiqueta ?? periodo
@@ -120,6 +126,33 @@ function informe(periodo: string, filtro: FiltroRevistaInforme): Informe {
     )
   }
   const promedio = (r: Revista) => promedioDe(entregas[r])
+  const incluidas = REVISTAS.filter((r) => filtro === 'ambas' || filtro === r)
+  const delPeriodo = (r: Revista) =>
+    baseDe(r).articulos.filter((a) => enRango(a.fechaPostulacion, desde, hasta))
+  const articulos = incluidas.flatMap((r) =>
+    delPeriodo(r).map((a) => ({
+      revista: r,
+      numeroOjs: a.numeroOjs,
+      titulo: a.titulo,
+      autores: a.autoresIds
+        .map((id) => autorPorId(id)?.nombre)
+        .filter(Boolean)
+        .join('; '),
+      publicacion: a.estado === 'aprobado' ? a.publicacion : null,
+    })),
+  )
+  const resultados = incluidas.map((r) => {
+    const lista = delPeriodo(r)
+    const publicados = lista.filter((a) => a.estado === 'aprobado').length
+    const rechazados = lista.filter((a) => a.estado === 'rechazado').length
+    return {
+      revista: r,
+      nombre: NOMBRE_INFORME[r],
+      publicados,
+      noPublicados: lista.length - publicados - rechazados,
+      rechazados,
+    }
+  })
 
   return {
     periodo,
@@ -164,7 +197,9 @@ function informe(periodo: string, filtro: FiltroRevistaInforme): Informe {
       reep: filtro === 'ire' ? 0 : promedio('reep'),
       ire: filtro === 'reep' ? 0 : promedio('ire'),
       // El total pondera cada revista por sus evaluaciones; no es el promedio de dos promedios.
-      total: promedioDe(REVISTAS.filter((r) => filtro === 'ambas' || filtro === r).flatMap((r) => entregas[r])),
+      total: promedioDe(
+        REVISTAS.filter((r) => filtro === 'ambas' || filtro === r).flatMap((r) => entregas[r]),
+      ),
     },
     conceptos: {
       publicable: conceptos.filter((a) => a.concepto === 'publicable').length,
@@ -173,6 +208,8 @@ function informe(periodo: string, filtro: FiltroRevistaInforme): Informe {
       noPublicable: conceptos.filter((a) => a.concepto === 'no-publicable').length,
       pendienteFormato: conceptos.filter((a) => a.concepto === 'pendiente-formato').length,
     },
+    articulos,
+    resultados,
   }
 }
 
@@ -182,6 +219,12 @@ export const handlersPanel = [
     if (!c.ok) return c.respuesta
     const tablero: Tablero = {
       fecha: ahoraIso().slice(0, 10),
+      sinPares: c.base.articulos.filter((a) =>
+        esperaPares(
+          a,
+          c.base.asignaciones.filter((x) => x.articuloId === a.id).map((x) => x.estado),
+        ),
+      ).length,
       enEvaluacion: c.base.articulos.filter((a) => a.estado === 'en-evaluacion').length,
       aprobados: c.base.articulos.filter((a) => a.estado === 'aprobado').length,
       sinResponder: sinResponder(c.base),

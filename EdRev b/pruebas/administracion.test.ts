@@ -65,18 +65,19 @@ describe('plantillas, auditoría, informes y pares por revista', () => {
     expect(repetido.body.parId).toBe(creado.body.id)
   })
 
-  it('los días de espera empiezan en 5, solo la Administradora los cambia y queda en la auditoría', async () => {
+  it('los días de espera empiezan en 5, la Auxiliar también los cambia y queda en la auditoría', async () => {
     const api = await como()
     expect((await api.get('/configuracion')).body).toMatchObject({ diasEspera: 5 })
     const aux = await como(AUXILIAR)
-    expect((await aux.get('/configuracion')).status).toBe(403)
-    expect((await aux.put('/configuracion', { diasEspera: 3 })).status).toBe(403)
+    expect((await aux.get('/configuracion')).status).toBe(200)
+    expect((await aux.put('/configuracion', { diasEspera: 6 })).body).toMatchObject({ diasEspera: 6 })
     expect((await api.put('/configuracion', { diasEspera: 0 })).status).toBe(422)
     expect((await api.put('/configuracion', { diasEspera: 90 })).status).toBe(422)
     expect((await api.put('/configuracion', { diasEspera: 7 })).body).toMatchObject({ diasEspera: 7 })
     expect((await api.get('/configuracion')).body).toMatchObject({ diasEspera: 7 })
     const aud = (await api.get('/auditoria?tipo=edicion&porPagina=5')).body.items as Array<{ accion: string }>
-    expect(aud.some((a) => a.accion.includes('de 5 a 7'))).toBe(true)
+    expect(aud.some((a) => a.accion.includes('de 6 a 7'))).toBe(true)
+    expect(aud.some((a) => a.accion.includes('de 5 a 6'))).toBe(true)
     await api.put('/configuracion', { diasEspera: 5 })
   })
 })

@@ -20,15 +20,21 @@ describe('permisos', () => {
       'registrar-datos',
       'asignar-pares',
       'administrar',
+      'administrar-usuarios',
     ] as Accion[]) {
       expect(puede('administrador', a)).toBe(true)
     }
   })
 
-  it('auxiliar does all the editorial work but not administration', () => {
-    for (const a of [...EDITORIALES, 'registrar-datos', 'asignar-pares'] as Accion[]) {
+  it('auxiliar does all the editorial work and administration, but not the user accounts', () => {
+    for (const a of [
+      ...EDITORIALES,
+      'registrar-datos',
+      'asignar-pares',
+      'administrar',
+    ] as Accion[]) {
       expect(puede('auxiliar', a)).toBe(true)
     }
-    expect(puede('auxiliar', 'administrar')).toBe(false)
+    expect(puede('auxiliar', 'administrar-usuarios')).toBe(false)
   })
 })

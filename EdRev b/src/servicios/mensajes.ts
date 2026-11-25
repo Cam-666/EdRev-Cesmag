@@ -4,7 +4,9 @@
  * `mensaje` con el texto tal como se envió, y aparece en «Correos enviados» de la revista desde la que salió.
  *
  * Cómo funciona:
- * 1. La persona elige la revista (de ahí sale el remitente y las plantillas) y una plantilla.
+ * 1. La persona elige la revista (de ahí sale el remitente y las plantillas) y una plantilla, o escribe el mensaje
+ *    ahí mismo (con los mismos datos que una plantilla de mensaje). Un texto escrito al enviar no se guarda como
+ *    plantilla: solo queda en el registro del mensaje enviado.
  * 2. `vistaPrevia` arma el correo con los datos de la persona y lo muestra tal como lo recibirá.
  * 3. `enviarMensaje` lo guarda «en cola»; la tarea de fondo de servicios/envioCorreos lo envía (por Brevo o
  *    simulado, según CORREO_MODO) y marca su resultado.
@@ -17,6 +19,7 @@ import { auditar } from '../lib/auditoria.js'
 import { aHtml } from '../lib/formato.js'
 import { datosRevista, ESTADO_ARTICULO, TIPO_ARTICULO } from '../lib/datosCorreo.js'
 import { CORREO_VALIDO, ErrorHttp, siglaDe } from '../lib/http.js'
+import { VARIABLES } from './administracion/plantillas.js'
 import { iso } from '../lib/mapeo.js'
 import { escudoEmbebido, marcoInstitucional } from '../lib/marcoCorreo.js'
 
@@ -24,6 +27,9 @@ export interface Destino {
   tipo: 'par' | 'autor'
   id: number
 }
+
+/** Lo que se envía: una plantilla de mensaje de la revista, o un texto escrito al momento de enviar. */
+export type Contenido = { plantilla: number } | { asunto: string; cuerpo: string }
 
 interface Persona {
   nombre: string
@@ -88,7 +94,8 @@ async function revistaDe(id: number): Promise<RevistaMensaje> {
 }
 
 interface PlantillaMensaje {
-  id_plantilla: number
+  /** null cuando el texto se escribió al enviar (no es una plantilla guardada). */
+  id_plantilla: number | null
   nombre: string
   asunto: string
   cuerpo: string
@@ -103,6 +110,16 @@ async function plantillaDe(revista: number, id: number): Promise<PlantillaMensaj
   if (!rows[0]) throw new ErrorHttp(404, 'La plantilla no existe en esa revista o no es una plantilla de mensaje')
   if (!rows[0].cuerpo.trim()) throw new ErrorHttp(422, 'La plantilla aún no tiene texto: redáctela en Plantillas')
   return rows[0]
+}
+
+/** El asunto y el texto del mensaje: los de la plantilla elegida o los que se escribieron al enviar. */
+async function contenidoDe(revista: number, c: Contenido): Promise<PlantillaMensaje> {
+  if ('plantilla' in c) return plantillaDe(revista, c.plantilla)
+  if (!c.cuerpo.trim()) throw new ErrorHttp(422, 'Escriba el texto del mensaje')
+  const usados = [...`${c.asunto} ${c.cuerpo}`.matchAll(/\{\{(\w+)\}\}/g)].map((m) => m[1] ?? '')
+  const desconocido = usados.find((m) => !VARIABLES.mensaje.includes(m))
+  if (desconocido) throw new ErrorHttp(422, `El dato {{${desconocido}}} no se puede usar en un mensaje`)
+  return { id_plantilla: null, nombre: 'escrito al enviar', asunto: c.asunto, cuerpo: c.cuerpo }
 }
 
 const rellenar = (texto: string, v: Record<string, string>) => texto.replace(/\{\{(\w+)\}\}/g, (_, k: string) => v[k] ?? '')
@@ -125,24 +142,27 @@ function datosDe(revista: RevistaMensaje, p: Persona): Record<string, string> {
   }
 }
 
-/** Las plantillas de mensaje de una revista que ya tienen texto, para elegir al enviar. */
+/**
+ * Las plantillas de mensaje de una revista que ya tienen texto, para elegir al enviar. Traen su asunto y su texto
+ * para que, si se quiere, se tomen como punto de partida de un mensaje escrito al enviar.
+ */
 export async function plantillasDeMensaje(revista: number) {
-  const { rows } = await pool.query<{ id_plantilla: number; nombre: string }>(
-    `SELECT id_plantilla, nombre FROM plantilla
+  const { rows } = await pool.query<{ id_plantilla: number; nombre: string; asunto: string; cuerpo: string }>(
+    `SELECT id_plantilla, nombre, COALESCE(asunto, '') AS asunto, cuerpo FROM plantilla
       WHERE id_revista = $1 AND fin = 'mensaje' AND btrim(cuerpo) <> '' ORDER BY nombre`,
     [revista],
   )
-  return rows.map((r) => ({ id: String(r.id_plantilla), nombre: r.nombre }))
+  return rows.map((r) => ({ id: String(r.id_plantilla), nombre: r.nombre, asunto: r.asunto, cuerpo: r.cuerpo }))
 }
 
 /** El correo tal como lo recibirá la persona (con el marco institucional), sin enviarlo. */
-export async function vistaPrevia(revista: number, destino: Destino, idPlantilla: number) {
-  const [p, rev, plantilla] = await Promise.all([persona(destino, revista), revistaDe(revista), plantillaDe(revista, idPlantilla)])
+export async function vistaPrevia(revista: number, destino: Destino, contenido: Contenido) {
+  const [p, rev, plantilla] = await Promise.all([persona(destino, revista), revistaDe(revista), contenidoDe(revista, contenido)])
   const v = datosDe(rev, p)
   return {
     para: { nombre: p.nombre, correo: p.correo?.trim() || null },
     de: rev.correo_remitente,
-    asunto: rellenar(plantilla.asunto, v),
+    asunto: rellenar(plantilla.asunto, v) || `Mensaje de ${rev.nombre}`,
     html: marcoInstitucional({
       tipo: 'mensaje',
       revista: rev.nombre,
@@ -154,14 +174,14 @@ export async function vistaPrevia(revista: number, destino: Destino, idPlantilla
 }
 
 /** Guarda el mensaje «en cola»: la tarea de fondo lo envía. */
-export async function enviarMensaje(revista: number, destino: Destino, idPlantilla: number, actor: number) {
-  const [p, rev, plantilla] = await Promise.all([persona(destino, revista), revistaDe(revista), plantillaDe(revista, idPlantilla)])
+export async function enviarMensaje(revista: number, destino: Destino, contenido: Contenido, actor: number) {
+  const [p, rev, plantilla] = await Promise.all([persona(destino, revista), revistaDe(revista), contenidoDe(revista, contenido)])
   const correo = p.correo?.trim().toLowerCase() ?? ''
   if (!CORREO_VALIDO.test(correo)) {
     throw new ErrorHttp(409, `${p.nombre} no tiene un correo válido registrado: corríjalo en su ficha antes de enviarle un mensaje`)
   }
   const v = datosDe(rev, p)
-  const asunto = rellenar(plantilla.asunto, v) || `Mensaje de ${rev.nombre}`
+  const asunto = (rellenar(plantilla.asunto, v) || `Mensaje de ${rev.nombre}`).slice(0, 300)
   const cuerpo = rellenar(plantilla.cuerpo, v)
   return enTransaccion(async (c) => {
     const { rows } = await c.query<{ id_mensaje: number }>(
@@ -185,7 +205,10 @@ export async function enviarMensaje(revista: number, destino: Destino, idPlantil
       tabla: 'mensaje',
       idRegistro: id,
       accion: 'envio',
-      texto: `Envió el mensaje «${plantilla.nombre}» a ${p.nombre} (${correo})`,
+      texto:
+        plantilla.id_plantilla === null
+          ? `Envió un mensaje escrito al momento («${asunto}») a ${p.nombre} (${correo})`
+          : `Envió el mensaje «${plantilla.nombre}» a ${p.nombre} (${correo})`,
       revista,
     })
     return { id: `m${id}`, estado: 'en-cola' as const, destinatario: correo, nombre: p.nombre }

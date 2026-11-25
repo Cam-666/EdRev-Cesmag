@@ -19,10 +19,11 @@ describe('rutas públicas y privadas', () => {
     }
   })
 
-  it('Administración es solo de la Administradora: la Auxiliar recibe 403', async () => {
+  it('las cuentas de usuario son solo de la Administradora: la Auxiliar recibe 403', async () => {
     const aux = await como(AUXILIAR)
     expect((await aux.get('/usuarios')).status).toBe(403)
-    expect((await aux.get('/plantillas')).status).toBe(403)
+    expect((await aux.patch('/usuarios/1', { activo: false })).status).toBe(403)
+    expect((await aux.get('/plantillas')).status).toBe(200)
     expect((await aux.get('/reep/articulos')).status).toBe(200)
   })
 })

@@ -24,6 +24,7 @@ export function useFiltrosArticulos() {
     desde: params.get('desde') ?? undefined,
     hasta: params.get('hasta') ?? undefined,
     sinResponder: params.get('sinResponder') === '1' ? true : undefined,
+    sinPares: params.get('sinPares') === '1' ? true : undefined,
     pagina: Math.max(1, Number(params.get('pagina') ?? 1) || 1),
     porPagina: POR_PAGINA,
   }
@@ -45,7 +46,8 @@ export function useFiltrosArticulos() {
     filtros.anio ||
     filtros.desde ||
     filtros.hasta ||
-    filtros.sinResponder,
+    filtros.sinResponder ||
+    filtros.sinPares,
   )
 
   return { filtros, cambiar, hayFiltros }

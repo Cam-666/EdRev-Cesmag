@@ -10,7 +10,8 @@ constancia. Las dos revistas siguen el mismo proceso pero cada una tiene sus art
 constancia. Los autores y los pares forman directorios comunes a las dos revistas.
 
 Quienes usan el sistema son la **Administradora** (hace todo, incluida la administración del sistema) y la **Auxiliar**
-(todo el trabajo editorial, menos Administración). Los pares evaluadores y los autores no entran al sistema: reciben
+(todo el trabajo editorial y, en Administración, las plantillas, la configuración y la auditoría; las cuentas de usuario
+son solo de la Administradora). Los pares evaluadores y los autores no entran al sistema: reciben
 correos, y el par responde a la invitación desde los botones del propio correo.
 
 ## Contenido del repositorio
@@ -62,7 +63,7 @@ Todas se definen en `EdRev b/.env` (ver `EdRev b/.env.example`). Ninguna credenc
 | `REMITENTE_CUENTAS` | Correo desde el que salen los enlaces de contraseña (si no se define, el de la primera revista). |
 | `LOGO_CORREO_URL` | Dirección del escudo del encabezado de los correos (por defecto, el del sitio de la universidad). |
 | `ZONA_HORARIA` | Zona horaria de la dependencia (por defecto `America/Bogota`). |
-| `UMBRAL_COINCIDENCIAS`, `DIAS_ESPERA_RESPUESTA`, `INTENTOS_ANTES_BLOQUEO`, `MAX_PARES_POR_ARTICULO` | Valores del proceso. Los días de espera los cambia la Administradora en Administración › Configuración y ese valor gana sobre el de `.env`. |
+| `UMBRAL_COINCIDENCIAS`, `DIAS_ESPERA_RESPUESTA`, `INTENTOS_ANTES_BLOQUEO`, `MAX_PARES_POR_ARTICULO` | Valores del proceso. Los días de espera se cambian en Administración › Configuración y ese valor gana sobre el de `.env`. |
 
 ## Correos: configurar Brevo y los remitentes de las dos revistas
 

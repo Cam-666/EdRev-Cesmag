@@ -2,7 +2,9 @@
  * informeGestion (servicio) — las cifras del informe de gestión de un semestre, de una revista o de las dos:
  * artículos postulados, aprobados y rechazados, evaluaciones entregadas, constancias emitidas, días promedio
  * de evaluación y distribución de conceptos. Las mismas cifras se ofrecen como datos (la página) y como
- * documento PDF (servicios/informePdf).
+ * documento PDF (servicios/informePdf). Para el archivo de Excel, la página recibe además el listado de los
+ * artículos postulados en el semestre (número de OJS, título, autores y, si se aprobó, volumen y número) y, por
+ * revista, cuántos quedaron publicados, no publicados y rechazados.
  */
 import { pool } from '../db.js'
 import { ErrorHttp } from '../lib/http.js'
@@ -88,12 +90,57 @@ async function cargar(filtro: string, periodoPedido: string | undefined) {
     },
   }))
   const incluidas = revistas.filter((r) => filtro === 'ambas' || filtro === r.sigla)
-  return { filtro, periodo, etiquetaPeriodo: p.etiqueta, incluidas }
+  return { filtro, periodo, etiquetaPeriodo: p.etiqueta, incluidas, desde, hasta }
+}
+
+/**
+ * Los artículos postulados en el semestre, con sus autores en el orden del artículo. «Publicados» son los aprobados
+ * (con volumen y número), «rechazados» los rechazados, y «no publicados» todos los demás del semestre: los que
+ * siguen en proceso y los archivados.
+ */
+async function articulosDelPeriodo(revistas: number[], desde: string, hasta: string) {
+  const { rows } = await pool.query<{
+    id_revista: number
+    numero_ojs: string
+    titulo: string
+    estado: string
+    volumen: number | null
+    numero: number | null
+    autores: string | null
+  }>(
+    `SELECT a.id_revista, a.numero_ojs, a.titulo, a.estado, a.volumen, a.numero,
+            (SELECT string_agg(au.nombre, '; ' ORDER BY aa.orden)
+               FROM articulo_autor aa JOIN autor au ON au.id_autor = aa.id_autor
+              WHERE aa.id_articulo = a.id_articulo) AS autores
+       FROM articulo a
+      WHERE a.id_revista = ANY($1) AND a.fecha_postulacion BETWEEN $2 AND $3
+      ORDER BY a.id_revista, a.fecha_postulacion, a.numero_ojs`,
+    [revistas, desde, hasta],
+  )
+  return rows.map((a) => ({
+    revista: (a.id_revista === 1 ? 'reep' : 'ire') as 'reep' | 'ire',
+    numeroOjs: a.numero_ojs,
+    titulo: a.titulo,
+    autores: a.autores ?? '',
+    estado: a.estado,
+    publicacion: a.estado === 'aprobado' && a.volumen !== null ? { volumen: a.volumen, numero: a.numero } : null,
+  }))
 }
 
 /** Las cifras del informe tal como las muestra la página. */
 export async function informeDeGestion(filtro: string, periodoPedido: string | undefined) {
-  const { periodo, etiquetaPeriodo, incluidas } = await cargar(filtro, periodoPedido)
+  const { periodo, etiquetaPeriodo, incluidas, desde, hasta } = await cargar(filtro, periodoPedido)
+  const articulos = await articulosDelPeriodo(
+    incluidas.map((r) => (r.sigla === 'reep' ? 1 : 2)),
+    desde,
+    hasta,
+  )
+  const resultados = incluidas.map((r) => {
+    const propios = articulos.filter((a) => a.revista === r.sigla)
+    const publicados = propios.filter((a) => a.estado === 'aprobado').length
+    const rechazados = propios.filter((a) => a.estado === 'rechazado').length
+    return { revista: r.sigla, nombre: r.nombre, publicados, noPublicados: propios.length - publicados - rechazados, rechazados }
+  })
   const de = (sigla: 'reep' | 'ire') => incluidas.find((r) => r.sigla === sigla)
   const indicador = (campo: 'postulados' | 'aprobados' | 'rechazados' | 'entregadas' | 'constancias') => {
     const reep = de('reep')?.[campo] ?? 0
@@ -124,6 +171,8 @@ export async function informeDeGestion(filtro: string, periodoPedido: string | u
       noPublicable: sumar('noPublicable'),
       pendienteFormato: sumar('pendienteFormato'),
     },
+    articulos: articulos.map(({ estado: _estado, ...a }) => a),
+    resultados,
   }
 }
 

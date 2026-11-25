@@ -1,8 +1,10 @@
 /*
  * panel (servicio) — el tablero de cada revista y el resumen de Inicio de las dos: pares que no han respondido,
- * evaluaciones entregadas sin constancia, artículos en evaluación y aprobados, y registros migrados por corregir.
+ * evaluaciones entregadas sin constancia, artículos aprobados por el comité que esperan pares, artículos en
+ * evaluación y aprobados, y registros migrados por corregir.
  */
 import { pool } from '../db.js'
+import { CONDICION_SIN_PARES } from '../lib/paresArticulo.js'
 import { fechaLocal } from '../lib/fechas.js'
 import { siglaDe } from '../lib/http.js'
 
@@ -50,6 +52,14 @@ async function contar(revista: number, estado: string): Promise<number> {
   return rows[0]?.n ?? 0
 }
 
+async function sinPares(revista: number): Promise<number> {
+  const { rows } = await pool.query<{ n: number }>(
+    `SELECT count(*)::int AS n FROM articulo a WHERE a.id_revista = $1 AND ${CONDICION_SIN_PARES}`,
+    [revista],
+  )
+  return rows[0]?.n ?? 0
+}
+
 async function porCorregir(revista: number): Promise<number> {
   const { rows } = await pool.query<{ n: number }>('SELECT count(*)::int AS n FROM por_corregir WHERE id_revista = $1', [
     revista,
@@ -62,6 +72,7 @@ const hoy = () => fechaLocal()
 export async function tableroDeRevista(revista: number) {
   return {
     fecha: hoy(),
+    sinPares: await sinPares(revista),
     enEvaluacion: await contar(revista, 'en-evaluacion'),
     aprobados: await contar(revista, 'aprobado'),
     sinResponder: await sinResponder(revista),

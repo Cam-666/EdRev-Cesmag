@@ -174,12 +174,13 @@ describe('route table', () => {
       expect(router.state.location.pathname).toBe('/acceso/recuperar')
     })
 
-    it('blocks Administración for the Auxiliar profile', () => {
-      montar('/administracion/usuarios', AUXILIAR)
-      expect(
-        screen.getByRole('heading', { level: 1, name: 'Acceso restringido' }),
-      ).toBeInTheDocument()
+    it('blocks the user accounts for the Auxiliar profile, but not the rest of Administración', () => {
+      const { router } = montar('/administracion/usuarios', AUXILIAR)
+      expect(router.state.location.pathname).toBe('/administracion/plantillas')
       expect(screen.queryByRole('tab', { name: 'Usuarios' })).toBeNull()
+      expect(screen.getByRole('tab', { name: 'Plantillas' })).toBeInTheDocument()
+      expect(screen.getByRole('tab', { name: 'Auditoría' })).toBeInTheDocument()
+      expect(screen.getByRole('tab', { name: 'Configuración' })).toBeInTheDocument()
     })
 
     it('lets the Auxiliar work in the journal modules', () => {

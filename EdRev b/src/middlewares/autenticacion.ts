@@ -1,6 +1,6 @@
 /*
  * autenticacion — el token de sesión (JWT) y los guardias de las rutas. La Auxiliar puede hacer todo menos
- * Administración; el perfil se lee de la base de datos en cada petición, así una cuenta inhabilitada deja de
+ * administrar las cuentas de usuario; el perfil se lee de la base de datos en cada petición, así una cuenta inhabilitada deja de
  * funcionar de inmediato aunque su token no haya vencido.
  */
 import type { NextFunction, Request, Response } from 'express'
@@ -52,7 +52,7 @@ export async function requiereSesion(req: Request, _res: Response, next: NextFun
   next()
 }
 
-/** Administración es solo de la Administradora. */
+/** Las cuentas de usuario son solo de la Administradora. */
 export function soloAdministradora(req: Request, _res: Response, next: NextFunction) {
   if (req.usuario?.perfil !== 'administrador') {
     throw new ErrorHttp(403, 'Sin permiso para esta acción')

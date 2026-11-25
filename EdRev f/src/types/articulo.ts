@@ -92,6 +92,8 @@ export interface FiltrosArticulos {
   hasta?: string
   /** Solo los artículos con pares que no han respondido la invitación (alerta del tablero). */
   sinResponder?: boolean
+  /** Solo los aprobados por el comité que todavía no tienen pares (indicador del tablero). */
+  sinPares?: boolean
   pagina: number
   porPagina: number
 }

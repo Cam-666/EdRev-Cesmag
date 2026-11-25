@@ -1,8 +1,8 @@
 /*
  * TableroPage — Tablero (/:revista/tablero): el tablero de la revista. Muestra al ingresar las dos situaciones
  * que la dependencia identificó como prioridad —pares que no han respondido y evaluaciones entregadas con
- * constancia pendiente—, con su cantidad y una forma de abrir cada listado, además de los artículos en
- * evaluación y aprobados.
+ * constancia pendiente—, con su cantidad y una forma de abrir cada listado, además de los artículos aprobados por
+ * el comité que todavía no tienen pares, los artículos en evaluación y los aprobados.
  */
 import { Alerta } from '@/components/common/Alerta'
 import { AlertasTablero } from '../components/AlertasTablero'
@@ -47,7 +47,7 @@ export function TableroPage() {
       >
         {t && (
           <>
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
               <TarjetaMetrica
                 valor={t.sinResponder.length}
                 etiqueta="Pares sin responder"
@@ -59,6 +59,13 @@ export function TableroPage() {
                 etiqueta="Constancias pendientes"
                 alerta={t.constanciasPendientes.length > 0}
                 href={`/${revista}/constancias`}
+              />
+              <TarjetaMetrica
+                valor={t.sinPares}
+                etiqueta="Artículos sin pares"
+                alerta={t.sinPares > 0}
+                href={`/${revista}/articulos?sinPares=1`}
+                textoEnlace="Ver artículos"
               />
               <TarjetaMetrica
                 valor={t.enEvaluacion}

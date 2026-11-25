@@ -1,7 +1,7 @@
 /*
  * Rutas privadas — todo lo que hace la aplicación detrás de la sesión. Todo el router se monta después del
  * middleware de autenticación (ver app.ts), así que ninguna ruta de aquí se alcanza sin un token válido;
- * Administración agrega su propio guardia (solo la Administradora).
+ * las cuentas de usuario agregan su propio guardia (solo la Administradora).
  */
 import { Router } from 'express'
 import { rutasAdmin } from './admin.js'
